@@ -83,6 +83,15 @@ describe('TabShell swiping', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('History')
   })
 
+  test('a swipe does not change the carousel options (that would re-init and cut the animation)', () => {
+    renderShell('/today')
+    const optionsBefore = embla.state.options
+
+    swipeTo(1)
+
+    expect(embla.state.options).toEqual(optionsBefore)
+  })
+
   test('settling on the current page keeps a nested URL', () => {
     renderShell('/history/2026-10-01')
 

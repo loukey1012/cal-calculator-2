@@ -1,5 +1,5 @@
 import useEmblaCarousel from 'embla-carousel-react'
-import { memo, useEffect, useRef, type ComponentType } from 'react'
+import { memo, useEffect, useRef, useState, type ComponentType } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router'
 import { HistoryIcon, IngredientsIcon, SettingsIcon, TodayIcon } from '../components/ios/icons'
 import { TabBar } from '../components/ios/TabBar'
@@ -60,11 +60,13 @@ export function TabShell() {
   const activeIndexRef = useRef(activeIndex)
   const pageRefs = useRef<(HTMLDivElement | null)[]>([])
 
-  const [emblaRef, emblaApi] = useEmblaCarousel({
+  // created once: new options make Embla re-init, which jumps and cuts the settle animation
+  const [carouselOptions] = useState(() => ({
     startIndex: activeIndex,
     watchDrag: allowTabSwipe,
     duration: SWIPE_SETTLE_DURATION,
-  })
+  }))
+  const [emblaRef, emblaApi] = useEmblaCarousel(carouselOptions)
 
   useEffect(() => {
     activeIndexRef.current = activeIndex
