@@ -5,6 +5,9 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 env:
   # placeholders: the shell doesn't contact Supabase in tests
   VITE_SUPABASE_URL: https://placeholder.supabase.co
@@ -27,3 +30,33 @@ jobs:
       - run: pnpm coverage
       - run: pnpm exec playwright install --with-deps webkit
       - run: pnpm e2e
+
+  # Schema + RLS integration tests against the DEV Supabase project (never prod)
+  # Uses the dev service-role key: only on pushes to main, never for pull requests
+  db-tests:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: db-tests-dev-project
+      cancel-in-progress: false
+    env:
+      SUPABASE_TEST_URL: ${{ secrets.SUPABASE_TEST_URL }}
+      SUPABASE_TEST_ANON_KEY: ${{ secrets.SUPABASE_TEST_ANON_KEY }}
+      SUPABASE_TEST_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_TEST_SERVICE_ROLE_KEY }}
+    steps:
+      - name: Require dev project secrets
+        run: |
+          for name in SUPABASE_TEST_URL SUPABASE_TEST_ANON_KEY SUPABASE_TEST_SERVICE_ROLE_KEY; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing repository secret $name (dev project credentials, see .env.test.local)"
+              exit 1
+            fi
+          done
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:db
