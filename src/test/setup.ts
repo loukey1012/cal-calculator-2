@@ -55,5 +55,7 @@ window.fetch = (input: RequestInfo | URL) => {
 }
 afterEach(() => {
   const requests = unmockedRequests.splice(0)
-  if (requests.length > 0) throw new Error(`Unmocked network requests:\n${requests.join('\n')}`)
+  if (requests.length === 0) return
+  cleanup() // keep later tests isolated even though this one fails
+  throw new Error(`Unmocked network requests:\n${requests.join('\n')}`)
 })

@@ -23,10 +23,19 @@ export const ingredientKeys = {
   categories: (householdId: string) => ['categories', householdId] as const,
 }
 
-export function useIngredients(householdId: string): UseQueryResult<Ingredient[]> {
+type IngredientsQueryOptions = {
+  /** refresh whenever the caller mounts, while still showing the cached list right away */
+  readonly alwaysRefresh?: boolean
+}
+
+export function useIngredients(
+  householdId: string,
+  { alwaysRefresh = false }: IngredientsQueryOptions = {},
+): UseQueryResult<Ingredient[]> {
   return useQuery({
     queryKey: ingredientKeys.ingredients(householdId),
     queryFn: () => fetchIngredients(householdId),
+    refetchOnMount: alwaysRefresh ? 'always' : true,
   })
 }
 

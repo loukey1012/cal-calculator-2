@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest'
-import { formatGrams, formatKcal, toWholeKcal } from './format'
+import { formatGrams, formatKcal, macroSummary, toWholeKcal } from './format'
+import { EMPTY_TOTALS } from './totals'
 
 describe('toWholeKcal', () => {
   test('rounds up to whole calories', () => {
@@ -30,5 +31,19 @@ describe('formatGrams', () => {
 
   test('never shows negative zero', () => {
     expect(formatGrams(-0.01, 'en')).toBe('0.0')
+  })
+})
+
+describe('macroSummary', () => {
+  test('shows protein, carbs and fat with one decimal', () => {
+    expect(macroSummary({ ...EMPTY_TOTALS, protein: 31.95, carbs: 40, fat: 27 }, 'en')).toBe(
+      'P 32.0 g · C 40.0 g · F 27.0 g',
+    )
+  })
+
+  test('shows a dash for nutrients no logged item had a value for, instead of a false 0', () => {
+    const totals = { ...EMPTY_TOTALS, protein: 1.3, missing: ['carbs', 'fat'] as const }
+
+    expect(macroSummary(totals, 'en')).toBe('P 1.3 g · C – · F –')
   })
 })
