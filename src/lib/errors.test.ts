@@ -10,6 +10,11 @@ describe('toUserMessage', () => {
     ['email rate limit exceeded', 'Too many attempts. Please wait a minute and try again.'],
     ['You are already in a household', 'You are already in a household.'],
     ['Invalid invite code', 'That invite code doesn’t match any household.'],
+    [
+      'new row for relation "ingredients" violates check constraint "ingredients_has_kcal"',
+      'Some values aren’t allowed. Check the numbers and try again.',
+    ],
+    ['duplicate key value violates unique constraint', 'This already exists.'],
   ])('maps "%s" to a friendly message', (raw, friendly) => {
     expect(toUserMessage(new Error(raw))).toBe(friendly)
   })

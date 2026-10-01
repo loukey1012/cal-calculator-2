@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest'
+import { z } from 'zod'
 import { fieldErrors } from '../../lib/forms'
 import { loginSchema, signUpSchema } from './validation'
 
@@ -44,6 +45,16 @@ describe('signUpSchema', () => {
 })
 
 describe('fieldErrors', () => {
+  test('keys nested fields by their full path', () => {
+    const schema = z.object({
+      per100g: z.object({ kcal: z.string().min(1, 'Enter the calories') }),
+    })
+
+    expect(fieldErrors(schema.safeParse({ per100g: { kcal: '' } }).error)).toEqual({
+      'per100g.kcal': 'Enter the calories',
+    })
+  })
+
   test('returns an empty object when there is no error', () => {
     expect(fieldErrors(undefined)).toEqual({})
   })

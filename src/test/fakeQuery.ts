@@ -4,6 +4,9 @@ export type QueryResult = { readonly data: unknown; readonly error: unknown }
 
 export type FakeQuery = {
   readonly select: Mock
+  readonly insert: Mock
+  readonly update: Mock
+  readonly delete: Mock
   readonly eq: Mock
   readonly order: Mock
   readonly single: Mock
@@ -15,12 +18,17 @@ export function fakeQuery(result: QueryResult): FakeQuery {
   const promise = Promise.resolve(result)
   const query: FakeQuery = {
     select: vi.fn(),
+    insert: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
     eq: vi.fn(),
     order: vi.fn(),
     single: vi.fn(() => promise),
     then: promise.then.bind(promise),
   }
-  query.select.mockReturnValue(query)
+  for (const method of [query.select, query.insert, query.update, query.delete]) {
+    method.mockReturnValue(query)
+  }
   query.eq.mockReturnValue(query)
   query.order.mockReturnValue(query)
   return query

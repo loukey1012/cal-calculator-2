@@ -59,3 +59,20 @@ export function ChevronRightIcon(props: SVGProps<SVGSVGElement>) {
     </Icon>
   )
 }
+
+export function PlusIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon strokeWidth={2.2} {...props}>
+      <path d="M12 5v14M5 12h14" />
+    </Icon>
+  )
+}
+
+export function SearchIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon strokeWidth={2} {...props}>
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="M16 16l4 4" />
+    </Icon>
+  )
+}

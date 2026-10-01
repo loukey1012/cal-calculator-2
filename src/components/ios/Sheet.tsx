@@ -10,6 +10,8 @@ type SheetProps = {
   readonly open: boolean
   readonly onClose: () => void
   readonly title: string
+  /** trailing header control, e.g. a Save button */
+  readonly action?: ReactNode
   readonly children: ReactNode
 }
 
@@ -18,7 +20,7 @@ export function Sheet({ open, ...panelProps }: SheetProps) {
   return open ? <SheetPanel {...panelProps} /> : null
 }
 
-function SheetPanel({ onClose, title, children }: Omit<SheetProps, 'open'>) {
+function SheetPanel({ onClose, title, action, children }: Omit<SheetProps, 'open'>) {
   const titleId = useId()
   const panelRef = useRef<HTMLDivElement>(null)
   const dragStartY = useRef<number | null>(null)
@@ -93,13 +95,16 @@ function SheetPanel({ onClose, title, children }: Omit<SheetProps, 'open'>) {
           onPointerCancel={endDrag}
         >
           <div className="mx-auto h-[5px] w-9 rounded-full bg-label-secondary/40" />
-          <div className="mt-2 flex items-center justify-between">
+          <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-center">
+            <div>
+              <Button variant="plain" className="-ml-2" onClick={onClose}>
+                Close
+              </Button>
+            </div>
             <h2 id={titleId} className="text-[17px] font-semibold">
               {title}
             </h2>
-            <Button variant="plain" onClick={onClose}>
-              Close
-            </Button>
+            <div className="text-right">{action}</div>
           </div>
         </div>
         <div className="overflow-y-auto overscroll-contain px-4 pb-4">{children}</div>

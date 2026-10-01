@@ -45,3 +45,15 @@ if (!('PointerEvent' in window)) {
   }
   Object.assign(window, { PointerEvent: PointerEventPolyfill })
 }
+
+// unit tests must never reach a real backend (.env.local points at production);
+// React Query would swallow the rejection, so the test fails afterwards instead
+const unmockedRequests: string[] = []
+window.fetch = (input: RequestInfo | URL) => {
+  unmockedRequests.push(String(input))
+  return Promise.reject(new Error(`Unmocked network request in a unit test: ${String(input)}`))
+}
+afterEach(() => {
+  const requests = unmockedRequests.splice(0)
+  if (requests.length > 0) throw new Error(`Unmocked network requests:\n${requests.join('\n')}`)
+})

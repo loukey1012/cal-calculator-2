@@ -11,6 +11,8 @@ const KNOWN_MESSAGES: ReadonlyArray<readonly [RegExp, string]> = [
   [/rate limit/i, 'Too many attempts. Please wait a minute and try again.'],
   [/already in a household/i, 'You are already in a household.'],
   [/invalid invite code/i, 'That invite code doesn’t match any household.'],
+  [/violates check constraint/i, 'Some values aren’t allowed. Check the numbers and try again.'],
+  [/duplicate key/i, 'This already exists.'],
 ]
 
 /** An error returned by Supabase (PostgREST/RPC), kept as a real Error with its SQLSTATE code. */

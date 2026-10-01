@@ -5,6 +5,10 @@ import { renderWithProviders } from './test/render'
 
 vi.mock('./features/auth/authContext', () => ({ useAuth: vi.fn() }))
 vi.mock('./features/auth/authApi', () => ({ signIn: vi.fn(), signUp: vi.fn(), signOut: vi.fn() }))
+vi.mock('./features/ingredients/ingredientsApi', () => ({
+  fetchIngredients: vi.fn().mockResolvedValue([]),
+  fetchCategories: vi.fn().mockResolvedValue([]),
+}))
 vi.mock('./features/household/householdApi', () => ({
   fetchProfile: vi.fn(),
   fetchHousehold: vi.fn(),
