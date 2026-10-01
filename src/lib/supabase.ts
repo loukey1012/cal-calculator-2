@@ -1,8 +1,9 @@
 import { createClient } from '@supabase/supabase-js'
+import type { Database } from './database.types'
 import { parseEnv } from './env'
 
 const env = parseEnv(import.meta.env)
 
-export const supabase = createClient(env.supabaseUrl, env.supabaseAnonKey, {
+export const supabase = createClient<Database>(env.supabaseUrl, env.supabaseAnonKey, {
   auth: { persistSession: true, autoRefreshToken: true },
 })

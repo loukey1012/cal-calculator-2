@@ -15,7 +15,9 @@
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
     "e2e": "playwright test",
-    "icons": "pwa-assets-generator"
+    "icons": "pwa-assets-generator",
+    "test:db": "vitest run --config vitest.integration.config.ts",
+    "db:types": "supabase gen types typescript --linked --schema public > src/lib/database.types.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",
