@@ -1,0 +1,7 @@
+dist
+dev-dist
+coverage
+pnpm-lock.yaml
+supabase/.temp
+playwright-report
+test-results

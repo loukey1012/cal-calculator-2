@@ -1,0 +1,29 @@
+# secrets — never commit
+.env
+.env.*
+!.env.example
+secrets/
+*service-account*.json
+
+# dependencies & build
+node_modules/
+dist/
+dev-dist/
+coverage/
+
+# tooling
+.vercel/
+supabase/.temp/
+supabase/.branches/
+playwright-report/
+test-results/
+*.tsbuildinfo
+
+# logs & os
+*.log
+.DS_Store
+
+# editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
