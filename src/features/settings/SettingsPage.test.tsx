@@ -1,14 +1,15 @@
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+import { CurrentUserContext } from '../../app/currentUser'
 import { renderWithProviders } from '../../test/render'
 
-vi.mock('./householdApi', () => ({ fetchHousehold: vi.fn(), fetchMembers: vi.fn() }))
+vi.mock('../household/householdApi', () => ({ fetchHousehold: vi.fn(), fetchMembers: vi.fn() }))
 vi.mock('../auth/authApi', () => ({ signOut: vi.fn() }))
 
 import { signOut } from '../auth/authApi'
-import { fetchHousehold, fetchMembers } from './householdApi'
-import { HouseholdHome } from './HouseholdHome'
+import { fetchHousehold, fetchMembers } from '../household/householdApi'
+import { SettingsPage } from './SettingsPage'
 
 const ME = {
   id: 'u1',
@@ -21,6 +22,14 @@ const ME = {
 const PARTNER = { ...ME, id: 'u2', display_name: 'Anna' }
 const HOUSEHOLD = { id: 'h1', name: 'Home', invite_code: '4Y5RFXKYMJ4P', created_at: '' }
 
+function renderPage() {
+  return renderWithProviders(
+    <CurrentUserContext value={{ profile: ME, householdId: 'h1' }}>
+      <SettingsPage />
+    </CurrentUserContext>,
+  )
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(fetchHousehold).mockResolvedValue(HOUSEHOLD)
@@ -31,11 +40,12 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('HouseholdHome', () => {
-  test('greets the user and lists the household and its members', async () => {
-    renderWithProviders(<HouseholdHome profile={ME} householdId="h1" />)
+describe('SettingsPage', () => {
+  test('shows the account, the household and its members', async () => {
+    renderPage()
 
-    expect(screen.getByText('Hi, Lukas')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Settings' })).toBeInTheDocument()
+    expect(screen.getByText('Lukas')).toBeInTheDocument()
     expect(await screen.findByText('Home')).toBeInTheDocument()
     expect(screen.getByText('Anna')).toBeInTheDocument()
     expect(screen.getByText('Lukas (you)')).toBeInTheDocument()
@@ -46,7 +56,7 @@ describe('HouseholdHome', () => {
     const share = vi.fn().mockResolvedValue(undefined)
     vi.stubGlobal('navigator', { ...navigator, share })
     const user = userEvent.setup()
-    renderWithProviders(<HouseholdHome profile={ME} householdId="h1" />)
+    renderPage()
 
     await user.click(await screen.findByRole('button', { name: 'Share invite code' }))
 
@@ -60,7 +70,7 @@ describe('HouseholdHome', () => {
     // after setup(): user-event installs its own clipboard stub
     const user = userEvent.setup()
     vi.stubGlobal('navigator', { ...navigator, share: undefined, clipboard: { writeText } })
-    renderWithProviders(<HouseholdHome profile={ME} householdId="h1" />)
+    renderPage()
 
     await user.click(await screen.findByRole('button', { name: 'Share invite code' }))
 
@@ -72,16 +82,27 @@ describe('HouseholdHome', () => {
     const share = vi.fn().mockRejectedValue(new DOMException('cancelled', 'AbortError'))
     vi.stubGlobal('navigator', { ...navigator, share })
     const user = userEvent.setup()
-    renderWithProviders(<HouseholdHome profile={ME} householdId="h1" />)
+    renderPage()
 
     await user.click(await screen.findByRole('button', { name: 'Share invite code' }))
 
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
+  test('shows an error when sharing fails', async () => {
+    const share = vi.fn().mockRejectedValue(new TypeError('Load failed'))
+    vi.stubGlobal('navigator', { ...navigator, share })
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: 'Share invite code' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('No connection.')
+  })
+
   test('shows an error when loading the household fails', async () => {
     vi.mocked(fetchHousehold).mockRejectedValue(new TypeError('Load failed'))
-    renderWithProviders(<HouseholdHome profile={ME} householdId="h1" />)
+    renderPage()
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'No connection. Check your internet and try again.',
@@ -91,7 +112,7 @@ describe('HouseholdHome', () => {
   test('logs out', async () => {
     vi.mocked(signOut).mockResolvedValue()
     const user = userEvent.setup()
-    renderWithProviders(<HouseholdHome profile={ME} householdId="h1" />)
+    renderPage()
 
     await user.click(screen.getByRole('button', { name: 'Log out' }))
 

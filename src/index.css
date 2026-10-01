@@ -36,10 +36,28 @@
   --color-fill: var(--fill);
   --color-destructive: var(--destructive);
   --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  --animate-sheet-in: sheet-in 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+  --animate-fade-in: fade-in 0.25s ease-out;
+
+  @keyframes sheet-in {
+    from {
+      transform: translateY(100%);
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
 }
 
 @utility pt-safe-top {
   padding-top: env(safe-area-inset-top);
+}
+
+/* room for the fixed tab bar (49pt like UIKit) plus the home indicator */
+@utility pb-tabbar {
+  padding-bottom: calc(49px + env(safe-area-inset-bottom) + 24px);
 }
 
 @utility pb-safe-bottom {

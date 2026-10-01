@@ -6,6 +6,24 @@ import { VitePWA } from 'vite-plugin-pwa'
 const APP_NAME = 'CALculator2'
 
 export default defineConfig({
+  build: {
+    rolldownOptions: {
+      output: {
+        // libraries change rarely: separate chunks stay cached across app updates
+        codeSplitting: {
+          groups: [
+            {
+              name: 'react',
+              test: /node_modules[\\/](react|react-dom|scheduler|react-router)[\\/]/,
+              priority: 3,
+            },
+            { name: 'supabase', test: /node_modules[\\/]@supabase[\\/]/, priority: 2 },
+            { name: 'vendor', test: /node_modules[\\/]/, priority: 1 },
+          ],
+        },
+      },
+    },
+  },
   plugins: [
     react(),
     tailwindcss(),

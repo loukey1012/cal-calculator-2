@@ -1,3 +1,5 @@
+import { lazy, Suspense } from 'react'
+import { CurrentUserContext } from './app/currentUser'
 import { Button } from './components/ios/Button'
 import { ErrorBanner } from './components/ios/ErrorBanner'
 import { Screen } from './components/ios/Screen'
@@ -5,9 +7,13 @@ import { Splash } from './components/ios/Splash'
 import { AuthScreen } from './features/auth/AuthScreen'
 import { useAuth } from './features/auth/authContext'
 import { useProfile } from './features/household/hooks'
-import { HouseholdHome } from './features/household/HouseholdHome'
 import { OnboardingScreen } from './features/household/OnboardingScreen'
 import { toUserMessage } from './lib/errors'
+
+// the signed-in app is its own chunk: the login screen loads without it
+const TabShell = lazy(() =>
+  import('./app/TabShell').then((module) => ({ default: module.TabShell })),
+)
 
 /** Routes between loading → login → household onboarding → app, based on session and profile. */
 export function AppGate() {
@@ -34,5 +40,11 @@ function SignedInGate({ userId }: { readonly userId: string }) {
 
   const householdId = profile.data.household_id
   if (!householdId) return <OnboardingScreen />
-  return <HouseholdHome profile={profile.data} householdId={householdId} />
+  return (
+    <CurrentUserContext value={{ profile: profile.data, householdId }}>
+      <Suspense fallback={<Splash />}>
+        <TabShell />
+      </Suspense>
+    </CurrentUserContext>
+  )
 }

@@ -54,7 +54,7 @@ describe('AppGate', () => {
     expect(fetchProfile).toHaveBeenCalledWith('u1')
   })
 
-  test('shows the home screen for a household member', async () => {
+  test('shows the tabbed app for a household member', async () => {
     vi.mocked(useAuth).mockReturnValue(SIGNED_IN)
     vi.mocked(fetchProfile).mockResolvedValue({ ...PROFILE, household_id: 'h1' })
     vi.mocked(fetchHousehold).mockResolvedValue({
@@ -66,7 +66,7 @@ describe('AppGate', () => {
     vi.mocked(fetchMembers).mockResolvedValue([])
     renderWithProviders(<AppGate />)
 
-    expect(await screen.findByText('Hi, Lukas')).toBeInTheDocument()
+    expect(await screen.findByRole('navigation', { name: 'Tabs' })).toBeInTheDocument()
   })
 
   test('shows a retryable error when the profile cannot be loaded', async () => {
