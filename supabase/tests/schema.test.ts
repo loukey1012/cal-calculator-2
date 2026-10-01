@@ -248,6 +248,61 @@ describe('ingredients', () => {
   })
 })
 
+describe('empty categories', () => {
+  async function categoryNamed(name: string) {
+    const { data } = await alice.client
+      .from('categories')
+      .insert({ household_id: householdId, name })
+      .select('id')
+      .single()
+    return data?.id as string
+  }
+
+  async function ingredientIn(categoryId: string, name: string) {
+    const { data } = await alice.client
+      .from('ingredients')
+      .insert({ household_id: householdId, category_id: categoryId, name, kcal_100: 1 })
+      .select('id')
+      .single()
+    return data?.id as string
+  }
+
+  async function categoryExists(id: string) {
+    const { data } = await alice.client.from('categories').select('id').eq('id', id)
+    return (data ?? []).length === 1
+  }
+
+  test('deleting the last ingredient of a category removes the category', async () => {
+    const categoryId = await categoryNamed('Temp A')
+    const ingredientId = await ingredientIn(categoryId, 'Only one')
+
+    await bob.client.from('ingredients').delete().eq('id', ingredientId)
+
+    expect(await categoryExists(categoryId)).toBe(false)
+  })
+
+  test('a category that still has ingredients is kept', async () => {
+    const categoryId = await categoryNamed('Temp B')
+    const first = await ingredientIn(categoryId, 'First')
+    await ingredientIn(categoryId, 'Second')
+
+    await alice.client.from('ingredients').delete().eq('id', first)
+
+    expect(await categoryExists(categoryId)).toBe(true)
+  })
+
+  test('moving the last ingredient to another category removes the emptied one', async () => {
+    const from = await categoryNamed('Temp C')
+    const to = await categoryNamed('Temp D')
+    const ingredientId = await ingredientIn(from, 'Mover')
+
+    await alice.client.from('ingredients').update({ category_id: to }).eq('id', ingredientId)
+
+    expect(await categoryExists(from)).toBe(false)
+    expect(await categoryExists(to)).toBe(true)
+  })
+})
+
 describe('meals', () => {
   let aliceLunchId: string
 
