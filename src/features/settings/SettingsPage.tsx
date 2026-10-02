@@ -16,6 +16,7 @@ import { formatInviteCode } from '../household/inviteCode'
 import { shareInviteCode } from '../household/shareInvite'
 import { goalForDate, type Goal } from '../nutrition/goals'
 import { useToday } from '../today/useToday'
+import { AccountSection } from './AccountSection'
 
 /** A failed load must not look like "no goal", which would invite overwriting it. */
 function goalDetail(loading: boolean, missing: boolean, goal: Goal | null): string {
@@ -54,9 +55,7 @@ export function SettingsPage() {
   return (
     <>
       <PageHeader title="Settings" />
-      <GroupedSection header="Account">
-        <ListRow title="Name" detail={profile.display_name || 'Unnamed'} />
-      </GroupedSection>
+      <AccountSection profile={profile} />
       <GroupedSection header="Goals">
         <ListRow
           title="Daily goal"

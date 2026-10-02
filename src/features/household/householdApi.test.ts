@@ -11,6 +11,7 @@ import {
   fetchMembers,
   fetchProfile,
   joinHousehold,
+  updateProfile,
 } from './householdApi'
 
 const PROFILE = { id: 'u1', household_id: 'h1', display_name: 'Lukas', accent_color: '#007aff' }
@@ -78,6 +79,20 @@ describe('householdApi', () => {
       error: { message: 'Invalid invite code' },
     })
     await expect(joinHousehold('AAAAAAAAAAAA')).rejects.toThrow('Invalid invite code')
+  })
+
+  test('updateProfile changes only the given fields of one profile', async () => {
+    const query = fakeQuery({ data: null, error: null })
+    supabaseMock.from.mockReturnValueOnce(query)
+
+    await updateProfile('u1', { accent_color: '#ff2d55' })
+
+    expect(supabaseMock.from).toHaveBeenCalledWith('profiles')
+    expect(query.update).toHaveBeenCalledWith({ accent_color: '#ff2d55' })
+    expect(query.eq).toHaveBeenCalledWith('id', 'u1')
+
+    supabaseMock.from.mockReturnValueOnce(fakeQuery({ data: null, error: DB_ERROR }))
+    await expect(updateProfile('u1', { display_name: 'x' })).rejects.toBeInstanceOf(ApiError)
   })
 
   test('createHousehold surfaces errors', async () => {

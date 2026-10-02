@@ -56,15 +56,14 @@ Built for a two-person household: both members log their own meals, can see and 
 
 - Large titles, inset grouped lists, bottom sheets (drag down to close), segmented controls, switches and swipe actions.
 - **Bottom tab bar** (Today · History · Ingredients · Settings). **Swipe left and right** to switch tabs with an animated settle, and tap the active tab to scroll to the top.
-- Light and dark mode follow the system. Per-person accent color.
+- Light and dark mode follow the system. **Accent color** per person (eight iOS colors) and your **name** shown to the household, both editable in Settings.
 - Installable to the home screen (manifest, icons, safe areas, no zoom on input focus).
 
 ### Coming next
 
-| Area     | Planned                                                |
-| -------- | ------------------------------------------------------ |
-| Settings | Edit name and accent color                             |
-| Polish   | Full end-to-end test suite on WebKit, real-device pass |
+| Area   | Planned                                                |
+| ------ | ------------------------------------------------------ |
+| Polish | Full end-to-end test suite on WebKit, real-device pass |
 
 Ideas for later (not planned yet): barcode scanning, recent/favorite ingredients, copying meals or saving templates, trend charts, weight tracking, CSV export, push reminders, rotating the invite code, live updates when your partner edits a meal.
 

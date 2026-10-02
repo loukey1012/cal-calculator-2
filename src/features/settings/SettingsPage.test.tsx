@@ -1,17 +1,21 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { CurrentUserContext } from '../../app/currentUser'
 import { PERSIST_KEY } from '../../lib/persistence'
 import { renderWithProviders } from '../../test/render'
 
-vi.mock('../household/householdApi', () => ({ fetchHousehold: vi.fn(), fetchMembers: vi.fn() }))
+vi.mock('../household/householdApi', () => ({
+  fetchHousehold: vi.fn(),
+  fetchMembers: vi.fn(),
+  updateProfile: vi.fn(),
+}))
 vi.mock('../auth/authApi', () => ({ signOut: vi.fn() }))
 vi.mock('../goals/goalsApi', () => ({ fetchGoals: vi.fn(), saveGoal: vi.fn() }))
 
 import { signOut } from '../auth/authApi'
 import { fetchGoals } from '../goals/goalsApi'
-import { fetchHousehold, fetchMembers } from '../household/householdApi'
+import { fetchHousehold, fetchMembers, updateProfile } from '../household/householdApi'
 import { SettingsPage } from './SettingsPage'
 
 const ME = {
@@ -56,6 +60,64 @@ describe('SettingsPage', () => {
     expect(screen.getByText('Anna')).toBeInTheDocument()
     expect(screen.getByText('Lukas (you)')).toBeInTheDocument()
     expect(screen.getByText('4Y5R-FXKY-MJ4P')).toBeInTheDocument()
+  })
+
+  test('changes the name and refreshes the profile', async () => {
+    vi.mocked(updateProfile).mockResolvedValue()
+    const user = userEvent.setup()
+    const { queryClient } = renderPage()
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
+
+    await user.click(screen.getByRole('button', { name: /Name/ }))
+    const name = screen.getByLabelText('Your name')
+    expect(name).toHaveValue('Lukas')
+    await user.clear(name)
+    await user.type(name, '  Luki ')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() => expect(updateProfile).toHaveBeenCalledWith('u1', { display_name: 'Luki' }))
+    await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: ['profile'] }))
+  })
+
+  test('an empty name is rejected', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(screen.getByRole('button', { name: /Name/ }))
+    await user.clear(screen.getByLabelText('Your name'))
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(screen.getByText('Enter your name')).toBeInTheDocument()
+    expect(updateProfile).not.toHaveBeenCalled()
+  })
+
+  test('picks an accent color, saved right away', async () => {
+    vi.mocked(updateProfile).mockResolvedValue()
+    const user = userEvent.setup()
+    renderPage()
+
+    const colors = screen.getByRole('radiogroup', { name: 'Accent color' })
+    expect(within(colors).getByRole('radio', { name: 'Blue' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    )
+    await user.click(within(colors).getByRole('radio', { name: 'Pink' }))
+
+    expect(updateProfile).toHaveBeenCalledWith('u1', { accent_color: '#ff2d55' })
+  })
+
+  test('explains when a profile change fails', async () => {
+    vi.mocked(updateProfile).mockRejectedValue(new TypeError('Load failed'))
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(
+      within(screen.getByRole('radiogroup', { name: 'Accent color' })).getByRole('radio', {
+        name: 'Green',
+      }),
+    )
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('No connection.')
   })
 
   test('shows the current daily goal and opens it for editing', async () => {

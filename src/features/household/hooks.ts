@@ -11,8 +11,10 @@ import {
   fetchMembers,
   fetchProfile,
   joinHousehold,
+  updateProfile,
   type Household,
   type Profile,
+  type ProfilePatch,
 } from './householdApi'
 import { householdKeys, PROFILE_QUERY_PREFIX } from './queryKeys'
 
@@ -61,4 +63,17 @@ export function usePeople(me: Profile, householdId: string): readonly Profile[] 
 
 export function displayName(member: Profile): string {
   return member.display_name || 'Unnamed'
+}
+
+export function useUpdateProfile(userId: string): UseMutationResult<void, Error, ProfilePatch> {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (patch: ProfilePatch) => updateProfile(userId, patch),
+    // the name shows in the person switch and member list too
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_PREFIX }),
+        queryClient.invalidateQueries({ queryKey: ['members'] }),
+      ]),
+  })
 }
