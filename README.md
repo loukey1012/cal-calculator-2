@@ -61,9 +61,9 @@ Built for a two-person household: both members log their own meals, can see and 
 
 ### Coming next
 
-| Area   | Planned                                                |
-| ------ | ------------------------------------------------------ |
-| Polish | Full end-to-end test suite on WebKit, real-device pass |
+| Area   | Planned                         |
+| ------ | ------------------------------- |
+| Polish | Real-device pass on your iPhone |
 
 Ideas for later (not planned yet): barcode scanning, recent/favorite ingredients, copying meals or saving templates, trend charts, weight tracking, CSV export, push reminders, rotating the invite code, live updates when your partner edits a meal.
 
@@ -154,10 +154,19 @@ pnpm preview        # serve the production build (with service worker)
 pnpm test           # unit and component tests
 pnpm coverage       # with coverage (80% minimum enforced)
 pnpm test:db        # schema/RLS integration tests against the DEV Supabase project
-pnpm e2e            # Playwright on WebKit (iPhone profile)
+pnpm e2e            # Playwright (iPhone profile): smoke tests; journeys need the dev project, see below
 pnpm lint && pnpm typecheck && pnpm format:check
 
 pnpm db:types       # regenerate src/lib/database.types.ts from the linked project
+```
+
+**End-to-end journeys** (log a meal, goals and partner, history, ingredients, offline) run the real app against the dev project. Build it against dev and pass the test credentials:
+
+```bash
+set -a; . ./.env.test.local; set +a
+VITE_SUPABASE_URL=$SUPABASE_TEST_URL VITE_SUPABASE_ANON_KEY=$SUPABASE_TEST_ANON_KEY \
+  pnpm exec playwright test --project=journeys-webkit --project=journeys-chromium
+# without WebKit's system libraries (e.g. WSL): add E2E_BROWSER=chromium
 ```
 
 The unit tests fail on any request that isn't mocked, so they can never reach a real backend. The database tests refuse to run against the production project.
