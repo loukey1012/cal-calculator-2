@@ -1,0 +1,4 @@
+# install scripts of dependencies run only when explicitly allowed
+allowBuilds:
+  '@firebase/util': false
+  protobufjs: false

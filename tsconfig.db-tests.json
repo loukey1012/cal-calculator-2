@@ -17,5 +17,5 @@
     "strict": true,
     "moduleResolution": "bundler"
   },
-  "include": ["vitest.integration.config.ts", "supabase/tests"]
+  "include": ["vitest.integration.config.ts", "supabase/tests", "scripts"]
 }
