@@ -18,7 +18,7 @@ const MAX_CATEGORY = 40
 const MAX_NOTE = 500
 const MAX_UNIT_LABEL = 30
 
-export const BASIS_FIELDS = ['kcal', ...NUTRIENT_KEYS] as const
+const BASIS_FIELDS = ['kcal', ...NUTRIENT_KEYS] as const
 export type BasisField = (typeof BASIS_FIELDS)[number]
 export type BasisFormValues = Readonly<Record<BasisField, string>>
 

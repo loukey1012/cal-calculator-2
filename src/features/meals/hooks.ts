@@ -18,7 +18,7 @@ import {
 import type { AmountPatch, DayMeal, MealType } from './dayModel'
 import { fetchDay } from './mealsApi'
 
-export const dayKeys = {
+const dayKeys = {
   day: (userId: string, date: string) => ['day', userId, date] as const,
 }
 

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-export type TabBarItem = { readonly id: string; readonly label: string; readonly icon: ReactNode }
+type TabBarItem = { readonly id: string; readonly label: string; readonly icon: ReactNode }
 
 type TabBarProps = {
   readonly items: readonly TabBarItem[]
