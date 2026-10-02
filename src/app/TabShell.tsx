@@ -8,6 +8,8 @@ import { IngredientsPage } from '../features/ingredients/IngredientsPage'
 import { SettingsPage } from '../features/settings/SettingsPage'
 import { TodayPage } from '../features/today/TodayPage'
 import { useCurrentUser } from './currentUser'
+import { useResumeOfflineChanges, useSaveWhenHidden } from './offlineLifecycle'
+import { SyncStatus } from './SyncStatus'
 import { useAccentColor } from './useAccentColor'
 
 const TABS = [
@@ -52,6 +54,8 @@ function allowTabSwipe(_embla: unknown, event: MouseEvent | TouchEvent): boolean
 export function TabShell() {
   const { profile } = useCurrentUser()
   useAccentColor(profile.accent_color)
+  useResumeOfflineChanges()
+  useSaveWhenHidden()
 
   const { pathname } = useLocation()
   const navigate = useNavigate()
@@ -119,6 +123,7 @@ export function TabShell() {
           })}
         </div>
       </div>
+      <SyncStatus />
       <TabBar
         items={TABS}
         activeIndex={activeIndex}

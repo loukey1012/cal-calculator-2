@@ -30,6 +30,13 @@ export class ApiError extends Error {
   }
 }
 
+/** The request never got an answer (offline, dropped connection), as opposed to a server error. */
+export function isNetworkError(error: unknown): boolean {
+  if (!(error instanceof Error) || !NETWORK_PATTERN.test(error.message)) return false
+  // supabase-js reports failed requests as error objects too; only real server answers have a code
+  return !(error instanceof ApiError && error.code)
+}
+
 export function toUserMessage(error: unknown): string {
   if (!(error instanceof Error)) return GENERIC_MESSAGE
   if (NETWORK_PATTERN.test(error.message)) return NETWORK_MESSAGE

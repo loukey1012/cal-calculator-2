@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { ApiError, toUserMessage } from './errors'
+import { ApiError, isNetworkError, toUserMessage } from './errors'
 
 describe('toUserMessage', () => {
   test.each([
@@ -32,6 +32,19 @@ describe('toUserMessage', () => {
     expect(toUserMessage(new Error('boom'))).toBe('Something went wrong. Please try again.')
     expect(toUserMessage('nope')).toBe('Something went wrong. Please try again.')
     expect(toUserMessage(undefined)).toBe('Something went wrong. Please try again.')
+  })
+})
+
+describe('isNetworkError', () => {
+  test('recognises failed requests, not server answers', () => {
+    expect(isNetworkError(new TypeError('Load failed'))).toBe(true)
+    expect(isNetworkError(new Error('Failed to fetch'))).toBe(true)
+    expect(isNetworkError(new ApiError('permission denied', '42501'))).toBe(false)
+    // supabase-js returns failed requests as an error object, which the API layer wraps
+    expect(isNetworkError(ApiError.from({ message: 'TypeError: Load failed', code: '' }))).toBe(
+      true,
+    )
+    expect(isNetworkError('Load failed')).toBe(false)
   })
 })
 

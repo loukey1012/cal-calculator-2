@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { act, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { renderWithProviders } from './test/render'
@@ -74,6 +74,25 @@ describe('AppGate', () => {
     renderWithProviders(<AppGate />)
 
     expect(await screen.findByRole('navigation', { name: 'Tabs' })).toBeInTheDocument()
+  })
+
+  test('keeps using the cached profile when a refresh fails (e.g. offline)', async () => {
+    vi.mocked(useAuth).mockReturnValue(SIGNED_IN)
+    vi.mocked(fetchProfile).mockResolvedValue({ ...PROFILE, household_id: 'h1' })
+    vi.mocked(fetchHousehold).mockResolvedValue({
+      id: 'h1',
+      name: 'Home',
+      invite_code: '4Y5RFXKYMJ4P',
+      created_at: '',
+    })
+    vi.mocked(fetchMembers).mockResolvedValue([])
+    const { queryClient } = renderWithProviders(<AppGate />)
+    await screen.findByRole('navigation', { name: 'Tabs' })
+
+    vi.mocked(fetchProfile).mockRejectedValue(new TypeError('Load failed'))
+    await act(() => queryClient.refetchQueries({ queryKey: ['profile'] }))
+
+    expect(screen.getByRole('navigation', { name: 'Tabs' })).toBeInTheDocument()
   })
 
   test('shows a retryable error when the profile cannot be loaded', async () => {

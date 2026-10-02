@@ -2,6 +2,7 @@ import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { CurrentUserContext } from '../../app/currentUser'
+import { ApiError } from '../../lib/errors'
 import { renderWithProviders } from '../../test/render'
 import { dayMeal, mealItem } from '../meals/testData'
 
@@ -122,9 +123,11 @@ describe('TodayPage', () => {
     await user.type(sheet.getByLabelText('Amount'), '150')
     await user.click(sheet.getByRole('button', { name: 'Add to Lunch' }))
     await user.click(sheet.getByRole('button', { name: 'Close' }))
-    act(() => failAdd(new TypeError('Load failed')))
+    act(() =>
+      failAdd(new ApiError('new row for relation "meal_items" violates check constraint', '23514')),
+    )
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('No connection.')
+    expect(await screen.findByRole('alert')).toHaveTextContent('Some values aren’t allowed.')
   })
 
   test('the open meal closes when the day rolls over at midnight', async () => {

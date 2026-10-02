@@ -63,9 +63,13 @@ export function IngredientsPage() {
 
   function renderContent() {
     if (ingredients.isPending) {
-      return <p className="mt-6 text-center text-[15px] text-label-secondary">Loading…</p>
+      return (
+        <p className="mt-6 text-center text-[15px] text-label-secondary">
+          {ingredients.fetchStatus === 'paused' ? 'Offline – not loaded yet' : 'Loading…'}
+        </p>
+      )
     }
-    if (ingredients.isError) {
+    if (ingredients.isError && ingredients.data === undefined) {
       return (
         <>
           <ErrorBanner message={toUserMessage(ingredients.error)} />

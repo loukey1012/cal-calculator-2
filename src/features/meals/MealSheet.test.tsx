@@ -1,8 +1,10 @@
 import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, test, vi } from 'vitest'
+import { onlineManager } from '@tanstack/react-query'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { CurrentUserContext } from '../../app/currentUser'
 import { STALE_TIME_MS } from '../../lib/queryClient'
+import { ApiError } from '../../lib/errors'
 import { renderWithProviders } from '../../test/render'
 import { ingredient } from '../ingredients/testData'
 import { dayMeal, mealItem } from './testData'
@@ -66,6 +68,10 @@ beforeEach(() => {
   vi.mocked(addMealItem).mockResolvedValue()
   vi.mocked(updateMealItem).mockResolvedValue()
   vi.mocked(deleteMealItem).mockResolvedValue()
+})
+
+afterEach(() => {
+  act(() => onlineManager.setOnline(true))
 })
 
 describe('MealSheet', () => {
@@ -213,7 +219,10 @@ describe('MealSheet', () => {
   })
 
   test('a failed add is undone and explained', async () => {
-    vi.mocked(addMealItem).mockRejectedValue(new TypeError('Load failed'))
+    // a server error; dropped connections are retried instead (see the retry test)
+    vi.mocked(addMealItem).mockRejectedValue(
+      new ApiError('new row for relation "meal_items" violates check constraint', '23514'),
+    )
     const user = userEvent.setup()
     const { sheet } = renderSheet()
 
@@ -222,7 +231,7 @@ describe('MealSheet', () => {
     await user.type(sheet.getByLabelText('Amount'), '50')
     await user.click(sheet.getByRole('button', { name: 'Add to Lunch' }))
 
-    expect(await sheet.findByRole('alert')).toHaveTextContent('No connection.')
+    expect(await sheet.findByRole('alert')).toHaveTextContent('Some values aren’t allowed.')
     expect(sheet.getAllByRole('button', { name: /Cream/ })).toHaveLength(1)
   })
 
@@ -263,7 +272,9 @@ describe('MealSheet', () => {
   })
 
   test('an old error disappears once a later change succeeds', async () => {
-    vi.mocked(addMealItem).mockRejectedValueOnce(new TypeError('Load failed'))
+    vi.mocked(addMealItem).mockRejectedValueOnce(
+      new ApiError('new row for relation "meal_items" violates check constraint', '23514'),
+    )
     const user = userEvent.setup()
     const { sheet } = renderSheet()
 
@@ -289,6 +300,41 @@ describe('MealSheet', () => {
     // query updates reach components asynchronously
     await waitFor(() => expect(sheet.queryByLabelText('Amount')).not.toBeInTheDocument())
     expect(sheet.getByText('Nothing logged yet.')).toBeInTheDocument()
+  })
+
+  test('offline, an added item shows right away and is sent once back online', async () => {
+    const user = userEvent.setup()
+    const { sheet } = renderSheet()
+
+    await user.click(await sheet.findByRole('button', { name: 'Add food' }))
+    await user.click(await sheet.findByRole('button', { name: /Protein bar/ }))
+    await user.type(sheet.getByLabelText('Amount'), '1')
+    // signal drops right before adding
+    act(() => onlineManager.setOnline(false))
+    await user.click(sheet.getByRole('button', { name: 'Add to Lunch' }))
+
+    expect(await sheet.findByRole('button', { name: /Protein bar/ })).toBeInTheDocument()
+    expect(addMealItem).not.toHaveBeenCalled()
+    act(() => onlineManager.setOnline(true))
+    await waitFor(() => expect(addMealItem).toHaveBeenCalledTimes(1))
+  })
+
+  test('a dropped connection is retried with the same item id', async () => {
+    vi.mocked(addMealItem)
+      .mockRejectedValueOnce(new TypeError('Load failed'))
+      .mockResolvedValueOnce()
+    const user = userEvent.setup()
+    const { sheet } = renderSheet()
+
+    await user.click(await sheet.findByRole('button', { name: 'Add food' }))
+    await user.click(await sheet.findByRole('button', { name: /Protein bar/ }))
+    await user.type(sheet.getByLabelText('Amount'), '1')
+    await user.click(sheet.getByRole('button', { name: 'Add to Lunch' }))
+
+    await waitFor(() => expect(addMealItem).toHaveBeenCalledTimes(2), { timeout: 4000 })
+    const [first, second] = vi.mocked(addMealItem).mock.calls
+    expect(second?.[0].id).toBe(first?.[0].id)
+    expect(sheet.queryByRole('alert')).not.toBeInTheDocument()
   })
 
   test('Back returns from the picker to the meal', async () => {

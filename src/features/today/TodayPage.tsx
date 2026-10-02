@@ -16,8 +16,8 @@ import { useToday } from './useToday'
 
 const DATE_FORMAT: Intl.DateTimeFormatOptions = { weekday: 'long', day: 'numeric', month: 'long' }
 
-function mealSubtitle(loading: boolean, count: number): string {
-  if (loading) return 'Loading…'
+function mealSubtitle(loading: boolean, offline: boolean, count: number): string {
+  if (loading) return offline ? 'Offline – not loaded yet' : 'Loading…'
   if (count === 0) return 'Nothing logged'
   return count === 1 ? '1 item' : `${count} items`
 }
@@ -52,7 +52,7 @@ export function TodayPage() {
           message={`Couldn’t save your last change. ${toUserMessage(latestChangeError)}`}
         />
       )}
-      {day.isError ? (
+      {day.isError && day.data === undefined ? (
         <>
           <ErrorBanner message={toUserMessage(day.error)} />
           <div className="mt-4">
@@ -75,7 +75,7 @@ export function TodayPage() {
               <ListRow
                 key={type}
                 title={label}
-                subtitle={mealSubtitle(day.isPending, count)}
+                subtitle={mealSubtitle(day.isPending, day.fetchStatus === 'paused', count)}
                 detail={count > 0 ? `${formatKcal(totals.kcal)} kcal` : undefined}
                 onClick={() => setOpenMeal({ type, date: today })}
               />

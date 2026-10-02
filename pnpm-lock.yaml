@@ -11,9 +11,15 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.117.2
         version: 2.117.2(@opentelemetry/api@1.9.1)
+      '@tanstack/query-async-storage-persister':
+        specifier: ^5.104.0
+        version: 5.104.0
       '@tanstack/react-query':
         specifier: ^5.104.0
         version: 5.104.0(react@19.3.0)
+      '@tanstack/react-query-persist-client':
+        specifier: ^5.104.0
+        version: 5.104.0(@tanstack/react-query@5.104.0(react@19.3.0))(react@19.3.0)
       embla-carousel-react:
         specifier: ^8.6.0
         version: 8.6.0(react@19.3.0)
@@ -1596,8 +1602,20 @@ packages:
     peerDependencies:
       vite: ^5.2.0 || ^6 || ^7 || ^8
 
+  '@tanstack/query-async-storage-persister@5.104.0':
+    resolution: {integrity: sha512-7pz2WgNxcvGKqbmILrmZ8DOQLOoQyqjT9HTWngYoxgjUyEses0O+GOzTjShT68snFq67EA3CFuYJs2Jna+kBIA==}
+
   '@tanstack/query-core@5.104.0':
     resolution: {integrity: sha512-JrC2r/JQlXt7khBSdUpsgxNvybzOg+aITa+ARRMlP2AFo93Y8vIqz077rp+e61mJetSZ0T6AJbwW1JHer1vrPQ==}
+
+  '@tanstack/query-persist-client-core@5.104.0':
+    resolution: {integrity: sha512-7XEoH8+gaARK06Uw6e97WqOfus7dtcrYxA6RUf1+OZArz1Ax7Stlcfas6XRz7V2YiOTAkGKUYsk2y43QUmpiTw==}
+
+  '@tanstack/react-query-persist-client@5.104.0':
+    resolution: {integrity: sha512-ZIw4PQfk/MLEJEyaxg0AQfuT0I+HGSogcWl18GjG+Yy2707TFtf3Or2yZilAJoSzBMdoZr9X2xx6T5cap0PlUg==}
+    peerDependencies:
+      '@tanstack/react-query': ^5.104.0
+      react: ^18 || ^19
 
   '@tanstack/react-query@5.104.0':
     resolution: {integrity: sha512-e1TZmDCQnWIfiDVryIHeA6Idj+Lfx1hORLOhXS/l5wcgvtVD4yYqbTDl378sGQKIi2cSgb0TEMC9cKK8GGoJEw==}
@@ -5051,7 +5069,22 @@ snapshots:
       tailwindcss: 4.3.3
       vite: 8.3.1(@types/node@24.19.0)(jiti@2.7.0)(terser@5.51.2)
 
+  '@tanstack/query-async-storage-persister@5.104.0':
+    dependencies:
+      '@tanstack/query-core': 5.104.0
+      '@tanstack/query-persist-client-core': 5.104.0
+
   '@tanstack/query-core@5.104.0': {}
+
+  '@tanstack/query-persist-client-core@5.104.0':
+    dependencies:
+      '@tanstack/query-core': 5.104.0
+
+  '@tanstack/react-query-persist-client@5.104.0(@tanstack/react-query@5.104.0(react@19.3.0))(react@19.3.0)':
+    dependencies:
+      '@tanstack/query-persist-client-core': 5.104.0
+      '@tanstack/react-query': 5.104.0(react@19.3.0)
+      react: 19.3.0
 
   '@tanstack/react-query@5.104.0(react@19.3.0)':
     dependencies:

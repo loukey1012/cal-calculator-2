@@ -1,7 +1,8 @@
-import { screen } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { CurrentUserContext } from '../../app/currentUser'
+import { PERSIST_KEY } from '../../lib/persistence'
 import { renderWithProviders } from '../../test/render'
 
 vi.mock('../household/householdApi', () => ({ fetchHousehold: vi.fn(), fetchMembers: vi.fn() }))
@@ -114,8 +115,11 @@ describe('SettingsPage', () => {
     const user = userEvent.setup()
     renderPage()
 
+    window.localStorage.setItem(PERSIST_KEY, '{"cached":"day data"}')
     await user.click(screen.getByRole('button', { name: 'Log out' }))
 
     expect(signOut).toHaveBeenCalled()
+    // nothing of this account stays on the phone
+    await waitFor(() => expect(window.localStorage.getItem(PERSIST_KEY)).toBeNull())
   })
 })

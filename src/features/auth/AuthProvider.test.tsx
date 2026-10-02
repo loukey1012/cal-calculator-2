@@ -1,4 +1,6 @@
-import { act, render, screen } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { act, render as baseRender, screen } from '@testing-library/react'
+import type { ReactElement } from 'react'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 
 vi.mock('./authApi', () => ({ getSession: vi.fn(), onSessionChange: vi.fn() }))
@@ -13,6 +15,10 @@ function Probe() {
 }
 
 const SESSION = { user: { id: 'u1' } } as never
+
+function render(ui: ReactElement) {
+  return baseRender(<QueryClientProvider client={new QueryClient()}>{ui}</QueryClientProvider>)
+}
 
 beforeEach(() => vi.clearAllMocks())
 

@@ -26,8 +26,19 @@ export function AppGate() {
 function SignedInGate({ userId }: { readonly userId: string }) {
   const profile = useProfile(userId)
 
-  if (profile.isPending) return <Splash />
-  if (profile.isError) {
+  // cached data wins over a failed refresh (e.g. offline): only show an error without any data
+  if (profile.data === undefined && profile.fetchStatus === 'paused') {
+    return (
+      <Screen title="CALculator2">
+        <p className="mt-4 text-[17px]">You’re offline.</p>
+        <p className="mt-1 text-[15px] text-label-secondary">
+          Connect to the internet once to load your account. After that the app also works offline.
+        </p>
+      </Screen>
+    )
+  }
+  if (profile.data === undefined && !profile.isError) return <Splash />
+  if (profile.data === undefined) {
     return (
       <Screen title="CALculator2">
         <ErrorBanner message={toUserMessage(profile.error)} />
