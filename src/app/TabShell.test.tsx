@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react'
+import { fireEvent, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { useLocation } from 'react-router'
@@ -108,6 +108,17 @@ describe('TabShell', () => {
     renderShell('/today')
 
     expect(document.documentElement.style.getPropertyValue('--accent')).toBe('#ff2d55')
+  })
+
+  test('the carousel never stays scrolled sideways, whatever scrolled it', () => {
+    renderShell('/today')
+    const viewport = screen.getAllByTestId('tab-page')[0]?.parentElement?.parentElement
+    if (!viewport) throw new Error('no carousel viewport')
+
+    viewport.scrollLeft = 374
+    fireEvent.scroll(viewport)
+
+    expect(viewport.scrollLeft).toBe(0)
   })
 
   test('inactive pages are inert so focus cannot wander off-screen', () => {

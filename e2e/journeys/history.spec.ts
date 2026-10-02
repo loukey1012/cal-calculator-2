@@ -34,6 +34,11 @@ test('open a past day in History and add a forgotten dinner', async ({ page, bac
 
   await history.getByRole('button', { name: /within goal/ }).click()
   await expect(page).toHaveURL(new RegExp(`/history/${yesterday}$`))
+  // reopening the app on a day must show that page, not slide half of a neighbour into view
+  await page.reload()
+  await expect(history.getByRole('button', { name: 'Back to History' })).toBeVisible()
+  const carousel = page.locator('[data-testid="tab-page"]').first().locator('xpath=../..')
+  expect(await carousel.evaluate((element) => element.scrollLeft)).toBe(0)
   await history.getByRole('button', { name: /Dinner/ }).click()
   const sheet = page.getByRole('dialog')
   await sheet.getByRole('button', { name: 'Add food' }).click()

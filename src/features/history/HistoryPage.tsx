@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import { useCurrentUser } from '../../app/currentUser'
+import { scrollTabPageToTop } from '../../app/tabPage'
 import { Button } from '../../components/ios/Button'
 import { ErrorBanner } from '../../components/ios/ErrorBanner'
 import { PageHeader } from '../../components/ios/PageHeader'
@@ -52,7 +53,7 @@ export function HistoryPage() {
   // the tab keeps its scroll position; switching between calendar and a day starts at the top
   const top = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    top.current?.scrollIntoView?.({ block: 'start' })
+    scrollTabPageToTop(top.current)
   }, [openDay])
 
   const personSwitch = (

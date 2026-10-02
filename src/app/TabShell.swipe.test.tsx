@@ -11,6 +11,7 @@ const embla = vi.hoisted(() => {
   const api = {
     on: vi.fn((event: string, handler: () => void) => handlers.set(event, handler)),
     off: vi.fn((event: string) => handlers.delete(event)),
+    rootNode: vi.fn(() => document.createElement('div')),
     selectedScrollSnap: vi.fn(() => state.snap),
     scrollTo: vi.fn((index: number) => {
       state.snap = index

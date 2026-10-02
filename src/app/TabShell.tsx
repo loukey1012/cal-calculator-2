@@ -10,6 +10,7 @@ import { TodayPage } from '../features/today/TodayPage'
 import { useCurrentUser } from './currentUser'
 import { useResumeOfflineChanges, useSaveWhenHidden } from './offlineLifecycle'
 import { SyncStatus } from './SyncStatus'
+import { TAB_SCROLLER_ATTRIBUTE } from './tabPage'
 import { useAccentColor } from './useAccentColor'
 
 const TABS = [
@@ -82,6 +83,20 @@ export function TabShell() {
       emblaApi.scrollTo(activeIndex, true)
   }, [emblaApi, activeIndex])
 
+  // Embla moves the pages with transforms, so its clipped viewport must stay at scrollLeft 0.
+  // scrollIntoView, focus or iOS restoring the page can still scroll it sideways, leaving
+  // a neighbouring (inert, untappable) page in view; undo that immediately.
+  useEffect(() => {
+    const viewport = emblaApi?.rootNode()
+    if (!viewport) return
+    const resetSideways = () => {
+      if (viewport.scrollLeft !== 0) viewport.scrollLeft = 0
+    }
+    resetSideways()
+    viewport.addEventListener('scroll', resetSideways)
+    return () => viewport.removeEventListener('scroll', resetSideways)
+  }, [emblaApi])
+
   // a swipe settled on another page → update the URL
   useEffect(() => {
     if (!emblaApi) return
@@ -111,6 +126,7 @@ export function TabShell() {
                 ref={(element) => {
                   pageRefs.current[index] = element
                 }}
+                {...{ [TAB_SCROLLER_ATTRIBUTE]: '' }}
                 inert={!active}
                 aria-hidden={active ? undefined : true}
                 className="h-full min-w-0 flex-[0_0_100%] overflow-y-auto overscroll-contain pt-safe-top pb-tabbar"

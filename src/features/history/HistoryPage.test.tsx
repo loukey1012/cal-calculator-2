@@ -44,7 +44,9 @@ function LocationProbe() {
 function renderPage(route = '/history') {
   return renderWithProviders(
     <CurrentUserContext value={{ profile: PROFILE, householdId: 'h1' }}>
-      <HistoryPage />
+      <div data-testid="scroller" data-tab-scroller="">
+        <HistoryPage />
+      </div>
       <LocationProbe />
     </CurrentUserContext>,
     { route },
@@ -123,10 +125,14 @@ describe('HistoryPage', () => {
     Element.prototype.scrollIntoView = scrollIntoView
     const user = userEvent.setup()
     renderPage()
+    const scroller = screen.getByTestId('scroller')
+    scroller.scrollTop = 500
 
     await user.click(await screen.findByRole('button', { name: /October 1.*within goal/ }))
 
-    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'start' })
+    expect(scroller.scrollTop).toBe(0)
+    // scrollIntoView would also scroll the tab carousel sideways
+    expect(scrollIntoView).not.toHaveBeenCalled()
   })
 
   test('the protein average is left out when nothing logged had protein data', async () => {
