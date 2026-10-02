@@ -61,9 +61,11 @@ Built for a two-person household: both members log their own meals, can see and 
 
 ### Coming next
 
-| Area   | Planned                         |
-| ------ | ------------------------------- |
-| Polish | Real-device pass on your iPhone |
+| Area      | Planned                                                                                                  |
+| --------- | -------------------------------------------------------------------------------------------------------- |
+| Polish    | Real-device pass on your iPhone                                                                          |
+| Rename    | App name **CALculator** (without the 2): title, manifest, login screen, README                           |
+| Nicknames | Give household members your own display name (a per-viewer nickname, their account name stays unchanged) |
 
 Ideas for later (not planned yet): barcode scanning, recent/favorite ingredients, copying meals or saving templates, trend charts, weight tracking, CSV export, push reminders, rotating the invite code, live updates when your partner edits a meal.
 
