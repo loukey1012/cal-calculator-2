@@ -27,6 +27,12 @@ Built for a two-person household: both members log their own meals, can see and 
 - Goals have a history: a new goal applies **from today on**, and past days keep the goal they had.
 - A "≥" marks totals that are only a lower bound (some logged items had no value for that nutrient).
 
+### History
+
+- **Month calendar** (Monday first): every logged day is marked green (within that day's calorie goal), red (over) or neutral (logged, no goal yet).
+- Month summary: days logged, average calories and protein.
+- **Open any past day** (`/history/YYYY-MM-DD`) to see its rings, totals and meals, and **edit it like today**, e.g. add a forgotten dinner. Also for your partner's days.
+
 ### Household
 
 - Accounts with email and password. One person creates a **household**, the other joins with a **12-character invite code** (shareable through the iOS share sheet).
@@ -55,11 +61,10 @@ Built for a two-person household: both members log their own meals, can see and 
 
 ### Coming next
 
-| Area        | Planned                                                                     |
-| ----------- | --------------------------------------------------------------------------- |
-| History tab | Month calendar, past days with totals, opening and **editing any past day** |
-| Settings    | Edit name and accent color                                                  |
-| Polish      | Full end-to-end test suite on WebKit, real-device pass                      |
+| Area     | Planned                                                |
+| -------- | ------------------------------------------------------ |
+| Settings | Edit name and accent color                             |
+| Polish   | Full end-to-end test suite on WebKit, real-device pass |
 
 Ideas for later (not planned yet): barcode scanning, recent/favorite ingredients, copying meals or saving templates, trend charts, weight tracking, CSV export, push reminders, rotating the invite code, live updates when your partner edits a meal.
 

@@ -24,6 +24,9 @@ vi.mock('../features/meals/mealsApi', () => ({
 vi.mock('../features/goals/goalsApi', () => ({
   fetchGoals: vi.fn().mockResolvedValue([]),
 }))
+vi.mock('../features/history/historyApi', () => ({
+  fetchDailyTotals: vi.fn().mockResolvedValue([]),
+}))
 vi.mock('../features/auth/authApi', () => ({ signOut: vi.fn() }))
 
 import { TabShell } from './TabShell'

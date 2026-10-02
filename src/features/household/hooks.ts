@@ -52,3 +52,13 @@ export function useCreateHousehold(): UseMutationResult<Household, Error, string
 export function useJoinHousehold(): UseMutationResult<Household, Error, string> {
   return useHouseholdMutation(joinHousehold)
 }
+
+/** You first, then the other household members. */
+export function usePeople(me: Profile, householdId: string): readonly Profile[] {
+  const members = useMembers(householdId)
+  return [me, ...(members.data ?? []).filter((member) => member.id !== me.id)]
+}
+
+export function displayName(member: Profile): string {
+  return member.display_name || 'Unnamed'
+}

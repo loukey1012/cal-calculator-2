@@ -6,6 +6,7 @@ import {
   type UseMutationResult,
   type UseQueryResult,
 } from '@tanstack/react-query'
+import { monthKeys } from '../history/hooks'
 import type { MealItemDraft } from '../nutrition/fromIngredient'
 import {
   applyDayChange,
@@ -58,7 +59,12 @@ function useDayChange(userId: string, date: string): DayChangeMutation {
       if (isOnlyPendingChange()) queryClient.setQueryData(queryKey, rollback?.previous)
     },
     onSettled: () => {
-      if (isOnlyPendingChange()) return queryClient.invalidateQueries({ queryKey })
+      if (!isOnlyPendingChange()) return
+      // the History calendar shows this day's totals too
+      return Promise.all([
+        queryClient.invalidateQueries({ queryKey }),
+        queryClient.invalidateQueries({ queryKey: monthKeys.person(userId) }),
+      ])
     },
   })
 }

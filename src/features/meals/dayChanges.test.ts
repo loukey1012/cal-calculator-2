@@ -170,6 +170,8 @@ describe('offline changes survive an app restart', () => {
       .execute(ADD)
 
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['day', 'u1', '2026-10-01'] })
+    // the History calendar shows the day's totals too
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['month', 'u1'] })
   })
 
   test('a change that was still being sent when the app closed is resent after a restart', async () => {

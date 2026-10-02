@@ -15,6 +15,9 @@ vi.mock('./features/meals/mealsApi', () => ({
 vi.mock('./features/goals/goalsApi', () => ({
   fetchGoals: vi.fn().mockResolvedValue([]),
 }))
+vi.mock('./features/history/historyApi', () => ({
+  fetchDailyTotals: vi.fn().mockResolvedValue([]),
+}))
 vi.mock('./features/household/householdApi', () => ({
   fetchProfile: vi.fn(),
   fetchHousehold: vi.fn(),

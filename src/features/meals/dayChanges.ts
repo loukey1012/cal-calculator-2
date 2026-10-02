@@ -1,5 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query'
 import { isNetworkError } from '../../lib/errors'
+import { monthKeys } from '../history/hooks'
 import type { MealItemDraft } from '../nutrition/fromIngredient'
 import {
   withItemAdded,
@@ -105,6 +106,9 @@ export function registerDayChangeDefaults(queryClient: QueryClient): void {
     ...DAY_CHANGE_OPTIONS,
     // restored changes have no optimistic handlers: show the server's version of their day after
     onSettled: (_data, _error, change: DayChange) =>
-      queryClient.invalidateQueries({ queryKey: dayChangeKey(change.userId, change.date) }),
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: dayChangeKey(change.userId, change.date) }),
+        queryClient.invalidateQueries({ queryKey: monthKeys.person(change.userId) }),
+      ]),
   })
 }

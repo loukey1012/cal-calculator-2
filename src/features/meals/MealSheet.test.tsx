@@ -337,6 +337,16 @@ describe('MealSheet', () => {
     expect(sheet.queryByRole('alert')).not.toBeInTheDocument()
   })
 
+  test('a saved change also refreshes the month calendar', async () => {
+    const user = userEvent.setup()
+    const { sheet, queryClient } = renderSheet()
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries')
+
+    await user.click(await sheet.findByRole('button', { name: 'Delete' }))
+
+    await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: ['month', 'u1'] }))
+  })
+
   test('Back returns from the picker to the meal', async () => {
     const user = userEvent.setup()
     const { sheet } = renderSheet()
