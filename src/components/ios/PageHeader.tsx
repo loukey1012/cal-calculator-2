@@ -12,7 +12,8 @@ type PageHeaderProps = {
 /** iOS large title. */
 export function PageHeader({ title, subtitle, action, leading }: PageHeaderProps) {
   return (
-    <header className="pb-2">
+    // keeps the bar buttons clear of the fade iOS draws below the status bar
+    <header className="pt-3 pb-2">
       <div className="flex min-h-11 items-center justify-between">
         <div>{leading}</div>
         <div>{action}</div>

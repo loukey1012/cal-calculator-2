@@ -126,6 +126,27 @@ describe('TabShell swiping', () => {
     expect(watchDrag(embla.api, { target: document.body } as unknown as Event)).toBe(true)
   })
 
+  test('when a swipe comes to rest, the carousel snaps exactly onto the current tab', () => {
+    renderShell('/settings')
+    embla.state.snap = 3
+    embla.api.scrollTo.mockClear()
+
+    // e.g. after an iOS rubber-band pull past the last page
+    act(() => embla.handlers.get('settle')?.())
+
+    expect(embla.api.scrollTo).toHaveBeenCalledWith(3, true)
+  })
+
+  test('returning to the app re-aligns the carousel', () => {
+    renderShell('/ingredients')
+    embla.state.snap = 2
+    embla.api.scrollTo.mockClear()
+
+    act(() => window.dispatchEvent(new Event('pageshow')))
+
+    expect(embla.api.scrollTo).toHaveBeenCalledWith(2, true)
+  })
+
   test('stops listening when unmounted', () => {
     const { unmount } = renderShell('/today')
 

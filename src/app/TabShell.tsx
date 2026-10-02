@@ -97,6 +97,24 @@ export function TabShell() {
     return () => viewport.removeEventListener('scroll', resetSideways)
   }, [emblaApi])
 
+  // iOS can leave the track between pages (rubber-band pulls past the first or last page,
+  // restoring the app from the background); snap it exactly onto the current tab again
+  useEffect(() => {
+    if (!emblaApi) return
+    const realign = () => emblaApi.scrollTo(emblaApi.selectedScrollSnap(), true)
+    const realignWhenVisible = () => {
+      if (document.visibilityState === 'visible') realign()
+    }
+    emblaApi.on('settle', realign)
+    window.addEventListener('pageshow', realign)
+    document.addEventListener('visibilitychange', realignWhenVisible)
+    return () => {
+      emblaApi.off('settle', realign)
+      window.removeEventListener('pageshow', realign)
+      document.removeEventListener('visibilitychange', realignWhenVisible)
+    }
+  }, [emblaApi])
+
   // a swipe settled on another page → update the URL
   useEffect(() => {
     if (!emblaApi) return
@@ -129,7 +147,7 @@ export function TabShell() {
                 {...{ [TAB_SCROLLER_ATTRIBUTE]: '' }}
                 inert={!active}
                 aria-hidden={active ? undefined : true}
-                className="h-full min-w-0 flex-[0_0_100%] overflow-y-auto overscroll-contain pt-safe-top pb-tabbar"
+                className="h-full min-w-0 flex-[0_0_100%] overflow-x-hidden overflow-y-auto overscroll-contain pt-safe-top pb-tabbar"
               >
                 <div className="mx-auto max-w-md px-4">
                   <TabPageContent Page={Page} />

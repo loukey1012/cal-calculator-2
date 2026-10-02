@@ -50,8 +50,17 @@ test('log a meal: add from the database and as a custom item, change an amount, 
   await sheet.getByRole('button', { name: 'Remove from Lunch' }).click()
   await expect(sheet.getByTestId('meal-total')).toContainText('295 kcal')
   await sheet.getByRole('button', { name: 'Close' }).click()
-  // wait until every change reached the server
-  await expect(page.getByRole('status').filter({ hasText: /Saving/ })).toHaveCount(0)
+  // wait until every change reached the server ("Saving" may not even have appeared yet)
+  await expect
+    .poll(async () => {
+      const { data } = await backend.admin
+        .from('meal_items')
+        .select('name, entered_amount, meals!inner(user_id)')
+        .eq('meals.user_id', me.id)
+        .order('name')
+      return data?.map((item) => `${item.name} ${item.entered_amount}`)
+    })
+    .toEqual(['Croissant 1', 'Skyr 100'])
 
   await page.reload()
   await expect(activePage(page).getByRole('button', { name: /Lunch/ })).toContainText('295 kcal')

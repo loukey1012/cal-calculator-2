@@ -71,6 +71,8 @@ html,
 body {
   background-color: var(--bg);
   overscroll-behavior: none;
+  /* all scrolling happens inside the tab pages; the document itself never moves */
+  overflow: hidden;
   -webkit-tap-highlight-color: transparent;
   -webkit-text-size-adjust: 100%;
 }

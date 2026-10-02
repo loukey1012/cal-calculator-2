@@ -7,5 +7,10 @@ export const TAB_SCROLLER_ATTRIBUTE = 'data-tab-scroller'
  */
 export function scrollTabPageToTop(element: Element | null): void {
   const scroller = element?.closest(`[${TAB_SCROLLER_ATTRIBUTE}]`)
-  if (scroller) scroller.scrollTop = 0
+  if (!scroller) return
+  scroller.scrollTop = 0
+  // once more after layout: iOS momentum scrolling from the previous view can still be running
+  requestAnimationFrame(() => {
+    scroller.scrollTop = 0
+  })
 }
