@@ -7,10 +7,21 @@ import { ListRow } from '../../components/ios/ListRow'
 import { PageHeader } from '../../components/ios/PageHeader'
 import { toUserMessage } from '../../lib/errors'
 import { useSignOut } from '../auth/useSignOut'
+import { describeGoal } from '../goals/goalForm'
+import { GoalSheet } from '../goals/GoalSheet'
+import { useGoals } from '../goals/hooks'
 import { useHousehold, useMembers } from '../household/hooks'
 import type { Profile } from '../household/householdApi'
 import { formatInviteCode } from '../household/inviteCode'
 import { shareInviteCode } from '../household/shareInvite'
+import { goalForDate, type Goal } from '../nutrition/goals'
+import { useToday } from '../today/useToday'
+
+/** A failed load must not look like "no goal", which would invite overwriting it. */
+function goalDetail(loading: boolean, missing: boolean, goal: Goal | null): string {
+  if (loading) return '…'
+  return missing ? 'Couldn’t load' : describeGoal(goal)
+}
 
 function memberLabel(member: Profile, currentUserId: string): string {
   const name = member.display_name || 'Unnamed'
@@ -24,6 +35,10 @@ export function SettingsPage() {
   const signOutMutation = useSignOut()
   const [copied, setCopied] = useState(false)
   const [shareError, setShareError] = useState<string | null>(null)
+  const [editingGoal, setEditingGoal] = useState(false)
+  const today = useToday()
+  const goals = useGoals(profile.id)
+  const currentGoal = goalForDate(goals.data ?? [], today)
   const loadError = household.error ?? members.error
 
   async function handleShare(code: string) {
@@ -42,6 +57,20 @@ export function SettingsPage() {
       <GroupedSection header="Account">
         <ListRow title="Name" detail={profile.display_name || 'Unnamed'} />
       </GroupedSection>
+      <GroupedSection header="Goals">
+        <ListRow
+          title="Daily goal"
+          detail={goalDetail(goals.isPending, goals.data === undefined, currentGoal)}
+          onClick={() => setEditingGoal(true)}
+        />
+      </GroupedSection>
+      <GoalSheet
+        open={editingGoal}
+        userId={profile.id}
+        date={today}
+        current={currentGoal}
+        onClose={() => setEditingGoal(false)}
+      />
       {loadError && <ErrorBanner message={toUserMessage(loadError)} />}
       {household.data && (
         <GroupedSection header="Household">

@@ -7,8 +7,10 @@ import { renderWithProviders } from '../../test/render'
 
 vi.mock('../household/householdApi', () => ({ fetchHousehold: vi.fn(), fetchMembers: vi.fn() }))
 vi.mock('../auth/authApi', () => ({ signOut: vi.fn() }))
+vi.mock('../goals/goalsApi', () => ({ fetchGoals: vi.fn(), saveGoal: vi.fn() }))
 
 import { signOut } from '../auth/authApi'
+import { fetchGoals } from '../goals/goalsApi'
 import { fetchHousehold, fetchMembers } from '../household/householdApi'
 import { SettingsPage } from './SettingsPage'
 
@@ -35,6 +37,9 @@ beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(fetchHousehold).mockResolvedValue(HOUSEHOLD)
   vi.mocked(fetchMembers).mockResolvedValue([PARTNER, ME])
+  vi.mocked(fetchGoals).mockResolvedValue([
+    { validFrom: '2026-09-01', kcal: 2000, proteinG: 120, carbsG: null, fatG: null },
+  ])
 })
 
 afterEach(() => {
@@ -51,6 +56,36 @@ describe('SettingsPage', () => {
     expect(screen.getByText('Anna')).toBeInTheDocument()
     expect(screen.getByText('Lukas (you)')).toBeInTheDocument()
     expect(screen.getByText('4Y5R-FXKY-MJ4P')).toBeInTheDocument()
+  })
+
+  test('shows the current daily goal and opens it for editing', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    const goalRow = await screen.findByRole('button', { name: /Daily goal/ })
+    await waitFor(() => expect(goalRow).toHaveTextContent('2,000 kcal · P 120 g'))
+    await user.click(goalRow)
+
+    expect(screen.getByRole('dialog', { name: 'Daily Goal' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Calories')).toHaveValue('2000')
+  })
+
+  test('says when the goal could not be loaded instead of pretending none is set', async () => {
+    vi.mocked(fetchGoals).mockRejectedValue(new TypeError('Load failed'))
+    renderPage()
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /Daily goal/ })).toHaveTextContent('Couldn’t load'),
+    )
+  })
+
+  test('says when no goal is set yet', async () => {
+    vi.mocked(fetchGoals).mockResolvedValue([])
+    renderPage()
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /Daily goal/ })).toHaveTextContent('Not set'),
+    )
   })
 
   test('shares the invite code via the iOS share sheet when available', async () => {

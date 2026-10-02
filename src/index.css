@@ -10,6 +10,7 @@
   --separator: rgb(60 60 67 / 0.29);
   --fill: rgb(118 118 128 / 0.12);
   --destructive: #ff3b30;
+  --segment-selected: #ffffff;
   color-scheme: light dark;
 }
 
@@ -23,6 +24,7 @@
     --separator: rgb(84 84 88 / 0.6);
     --fill: rgb(118 118 128 / 0.24);
     --destructive: #ff453a;
+    --segment-selected: #636366;
   }
 }
 
@@ -35,6 +37,7 @@
   --color-separator: var(--separator);
   --color-fill: var(--fill);
   --color-destructive: var(--destructive);
+  --color-segment-selected: var(--segment-selected);
   --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
   --animate-sheet-in: sheet-in 0.35s cubic-bezier(0.32, 0.72, 0, 1);
   --animate-fade-in: fade-in 0.25s ease-out;

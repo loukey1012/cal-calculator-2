@@ -12,11 +12,15 @@ vi.mock('../meals/mealsApi', () => ({
   updateMealItem: vi.fn(),
   deleteMealItem: vi.fn(),
 }))
+vi.mock('../goals/goalsApi', () => ({ fetchGoals: vi.fn(), saveGoal: vi.fn() }))
+vi.mock('../household/householdApi', () => ({ fetchMembers: vi.fn() }))
 vi.mock('../ingredients/ingredientsApi', () => ({
   fetchIngredients: vi.fn().mockResolvedValue([]),
   fetchCategories: vi.fn().mockResolvedValue([]),
 }))
 
+import { fetchGoals } from '../goals/goalsApi'
+import { fetchMembers } from '../household/householdApi'
 import { addMealItem, fetchDay } from '../meals/mealsApi'
 import { TodayPage } from './TodayPage'
 
@@ -49,6 +53,9 @@ const LUNCH = dayMeal('m1', 'lunch', [
   }),
 ])
 
+const GOAL = { validFrom: '2026-09-01', kcal: 2000, proteinG: 120, carbsG: null, fatG: null }
+const PARTNER = { ...PROFILE, id: 'u2', display_name: 'Anna' }
+
 function renderPage() {
   return renderWithProviders(
     <CurrentUserContext value={{ profile: PROFILE, householdId: 'h1' }}>
@@ -62,6 +69,8 @@ beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date(2026, 9, 1, 12, 0, 0))
   vi.mocked(fetchDay).mockResolvedValue([LUNCH])
+  vi.mocked(fetchGoals).mockResolvedValue([GOAL])
+  vi.mocked(fetchMembers).mockResolvedValue([PROFILE])
 })
 
 afterEach(() => {
@@ -143,6 +152,65 @@ describe('TodayPage', () => {
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(screen.getByText(/Friday/)).toBeInTheDocument()
+  })
+
+  test('shows rings for the goal valid today', async () => {
+    renderPage()
+
+    const goals = await screen.findByRole('list', { name: 'Goals' })
+    await waitFor(() => expect(goals).toHaveTextContent('538 / 2,000 kcal'))
+    expect(goals).toHaveTextContent('Protein')
+    expect(fetchGoals).toHaveBeenCalledWith('u1')
+  })
+
+  test('without a goal it offers to set one', async () => {
+    vi.mocked(fetchGoals).mockResolvedValue([])
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: 'Set goal' }))
+
+    expect(screen.getByRole('dialog', { name: 'Daily Goal' })).toBeInTheDocument()
+  })
+
+  test('a goal that cannot be loaded is reported, not shown as missing', async () => {
+    vi.mocked(fetchGoals)
+      .mockRejectedValueOnce(new TypeError('Load failed'))
+      .mockResolvedValue([GOAL])
+    const user = userEvent.setup()
+    renderPage()
+
+    expect(await screen.findByText(/Couldn’t load the daily goal/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Set goal' })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Try again' }))
+
+    expect(await screen.findByRole('list', { name: 'Goals' })).toBeInTheDocument()
+  })
+
+  test('no person switch when you are alone in the household', async () => {
+    renderPage()
+    await screen.findByRole('list', { name: 'Goals' })
+
+    expect(screen.queryByRole('radiogroup', { name: 'Person' })).not.toBeInTheDocument()
+  })
+
+  test('switching to the partner shows their day and goal', async () => {
+    vi.mocked(fetchMembers).mockResolvedValue([PARTNER, PROFILE])
+    vi.mocked(fetchGoals).mockImplementation(async (userId) => (userId === 'u1' ? [GOAL] : []))
+    const user = userEvent.setup()
+    renderPage()
+
+    const person = await screen.findByRole('radiogroup', { name: 'Person' })
+    expect(
+      within(person)
+        .getAllByRole('radio')
+        .map((option) => option.textContent),
+    ).toEqual(['Lukas', 'Anna'])
+    await user.click(within(person).getByRole('radio', { name: 'Anna' }))
+
+    expect(fetchDay).toHaveBeenLastCalledWith('u2', '2026-10-01')
+    expect(await screen.findByText('Anna hasn’t set a daily goal yet.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Set goal' })).not.toBeInTheDocument()
   })
 
   test('shows a retryable error when the day cannot be loaded', async () => {

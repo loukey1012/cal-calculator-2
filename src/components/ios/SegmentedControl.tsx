@@ -25,7 +25,7 @@ export function SegmentedControl<T extends string>({
             aria-checked={selected}
             onClick={() => onChange(option.value)}
             className={`flex-1 rounded-[7px] py-1.5 text-[13px] font-semibold text-label transition-colors ${
-              selected ? 'bg-bg-elevated shadow-sm' : ''
+              selected ? 'bg-segment-selected shadow-sm' : ''
             }`}
           >
             {option.label}
