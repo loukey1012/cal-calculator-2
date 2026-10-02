@@ -99,6 +99,9 @@ src/
     nutrition/    pure nutrition math: units, totals, goals, formatting
     today/ history/ settings/   tab pages
   lib/            supabase client, env validation, errors, persistence, dates, numbers
+e2e/
+  smoke.spec.ts   no-backend checks (shell loads, installable)
+  journeys/       real user journeys against the dev project, throwaway users per test
 supabase/
   migrations/     database schema, RLS policies, RPCs, views, triggers
   tests/          integration tests against the dev Supabase project
@@ -197,8 +200,10 @@ MIGRATION_SUPABASE_URL=... MIGRATION_SUPABASE_SERVICE_ROLE_KEY=... \
 
 - **Vercel** builds every push to `main` (`vercel.json`: SPA rewrites, long-lived caching for hashed assets, no caching for the service worker and `index.html`).
 - Vercel environment variables: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (production project).
-- **GitHub Actions** (`.github/workflows/ci.yml`) on every push and pull request: lint, typecheck, format, unit tests with coverage, WebKit E2E. On pushes to `main` it also runs the database integration tests against the dev project, using the `SUPABASE_TEST_*` repository secrets.
+- **GitHub Actions** (`.github/workflows/ci.yml`) on every push and pull request: lint, typecheck, format, unit tests with coverage, WebKit E2E. On pushes to `main` it also runs, against the dev project with the `SUPABASE_TEST_*` repository secrets, the database integration tests and the end-to-end journeys (WebKit with an iPhone profile; the offline restart additionally in Chromium, since Playwright's WebKit has no service workers).
 
 ## Installing on the iPhone
 
-Open the live URL in Safari, then **Share → Add to Home Screen**. The app then starts full-screen like a native app, keeps you signed in, and updates itself when a new version is deployed.
+Open the live URL in Safari, then **Share → Add to Home Screen**. The app then starts full-screen like a native app, keeps you signed in, and updates itself when a new version is deployed (fully close and reopen the app to pick it up; occasionally twice).
+
+Once everyone in the household has an account, turn off **Allow new users to sign up** in Supabase (Authentication → Sign In / Providers).
