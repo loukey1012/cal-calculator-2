@@ -1,8 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import { useCurrentUser } from '../../app/currentUser'
-import { scrollTabPageToTop } from '../../app/tabPage'
-import { Button } from '../../components/ios/Button'
 import { ErrorBanner } from '../../components/ios/ErrorBanner'
 import { PageHeader } from '../../components/ios/PageHeader'
 import { fromLocalDateString, toLocalDateString } from '../../lib/dates'
@@ -33,6 +31,7 @@ function summaryText({ loggedDays, averageKcal, averageProtein }: MonthSummary):
   return averageProtein > 0 ? `${kcal} · Ø ${formatGrams(averageProtein)} g protein` : kcal
 }
 
+/** Month calendar; the selected day (kept in the URL) opens beneath it, fully editable. */
 export function HistoryPage() {
   const { profile, householdId } = useCurrentUser()
   const today = useToday()
@@ -41,70 +40,59 @@ export function HistoryPage() {
   const people = usePeople(profile, householdId)
   const [selectedId, setSelectedId] = useState(profile.id)
   const person = people.find((member) => member.id === selectedId) ?? profile
-  const [month, setMonth] = useState(() => monthStart(today))
 
   const requestedDay = DAY_ROUTE.exec(pathname)?.[1]
-  // only real days up to today can be opened; anything else falls back to the calendar
-  const openDay =
+  // only real days up to today can be opened; anything else shows just the calendar
+  const selectedDay =
     requestedDay !== undefined && isRealDay(requestedDay) && requestedDay <= today
       ? requestedDay
       : null
+  const [month, setMonth] = useState(() => monthStart(selectedDay ?? today))
 
-  // the tab keeps its scroll position; switching between calendar and a day starts at the top
-  const top = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    scrollTabPageToTop(top.current)
-  }, [openDay])
-
-  const personSwitch = (
-    <PersonSwitch people={people} selectedId={person.id} onChange={setSelectedId} />
-  )
-
-  if (openDay) {
-    return (
-      <>
-        <div ref={top} />
-        <PageHeader
-          title={new Intl.DateTimeFormat(undefined, DAY_TITLE).format(fromLocalDateString(openDay))}
-          leading={
-            <Button
-              variant="plain"
-              aria-label="Back to History"
-              className="-ml-2"
-              onClick={() => navigate('/history')}
-            >
-              ‹ History
-            </Button>
-          }
-        />
-        {personSwitch}
-        <DayView
-          key={person.id}
-          person={person}
-          isOwnDay={person.id === profile.id}
-          date={openDay}
-        />
-      </>
-    )
+  // selecting replaces the entry: browsing days builds no back stack
+  function toggleDay(day: string) {
+    navigate(day === selectedDay ? '/history' : `/history/${day}`, { replace: true })
   }
 
   return (
     <>
-      <div ref={top} />
       <PageHeader title="History" />
-      {personSwitch}
+      <PersonSwitch people={people} selectedId={person.id} onChange={setSelectedId} />
       <MonthOverview
         key={person.id}
         person={person}
         month={month}
         today={today}
+        selectedDay={selectedDay}
         onChangeMonth={setMonth}
-        onOpenDay={(day) => {
-          setMonth(monthStart(day))
-          navigate(`/history/${day}`)
-        }}
+        onSelectDay={toggleDay}
       />
+      {selectedDay ? (
+        <SelectedDay day={selectedDay} person={person} isOwnDay={person.id === profile.id} />
+      ) : (
+        <p className="mt-6 text-center text-[15px] text-label-secondary">
+          Tap a day to see what was eaten.
+        </p>
+      )}
     </>
+  )
+}
+
+type SelectedDayProps = {
+  readonly day: string
+  readonly person: Profile
+  readonly isOwnDay: boolean
+}
+
+function SelectedDay({ day, person, isOwnDay }: SelectedDayProps) {
+  const title = new Intl.DateTimeFormat(undefined, DAY_TITLE).format(fromLocalDateString(day))
+  return (
+    <section aria-labelledby="history-day-title" className="mt-6">
+      <h2 id="history-day-title" className="px-4 text-[22px] font-bold">
+        {title}
+      </h2>
+      <DayView key={person.id} person={person} isOwnDay={isOwnDay} date={day} />
+    </section>
   )
 }
 
@@ -112,11 +100,19 @@ type MonthOverviewProps = {
   readonly person: Profile
   readonly month: string
   readonly today: string
+  readonly selectedDay: string | null
   readonly onChangeMonth: (month: string) => void
-  readonly onOpenDay: (day: string) => void
+  readonly onSelectDay: (day: string) => void
 }
 
-function MonthOverview({ person, month, today, onChangeMonth, onOpenDay }: MonthOverviewProps) {
+function MonthOverview({
+  person,
+  month,
+  today,
+  selectedDay,
+  onChangeMonth,
+  onSelectDay,
+}: MonthOverviewProps) {
   const totals = useMonthTotals(person.id, month)
   const goals = useGoals(person.id)
   const byDate = new Map((totals.data ?? []).map((total) => [total.date, total]))
@@ -126,8 +122,9 @@ function MonthOverview({ person, month, today, onChangeMonth, onOpenDay }: Month
       <MonthCalendar
         month={month}
         today={today}
+        selectedDay={selectedDay}
         statusOf={(day) => dayStatus(byDate.get(day), goals.data ?? [])}
-        onSelectDay={onOpenDay}
+        onSelectDay={onSelectDay}
         onChangeMonth={onChangeMonth}
       />
       {totals.isError && totals.data === undefined ? (

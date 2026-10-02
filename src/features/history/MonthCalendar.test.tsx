@@ -10,6 +10,7 @@ function renderCalendar() {
     <MonthCalendar
       month="2026-10-01"
       today="2026-10-15"
+      selectedDay="2026-10-02"
       statusOf={(date) =>
         date === '2026-10-01' ? 'onTarget' : date === '2026-10-02' ? 'over' : 'none'
       }
@@ -21,6 +22,19 @@ function renderCalendar() {
 }
 
 describe('MonthCalendar', () => {
+  test('highlights the selected day', () => {
+    renderCalendar()
+
+    expect(screen.getByRole('button', { name: /October 2,/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(screen.getByRole('button', { name: /October 1,/ })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+  })
+
   test('shows the month with Monday-first weekday headers', () => {
     renderCalendar()
 

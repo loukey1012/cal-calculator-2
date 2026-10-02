@@ -10,7 +10,6 @@ import { TodayPage } from '../features/today/TodayPage'
 import { useCurrentUser } from './currentUser'
 import { useResumeOfflineChanges, useSaveWhenHidden } from './offlineLifecycle'
 import { SyncStatus } from './SyncStatus'
-import { TAB_SCROLLER_ATTRIBUTE } from './tabPage'
 import { useAccentColor } from './useAccentColor'
 
 const TABS = [
@@ -144,7 +143,6 @@ export function TabShell() {
                 ref={(element) => {
                   pageRefs.current[index] = element
                 }}
-                {...{ [TAB_SCROLLER_ATTRIBUTE]: '' }}
                 inert={!active}
                 aria-hidden={active ? undefined : true}
                 className="h-full min-w-0 flex-[0_0_100%] overflow-x-hidden overflow-y-auto overscroll-contain pt-safe-top pb-tabbar"

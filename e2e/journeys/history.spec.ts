@@ -1,6 +1,9 @@
 import { activePage, expect, localDay, logIn, test } from './backend.ts'
 
-test('open a past day in History and add a forgotten dinner', async ({ page, backend }) => {
+test('select a past day in History and add a forgotten dinner beneath the calendar', async ({
+  page,
+  backend,
+}) => {
   const me = await backend.user('Hanna')
   await backend.household([me])
   const yesterday = localDay(1)
@@ -34,12 +37,14 @@ test('open a past day in History and add a forgotten dinner', async ({ page, bac
 
   await history.getByRole('button', { name: /within goal/ }).click()
   await expect(page).toHaveURL(new RegExp(`/history/${yesterday}$`))
-  // reopening the app on a day must show that page, not slide half of a neighbour into view
+  // reopening the app keeps the day selected, without sliding half of a neighbour into view
   await page.reload()
-  await expect(history.getByRole('button', { name: 'Back to History' })).toBeVisible()
+  const day = history.getByRole('region')
+  await expect(day).toBeVisible()
+  await expect(history.getByRole('button', { pressed: true })).toBeVisible()
   const carousel = page.locator('[data-testid="tab-page"]').first().locator('xpath=../..')
   expect(await carousel.evaluate((element) => element.scrollLeft)).toBe(0)
-  await history.getByRole('button', { name: /Dinner/ }).click()
+  await day.getByRole('button', { name: /Dinner/ }).click()
   const sheet = page.getByRole('dialog')
   await sheet.getByRole('button', { name: 'Add food' }).click()
   await sheet.getByRole('button', { name: /Custom item/ }).click()
@@ -49,10 +54,9 @@ test('open a past day in History and add a forgotten dinner', async ({ page, bac
   await sheet.getByLabel('Amount').fill('1')
   await sheet.getByRole('button', { name: 'Add to Dinner' }).click()
   await sheet.getByRole('button', { name: 'Close' }).click()
-  await expect(history.getByTestId('day-total')).toContainText('2,250 kcal')
-
-  await history.getByRole('button', { name: 'Back to History' }).click()
-  await expect(history.getByRole('button', { name: /over goal/ })).toBeVisible()
+  await expect(day.getByTestId('day-total')).toContainText('2,250 kcal')
+  // the calendar above updates right away
+  await expect(history.getByRole('button', { name: /over goal/, pressed: true })).toBeVisible()
   const { data } = await backend.admin
     .from('meals')
     .select('meal_type, meal_items(name)')

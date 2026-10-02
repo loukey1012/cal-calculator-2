@@ -44,9 +44,7 @@ function LocationProbe() {
 function renderPage(route = '/history') {
   return renderWithProviders(
     <CurrentUserContext value={{ profile: PROFILE, householdId: 'h1' }}>
-      <div data-testid="scroller" data-tab-scroller="">
-        <HistoryPage />
-      </div>
+      <HistoryPage />
       <LocationProbe />
     </CurrentUserContext>,
     { route },
@@ -93,15 +91,24 @@ describe('HistoryPage', () => {
     expect(summary).toHaveTextContent('Ø 80.0 g protein')
   })
 
-  test('opens a past day, which can be edited like today', async () => {
+  test('a tapped day opens beneath the calendar and can be edited like today', async () => {
     const user = userEvent.setup()
     renderPage()
+    expect(screen.getByText('Tap a day to see what was eaten.')).toBeInTheDocument()
 
     await user.click(await screen.findByRole('button', { name: /October 1.*within goal/ }))
 
     expect(screen.getByTestId('path')).toHaveTextContent('/history/2026-10-01')
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/October 1/)
+    // still the History page with its calendar, the day just below it
+    expect(screen.getByRole('heading', { level: 1, name: 'History' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2, name: 'October 2026' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /October 1.*within goal/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    const day = screen.getByRole('region', { name: /October 1/ })
     await waitFor(() => expect(fetchDay).toHaveBeenCalledWith('u1', '2026-10-01'))
+    expect(within(day).getByTestId('day-total')).toBeInTheDocument()
 
     // add the forgotten dinner to that day
     await user.click(screen.getByRole('button', { name: /Dinner/ }))
@@ -120,21 +127,6 @@ describe('HistoryPage', () => {
     )
   })
 
-  test('opening a day starts at its top, not at the calendar’s scroll position', async () => {
-    const scrollIntoView = vi.fn()
-    Element.prototype.scrollIntoView = scrollIntoView
-    const user = userEvent.setup()
-    renderPage()
-    const scroller = screen.getByTestId('scroller')
-    scroller.scrollTop = 500
-
-    await user.click(await screen.findByRole('button', { name: /October 1.*within goal/ }))
-
-    expect(scroller.scrollTop).toBe(0)
-    // scrollIntoView would also scroll the tab carousel sideways
-    expect(scrollIntoView).not.toHaveBeenCalled()
-  })
-
   test('the protein average is left out when nothing logged had protein data', async () => {
     vi.mocked(fetchDailyTotals).mockResolvedValue([
       { date: '2026-10-01', kcal: 1850, protein: 0, mealCount: 1 },
@@ -146,21 +138,32 @@ describe('HistoryPage', () => {
     expect(summary).not.toHaveTextContent('protein')
   })
 
-  test('a day can be opened directly by its address and closed with Back', async () => {
+  test('tapping another day switches the details; tapping the open day closes them', async () => {
     const user = userEvent.setup()
     renderPage('/history/2026-10-02')
+    expect(screen.getByRole('region', { name: /October 2/ })).toBeInTheDocument()
 
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/October 2/)
-    await user.click(screen.getByRole('button', { name: 'Back to History' }))
+    await user.click(await screen.findByRole('button', { name: /October 1.*within goal/ }))
+    expect(screen.getByRole('region', { name: /October 1/ })).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: /October 2/ })).not.toBeInTheDocument()
 
-    expect(screen.getByTestId('path')).toHaveTextContent('/history')
-    expect(screen.getByRole('heading', { level: 1, name: 'History' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /October 1.*within goal/ }))
+    expect(screen.getByTestId('path')).toHaveTextContent(/^\/history$/)
+    expect(screen.queryByRole('region', { name: /October/ })).not.toBeInTheDocument()
+  })
+
+  test('a day in an earlier month opens that month', () => {
+    renderPage('/history/2026-09-10')
+
+    expect(screen.getByRole('heading', { level: 2, name: 'September 2026' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: /September 10/ })).toBeInTheDocument()
   })
 
   test('an invalid or future date in the address shows the calendar instead', () => {
     renderPage('/history/2026-12-24')
 
     expect(screen.getByRole('heading', { level: 1, name: 'History' })).toBeInTheDocument()
+    expect(screen.queryByRole('region')).not.toBeInTheDocument()
   })
 
   test('shows the partner’s history after switching person', async () => {

@@ -30,6 +30,8 @@ type MonthCalendarProps = {
   /** YYYY-MM-01 */
   readonly month: string
   readonly today: string
+  /** the day shown below the calendar, if any */
+  readonly selectedDay: string | null
   readonly statusOf: (date: string) => DayStatus
   readonly onSelectDay: (date: string) => void
   readonly onChangeMonth: (month: string) => void
@@ -38,6 +40,7 @@ type MonthCalendarProps = {
 export function MonthCalendar({
   month,
   today,
+  selectedDay,
   statusOf,
   onSelectDay,
   onChangeMonth,
@@ -84,6 +87,7 @@ export function MonthCalendar({
                     <DayButton
                       date={date}
                       today={today}
+                      selected={date === selectedDay}
                       status={statusOf(date)}
                       onSelect={onSelectDay}
                     />
@@ -101,11 +105,12 @@ export function MonthCalendar({
 type DayButtonProps = {
   readonly date: string
   readonly today: string
+  readonly selected: boolean
   readonly status: DayStatus
   readonly onSelect: (date: string) => void
 }
 
-function DayButton({ date, today, status, onSelect }: DayButtonProps) {
+function DayButton({ date, today, selected, status, onSelect }: DayButtonProps) {
   const isToday = date === today
   const label = new Intl.DateTimeFormat(undefined, DAY_LABEL).format(fromLocalDateString(date))
   return (
@@ -113,12 +118,14 @@ function DayButton({ date, today, status, onSelect }: DayButtonProps) {
       type="button"
       data-status={status}
       aria-current={isToday ? 'date' : undefined}
+      aria-pressed={selected}
       aria-label={`${isToday ? 'Today, ' : ''}${label}${STATUS_TEXT[status]}`}
       disabled={date > today}
       onClick={() => onSelect(date)}
-      className={`mx-auto flex h-9 w-9 items-center justify-center rounded-full text-[15px] disabled:opacity-30 ${STATUS_CLASSES[status]} ${
-        isToday ? 'ring-2 ring-accent' : ''
-      }`}
+      className={`mx-auto flex h-9 w-9 items-center justify-center rounded-full text-[15px] disabled:opacity-30 ${
+        // like the iOS calendar: the selected day is filled with the accent color
+        selected ? 'bg-accent font-semibold text-white' : STATUS_CLASSES[status]
+      } ${isToday ? 'ring-2 ring-accent' : ''}`}
     >
       {Number(date.slice(8))}
     </button>

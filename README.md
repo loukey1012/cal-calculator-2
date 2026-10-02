@@ -31,7 +31,7 @@ Built for a two-person household: both members log their own meals, can see and 
 
 - **Month calendar** (Monday first): every logged day is marked green (within that day's calorie goal), red (over) or neutral (logged, no goal yet).
 - Month summary: days logged, average calories and protein.
-- **Open any past day** (`/history/YYYY-MM-DD`) to see its rings, totals and meals, and **edit it like today**, e.g. add a forgotten dinner. Also for your partner's days.
+- **Tap any past day** to show its rings, totals and meals **right beneath the calendar**, and **edit it like today**, e.g. add a forgotten dinner. Tap another day to switch, or the same day again to close it. The selected day is kept in the address (`/history/YYYY-MM-DD`), so reopening the app keeps it. Also for your partner's days.
 
 ### Household
 
