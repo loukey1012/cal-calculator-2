@@ -107,7 +107,7 @@ function SheetPanel({ onClose, title, action, children }: Omit<SheetProps, 'open
             <div className="text-right">{action}</div>
           </div>
         </div>
-        <div className="overflow-y-auto overscroll-contain px-4 pb-4">{children}</div>
+        <div className="no-scrollbar overflow-y-auto overscroll-contain px-4 pb-4">{children}</div>
       </div>
     </div>,
     document.body,

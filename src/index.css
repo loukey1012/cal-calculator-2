@@ -151,6 +151,14 @@
   letter-spacing: var(--caption-tracking);
 }
 
+/* scrolling areas show no scroll indicator (iOS draws one while scrolling) */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* soft accent tint behind icons and the active tab */
 @utility bg-accent-soft {
   background-color: color-mix(in srgb, var(--accent) 16%, transparent);

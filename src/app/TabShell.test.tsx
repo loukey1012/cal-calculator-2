@@ -128,4 +128,10 @@ describe('TabShell', () => {
     const pages = screen.getAllByTestId('tab-page')
     expect(pages.filter((page) => !page.hasAttribute('inert'))).toHaveLength(1)
   })
+
+  test('pages scroll without a visible scroll indicator', () => {
+    renderShell('/today')
+
+    for (const page of screen.getAllByTestId('tab-page')) expect(page).toHaveClass('no-scrollbar')
+  })
 })

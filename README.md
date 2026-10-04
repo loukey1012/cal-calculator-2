@@ -55,7 +55,7 @@ Built for a two-person household: both members log their own meals, can see and 
 ### Look and feel
 
 - Rounded cards on a soft background, the Manrope font, meals as a 2×2 grid of cards, avatars (initial on each person's accent color) in the person switch and member list. Bottom sheets (drag down to close), segmented controls, switches and swipe actions.
-- **Floating tab bar** (Today · History · Ingredients · Settings): the active tab shows its label in an accent tint. **Swipe left and right** to switch tabs with an animated settle, and tap the active tab to scroll to the top.
+- **Floating tab bar** (Today · History · Ingredients · Settings): the active tab shows its label in an accent tint. **Swipe left and right** to switch tabs with an animated settle, and tap the active tab to scroll to the top. Pages and sheets scroll without a visible scroll indicator.
 - Installable to the home screen (manifest, icons, safe areas, no zoom on input focus).
 
 ### Appearance (Settings › Appearance)

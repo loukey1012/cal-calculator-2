@@ -30,7 +30,7 @@ function CategoryChips({ categories, selectedId, onSelect }: CategoryChipsProps)
       role="group"
       aria-label="Categories"
       data-swipe-lock=""
-      className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1"
+      className="no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1"
     >
       {chips.map((chip) => {
         const selected = chip.id === selectedId

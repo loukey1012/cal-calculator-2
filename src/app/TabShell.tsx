@@ -145,7 +145,7 @@ export function TabShell() {
                 }}
                 inert={!active}
                 aria-hidden={active ? undefined : true}
-                className="h-full min-w-0 flex-[0_0_100%] overflow-x-hidden overflow-y-auto overscroll-contain pt-safe-top pb-tabbar"
+                className="no-scrollbar h-full min-w-0 flex-[0_0_100%] overflow-x-hidden overflow-y-auto overscroll-contain pt-safe-top pb-tabbar"
               >
                 <div className="mx-auto max-w-md px-4">
                   <TabPageContent Page={Page} />
