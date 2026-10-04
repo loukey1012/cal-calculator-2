@@ -30,7 +30,7 @@ export function SyncStatus() {
   return (
     <div
       role="status"
-      className="pointer-events-none fixed inset-x-0 bottom-[calc(var(--tabbar-height)+var(--tabbar-bottom)+8px)] z-20 flex justify-center"
+      className="pointer-events-none fixed inset-x-0 bottom-[calc(var(--tabbar-height)+var(--tabbar-bottom)+8px-var(--viewport-shortfall))] z-20 flex justify-center"
     >
       <span className="rounded-full bg-label/80 px-3 py-1 text-[13px] font-medium text-bg backdrop-blur">
         {text}

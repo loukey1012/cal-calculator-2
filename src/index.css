@@ -37,11 +37,25 @@
   --goal-fat: #2f9bd6;
 
   --tabbar-height: 64px;
-  /* like iOS floating bars, the tab bar reaches into the home-indicator area: it sits
-     ~20px above the screen edge on iPhone (34px inset), clearing the indicator line,
-     and 16px elsewhere. pb-tabbar and SyncStatus derive from this variable. */
+  /* gap between the tab bar and the real screen edge: like iOS floating bars it reaches into
+     the home-indicator area, ~20px on iPhone (34px inset) and 16px elsewhere */
   --tabbar-bottom: max(16px, calc(env(safe-area-inset-bottom) - 14px));
+  /* how far the viewport ends above the real screen edge; see the standalone rule below */
+  --viewport-shortfall: 0px;
   color-scheme: light;
+}
+
+/*
+ * iOS home-screen apps with a translucent status bar draw under the status bar, but report a
+ * viewport that is shorter by the status bar's height (measured on an iPhone: screen 844px,
+ * 100dvh 797px, 100lvh 844px). Everything sized or pinned to the viewport would leave an empty
+ * strip of that height at the bottom, so the app shell, tab bar and sheets compensate by the
+ * difference. It is 0 in the browser and once iOS reports the full height.
+ */
+@media (display-mode: standalone) {
+  :root {
+    --viewport-shortfall: calc(100lvh - 100dvh);
+  }
 }
 
 :root[data-scheme='soft'] {
@@ -131,6 +145,20 @@
 
 @utility pt-safe-top {
   padding-top: env(safe-area-inset-top);
+}
+
+/* the full screen height, also in iOS home-screen apps (see --viewport-shortfall) */
+@utility h-screen-full {
+  height: calc(100dvh + var(--viewport-shortfall));
+}
+
+/* fixed elements measured from the real screen edge instead of the (short) viewport */
+@utility bottom-screen-edge {
+  bottom: calc(0px - var(--viewport-shortfall));
+}
+
+@utility bottom-tabbar {
+  bottom: calc(var(--tabbar-bottom) - var(--viewport-shortfall));
 }
 
 /* room for the floating tab bar above the home indicator */

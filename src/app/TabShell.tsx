@@ -131,7 +131,7 @@ export function TabShell() {
   if (routeIndex === -1) return <Navigate to={TABS[0].path} replace />
 
   return (
-    <div className="flex h-dvh flex-col bg-bg text-label">
+    <div className="flex h-screen-full flex-col bg-bg text-label">
       <div ref={emblaRef} className="min-h-0 flex-1 overflow-hidden">
         <div className="flex h-full touch-pan-y">
           {TABS.map(({ id, Page }, index) => {

@@ -71,7 +71,7 @@ function SheetPanel({ onClose, title, action, children }: Omit<SheetProps, 'open
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-end justify-center">
+    <div className="fixed inset-x-0 top-0 bottom-screen-edge z-50 flex items-end justify-center">
       <div
         data-testid="sheet-backdrop"
         className="absolute inset-0 animate-fade-in bg-black/40"

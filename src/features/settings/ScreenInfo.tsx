@@ -37,6 +37,7 @@ function measure(): readonly Measurement[] {
     { label: '100dvh', value: cssPixels('height', '100dvh') },
     { label: '100lvh', value: cssPixels('height', '100lvh') },
     { label: '100svh', value: cssPixels('height', '100svh') },
+    { label: 'shortfall fix', value: cssPixels('height', 'var(--viewport-shortfall)') },
     { label: 'safe-area top', value: cssPixels('paddingTop', 'env(safe-area-inset-top)') },
     { label: 'safe-area bottom', value: cssPixels('paddingBottom', 'env(safe-area-inset-bottom)') },
     { label: 'device pixel ratio', value: String(window.devicePixelRatio) },
