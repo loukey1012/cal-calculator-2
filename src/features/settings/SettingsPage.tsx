@@ -21,7 +21,6 @@ import { shareInviteCode } from '../household/shareInvite'
 import { goalForDate, type Goal } from '../nutrition/goals'
 import { useToday } from '../today/useToday'
 import { AccountSection } from './AccountSection'
-import { ScreenInfo } from './ScreenInfo'
 
 /** A failed load must not look like "no goal", which would invite overwriting it. */
 function goalDetail(loading: boolean, missing: boolean, goal: Goal | null): string {
@@ -131,7 +130,6 @@ function SettingsOverview() {
         </GroupedSection>
       )}
       {signOutMutation.isError && <ErrorBanner message={toUserMessage(signOutMutation.error)} />}
-      <ScreenInfo />
       <div className="mt-8">
         <Button
           variant="destructive"

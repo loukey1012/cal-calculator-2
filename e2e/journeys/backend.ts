@@ -8,7 +8,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 const testUrl = process.env.SUPABASE_TEST_URL
 const serviceKey = process.env.SUPABASE_TEST_SERVICE_ROLE_KEY
 const appUrl = process.env.VITE_SUPABASE_URL
-export const hasDevBackend = Boolean(
+const hasDevBackend = Boolean(
   testUrl && serviceKey && appUrl && new URL(appUrl).host === new URL(testUrl).host,
 )
 

@@ -1,12 +1,11 @@
 import { z } from 'zod'
 import { mixHex, onColor, readableInk } from '../../lib/color'
 
-export const THEMES = ['system', 'light', 'dark'] as const
-export const DARK_STYLES = ['soft', 'bento'] as const
-export const GOAL_PALETTES = ['vivid', 'pastel', 'accent', 'contrast'] as const
-export const PROGRESS_STYLES = ['rings', 'ringBars', 'bars', 'compact'] as const
+const THEMES = ['system', 'light', 'dark'] as const
+const DARK_STYLES = ['soft', 'bento'] as const
+const GOAL_PALETTES = ['vivid', 'pastel', 'accent', 'contrast'] as const
+const PROGRESS_STYLES = ['rings', 'ringBars', 'bars', 'compact'] as const
 
-export type Theme = (typeof THEMES)[number]
 export type DarkStyle = (typeof DARK_STYLES)[number]
 export type GoalPalette = (typeof GOAL_PALETTES)[number]
 export type ProgressStyle = (typeof PROGRESS_STYLES)[number]
