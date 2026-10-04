@@ -11,8 +11,39 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="CALculator2" />
-    <meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f3f4f7" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0b0c0f" media="(prefers-color-scheme: dark)" />
+
+    <!-- start in the account's look (mirrored to localStorage by useAppearance) before the app
+         has loaded, so a dark theme never flashes light; key: APPEARANCE_CACHE_KEY in
+         src/lib/persistence.ts -->
+    <script>
+      ;(function () {
+        var root = document.documentElement
+        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+        var theme = 'system'
+        var darkStyle = 'soft'
+        var variables = {}
+        try {
+          var cache = JSON.parse(localStorage.getItem('calculator-appearance') || 'null')
+          if (cache && typeof cache === 'object') {
+            theme = cache.theme
+            darkStyle = cache.darkStyle === 'bento' ? 'bento' : 'soft'
+            variables = cache.variables || {}
+          }
+        } catch (error) {
+          // no storage (private browsing): the device's light/dark look
+        }
+        var dark = theme === 'dark' || (theme !== 'light' && prefersDark)
+        root.dataset.scheme = dark ? darkStyle : 'light'
+        for (var name in variables) {
+          var value = variables[name]
+          if (/^--[a-z-]+$/.test(name) && /^#[0-9a-f]{6}$/i.test(value)) {
+            root.style.setProperty(name, value)
+          }
+        }
+      })()
+    </script>
 
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />

@@ -52,6 +52,39 @@ describe('profiles', () => {
 
     expect(error?.code).toBe('23514')
   })
+
+  test('a user saves their appearance on their own profile; it starts empty', async () => {
+    const appearance = { theme: 'dark', darkStyle: 'bento' }
+    const before = await alice.client
+      .from('profiles')
+      .select('appearance')
+      .eq('id', alice.id)
+      .single()
+    const { error } = await alice.client.from('profiles').update({ appearance }).eq('id', alice.id)
+    const after = await alice.client
+      .from('profiles')
+      .select('appearance')
+      .eq('id', alice.id)
+      .single()
+
+    expect(before.data?.appearance).toEqual({})
+    expect(error).toBeNull()
+    expect(after.data?.appearance).toEqual(appearance)
+  })
+
+  test('appearance must be a small JSON object', async () => {
+    const notObject = await alice.client
+      .from('profiles')
+      .update({ appearance: ['dark'] })
+      .eq('id', alice.id)
+    const tooBig = await alice.client
+      .from('profiles')
+      .update({ appearance: { junk: 'x'.repeat(2000) } })
+      .eq('id', alice.id)
+
+    expect(notObject.error?.code).toBe('23514')
+    expect(tooBig.error?.code).toBe('23514')
+  })
 })
 
 describe('households', () => {

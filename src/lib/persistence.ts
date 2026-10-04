@@ -56,6 +56,18 @@ export const DEHYDRATE_OPTIONS: DehydrateOptions = {
 }
 
 /** Removes this account's cached data and queued changes from the phone. */
+/**
+ * localStorage mirror of the account's look (theme, colors), written by useAppearance and read
+ * by the inline script in index.html so the app starts in the right colors.
+ */
+export const APPEARANCE_CACHE_KEY = 'calculator-appearance'
+
+/** On sign-out or account switch: nothing of the previous account may stay on the phone. */
 export async function clearPersistedCache(): Promise<void> {
   await persister.removeClient()
+  try {
+    window.localStorage.removeItem(APPEARANCE_CACHE_KEY)
+  } catch {
+    // no storage (private browsing): nothing was cached
+  }
 }

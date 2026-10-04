@@ -67,7 +67,7 @@ export function AmountEditor({
           />
         </div>
       )}
-      <div className="mt-4 flex items-center gap-3 rounded-xl bg-bg-elevated px-3 py-2">
+      <div className="mt-4 flex items-center gap-3 rounded-2xl bg-bg-elevated px-3 py-2 shadow-card">
         <Button variant="plain" aria-label="Less" onClick={() => step(-1)} className="text-[24px]">
           −
         </Button>

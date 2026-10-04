@@ -36,6 +36,7 @@ const PROFILE = {
   household_id: 'h1',
   display_name: 'Lukas',
   accent_color: '#ff2d55',
+  appearance: {},
   created_at: '',
   updated_at: '',
 }

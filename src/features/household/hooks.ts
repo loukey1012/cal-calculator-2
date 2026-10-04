@@ -65,15 +65,35 @@ export function displayName(member: Profile): string {
   return member.display_name || 'Unnamed'
 }
 
-export function useUpdateProfile(userId: string): UseMutationResult<void, Error, ProfilePatch> {
+type ProfileSnapshot = { readonly previous: Profile | undefined }
+
+export function useUpdateProfile(
+  userId: string,
+): UseMutationResult<void, Error, ProfilePatch, ProfileSnapshot> {
   const queryClient = useQueryClient()
+  const profileKey = householdKeys.profile(userId)
+  const mutationKey = ['updateProfile', userId]
   return useMutation({
+    mutationKey,
     mutationFn: (patch: ProfilePatch) => updateProfile(userId, patch),
-    // the name shows in the person switch and member list too
-    onSuccess: () =>
-      Promise.all([
-        queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_PREFIX }),
-        queryClient.invalidateQueries({ queryKey: ['members'] }),
-      ]),
+    // shown right away (the whole app recolors on an appearance change), undone if saving fails
+    onMutate: async (patch) => {
+      await queryClient.cancelQueries({ queryKey: profileKey })
+      const previous = queryClient.getQueryData<Profile>(profileKey)
+      if (previous) queryClient.setQueryData<Profile>(profileKey, { ...previous, ...patch })
+      return { previous }
+    },
+    onError: (_error, _patch, snapshot) => {
+      if (snapshot?.previous) queryClient.setQueryData(profileKey, snapshot.previous)
+    },
+    // the name and accent show in the person switch and member list too. Refetch only after
+    // the last of several quick changes, or an older answer would briefly undo the newer ones.
+    // Not awaited: a change still waiting for its refetch must not count as in progress, or a
+    // later change settling meanwhile would skip its own refetch
+    onSettled: () => {
+      if (queryClient.isMutating({ mutationKey }) !== 1) return
+      void queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_PREFIX })
+      void queryClient.invalidateQueries({ queryKey: ['members'] })
+    },
   })
 }

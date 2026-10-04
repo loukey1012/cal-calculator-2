@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { z } from 'zod'
+import { Avatar } from '../../components/ios/Avatar'
 import { Button } from '../../components/ios/Button'
 import { ErrorBanner } from '../../components/ios/ErrorBanner'
 import { GroupedSection } from '../../components/ios/GroupedSection'
@@ -13,53 +14,26 @@ import type { Profile } from '../household/householdApi'
 const NAME_FORM_ID = 'name-form'
 const MAX_NAME = 40
 
-// iOS system colors (light appearance); blue is the default
-const ACCENT_COLORS = [
-  { name: 'Blue', value: '#007aff' },
-  { name: 'Indigo', value: '#5856d6' },
-  { name: 'Purple', value: '#af52de' },
-  { name: 'Pink', value: '#ff2d55' },
-  { name: 'Red', value: '#ff3b30' },
-  { name: 'Orange', value: '#ff9500' },
-  { name: 'Green', value: '#34c759' },
-  { name: 'Teal', value: '#30b0c7' },
-] as const
-
 const nameSchema = z
   .string()
   .trim()
   .min(1, 'Enter your name')
   .max(MAX_NAME, `Use at most ${MAX_NAME} characters`)
 
-/** Your name and accent color; only you can change them. */
+/** Your name; only you can change it. Colors live in Settings › Appearance. */
 export function AccountSection({ profile }: { readonly profile: Profile }) {
   const update = useUpdateProfile(profile.id)
   const [editingName, setEditingName] = useState(false)
-  const accent = profile.accent_color.toLowerCase()
 
   return (
     <>
       <GroupedSection header="Account">
-        <ListRow title="Name" detail={displayName(profile)} onClick={() => setEditingName(true)} />
-      </GroupedSection>
-      <GroupedSection header="Accent color">
-        <div role="radiogroup" aria-label="Accent color" className="flex flex-wrap gap-3 px-4 py-3">
-          {ACCENT_COLORS.map((color) => {
-            const selected = color.value === accent
-            return (
-              <button
-                key={color.value}
-                type="button"
-                role="radio"
-                aria-checked={selected}
-                aria-label={color.name}
-                onClick={() => update.mutate({ accent_color: color.value })}
-                className={`h-9 w-9 rounded-full ${selected ? 'ring-2 ring-label ring-offset-2 ring-offset-bg-elevated' : ''}`}
-                style={{ backgroundColor: color.value }}
-              />
-            )
-          })}
-        </div>
+        <ListRow
+          leading={<Avatar name={displayName(profile)} color={profile.accent_color} size="large" />}
+          title="Name"
+          detail={displayName(profile)}
+          onClick={() => setEditingName(true)}
+        />
       </GroupedSection>
       {update.isError && !editingName && <ErrorBanner message={toUserMessage(update.error)} />}
       <Sheet

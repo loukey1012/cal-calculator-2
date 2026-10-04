@@ -9,7 +9,7 @@ type PageHeaderProps = {
   readonly leading?: ReactNode
 }
 
-/** iOS large title. */
+/** Large page title with optional bar buttons above it. */
 export function PageHeader({ title, subtitle, action, leading }: PageHeaderProps) {
   return (
     // keeps the bar buttons clear of the fade iOS draws below the status bar
@@ -18,8 +18,10 @@ export function PageHeader({ title, subtitle, action, leading }: PageHeaderProps
         <div>{leading}</div>
         <div>{action}</div>
       </div>
-      <h1 className="text-[34px] leading-tight font-bold tracking-tight">{title}</h1>
-      {subtitle && <p className="text-[15px] text-label-secondary">{subtitle}</p>}
+      {subtitle && <p className="caption">{subtitle}</p>}
+      <h1 className="font-display text-[32px] leading-tight font-extrabold tracking-tight">
+        {title}
+      </h1>
     </header>
   )
 }

@@ -1,16 +1,20 @@
 import { useState } from 'react'
+import { useLocation, useNavigate } from 'react-router'
 import { useCurrentUser } from '../../app/currentUser'
+import { Avatar } from '../../components/ios/Avatar'
 import { Button } from '../../components/ios/Button'
 import { ErrorBanner } from '../../components/ios/ErrorBanner'
 import { GroupedSection } from '../../components/ios/GroupedSection'
 import { ListRow } from '../../components/ios/ListRow'
 import { PageHeader } from '../../components/ios/PageHeader'
 import { toUserMessage } from '../../lib/errors'
+import { parseAppearance, type Appearance } from '../appearance/appearance'
+import { AppearancePage } from '../appearance/AppearancePage'
 import { useSignOut } from '../auth/useSignOut'
 import { describeGoal } from '../goals/goalForm'
 import { GoalSheet } from '../goals/GoalSheet'
 import { useGoals } from '../goals/hooks'
-import { useHousehold, useMembers } from '../household/hooks'
+import { displayName, useHousehold, useMembers } from '../household/hooks'
 import type { Profile } from '../household/householdApi'
 import { formatInviteCode } from '../household/inviteCode'
 import { shareInviteCode } from '../household/shareInvite'
@@ -24,12 +28,27 @@ function goalDetail(loading: boolean, missing: boolean, goal: Goal | null): stri
   return missing ? 'Couldn’t load' : describeGoal(goal)
 }
 
+const APPEARANCE_PATH = '/settings/appearance'
+
 function memberLabel(member: Profile, currentUserId: string): string {
-  const name = member.display_name || 'Unnamed'
+  const name = displayName(member)
   return member.id === currentUserId ? `${name} (you)` : name
 }
 
+function appearanceSummary({ theme, darkStyle }: Appearance): string {
+  const style = darkStyle === 'bento' ? 'Bento' : 'Soft'
+  if (theme === 'light') return 'Light'
+  return theme === 'dark' ? `Dark · ${style}` : `System · ${style}`
+}
+
+/** Settings, or its Appearance page (kept in the URL like the selected history day). */
 export function SettingsPage() {
+  const { pathname } = useLocation()
+  return pathname === APPEARANCE_PATH ? <AppearancePage /> : <SettingsOverview />
+}
+
+function SettingsOverview() {
+  const navigate = useNavigate()
   const { profile, householdId } = useCurrentUser()
   const household = useHousehold(householdId)
   const members = useMembers(householdId)
@@ -56,6 +75,13 @@ export function SettingsPage() {
     <>
       <PageHeader title="Settings" />
       <AccountSection profile={profile} />
+      <GroupedSection header="Look">
+        <ListRow
+          title="Appearance"
+          detail={appearanceSummary(parseAppearance(profile.appearance))}
+          onClick={() => navigate(APPEARANCE_PATH, { replace: true })}
+        />
+      </GroupedSection>
       <GroupedSection header="Goals">
         <ListRow
           title="Daily goal"
@@ -95,7 +121,11 @@ export function SettingsPage() {
       {members.data && (
         <GroupedSection header="Members">
           {members.data.map((member) => (
-            <ListRow key={member.id} title={memberLabel(member, profile.id)} />
+            <ListRow
+              key={member.id}
+              leading={<Avatar name={displayName(member)} color={member.accent_color} />}
+              title={memberLabel(member, profile.id)}
+            />
           ))}
         </GroupedSection>
       )}

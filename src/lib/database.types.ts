@@ -346,6 +346,7 @@ export type Database = {
       profiles: {
         Row: {
           accent_color: string
+          appearance: Json
           created_at: string
           display_name: string
           household_id: string | null
@@ -354,6 +355,7 @@ export type Database = {
         }
         Insert: {
           accent_color?: string
+          appearance?: Json
           created_at?: string
           display_name?: string
           household_id?: string | null
@@ -362,6 +364,7 @@ export type Database = {
         }
         Update: {
           accent_color?: string
+          appearance?: Json
           created_at?: string
           display_name?: string
           household_id?: string | null

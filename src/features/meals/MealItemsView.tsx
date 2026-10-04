@@ -38,7 +38,7 @@ export function MealItemsView({
         <p className="mt-6 text-center text-[15px] text-label-secondary">Nothing logged yet.</p>
       )}
       {items.length > 0 && (
-        <div className="mt-4 divide-y divide-separator overflow-hidden rounded-xl bg-bg-elevated">
+        <div className="mt-4 divide-y divide-separator overflow-hidden rounded-3xl bg-bg-elevated shadow-card">
           {items.map((item) => (
             <SwipeableRow key={item.id} onDelete={() => onDelete(item.id)}>
               <ListRow

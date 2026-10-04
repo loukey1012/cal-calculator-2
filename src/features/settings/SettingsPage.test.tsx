@@ -1,8 +1,8 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { CurrentUserContext } from '../../app/currentUser'
-import { PERSIST_KEY } from '../../lib/persistence'
+import { APPEARANCE_CACHE_KEY, PERSIST_KEY } from '../../lib/persistence'
 import { renderWithProviders } from '../../test/render'
 
 vi.mock('../household/householdApi', () => ({
@@ -23,6 +23,7 @@ const ME = {
   household_id: 'h1',
   display_name: 'Lukas',
   accent_color: '#007aff',
+  appearance: {},
   created_at: '',
   updated_at: '',
 }
@@ -91,19 +92,15 @@ describe('SettingsPage', () => {
     expect(updateProfile).not.toHaveBeenCalled()
   })
 
-  test('picks an accent color, saved right away', async () => {
-    vi.mocked(updateProfile).mockResolvedValue()
+  test('opens Appearance, summarising the current look', async () => {
     const user = userEvent.setup()
     renderPage()
 
-    const colors = screen.getByRole('radiogroup', { name: 'Accent color' })
-    expect(within(colors).getByRole('radio', { name: 'Blue' })).toHaveAttribute(
-      'aria-checked',
-      'true',
-    )
-    await user.click(within(colors).getByRole('radio', { name: 'Pink' }))
+    const row = screen.getByRole('button', { name: /Appearance/ })
+    expect(row).toHaveTextContent('System · Soft')
+    await user.click(row)
 
-    expect(updateProfile).toHaveBeenCalledWith('u1', { accent_color: '#ff2d55' })
+    expect(await screen.findByRole('heading', { level: 1, name: 'Appearance' })).toBeInTheDocument()
   })
 
   test('explains when a profile change fails', async () => {
@@ -111,11 +108,9 @@ describe('SettingsPage', () => {
     const user = userEvent.setup()
     renderPage()
 
-    await user.click(
-      within(screen.getByRole('radiogroup', { name: 'Accent color' })).getByRole('radio', {
-        name: 'Green',
-      }),
-    )
+    await user.click(screen.getByRole('button', { name: /Name/ }))
+    await user.type(screen.getByLabelText('Your name'), 'x')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('No connection.')
   })
@@ -213,10 +208,13 @@ describe('SettingsPage', () => {
     renderPage()
 
     window.localStorage.setItem(PERSIST_KEY, '{"cached":"day data"}')
+    window.localStorage.setItem(APPEARANCE_CACHE_KEY, '{"theme":"dark"}')
     await user.click(screen.getByRole('button', { name: 'Log out' }))
 
     expect(signOut).toHaveBeenCalled()
     // nothing of this account stays on the phone
     await waitFor(() => expect(window.localStorage.getItem(PERSIST_KEY)).toBeNull())
+    // the next person on this phone must not start in this account's colors
+    expect(window.localStorage.getItem(APPEARANCE_CACHE_KEY)).toBeNull()
   })
 })

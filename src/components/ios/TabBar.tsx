@@ -10,27 +10,28 @@ type TabBarProps = {
   readonly onReselect: (index: number) => void
 }
 
+/** Floating pill above the home indicator; the active tab shows its label in an accent tint. */
 export function TabBar({ items, activeIndex, onSelect, onReselect }: TabBarProps) {
   return (
-    <nav
-      aria-label="Tabs"
-      className="fixed inset-x-0 bottom-0 z-10 border-t border-separator bg-bg-elevated/80 pb-safe-bottom backdrop-blur-xl"
-    >
-      <ul className="mx-auto flex max-w-md">
+    <nav aria-label="Tabs" className="fixed inset-x-0 bottom-(--tabbar-bottom) z-10 px-4">
+      <ul className="mx-auto flex h-(--tabbar-height) max-w-md items-center justify-between rounded-full bg-bar px-2 shadow-bar backdrop-blur-xl">
         {items.map((item, index) => {
           const active = index === activeIndex
           return (
-            <li key={item.id} className="flex-1">
+            <li key={item.id}>
               <button
                 type="button"
+                aria-label={item.label}
                 aria-current={active ? 'page' : undefined}
                 onClick={() => (active ? onReselect(index) : onSelect(index))}
-                className={`flex h-[49px] w-full flex-col items-center justify-center gap-0.5 text-[10px] font-medium ${
-                  active ? 'text-accent' : 'text-label-secondary'
+                className={`flex h-12 items-center justify-center gap-2 rounded-full transition-colors ${
+                  active
+                    ? 'bg-accent-soft px-4 text-[14px] font-extrabold text-accent-ink'
+                    : 'w-13 text-label-secondary'
                 }`}
               >
-                <span className="h-6 w-6">{item.icon}</span>
-                {item.label}
+                <span className="h-6 w-6 shrink-0">{item.icon}</span>
+                {active && <span aria-hidden="true">{item.label}</span>}
               </button>
             </li>
           )

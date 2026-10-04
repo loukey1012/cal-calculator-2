@@ -1,4 +1,5 @@
 import { Button } from '../../components/ios/Button'
+import { ChevronLeftIcon, ChevronRightIcon } from '../../components/ios/icons'
 import { fromLocalDateString } from '../../lib/dates'
 import { addMonths, monthGrid, monthStart, type DayStatus } from './calendar'
 
@@ -22,8 +23,8 @@ const STATUS_TEXT: Record<DayStatus, string> = {
 const STATUS_CLASSES: Record<DayStatus, string> = {
   none: 'text-label',
   logged: 'bg-fill text-label',
-  onTarget: 'bg-[#30d158]/25 text-label',
-  over: 'bg-[#ff375f]/25 text-label',
+  onTarget: 'bg-success/25 text-label',
+  over: 'bg-destructive/25 text-label',
 }
 
 type MonthCalendarProps = {
@@ -49,30 +50,30 @@ export function MonthCalendar({
   const isCurrentMonth = month >= monthStart(today)
 
   return (
-    <section className="mt-4 rounded-xl bg-bg-elevated p-3">
+    <section className="mt-4 rounded-[28px] bg-bg-elevated p-4 shadow-card">
       <div className="flex items-center justify-between">
         <Button
           variant="plain"
           aria-label="Previous month"
           onClick={() => onChangeMonth(addMonths(month, -1))}
         >
-          ‹
+          <ChevronLeftIcon className="h-5 w-5" />
         </Button>
-        <h2 className="text-[17px] font-semibold">{title}</h2>
+        <h2 className="font-display text-[17px] font-bold">{title}</h2>
         <Button
           variant="plain"
           aria-label="Next month"
           disabled={isCurrentMonth}
           onClick={() => onChangeMonth(addMonths(month, 1))}
         >
-          ›
+          <ChevronRightIcon className="h-5 w-5" />
         </Button>
       </div>
       <table className="mt-1 w-full table-fixed text-center">
         <thead>
           <tr>
             {WEEKDAYS.map((weekday) => (
-              <th key={weekday} className="pb-1 text-[12px] font-medium text-label-secondary">
+              <th key={weekday} className="caption pb-1 text-[11px]">
                 {weekday}
               </th>
             ))}
@@ -122,9 +123,9 @@ function DayButton({ date, today, selected, status, onSelect }: DayButtonProps) 
       aria-label={`${isToday ? 'Today, ' : ''}${label}${STATUS_TEXT[status]}`}
       disabled={date > today}
       onClick={() => onSelect(date)}
-      className={`mx-auto flex h-9 w-9 items-center justify-center rounded-full text-[15px] disabled:opacity-30 ${
-        // like the iOS calendar: the selected day is filled with the accent color
-        selected ? 'bg-accent font-semibold text-white' : STATUS_CLASSES[status]
+      className={`mx-auto flex h-10 w-10 items-center justify-center rounded-full text-[15px] font-semibold disabled:opacity-30 ${
+        // the selected day is filled with the accent color
+        selected ? 'bg-accent font-extrabold text-on-accent' : STATUS_CLASSES[status]
       } ${isToday ? 'ring-2 ring-accent' : ''}`}
     >
       {Number(date.slice(8))}

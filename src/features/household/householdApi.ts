@@ -44,7 +44,7 @@ export async function joinHousehold(inviteCode: string): Promise<Household> {
 }
 
 /** The profile fields a user may change themselves (the database grants no other columns). */
-export type ProfilePatch = Partial<Pick<Profile, 'display_name' | 'accent_color'>>
+export type ProfilePatch = Partial<Pick<Profile, 'display_name' | 'accent_color' | 'appearance'>>
 
 export async function updateProfile(userId: string, patch: ProfilePatch): Promise<void> {
   const { error } = await supabase.from('profiles').update(patch).eq('id', userId)

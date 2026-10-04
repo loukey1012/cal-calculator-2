@@ -1,4 +1,4 @@
-import { SegmentedControl } from '../../components/ios/SegmentedControl'
+import { Avatar } from '../../components/ios/Avatar'
 import { displayName } from './hooks'
 import type { Profile } from './householdApi'
 
@@ -12,13 +12,28 @@ type PersonSwitchProps = {
 export function PersonSwitch({ people, selectedId, onChange }: PersonSwitchProps) {
   if (people.length < 2) return null
   return (
-    <div className="mt-2">
-      <SegmentedControl
-        label="Person"
-        options={people.map((member) => ({ value: member.id, label: displayName(member) }))}
-        value={selectedId}
-        onChange={onChange}
-      />
+    <div role="radiogroup" aria-label="Person" className="mt-3 flex flex-wrap gap-2">
+      {people.map((member) => {
+        const selected = member.id === selectedId
+        const name = displayName(member)
+        return (
+          <button
+            key={member.id}
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            onClick={() => onChange(member.id)}
+            className={`flex h-11 items-center gap-2 rounded-full pr-4 pl-1.5 text-[15px] transition-colors ${
+              selected
+                ? 'bg-bg-elevated font-bold text-label shadow-card'
+                : 'font-semibold text-label-secondary'
+            }`}
+          >
+            <Avatar name={name} color={member.accent_color} />
+            {name}
+          </button>
+        )
+      })}
     </div>
   )
 }

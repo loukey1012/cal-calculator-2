@@ -116,7 +116,7 @@ export function AuthScreen() {
         {notice && (
           <p
             role="status"
-            className="mt-4 rounded-xl bg-accent/10 px-4 py-3 text-[15px] text-label"
+            className="mt-4 rounded-2xl bg-accent-soft px-4 py-3 text-[15px] text-label"
           >
             {notice}
           </p>

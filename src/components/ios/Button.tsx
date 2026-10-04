@@ -8,9 +8,10 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 }
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
-  filled: 'w-full rounded-xl bg-accent px-4 py-3.5 text-[17px] font-semibold text-white',
-  plain: 'px-2 py-2 text-[17px] text-accent',
-  destructive: 'w-full rounded-xl bg-bg-elevated px-4 py-3 text-[17px] text-destructive',
+  filled: 'w-full rounded-2xl bg-accent px-4 py-3.5 text-[17px] font-bold text-on-accent',
+  plain: 'px-2 py-2 text-[17px] font-semibold text-accent-ink',
+  destructive:
+    'w-full rounded-2xl bg-bg-elevated px-4 py-3.5 text-[17px] font-semibold text-destructive shadow-card',
 }
 
 export function Button({

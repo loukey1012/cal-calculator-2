@@ -10,7 +10,7 @@ import { TodayPage } from '../features/today/TodayPage'
 import { useCurrentUser } from './currentUser'
 import { useResumeOfflineChanges, useSaveWhenHidden } from './offlineLifecycle'
 import { SyncStatus } from './SyncStatus'
-import { useAccentColor } from './useAccentColor'
+import { useAppearance } from '../features/appearance/useAppearance'
 
 const TABS = [
   { id: 'today', label: 'Today', path: '/today', icon: <TodayIcon />, Page: TodayPage },
@@ -53,7 +53,7 @@ function allowTabSwipe(_embla: unknown, event: MouseEvent | TouchEvent): boolean
 /** The signed-in app: four pages side by side, switched by the tab bar or by swiping. */
 export function TabShell() {
   const { profile } = useCurrentUser()
-  useAccentColor(profile.accent_color)
+  useAppearance(profile)
   useResumeOfflineChanges()
   useSaveWhenHidden()
 

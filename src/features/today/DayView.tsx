@@ -1,8 +1,7 @@
-import { useState } from 'react'
+import { useState, type ComponentType, type SVGProps } from 'react'
 import { Button } from '../../components/ios/Button'
 import { ErrorBanner } from '../../components/ios/ErrorBanner'
-import { GroupedSection } from '../../components/ios/GroupedSection'
-import { ListRow } from '../../components/ios/ListRow'
+import { BreakfastIcon, DinnerIcon, LunchIcon, SnackIcon } from '../../components/ios/icons'
 import { toUserMessage } from '../../lib/errors'
 import { displayName } from '../household/hooks'
 import type { Profile } from '../household/householdApi'
@@ -13,10 +12,49 @@ import { formatKcal, macroSummary } from '../nutrition/format'
 import { mealTotals, sumTotals } from '../nutrition/totals'
 import { GoalCard } from './GoalCard'
 
-function mealSubtitle(loading: boolean, offline: boolean, count: number): string {
+const MEAL_ICONS: Record<MealType, ComponentType<SVGProps<SVGSVGElement>>> = {
+  breakfast: BreakfastIcon,
+  lunch: LunchIcon,
+  dinner: DinnerIcon,
+  snack: SnackIcon,
+}
+
+function itemCount(count: number): string {
+  return count === 1 ? '1 item' : `${count} items`
+}
+
+function mealSubtitle(loading: boolean, offline: boolean, count: number, kcal: number): string {
   if (loading) return offline ? 'Offline – not loaded yet' : 'Loading…'
   if (count === 0) return 'Nothing logged'
-  return count === 1 ? '1 item' : `${count} items`
+  return `${formatKcal(kcal)} kcal · ${itemCount(count)}`
+}
+
+type MealCardProps = {
+  readonly type: MealType
+  readonly label: string
+  readonly subtitle: string
+  readonly onOpen: () => void
+}
+
+function MealCard({ type, label, subtitle, onOpen }: MealCardProps) {
+  const MealIcon = MEAL_ICONS[type]
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="flex flex-col gap-3 rounded-[22px] bg-bg-elevated p-4 text-left shadow-card transition-transform active:scale-[0.98]"
+    >
+      <span className="grid h-9 w-9 place-items-center rounded-xl bg-accent-soft text-accent-ink">
+        <MealIcon className="h-5 w-5" />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-[16px] font-extrabold">{label}</span>
+        <span className="block truncate text-[13px] font-semibold text-label-secondary">
+          {subtitle}
+        </span>
+      </span>
+    </button>
+  )
 }
 
 type DayViewProps = {
@@ -26,7 +64,7 @@ type DayViewProps = {
   readonly date: string
 }
 
-/** A person's day: goal rings, total and the four meals, each opening an editable meal sheet. */
+/** A person's day: goal progress, total and the four meals, each opening an editable meal sheet. */
 export function DayView({ person, isOwnDay, date }: DayViewProps) {
   const day = useDay(person.id, date)
   // the sheet belongs to the day it was opened on, so it closes when the day rolls over
@@ -68,26 +106,35 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
             date={date}
             totals={dayTotals}
           />
-          <GroupedSection>
-            <div data-testid="day-total">
-              <ListRow
-                title="Total"
-                subtitle={day.isPending ? 'Loading…' : macroSummary(dayTotals)}
-                detail={day.isPending ? undefined : `${formatKcal(dayTotals.kcal)} kcal`}
-              />
+          <section className="mt-6">
+            <div data-testid="day-total" className="mb-3 px-1">
+              <div className="flex items-baseline justify-between gap-3">
+                <h2 className="font-display text-[20px] font-bold">Meals</h2>
+                {!day.isPending && (
+                  <span className="text-[15px] font-bold">{formatKcal(dayTotals.kcal)} kcal</span>
+                )}
+              </div>
+              <p className="text-[13px] font-semibold text-label-secondary">
+                {day.isPending ? 'Loading…' : macroSummary(dayTotals)}
+              </p>
             </div>
-          </GroupedSection>
-          <GroupedSection header="Meals">
-            {meals.map(({ type, label, count, totals }) => (
-              <ListRow
-                key={type}
-                title={label}
-                subtitle={mealSubtitle(day.isPending, day.fetchStatus === 'paused', count)}
-                detail={count > 0 ? `${formatKcal(totals.kcal)} kcal` : undefined}
-                onClick={() => setOpenMeal({ type, date })}
-              />
-            ))}
-          </GroupedSection>
+            <div className="grid grid-cols-2 gap-3">
+              {meals.map(({ type, label, count, totals }) => (
+                <MealCard
+                  key={type}
+                  type={type}
+                  label={label}
+                  subtitle={mealSubtitle(
+                    day.isPending,
+                    day.fetchStatus === 'paused',
+                    count,
+                    totals.kcal,
+                  )}
+                  onOpen={() => setOpenMeal({ type, date })}
+                />
+              ))}
+            </div>
+          </section>
         </>
       )}
       <MealSheet

@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Button } from '../../components/ios/Button'
 import { toUserMessage } from '../../lib/errors'
-import { GoalRings } from '../goals/GoalRings'
+import { useMyAppearance } from '../appearance/useMyAppearance'
+import { GoalProgressView } from '../goals/GoalProgressView'
 import { GoalSheet } from '../goals/GoalSheet'
 import { useGoals } from '../goals/hooks'
 import { goalForDate, goalProgress } from '../nutrition/goals'
@@ -21,6 +22,7 @@ const MESSAGE = 'py-2 text-center text-[15px] text-label-secondary'
 /** The day's progress against the goal that was valid on that day. */
 export function GoalCard({ userId, isOwnGoal, name, date, totals }: GoalCardProps) {
   const goals = useGoals(userId)
+  const { progressStyle } = useMyAppearance()
   const [editing, setEditing] = useState(false)
   const goal = goalForDate(goals.data ?? [], date)
 
@@ -41,7 +43,8 @@ export function GoalCard({ userId, isOwnGoal, name, date, totals }: GoalCardProp
         </div>
       )
     }
-    if (goal) return <GoalRings progress={goalProgress(totals, goal)} />
+    if (goal)
+      return <GoalProgressView progress={goalProgress(totals, goal)} style={progressStyle} />
     if (!isOwnGoal) return <p className={MESSAGE}>{name} hasn’t set a daily goal yet.</p>
     return (
       <div className="py-2 text-center">
@@ -56,7 +59,7 @@ export function GoalCard({ userId, isOwnGoal, name, date, totals }: GoalCardProp
   }
 
   return (
-    <section className="mt-4 rounded-xl bg-bg-elevated p-4">
+    <section className="mt-4 rounded-[28px] bg-bg-elevated p-5 shadow-card">
       {renderContent()}
       {isOwnGoal && (
         <GoalSheet

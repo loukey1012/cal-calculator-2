@@ -29,6 +29,7 @@ const PROFILE = {
   household_id: 'h1',
   display_name: 'Lukas',
   accent_color: '#007aff',
+  appearance: {},
   created_at: '',
   updated_at: '',
 }

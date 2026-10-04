@@ -88,7 +88,7 @@ function SelectedDay({ day, person, isOwnDay }: SelectedDayProps) {
   const title = new Intl.DateTimeFormat(undefined, DAY_TITLE).format(fromLocalDateString(day))
   return (
     <section aria-labelledby="history-day-title" className="mt-6">
-      <h2 id="history-day-title" className="px-4 text-[22px] font-bold">
+      <h2 id="history-day-title" className="px-1 font-display text-[22px] font-bold">
         {title}
       </h2>
       <DayView key={person.id} person={person} isOwnDay={isOwnDay} date={day} />
@@ -130,7 +130,10 @@ function MonthOverview({
       {totals.isError && totals.data === undefined ? (
         <ErrorBanner message={toUserMessage(totals.error)} />
       ) : (
-        <p data-testid="month-summary" className="mt-3 px-4 text-[15px] text-label-secondary">
+        <p
+          data-testid="month-summary"
+          className="mt-3 px-1 text-[14px] font-medium text-label-secondary"
+        >
           {totals.isPending ? 'Loading…' : summaryText(monthSummary(totals.data ?? []))}
         </p>
       )}

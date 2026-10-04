@@ -1,6 +1,6 @@
 # CALculator2
 
-A household meal and nutrition tracker that looks and feels like an iOS app. It runs as a Progressive Web App (PWA) installed on the iPhone home screen, is hosted on Vercel and stores its data in Supabase.
+A household meal and nutrition tracker with a modern, card-based look that each person can customize. It runs as a Progressive Web App (PWA) installed on the iPhone home screen, is hosted on Vercel and stores its data in Supabase.
 
 Built for a two-person household: both members log their own meals, can see and edit each other's days, and share one ingredient database.
 
@@ -20,10 +20,10 @@ Built for a two-person household: both members log their own meals, can see and 
 - **Day total** and per-meal totals. Unknown nutrients show as "–" instead of a misleading 0.
 - "Today" moves on at midnight, and when the app comes back to the foreground on a later day.
 
-### Daily goals and rings
+### Daily goals and progress
 
 - Per-person daily goal: **calories required**; protein, carbs and fat optional.
-- **Concentric rings** in the style of Apple's Activity rings, showing consumed / target and how much is left or over. Calories always get a ring; each macro gets one only if it has a target.
+- A **progress card** on each day: a large calorie ring with the kcal left (or over) in the middle, and a small ring per macro. Shows consumed / target and how much is left or over. Calories always show; each macro only if it has a target. As **bars** or **compact** bars instead, if you prefer (Settings › Appearance).
 - Goals have a history: a new goal applies **from today on**, and past days keep the goal they had.
 - A "≥" marks totals that are only a lower bound (some logged items had no value for that nutrient).
 
@@ -52,12 +52,22 @@ Built for a two-person household: both members log their own meals, can see and 
 - A pill above the tab bar shows the state: _Offline_, _Offline · 2 changes pending_, _Saving 2 changes…_
 - iOS doesn't run web apps in the background, so queued changes go out the next time the app is open with a connection.
 
-### iOS look and feel
+### Look and feel
 
-- Large titles, inset grouped lists, bottom sheets (drag down to close), segmented controls, switches and swipe actions.
-- **Bottom tab bar** (Today · History · Ingredients · Settings). **Swipe left and right** to switch tabs with an animated settle, and tap the active tab to scroll to the top.
-- Light and dark mode follow the system. **Accent color** per person (eight iOS colors) and your **name** shown to the household, both editable in Settings.
+- Rounded cards on a soft background, the Manrope font, meals as a 2×2 grid of cards, avatars (initial on each person's accent color) in the person switch and member list. Bottom sheets (drag down to close), segmented controls, switches and swipe actions.
+- **Floating tab bar** (Today · History · Ingredients · Settings): the active tab shows its label in an accent tint. **Swipe left and right** to switch tabs with an animated settle, and tap the active tab to scroll to the top.
 - Installable to the home screen (manifest, icons, safe areas, no zoom on input focus).
+
+### Appearance (Settings › Appearance)
+
+Everything here is saved **to your account**, never to the device: you get the same look on every phone or browser you log in on. Changes apply instantly, with a live preview at the top.
+
+- **Theme:** System, Light or Dark.
+- **Dark style:** **Soft** (deep grey, rounded) or **Bento** (near-black, Space Grotesk numbers, uppercase labels). Used whenever the app is dark, also with System at night.
+- **Accent color:** 12 colors (buttons, the active tab, your avatar). Text in the accent color is darkened or lightened automatically so it stays readable, e.g. Lime on a light background.
+- **Goal colors:** Vivid, Pastel, Accent shades or High contrast.
+- **Progress style:** Rings, Bars or Compact.
+- Your **name** shown to the household is under Settings › Account.
 
 ### Coming next
 
@@ -76,7 +86,8 @@ Ideas for later (not planned yet): barcode scanning, recent/favorite ingredients
 | Area               | Choice                                                                             |
 | ------------------ | ---------------------------------------------------------------------------------- |
 | App                | React 19, TypeScript (strict), Vite 8                                              |
-| Styling            | Tailwind CSS 4 with iOS system colors as CSS variables                             |
+| Styling            | Tailwind CSS 4; theme colors as CSS variables per scheme (light, soft, bento)      |
+| Fonts              | Manrope and Space Grotesk (Fontsource, bundled so they work offline)               |
 | Data               | TanStack Query 5 (+ persistence to `localStorage`), supabase-js                    |
 | Routing / gestures | React Router, Embla Carousel                                                       |
 | Validation         | Zod                                                                                |
@@ -91,13 +102,14 @@ Ideas for later (not planned yet): barcode scanning, recent/favorite ingredients
 ```
 src/
   app/            tab shell, swipe navigation, current user, offline lifecycle, sync status
-  components/ios/ iOS-style building blocks (Sheet, ListRow, TabBar, SegmentedControl, …)
+  components/ios/ UI building blocks (Sheet, ListRow, TabBar, SegmentedControl, Avatar, …)
   features/
+    appearance/   per-account theme, dark style, accent, goal colors, progress style; Appearance page
     auth/         login, sign-up, session (clears cached data on sign-out / account change)
     household/    profile, household, invite codes, onboarding
     ingredients/  ingredient database: API, form parsing, listing, screens
     meals/        day model, meal sheet, offline-capable day changes
-    goals/        goal history, goal form, rings
+    goals/        goal history, goal form, progress card (rings / bars / compact)
     nutrition/    pure nutrition math: units, totals, goals, formatting
     today/ history/ settings/   tab pages
   lib/            supabase client, env validation, errors, persistence, dates, numbers
@@ -113,7 +125,7 @@ scripts/
 
 ### Data model (Supabase)
 
-- `households`, `profiles` (one per auth user, created by a trigger)
+- `households`, `profiles` (one per auth user, created by a trigger; holds the name, accent color and `appearance` JSON)
 - `goal_history` (goal valid from a date)
 - `categories`, `ingredients` (per-100 g and/or per-unit columns; at least one calorie value required)
 - `meals` (unique per user, local date and meal type), `meal_items` (nutrition snapshot plus a basis multiplier)
@@ -165,7 +177,7 @@ pnpm lint && pnpm typecheck && pnpm format:check
 pnpm db:types       # regenerate src/lib/database.types.ts from the linked project
 ```
 
-**End-to-end journeys** (log a meal, goals and partner, history, ingredients, offline) run the real app against the dev project. Build it against dev and pass the test credentials:
+**End-to-end journeys** (log a meal, goals and partner, history, ingredients, offline, appearance following the account to a new device) run the real app against the dev project. Build it against dev and pass the test credentials:
 
 ```bash
 set -a; . ./.env.test.local; set +a

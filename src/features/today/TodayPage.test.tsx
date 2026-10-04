@@ -29,6 +29,7 @@ const PROFILE = {
   household_id: 'h1',
   display_name: 'Lukas',
   accent_color: '#007aff',
+  appearance: {},
   created_at: '',
   updated_at: '',
 }
@@ -201,11 +202,10 @@ describe('TodayPage', () => {
     renderPage()
 
     const person = await screen.findByRole('radiogroup', { name: 'Person' })
-    expect(
-      within(person)
-        .getAllByRole('radio')
-        .map((option) => option.textContent),
-    ).toEqual(['Lukas', 'Anna'])
+    const [first, second, ...rest] = within(person).getAllByRole('radio')
+    expect(first).toHaveAccessibleName('Lukas')
+    expect(second).toHaveAccessibleName('Anna')
+    expect(rest).toHaveLength(0)
     await user.click(within(person).getByRole('radio', { name: 'Anna' }))
 
     expect(fetchDay).toHaveBeenLastCalledWith('u2', '2026-10-01')

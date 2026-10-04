@@ -75,7 +75,7 @@ export function ToggleRow({ label, checked, onChange, error }: ToggleRowProps) {
           aria-describedby={error ? `${id}-error` : undefined}
           onClick={() => onChange(!checked)}
           className={`relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors ${
-            checked ? 'bg-[#34c759]' : 'bg-fill'
+            checked ? 'bg-success' : 'bg-track'
           }`}
         >
           <span

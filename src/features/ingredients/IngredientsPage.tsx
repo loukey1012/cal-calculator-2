@@ -40,8 +40,8 @@ function CategoryChips({ categories, selectedId, onSelect }: CategoryChipsProps)
             type="button"
             aria-pressed={selected}
             onClick={() => onSelect(chip.id)}
-            className={`shrink-0 rounded-full px-3.5 py-1.5 text-[15px] ${
-              selected ? 'bg-accent text-white' : 'bg-bg-elevated text-label'
+            className={`min-h-9 shrink-0 rounded-full px-4 text-[14px] font-bold ${
+              selected ? 'bg-accent text-on-accent' : 'bg-bg-elevated text-label shadow-card'
             }`}
           >
             {chip.name}

@@ -1,13 +1,13 @@
 import type { SVGProps } from 'react'
 
-// Outline icons in the spirit of SF Symbols; they inherit the text color.
+// Rounded outline icons; they inherit the text color.
 function Icon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth={1.8}
+      strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
@@ -73,6 +73,51 @@ export function SearchIcon(props: SVGProps<SVGSVGElement>) {
     <Icon strokeWidth={2} {...props}>
       <circle cx="11" cy="11" r="6.5" />
       <path d="M16 16l4 4" />
+    </Icon>
+  )
+}
+
+export function BreakfastIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2.5v2M12 19.5v2M4.6 4.6 6 6M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4" />
+    </Icon>
+  )
+}
+
+export function LunchIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon {...props}>
+      <path d="M3 11h18a9 9 0 0 1-18 0z" />
+      <path d="M8 7.5c0-1.5 1-2 1-3.5M12 7.5c0-1.5 1-2 1-3.5M16 7.5c0-1.5 1-2 1-3.5" />
+    </Icon>
+  )
+}
+
+export function DinnerIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon {...props}>
+      <path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" />
+    </Icon>
+  )
+}
+
+export function SnackIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <circle cx="9" cy="10" r="0.8" fill="currentColor" />
+      <circle cx="14" cy="14.5" r="0.8" fill="currentColor" />
+      <circle cx="15" cy="9" r="0.8" fill="currentColor" />
+    </Icon>
+  )
+}
+
+export function ChevronLeftIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon strokeWidth={2.4} {...props}>
+      <path d="M14.5 6l-6 6 6 6" />
     </Icon>
   )
 }

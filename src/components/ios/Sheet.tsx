@@ -84,7 +84,7 @@ function SheetPanel({ onClose, title, action, children }: Omit<SheetProps, 'open
         aria-labelledby={titleId}
         tabIndex={-1}
         style={dragOffset ? { transform: `translateY(${dragOffset}px)` } : undefined}
-        className="relative flex max-h-[92dvh] w-full max-w-md animate-sheet-in flex-col rounded-t-[14px] bg-bg pb-safe-bottom text-label outline-none"
+        className="relative flex max-h-[92dvh] w-full max-w-md animate-sheet-in flex-col rounded-t-[28px] bg-bg pb-safe-bottom text-label outline-none"
       >
         <div
           data-testid="sheet-drag-handle"
@@ -101,7 +101,7 @@ function SheetPanel({ onClose, title, action, children }: Omit<SheetProps, 'open
                 Close
               </Button>
             </div>
-            <h2 id={titleId} className="text-[17px] font-semibold">
+            <h2 id={titleId} className="font-display text-[17px] font-bold">
               {title}
             </h2>
             <div className="text-right">{action}</div>
