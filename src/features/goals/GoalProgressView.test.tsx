@@ -27,7 +27,7 @@ function items() {
 }
 
 describe('GoalProgressView', () => {
-  test.each(['rings', 'bars', 'compact'] as const)(
+  test.each(['rings', 'ringBars', 'bars', 'compact'] as const)(
     '%s: one item per goal with consumed, target and what is left',
     (style) => {
       render(<GoalProgressView progress={[KCAL, PROTEIN]} style={style} />)
@@ -67,5 +67,14 @@ describe('GoalProgressView', () => {
 
     expect(screen.queryByTestId('ring')).not.toBeInTheDocument()
     expect(screen.getAllByTestId('bar').map((bar) => bar.dataset.fill)).toEqual(['0.457', '1'])
+  })
+
+  test('ring + bars: a ring for calories only, bars for the macros with their left line', () => {
+    render(<GoalProgressView progress={[KCAL, PROTEIN]} style="ringBars" />)
+
+    expect(screen.getAllByTestId('ring')).toHaveLength(1)
+    expect(screen.getByTestId('ring')).toHaveAttribute('data-fill', '0.457')
+    expect(screen.getAllByTestId('bar').map((bar) => bar.dataset.fill)).toEqual(['1'])
+    expect(items()[1]).toHaveTextContent('5.0 g over')
   })
 })

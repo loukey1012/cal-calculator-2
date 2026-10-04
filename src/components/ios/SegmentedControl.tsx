@@ -24,7 +24,7 @@ export function SegmentedControl<T extends string>({
             role="radio"
             aria-checked={selected}
             onClick={() => onChange(option.value)}
-            className={`min-h-10 flex-1 rounded-xl px-2 text-[14px] font-bold transition-colors ${
+            className={`min-h-10 flex-1 rounded-xl px-1 py-1 text-center text-[13px] leading-tight font-bold transition-colors ${
               selected ? 'bg-segment-selected text-label shadow-sm' : 'text-label-secondary'
             }`}
           >

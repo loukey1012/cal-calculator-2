@@ -98,6 +98,16 @@ function Bar({ goal, color, thin = false }: MeterProps & { thin?: boolean }) {
   )
 }
 
+/** the calorie headline is a big ring in both ring styles */
+function kcalAsRing(style: ProgressStyle): boolean {
+  return style === 'rings' || style === 'ringBars'
+}
+
+/** only the full ring style turns the macros into rings too */
+function macrosAsRings(style: ProgressStyle): boolean {
+  return style === 'rings'
+}
+
 const KCAL_RING_SIZE = 148
 const KCAL_RING_STROKE = 14
 const MACRO_RING_SIZE = 52
@@ -109,7 +119,7 @@ function KcalHero({ goal, style }: { goal: GoalProgress; style: ProgressStyle })
   const remaining = amount(Math.abs(goal.remaining), unit)
   const remainingLabel = `kcal ${over ? 'over' : 'left'}`
 
-  if (style === 'rings') {
+  if (kcalAsRing(style)) {
     return (
       <li className="col-span-full flex items-center gap-5">
         <div className="relative">
@@ -171,7 +181,7 @@ function MacroItem({ goal, style }: { goal: GoalProgress; style: ProgressStyle }
     </div>
   )
 
-  if (style === 'rings') {
+  if (macrosAsRings(style)) {
     return (
       <li className="flex flex-col items-center gap-2 text-center">
         <Ring goal={goal} color={color} size={MACRO_RING_SIZE} stroke={MACRO_RING_STROKE} />

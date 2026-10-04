@@ -17,7 +17,7 @@ test('the chosen look is saved to the account and follows the user to a new devi
   await settings.getByRole('radio', { name: 'Dark', exact: true }).click()
   await settings.getByRole('radio', { name: /Bento/ }).click()
   await settings.getByRole('radio', { name: 'Lime' }).click()
-  await settings.getByRole('radio', { name: 'Bars' }).click()
+  await settings.getByRole('radio', { name: 'Bars', exact: true }).click()
 
   const html = page.locator('html')
   await expect(html).toHaveAttribute('data-scheme', 'bento')

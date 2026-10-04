@@ -30,6 +30,7 @@ const THEME_OPTIONS = [
 
 const PROGRESS_OPTIONS = [
   { value: 'rings', label: 'Rings' },
+  { value: 'ringBars', label: 'Ring + bars' },
   { value: 'bars', label: 'Bars' },
   { value: 'compact', label: 'Compact' },
 ] as const

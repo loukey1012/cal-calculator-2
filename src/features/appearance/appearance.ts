@@ -4,7 +4,7 @@ import { mixHex, onColor, readableInk } from '../../lib/color'
 export const THEMES = ['system', 'light', 'dark'] as const
 export const DARK_STYLES = ['soft', 'bento'] as const
 export const GOAL_PALETTES = ['vivid', 'pastel', 'accent', 'contrast'] as const
-export const PROGRESS_STYLES = ['rings', 'bars', 'compact'] as const
+export const PROGRESS_STYLES = ['rings', 'ringBars', 'bars', 'compact'] as const
 
 export type Theme = (typeof THEMES)[number]
 export type DarkStyle = (typeof DARK_STYLES)[number]
@@ -17,7 +17,7 @@ export const DEFAULT_APPEARANCE = {
   theme: 'system',
   darkStyle: 'soft',
   goalPalette: 'vivid',
-  progressStyle: 'rings',
+  progressStyle: 'ringBars',
 } as const satisfies Record<string, string>
 
 // every field falls back on its own, so one unknown value (e.g. from a newer app version)

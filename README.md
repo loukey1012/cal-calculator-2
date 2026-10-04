@@ -23,7 +23,7 @@ Built for a two-person household: both members log their own meals, can see and 
 ### Daily goals and progress
 
 - Per-person daily goal: **calories required**; protein, carbs and fat optional.
-- A **progress card** on each day: a large calorie ring with the kcal left (or over) in the middle, and a small ring per macro. Shows consumed / target and how much is left or over. Calories always show; each macro only if it has a target. As **bars** or **compact** bars instead, if you prefer (Settings › Appearance).
+- A **progress card** on each day: a large calorie ring with the kcal left (or over) in the middle, and a bar per macro (**Ring + bars**, the default). Shows consumed / target and how much is left or over. Calories always show; each macro only if it has a target. Also available as a small ring per macro, all **bars**, or **compact** bars (Settings › Appearance).
 - Goals have a history: a new goal applies **from today on**, and past days keep the goal they had.
 - A "≥" marks totals that are only a lower bound (some logged items had no value for that nutrient).
 
@@ -66,7 +66,7 @@ Everything here is saved **to your account**, never to the device: you get the s
 - **Dark style:** **Soft** (deep grey, rounded) or **Bento** (near-black, Space Grotesk numbers, uppercase labels). Used whenever the app is dark, also with System at night.
 - **Accent color:** 12 colors (buttons, the active tab, your avatar). Text in the accent color is darkened or lightened automatically so it stays readable, e.g. Lime on a light background.
 - **Goal colors:** Vivid, Pastel, Accent shades or High contrast.
-- **Progress style:** Rings, Bars or Compact.
+- **Progress style:** Rings, **Ring + bars** (default: a calorie ring, bars for the macros), Bars or Compact.
 - Your **name** shown to the household is under Settings › Account.
 
 ### Coming next
@@ -109,7 +109,7 @@ src/
     household/    profile, household, invite codes, onboarding
     ingredients/  ingredient database: API, form parsing, listing, screens
     meals/        day model, meal sheet, offline-capable day changes
-    goals/        goal history, goal form, progress card (rings / bars / compact)
+    goals/        goal history, goal form, progress card (rings / ring + bars / bars / compact)
     nutrition/    pure nutrition math: units, totals, goals, formatting
     today/ history/ settings/   tab pages
   lib/            supabase client, env validation, errors, persistence, dates, numbers

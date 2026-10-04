@@ -25,6 +25,10 @@ describe('parseAppearance', () => {
     expect(parseAppearance(value)).toEqual(DEFAULT_APPEARANCE)
   })
 
+  test('new accounts get ring + bars', () => {
+    expect(DEFAULT_APPEARANCE.progressStyle).toBe('ringBars')
+  })
+
   test('an unknown value only resets that one field', () => {
     expect(parseAppearance({ theme: 'sepia', darkStyle: 'bento' })).toEqual({
       ...DEFAULT_APPEARANCE,

@@ -37,7 +37,10 @@
   --goal-fat: #2f9bd6;
 
   --tabbar-height: 64px;
-  --tabbar-bottom: max(16px, calc(env(safe-area-inset-bottom) + 4px));
+  /* like iOS floating bars, the tab bar reaches into the home-indicator area: it sits
+     ~20px above the screen edge on iPhone (34px inset), clearing the indicator line,
+     and 16px elsewhere. pb-tabbar and SyncStatus derive from this variable. */
+  --tabbar-bottom: max(16px, calc(env(safe-area-inset-bottom) - 14px));
   color-scheme: light;
 }
 
