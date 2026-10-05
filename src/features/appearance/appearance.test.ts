@@ -131,6 +131,44 @@ describe('the pink scheme', () => {
   )
 })
 
+describe('custom goal colors', () => {
+  test('keeps valid colors per goal, lowercased', () => {
+    const parsed = parseAppearance({ customGoalColors: { protein: '#2FA889', fat: '#9466d6' } })
+
+    expect(parsed.customGoalColors).toEqual({ protein: '#2fa889', fat: '#9466d6' })
+  })
+
+  test('drops only the invalid entries', () => {
+    const parsed = parseAppearance({
+      darkStyle: 'bento',
+      customGoalColors: { kcal: 'red', protein: '#2fa889', carbs: '#12345' },
+    })
+
+    expect(parsed.darkStyle).toBe('bento')
+    expect(parsed.customGoalColors).toEqual({ protein: '#2fa889' })
+  })
+
+  test('anything but an object means no custom colors', () => {
+    expect(parseAppearance({ customGoalColors: 'pink' }).customGoalColors ?? {}).toEqual({})
+    expect(parseAppearance({}).customGoalColors ?? {}).toEqual({})
+  })
+
+  test('custom colors replace the palette color of their goal only', () => {
+    const palette = goalColors('vivid', 'light', '#007aff')
+
+    const colors = goalColors('vivid', 'light', '#007aff', { carbs: '#123456' })
+
+    expect(colors).toEqual([palette[0], palette[1], '#123456', palette[3]])
+  })
+
+  test('the CSS variables use the custom colors', () => {
+    const vars = appearanceVariables('vivid', 'pink', '#d6409f', { protein: '#123456' })
+
+    expect(vars['--goal-protein']).toBe('#123456')
+    expect(vars['--goal-kcal']).toBe(goalColors('vivid', 'pink', '#d6409f')[0])
+  })
+})
+
 describe('goalColors', () => {
   test('fixed palettes have one color per goal', () => {
     expect(goalColors('vivid', 'light', '#007aff')).toHaveLength(4)

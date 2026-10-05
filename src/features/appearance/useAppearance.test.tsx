@@ -53,6 +53,17 @@ describe('useAppearance', () => {
     expect(cache).toMatchObject({ theme: 'light', lightStyle: 'pink' })
   })
 
+  test('paints custom goal colors over the palette', () => {
+    renderHook(() =>
+      useAppearance({
+        accent_color: '#007aff',
+        appearance: { goalPalette: 'vivid', customGoalColors: { fat: '#9466d6' } },
+      }),
+    )
+
+    expect(variable('--goal-fat')).toBe('#9466d6')
+  })
+
   test('mirrors the look to localStorage for the next app start', () => {
     renderHook(() =>
       useAppearance({ accent_color: '#007aff', appearance: { theme: 'dark', darkStyle: 'bento' } }),

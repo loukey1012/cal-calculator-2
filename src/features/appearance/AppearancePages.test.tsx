@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react'
+import { fireEvent, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { CurrentUserContext } from '../../app/currentUser'
@@ -31,7 +31,7 @@ const COLORS = '/settings/appearance/colors'
 const PROGRESS = '/settings/appearance/progress'
 const CHIPS = '/settings/appearance/category-chips'
 
-function renderPage(route: string, appearance: Record<string, string> = {}) {
+function renderPage(route: string, appearance: Record<string, unknown> = {}) {
   return renderWithProviders(
     <CurrentUserContext value={{ profile: { ...ME, appearance }, householdId: 'h1' }}>
       <SettingsPage />
@@ -212,5 +212,79 @@ describe('Appearance pages', () => {
 
     expect(heading('Appearance')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /App colors/ })).toBeInTheDocument()
+  })
+})
+
+describe('Ring colors', () => {
+  function ringColorRow(name: string) {
+    return within(screen.getByRole('list', { name: 'Ring colors' })).getByRole('button', {
+      name: new RegExp(name),
+    })
+  }
+
+  test('lists every goal, marking the ones with a custom color', () => {
+    renderPage(PROGRESS, { customGoalColors: { fat: '#9466d6' } })
+
+    expect(ringColorRow('Calories')).toHaveTextContent('Palette')
+    expect(ringColorRow('Protein')).toHaveTextContent('Palette')
+    expect(ringColorRow('Carbs')).toHaveTextContent('Palette')
+    expect(ringColorRow('Fat')).toHaveTextContent('Custom')
+  })
+
+  test('picking a color saves it for that goal only, keeping the other choices', async () => {
+    const user = userEvent.setup()
+    renderPage(PROGRESS, { goalPalette: 'pastel', customGoalColors: { fat: '#9466d6' } })
+
+    await user.click(ringColorRow('Protein'))
+    const sheet = screen.getByRole('dialog', { name: 'Protein color' })
+    await user.click(within(sheet).getByRole('radio', { name: 'Mint' }))
+
+    expect(updateProfile).toHaveBeenCalledWith('u1', {
+      appearance: {
+        ...DEFAULT_APPEARANCE,
+        goalPalette: 'pastel',
+        customGoalColors: { fat: '#9466d6', protein: '#2fa889' },
+      },
+    })
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  test('any color can be chosen with the color picker', async () => {
+    const user = userEvent.setup()
+    renderPage(PROGRESS)
+
+    await user.click(ringColorRow('Calories'))
+    const sheet = screen.getByRole('dialog', { name: 'Calories color' })
+    fireEvent.input(within(sheet).getByLabelText('Custom color'), {
+      target: { value: '#123456' },
+    })
+    await user.click(within(sheet).getByRole('button', { name: 'Use custom color' }))
+
+    expect(updateProfile).toHaveBeenCalledWith('u1', {
+      appearance: { ...DEFAULT_APPEARANCE, customGoalColors: { kcal: '#123456' } },
+    })
+  })
+
+  test('a goal can go back to its palette color', async () => {
+    const user = userEvent.setup()
+    renderPage(PROGRESS, { customGoalColors: { protein: '#123456', fat: '#9466d6' } })
+
+    await user.click(ringColorRow('Protein'))
+    await user.click(screen.getByRole('button', { name: 'Use palette color' }))
+
+    expect(updateProfile).toHaveBeenCalledWith('u1', {
+      appearance: { ...DEFAULT_APPEARANCE, customGoalColors: { fat: '#9466d6' } },
+    })
+  })
+
+  test('choosing a palette resets the custom colors', async () => {
+    const user = userEvent.setup()
+    renderPage(PROGRESS, { customGoalColors: { protein: '#123456' } })
+
+    await user.click(radio('Goal colors', /Pastel/))
+
+    const saved = vi.mocked(updateProfile).mock.calls[0]?.[1]
+    expect(saved).toEqual({ appearance: { ...DEFAULT_APPEARANCE, goalPalette: 'pastel' } })
+    expect(saved?.appearance).not.toHaveProperty('customGoalColors')
   })
 })

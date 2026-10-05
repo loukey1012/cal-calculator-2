@@ -83,3 +83,40 @@ test('the pink light style paints the app pink and is kept across a restart', as
   await page.reload()
   await expect(html).toHaveAttribute('data-scheme', 'pink')
 })
+
+test('each ring can get its own color', async ({ page, backend }) => {
+  const me = await backend.user('Anna')
+  await backend.household([me])
+  await logIn(page, me)
+
+  await page.getByRole('button', { name: 'Settings' }).click()
+  await activePage(page)
+    .getByRole('button', { name: /Appearance/ })
+    .click()
+  const settings = activePage(page)
+  await settings.getByRole('button', { name: /Progress/ }).click()
+  await settings
+    .getByRole('list', { name: 'Ring colors' })
+    .getByRole('button', { name: /Protein/ })
+    .click()
+  await page
+    .getByRole('dialog', { name: 'Protein color' })
+    .getByRole('radio', { name: 'Lavender' })
+    .click()
+
+  await expect
+    .poll(() =>
+      page.locator('html').evaluate((root) => root.style.getPropertyValue('--goal-protein')),
+    )
+    .toBe('#9466d6')
+  await expect
+    .poll(async () => {
+      const { data } = await backend.admin
+        .from('profiles')
+        .select('appearance')
+        .eq('id', me.id)
+        .single()
+      return data?.appearance
+    })
+    .toMatchObject({ customGoalColors: { protein: '#9466d6' } })
+})
