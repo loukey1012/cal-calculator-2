@@ -20,6 +20,7 @@ describe('parseAppearance', () => {
       goalPalette: 'pastel',
       progressStyle: 'bars',
       categoryLayout: 'wrap',
+      appIcon: 'pink',
     }
 
     expect(parseAppearance(stored)).toEqual(stored)
@@ -45,6 +46,21 @@ describe('parseAppearance', () => {
     expect(DEFAULT_APPEARANCE.lightStyle).toBe('classic')
     expect(parseAppearance({ lightStyle: 'pink' }).lightStyle).toBe('pink')
   })
+
+  test('the app icon is Graphite until changed', () => {
+    expect(DEFAULT_APPEARANCE.appIcon).toBe('graphite')
+    expect(parseAppearance({ appIcon: 'sunset' }).appIcon).toBe('sunset')
+  })
+
+  test.each(['macro', 'Pink', '../x', 3])(
+    'an unknown app icon %j falls back to Graphite',
+    (appIcon) => {
+      expect(parseAppearance({ appIcon, theme: 'dark' })).toEqual({
+        ...DEFAULT_APPEARANCE,
+        theme: 'dark',
+      })
+    },
+  )
 
   test('an unknown value only resets that one field', () => {
     expect(parseAppearance({ theme: 'sepia', darkStyle: 'bento' })).toEqual({

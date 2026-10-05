@@ -31,6 +31,7 @@ const MENU = '/settings/appearance'
 const COLORS = '/settings/appearance/colors'
 const PROGRESS = '/settings/appearance/progress'
 const CHIPS = '/settings/appearance/category-chips'
+const ICON = '/settings/appearance/app-icon'
 
 function renderPage(route: string, appearance: { [key: string]: Json } = {}) {
   return renderWithProviders(
@@ -55,7 +56,7 @@ beforeEach(() => {
 })
 
 describe('Appearance menu', () => {
-  test('lists the three pages, each summarising its current choices', () => {
+  test('lists the four pages, each summarising its current choices', () => {
     renderPage(MENU, { theme: 'dark', darkStyle: 'bento', goalPalette: 'pastel' })
 
     expect(heading('Appearance')).toBeInTheDocument()
@@ -65,6 +66,7 @@ describe('Appearance menu', () => {
       'Ring + bars · Pastel',
     )
     expect(screen.getByRole('button', { name: /Category chips/ })).toHaveTextContent('One line')
+    expect(screen.getByRole('button', { name: /App icon/ })).toHaveTextContent('Graphite')
     expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
   })
 
@@ -72,6 +74,7 @@ describe('Appearance menu', () => {
     ['App colors', 'App colors', 'Theme'],
     ['Progress', 'Progress', 'Progress style'],
     ['Category chips', 'Category chips', 'Category chips'],
+    ['App icon', 'App icon', 'App icon'],
   ])('opens %s', async (row, title, group) => {
     const user = userEvent.setup()
     renderPage(MENU)
@@ -124,6 +127,23 @@ describe('Appearance pages', () => {
     expect(radio('Goal colors', /Vivid/)).toHaveAttribute('aria-checked', 'true')
   })
 
+  test('the app icon page offers eight icons, Graphite chosen for a new account', () => {
+    renderPage(ICON)
+
+    expect(
+      within(screen.getByRole('radiogroup', { name: 'App icon' })).getAllByRole('radio'),
+    ).toHaveLength(8)
+    expect(radio('App icon', 'Graphite')).toHaveAttribute('aria-checked', 'true')
+  })
+
+  test('the app icon page shows the chosen icon and how to get it on the home screen', () => {
+    renderPage(ICON, { appIcon: 'leaf' })
+
+    expect(radio('App icon', 'Leaf')).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByRole('img', { name: 'Leaf' })).toHaveAttribute('src', '/icons/leaf/icon.svg')
+    expect(screen.getByText(/remove CALculator from your home screen/i)).toBeInTheDocument()
+  })
+
   test('the category chips page shows its default', () => {
     renderPage(CHIPS)
     expect(radio('Category chips', 'One line')).toHaveAttribute('aria-checked', 'true')
@@ -145,6 +165,7 @@ describe('Appearance pages', () => {
     [PROGRESS, 'Progress style', 'Ring + bars', { progressStyle: 'ringBars' }],
     [CHIPS, 'Category chips', 'All on screen', { categoryLayout: 'wrap' }],
     [CHIPS, 'Category chips', 'Grouped', { categoryLayout: 'grouped' }],
+    [ICON, 'App icon', 'Sunset', { appIcon: 'sunset' }],
   ] as const)(
     '%s saves %s to the account, keeping the other choices',
     async (route, group, name, change) => {

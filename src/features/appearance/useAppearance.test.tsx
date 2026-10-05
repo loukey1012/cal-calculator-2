@@ -1,13 +1,20 @@
 import { renderHook } from '@testing-library/react'
-import { afterEach, describe, expect, test } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import { APPEARANCE_CACHE_KEY } from '../../lib/persistence'
 import { useAppearance } from './useAppearance'
 
 const root = document.documentElement
 const variable = (name: string) => root.style.getPropertyValue(name)
 
+const touchIcon = () => document.querySelector('link[rel="apple-touch-icon"]')?.getAttribute('href')
+
+beforeEach(() => {
+  document.head.innerHTML = '<link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />'
+})
+
 afterEach(() => {
   localStorage.clear()
+  document.head.innerHTML = ''
 })
 
 describe('useAppearance', () => {
@@ -72,5 +79,26 @@ describe('useAppearance', () => {
     const cache = JSON.parse(localStorage.getItem(APPEARANCE_CACHE_KEY) ?? 'null')
     expect(cache).toMatchObject({ theme: 'dark', darkStyle: 'bento' })
     expect(cache.variables['--accent']).toBe('#007aff')
+  })
+
+  test('uses the account’s app icon and goes back to the default when signed out', () => {
+    const { rerender, unmount } = renderHook(
+      ({ appIcon }) => useAppearance({ accent_color: '#007aff', appearance: { appIcon } }),
+      { initialProps: { appIcon: 'violet' } },
+    )
+    expect(touchIcon()).toBe('/icons/violet/apple-touch-icon-180x180.png')
+
+    rerender({ appIcon: 'leaf' })
+    expect(touchIcon()).toBe('/icons/leaf/apple-touch-icon-180x180.png')
+
+    unmount()
+    expect(touchIcon()).toBe('/icons/graphite/apple-touch-icon-180x180.png')
+  })
+
+  test('mirrors the app icon to localStorage for the next app start', () => {
+    renderHook(() => useAppearance({ accent_color: '#007aff', appearance: { appIcon: 'pink' } }))
+
+    const cache = JSON.parse(localStorage.getItem(APPEARANCE_CACHE_KEY) ?? 'null')
+    expect(cache).toMatchObject({ appIcon: 'pink' })
   })
 })
