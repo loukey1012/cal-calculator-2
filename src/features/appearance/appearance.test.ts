@@ -30,6 +30,10 @@ describe('parseAppearance', () => {
     expect(DEFAULT_APPEARANCE.progressStyle).toBe('ringBars')
   })
 
+  test('category chips can be grouped into broad categories', () => {
+    expect(parseAppearance({ categoryLayout: 'grouped' }).categoryLayout).toBe('grouped')
+  })
+
   test('category chips stay on one line until changed', () => {
     expect(DEFAULT_APPEARANCE.categoryLayout).toBe('line')
   })

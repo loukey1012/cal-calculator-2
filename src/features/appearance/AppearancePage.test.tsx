@@ -65,6 +65,7 @@ describe('AppearancePage', () => {
     ['Progress style', 'Compact', { progressStyle: 'compact' }],
     ['Progress style', 'Ring + bars', { progressStyle: 'ringBars' }],
     ['Category chips', 'All on screen', { categoryLayout: 'wrap' }],
+    ['Category chips', 'Grouped', { categoryLayout: 'grouped' }],
   ] as const)('saves %s to the account, keeping the other choices', async (group, name, change) => {
     const user = userEvent.setup()
     renderPage({ theme: 'light', progressStyle: 'bars' })
@@ -102,6 +103,14 @@ describe('AppearancePage', () => {
     const preview = screen.getByRole('img', { name: 'Category chips preview' })
 
     expect(preview.querySelector('[aria-label="Categories"]')).toHaveClass(layoutClass)
+  })
+
+  test('the grouped preview shows a broad category opened up', () => {
+    renderPage({ categoryLayout: 'grouped' })
+
+    const preview = screen.getByRole('img', { name: 'Category chips preview' })
+
+    expect(preview.querySelector('[aria-expanded="true"]')).not.toBeNull()
   })
 
   test('explains when saving fails', async () => {

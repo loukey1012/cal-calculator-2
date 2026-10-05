@@ -1,9 +1,18 @@
 import { describe, expect, test } from 'vitest'
-import { filterIngredients, groupByCategory, nutritionSummary } from './listing'
-import { category, ingredient } from './testData'
+import {
+  ALL_CATEGORIES,
+  chipGroups,
+  filterIngredients,
+  groupByCategory,
+  nutritionSummary,
+} from './listing'
+import { category, categoryGroup, ingredient } from './testData'
 
-const DAIRY = category('c1', 'Dairy')
-const BAKERY = category('c2', 'Bakery')
+const FRIDGE = categoryGroup('g1', 'Fridge')
+const PANTRY = categoryGroup('g2', 'Pantry')
+const EMPTY_GROUP = categoryGroup('g3', 'Empty')
+const DAIRY = category('c1', 'Dairy', 'g1')
+const BAKERY = category('c2', 'Bakery', null)
 const CREAM = ingredient({
   id: 'cream',
   name: 'Cream 7%',
@@ -16,19 +25,62 @@ const BREAD = ingredient({ id: 'bread', name: 'bread', category_id: 'c2', kcal_1
 const BAR = ingredient({ id: 'bar', name: 'Protein bar', kcal_unit: 210, unit_label: 'bar' })
 const ALL = [CREAM, CHEESE, BREAD, BAR]
 
+const CATEGORIES = [DAIRY, BAKERY]
+const filter = (query: string, category = ALL_CATEGORIES) =>
+  filterIngredients(ALL, { query, category }, CATEGORIES)
+
 describe('filterIngredients', () => {
   test('without filters returns everything', () => {
-    expect(filterIngredients(ALL, { query: ' ', categoryId: null })).toEqual(ALL)
+    expect(filter(' ')).toEqual(ALL)
   })
 
   test('matches name or brand, ignoring case and accents', () => {
-    expect(filterIngredients(ALL, { query: 'kase', categoryId: null })).toEqual([CHEESE])
-    expect(filterIngredients(ALL, { query: 'MILB', categoryId: null })).toEqual([CREAM])
+    expect(filter('kase')).toEqual([CHEESE])
+    expect(filter('MILB')).toEqual([CREAM])
   })
 
   test('filters by category, combined with the search', () => {
-    expect(filterIngredients(ALL, { query: '', categoryId: 'c1' })).toEqual([CREAM, CHEESE])
-    expect(filterIngredients(ALL, { query: 'cream', categoryId: 'c2' })).toEqual([])
+    expect(filter('', { kind: 'category', id: 'c1' })).toEqual([CREAM, CHEESE])
+    expect(filter('cream', { kind: 'category', id: 'c2' })).toEqual([])
+  })
+
+  test('filters by broad category: every category inside it', () => {
+    expect(filter('', { kind: 'group', id: 'g1' })).toEqual([CREAM, CHEESE])
+    expect(filter('', { kind: 'group', id: 'g2' })).toEqual([])
+  })
+
+  test('"Other" holds ungrouped categories and ingredients without a category', () => {
+    expect(filter('', { kind: 'group', id: null })).toEqual([BREAD, BAR])
+  })
+})
+
+describe('chipGroups', () => {
+  test('broad categories by name with their categories; empty ones hidden; Other last', () => {
+    const groups = chipGroups([PANTRY, FRIDGE, EMPTY_GROUP], CATEGORIES, ALL)
+
+    expect(groups.map((group) => [group.id, group.name])).toEqual([
+      ['g1', 'Fridge'],
+      [null, 'Other'],
+    ])
+    expect(groups[0]?.categories).toEqual([DAIRY])
+    expect(groups[1]?.categories).toEqual([BAKERY])
+  })
+
+  test('Other shows for ingredients without a category even when every category is grouped', () => {
+    const groups = chipGroups([FRIDGE], [DAIRY], [CREAM, BAR])
+
+    expect(groups.map((group) => group.name)).toEqual(['Fridge', 'Other'])
+    expect(groups[1]?.categories).toEqual([])
+  })
+
+  test('no Other when everything is grouped', () => {
+    expect(chipGroups([FRIDGE], [DAIRY], [CREAM]).map((group) => group.name)).toEqual(['Fridge'])
+  })
+
+  test('a category pointing at an unknown broad category counts as Other', () => {
+    const stray = category('c9', 'Stray', 'deleted')
+
+    expect(chipGroups([], [stray], []).map((group) => group.categories)).toEqual([[stray]])
   })
 })
 

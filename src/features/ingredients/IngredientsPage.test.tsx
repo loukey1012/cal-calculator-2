@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { CurrentUserContext } from '../../app/currentUser'
 import { renderWithProviders } from '../../test/render'
-import { category, ingredient } from './testData'
+import { category, categoryGroup, ingredient } from './testData'
 
 vi.mock('./ingredientsApi', () => ({
   fetchIngredients: vi.fn(),
@@ -15,7 +15,7 @@ vi.mock('./ingredientsApi', () => ({
   createCategory: vi.fn(),
 }))
 
-import { fetchCategories, fetchIngredients } from './ingredientsApi'
+import { fetchCategories, fetchCategoryGroups, fetchIngredients } from './ingredientsApi'
 import { IngredientsPage } from './IngredientsPage'
 
 const PROFILE = {
@@ -46,6 +46,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(fetchIngredients).mockResolvedValue(INGREDIENTS)
   vi.mocked(fetchCategories).mockResolvedValue(CATEGORIES)
+  vi.mocked(fetchCategoryGroups).mockResolvedValue([])
 })
 
 describe('IngredientsPage', () => {
@@ -122,6 +123,31 @@ describe('IngredientsPage', () => {
     await user.click(within(group).getByRole('button', { name: 'Bakery' }))
     expect(screen.getByText('Bread')).toBeInTheDocument()
     expect(screen.queryByText('Käse')).not.toBeInTheDocument()
+  })
+
+  test('grouped: a broad category filters the list and opens its categories', async () => {
+    vi.mocked(fetchCategories).mockResolvedValue([
+      category('c1', 'Dairy', 'g1'),
+      category('c2', 'Bakery', 'g2'),
+    ])
+    vi.mocked(fetchCategoryGroups).mockResolvedValue([
+      categoryGroup('g1', 'Fridge'),
+      categoryGroup('g2', 'Pantry'),
+    ])
+    const user = userEvent.setup()
+    renderPage({ categoryLayout: 'grouped' })
+
+    await user.click(await screen.findByRole('button', { name: 'Pantry' }))
+
+    expect(screen.getByText('Bread')).toBeInTheDocument()
+    expect(screen.queryByText('Käse')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Fridge' }))
+    const fridge = within(screen.getByRole('group', { name: 'Fridge categories' }))
+    await user.click(fridge.getByRole('button', { name: 'Dairy' }))
+
+    expect(screen.getByText('Käse')).toBeInTheDocument()
+    expect(screen.queryByText('Bread')).not.toBeInTheDocument()
   })
 
   test('says when nothing matches the search', async () => {
