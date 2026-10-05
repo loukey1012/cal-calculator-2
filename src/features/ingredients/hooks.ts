@@ -93,12 +93,14 @@ export type SaveIngredientInput = {
   readonly categories: readonly Category[]
 }
 
-function useInvalidateIngredients(householdId: string) {
+/** Refetches ingredients, categories and broad categories, e.g. after one of them changed. */
+export function useInvalidateIngredients(householdId: string): () => Promise<unknown> {
   const queryClient = useQueryClient()
   return () =>
     Promise.all([
       queryClient.invalidateQueries({ queryKey: ingredientKeys.ingredients(householdId) }),
       queryClient.invalidateQueries({ queryKey: ingredientKeys.categories(householdId) }),
+      queryClient.invalidateQueries({ queryKey: ingredientKeys.categoryGroups(householdId) }),
     ])
 }
 

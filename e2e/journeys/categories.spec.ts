@@ -17,7 +17,7 @@ test('manage categories: add a broad category and a category in it, move, rename
       .eq('household_id', household)
       .eq('name', name)
       .single()
-    return (data?.category_groups as { name: string } | null)?.name ?? null
+    return (data?.category_groups as unknown as { name: string } | null)?.name ?? null
   }
 
   await settings.getByRole('button', { name: 'Add Broad Category' }).click()

@@ -43,7 +43,8 @@ Built for a two-person household: both members log their own meals, can see and 
 - Shared per household, **grouped by category**, with **accent-insensitive search** (`kase` finds `Käse`) and category filter chips: one sideways-scrolling line, all on screen, or **grouped** into broad categories that open their categories when tapped (Settings › Appearance).
 - Nutrition **per 100 g and/or per unit**: calories (whole numbers, rounded up), protein, carbs, sugar, fat, saturated fat, fiber, salt. Only calories are required.
 - Unit name and grams per unit, brand, category (created on the fly, optionally inside a **broad category** such as Fresh › Meat & Fish), note.
-- Categories are **deleted automatically** once no ingredient uses them.
+- Categories are **deleted automatically** once their last ingredient leaves them.
+- **Settings › Categories** manages them: add, rename and delete broad categories (their categories move to Other); add, rename, move between broad categories and delete categories (their ingredients stay, without a category). Swipe right to go back to Settings.
 
 ### Works offline
 
@@ -108,7 +109,8 @@ src/
     appearance/   per-account theme, dark style, accent, goal colors, progress style, category chips; Appearance page
     auth/         login, sign-up, session (clears cached data on sign-out / account change)
     household/    profile, household, invite codes, onboarding
-    ingredients/  ingredient database: API, form parsing, listing, screens
+    ingredients/  ingredient database: API, form parsing, listing, category chips, screens
+    categories/   Settings › Categories: broad categories and categories (create, rename, move, delete)
     meals/        day model, meal sheet, offline-capable day changes
     goals/        goal history, goal form, progress card (rings / ring + bars / bars / compact)
     nutrition/    pure nutrition math: units, totals, goals, formatting
@@ -178,7 +180,7 @@ pnpm lint && pnpm typecheck && pnpm format:check
 pnpm db:types       # regenerate src/lib/database.types.ts from the linked project
 ```
 
-**End-to-end journeys** (log a meal, goals and partner, history, ingredients, offline, appearance following the account to a new device) run the real app against the dev project. Build it against dev and pass the test credentials:
+**End-to-end journeys** (log a meal, goals and partner, history, ingredients, category management, offline, appearance following the account to a new device) run the real app against the dev project. Build it against dev and pass the test credentials:
 
 ```bash
 set -a; . ./.env.test.local; set +a

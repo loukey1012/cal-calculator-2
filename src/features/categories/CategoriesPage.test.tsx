@@ -74,8 +74,9 @@ function renderPage() {
 }
 
 const dialog = () => within(screen.getByRole('dialog'))
-const section = (name: string) =>
-  within(screen.getByRole('heading', { level: 2, name }).closest('section') as HTMLElement)
+/** waits for the section to load */
+const section = async (name: string) =>
+  within((await screen.findByRole('heading', { level: 2, name })).closest('section') as HTMLElement)
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -99,16 +100,16 @@ describe('CategoriesPage', () => {
     renderPage()
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Categories' })).toBeInTheDocument()
-    const broad = section('Broad categories')
-    expect(await broad.findByRole('button', { name: /^Fresh/ })).toHaveTextContent('2 categories')
+    const broad = await section('Broad categories')
+    expect(broad.getByRole('button', { name: /^Fresh/ })).toHaveTextContent('2 categories')
     expect(broad.getByRole('button', { name: /^Pantry/ })).toHaveTextContent('1 category')
     expect(
       screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent),
     ).toEqual(['Broad categories', 'Fresh', 'Pantry', 'Other'])
-    expect(section('Fresh').getByRole('button', { name: /^Meat/ })).toHaveTextContent(
+    expect((await section('Fresh')).getByRole('button', { name: /^Meat/ })).toHaveTextContent(
       '2 ingredients',
     )
-    expect(section('Other').getByRole('button', { name: /^Misc/ })).toHaveTextContent(
+    expect((await section('Other')).getByRole('button', { name: /^Misc/ })).toHaveTextContent(
       '0 ingredients',
     )
   })
@@ -129,7 +130,7 @@ describe('CategoriesPage', () => {
     const user = userEvent.setup()
     renderPage()
 
-    await user.click(await section('Broad categories').findByRole('button', { name: /^Fresh/ }))
+    await user.click((await section('Broad categories')).getByRole('button', { name: /^Fresh/ }))
     const name = dialog().getByLabelText('Name')
     expect(name).toHaveValue('Fresh')
     await user.clear(name)
@@ -144,7 +145,7 @@ describe('CategoriesPage', () => {
     const user = userEvent.setup()
     renderPage()
 
-    await user.click(await section('Broad categories').findByRole('button', { name: /^Fresh/ }))
+    await user.click((await section('Broad categories')).getByRole('button', { name: /^Fresh/ }))
     await user.click(dialog().getByRole('button', { name: 'Delete Broad Category' }))
 
     expect(confirm).toHaveBeenCalledWith(expect.stringContaining('2 categories move to Other'))
@@ -156,7 +157,7 @@ describe('CategoriesPage', () => {
     const user = userEvent.setup()
     renderPage()
 
-    await user.click(await section('Broad categories').findByRole('button', { name: /^Fresh/ }))
+    await user.click((await section('Broad categories')).getByRole('button', { name: /^Fresh/ }))
     await user.click(dialog().getByRole('button', { name: 'Delete Broad Category' }))
 
     expect(deleteCategoryGroup).not.toHaveBeenCalled()
@@ -180,7 +181,7 @@ describe('CategoriesPage', () => {
     const user = userEvent.setup()
     renderPage()
 
-    await user.click(await section('Fresh').findByRole('button', { name: /^Meat/ }))
+    await user.click((await section('Fresh')).getByRole('button', { name: /^Meat/ }))
     expect(dialog().getByLabelText('Broad category')).toHaveValue('g1')
     await user.selectOptions(dialog().getByLabelText('Broad category'), 'g2')
     await user.click(dialog().getByRole('button', { name: 'Save' }))
@@ -195,7 +196,7 @@ describe('CategoriesPage', () => {
     const user = userEvent.setup()
     renderPage()
 
-    await user.click(await section('Fresh').findByRole('button', { name: /^Meat/ }))
+    await user.click((await section('Fresh')).getByRole('button', { name: /^Meat/ }))
     await user.click(dialog().getByRole('button', { name: 'Delete Category' }))
 
     expect(confirm).toHaveBeenCalledWith(expect.stringContaining('2 ingredients'))

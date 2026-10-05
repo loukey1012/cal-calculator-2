@@ -10,6 +10,7 @@ import { PageHeader } from '../../components/ios/PageHeader'
 import { toUserMessage } from '../../lib/errors'
 import { parseAppearance, type Appearance } from '../appearance/appearance'
 import { AppearancePage } from '../appearance/AppearancePage'
+import { CategoriesPage } from '../categories/CategoriesPage'
 import { useSignOut } from '../auth/useSignOut'
 import { describeGoal } from '../goals/goalForm'
 import { GoalSheet } from '../goals/GoalSheet'
@@ -29,6 +30,7 @@ function goalDetail(loading: boolean, missing: boolean, goal: Goal | null): stri
 }
 
 const APPEARANCE_PATH = '/settings/appearance'
+const CATEGORIES_PATH = '/settings/categories'
 
 function memberLabel(member: Profile, currentUserId: string): string {
   const name = displayName(member)
@@ -41,10 +43,12 @@ function appearanceSummary({ theme, darkStyle }: Appearance): string {
   return theme === 'dark' ? `Dark · ${style}` : `System · ${style}`
 }
 
-/** Settings, or its Appearance page (kept in the URL like the selected history day). */
+/** Settings, or one of its pages (kept in the URL like the selected history day). */
 export function SettingsPage() {
   const { pathname } = useLocation()
-  return pathname === APPEARANCE_PATH ? <AppearancePage /> : <SettingsOverview />
+  if (pathname === APPEARANCE_PATH) return <AppearancePage />
+  if (pathname === CATEGORIES_PATH) return <CategoriesPage />
+  return <SettingsOverview />
 }
 
 function SettingsOverview() {
@@ -81,6 +85,9 @@ function SettingsOverview() {
           detail={appearanceSummary(parseAppearance(profile.appearance))}
           onClick={() => navigate(APPEARANCE_PATH, { replace: true })}
         />
+      </GroupedSection>
+      <GroupedSection header="Ingredients">
+        <ListRow title="Categories" onClick={() => navigate(CATEGORIES_PATH, { replace: true })} />
       </GroupedSection>
       <GroupedSection header="Goals">
         <ListRow
