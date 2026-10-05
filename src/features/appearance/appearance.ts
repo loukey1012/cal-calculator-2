@@ -8,6 +8,17 @@ const DARK_STYLES = ['soft', 'bento'] as const
 const GOAL_PALETTES = ['vivid', 'pastel', 'accent', 'contrast'] as const
 const PROGRESS_STYLES = ['rings', 'ringBars', 'bars', 'compact'] as const
 const CATEGORY_LAYOUTS = ['line', 'wrap', 'grouped'] as const
+/** The home-screen icons to pick from; each has its files in public/icons/<name>/. */
+export const APP_ICONS = [
+  'graphite',
+  'classic',
+  'pink',
+  'sunset',
+  'progress',
+  'ember',
+  'leaf',
+  'violet',
+] as const
 
 export type LightStyle = (typeof LIGHT_STYLES)[number]
 export type DarkStyle = (typeof DARK_STYLES)[number]
@@ -18,6 +29,7 @@ export type ProgressStyle = (typeof PROGRESS_STYLES)[number]
  * grouped into broad categories that open their categories.
  */
 export type CategoryLayout = (typeof CATEGORY_LAYOUTS)[number]
+export type AppIcon = (typeof APP_ICONS)[number]
 /** What is actually painted: light (the classic light style), pink, or one of the dark styles. */
 export type Scheme = 'light' | 'pink' | DarkStyle
 
@@ -28,6 +40,7 @@ export const DEFAULT_APPEARANCE = {
   goalPalette: 'vivid',
   progressStyle: 'ringBars',
   categoryLayout: 'line',
+  appIcon: 'graphite',
 } as const satisfies Record<string, string>
 
 /** A color picked for one goal's ring and bar, on top of the palette. */
@@ -58,6 +71,7 @@ const appearanceSchema = z
     goalPalette: z.enum(GOAL_PALETTES).catch(DEFAULT_APPEARANCE.goalPalette),
     progressStyle: z.enum(PROGRESS_STYLES).catch(DEFAULT_APPEARANCE.progressStyle),
     categoryLayout: z.enum(CATEGORY_LAYOUTS).catch(DEFAULT_APPEARANCE.categoryLayout),
+    appIcon: z.enum(APP_ICONS).catch(DEFAULT_APPEARANCE.appIcon),
     customGoalColors: customGoalColorsSchema.optional(),
   })
   .catch(DEFAULT_APPEARANCE)

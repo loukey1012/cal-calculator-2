@@ -50,18 +50,23 @@
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
-    <!-- TEMPORARY icon probe: does Safari's Add to Home Screen pick up a swapped touch icon?
-         ?icon-probe=early swaps it before load, ?icon-probe=late 3 s after. Remove after the test. -->
+    <!-- offer the account's app icon (cached by useAppearance) for Add to Home Screen, also before
+         the app has loaded; same files as appIconFiles in src/features/appearance/appIcon.ts -->
     <script>
       ;(function () {
-        var mode = new URLSearchParams(location.search).get('icon-probe')
-        if (mode !== 'early' && mode !== 'late') return
-        var swap = function () {
-          var link = document.querySelector('link[rel="apple-touch-icon"]')
-          if (link) link.setAttribute('href', '/icon-probe/' + mode + '-180.png')
+        var icon
+        try {
+          var cache = JSON.parse(localStorage.getItem('calculator-appearance') || 'null')
+          icon = cache && cache.appIcon
+        } catch (error) {
+          // no storage (private browsing): the default icon
         }
-        if (mode === 'early') swap()
-        else setTimeout(swap, 3000)
+        if (typeof icon !== 'string' || !/^[a-z]+$/.test(icon)) return
+        var touchIcon = document.querySelector('link[rel="apple-touch-icon"]')
+        var svgIcon = document.querySelector('link[rel="icon"][type="image/svg+xml"]')
+        if (touchIcon)
+          touchIcon.setAttribute('href', '/icons/' + icon + '/apple-touch-icon-180x180.png')
+        if (svgIcon) svgIcon.setAttribute('href', '/icons/' + icon + '/icon.svg')
       })()
     </script>
   </head>

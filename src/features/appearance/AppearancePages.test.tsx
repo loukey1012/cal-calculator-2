@@ -140,7 +140,10 @@ describe('Appearance pages', () => {
     renderPage(ICON, { appIcon: 'leaf' })
 
     expect(radio('App icon', 'Leaf')).toHaveAttribute('aria-checked', 'true')
-    expect(screen.getByRole('img', { name: 'Leaf' })).toHaveAttribute('src', '/icons/leaf/icon.svg')
+    expect(radio('App icon', 'Leaf').querySelector('img')).toHaveAttribute(
+      'src',
+      '/icons/leaf/icon.svg',
+    )
     expect(screen.getByText(/remove CALculator from your home screen/i)).toBeInTheDocument()
   })
 

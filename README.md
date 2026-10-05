@@ -62,7 +62,7 @@ Built for a two-person household: both members log their own meals, can see and 
 
 ### Appearance (Settings › Appearance)
 
-Everything here is saved **to your account**, never to the device: you get the same look on every phone or browser you log in on. Changes apply instantly. Appearance is a menu of three pages, each row summarising its current choices; the back button or a swipe to the right goes up one level.
+Everything here is saved **to your account**, never to the device: you get the same look on every phone or browser you log in on. Changes apply instantly. Appearance is a menu of four pages, each row summarising its current choices; the back button or a swipe to the right goes up one level.
 
 - **App colors**
   - **Theme:** System, Light or Dark.
@@ -74,6 +74,7 @@ Everything here is saved **to your account**, never to the device: you get the s
   - **Goal colors:** Vivid, Pastel, Accent shades or High contrast.
   - **Ring colors:** give Calories, Protein, Carbs or Fat **its own color** (18 swatches, or any color with the color picker); the others keep the palette's. "Use palette color" undoes one, and choosing a palette resets them all. A custom color stays the same in every theme.
 - **Category chips** (with a preview): **One line** (default, scrolls sideways), **All on screen** (slimmer chips wrapping into rows) or **Grouped** (broad categories such as Fresh; tapping one filters by it and opens its categories below) for the category filter on the Ingredients page. Wrapped chips are **arranged automatically to fill as few rows as possible** ("All" stays first; alphabetical within each row), measured on the device and re-arranged when the width or fonts change.
+- **App icon:** eight versions of the C-ring icon: **Graphite** (default), Classic, Pink, Sunset, Progress, Ember, Leaf and Violet. The choice is offered when you add the app to the home screen (also before signing in on a phone you used before, from the cached look) and shows in the browser tab. iPhone keeps the icon an app had when it was added, so after switching, remove CALculator from the home screen and add it again from Safari; the page says so.
 - Your **name** shown to the household is under Settings › Account.
 
 ### Coming next
@@ -183,7 +184,11 @@ pnpm e2e            # Playwright (iPhone profile): smoke tests; journeys need th
 pnpm lint && pnpm typecheck && pnpm format:check
 
 pnpm db:types       # regenerate src/lib/database.types.ts from the linked project
+pnpm icons          # regenerate the icon PNGs: the default set from public/icon.svg (Graphite)
+                    # and one home-screen icon per choice from public/icons/<name>/icon.svg
 ```
+
+To add an app icon choice: put its SVG in `public/icons/<name>/icon.svg`, add `<name>` to `APP_ICONS` (`src/features/appearance/appearance.ts`) and a label to `APP_ICON_OPTIONS`, then run `pnpm icons`.
 
 **End-to-end journeys** (log a meal, goals and partner, Today fitting the screen, history, ingredients, category management, offline, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color) run the real app against the dev project. Build it against dev and pass the test credentials:
 
@@ -226,6 +231,6 @@ MIGRATION_SUPABASE_URL=... MIGRATION_SUPABASE_SERVICE_ROLE_KEY=... \
 
 ## Installing on the iPhone
 
-Open the live URL in Safari, then **Share → Add to Home Screen**. The app then starts full-screen like a native app, keeps you signed in, and updates itself when a new version is deployed (fully close and reopen the app to pick it up; occasionally twice).
+Open the live URL in Safari, then **Share → Add to Home Screen**. The app then starts full-screen like a native app, keeps you signed in, and updates itself when a new version is deployed (fully close and reopen the app to pick it up; occasionally twice). The home-screen icon is the one chosen under Settings › Appearance › App icon at the moment you add the app; to change it later, pick a new one, remove the app from the home screen and add it again.
 
 Once everyone in the household has an account, turn off **Allow new users to sign up** in Supabase (Authentication → Sign In / Providers).

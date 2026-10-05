@@ -1,4 +1,5 @@
 import type {
+  AppIcon,
   Appearance,
   CategoryLayout,
   DarkStyle,
@@ -11,6 +12,7 @@ export const APPEARANCE_PATH = '/settings/appearance'
 export const APP_COLORS_PATH = `${APPEARANCE_PATH}/colors`
 export const PROGRESS_APPEARANCE_PATH = `${APPEARANCE_PATH}/progress`
 export const CATEGORY_CHIPS_APPEARANCE_PATH = `${APPEARANCE_PATH}/category-chips`
+export const APP_ICON_PATH = `${APPEARANCE_PATH}/app-icon`
 
 export const THEME_OPTIONS = [
   { value: 'system', label: 'System' },
@@ -49,6 +51,17 @@ export const CATEGORY_LAYOUT_OPTIONS: ReadonlyArray<{ value: CategoryLayout; lab
   { value: 'grouped', label: 'Grouped' },
 ]
 
+export const APP_ICON_OPTIONS: ReadonlyArray<{ value: AppIcon; label: string }> = [
+  { value: 'graphite', label: 'Graphite' },
+  { value: 'classic', label: 'Classic' },
+  { value: 'pink', label: 'Pink' },
+  { value: 'sunset', label: 'Sunset' },
+  { value: 'progress', label: 'Progress' },
+  { value: 'ember', label: 'Ember' },
+  { value: 'leaf', label: 'Leaf' },
+  { value: 'violet', label: 'Violet' },
+]
+
 function labelOf<T extends string>(
   options: ReadonlyArray<{ value: T; label: string }>,
   value: T,
@@ -72,4 +85,8 @@ export function progressSummary({ progressStyle, goalPalette }: Appearance): str
 
 export function categoryChipsSummary({ categoryLayout }: Appearance): string {
   return labelOf(CATEGORY_LAYOUT_OPTIONS, categoryLayout)
+}
+
+export function appIconSummary({ appIcon }: Appearance): string {
+  return labelOf(APP_ICON_OPTIONS, appIcon)
 }

@@ -1,7 +1,9 @@
-import { existsSync } from 'node:fs'
 import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import { APP_ICONS } from './appearance'
 import { applyAppIcon, appIconFiles } from './appIcon'
+
+// every icon file shipped in public/, as /public/icons/<name>/<file>
+const shippedFiles = Object.keys(import.meta.glob('/public/icons/*/*.{png,svg}'))
 
 describe('appIconFiles', () => {
   test('points at the icon’s own folder', () => {
@@ -14,8 +16,8 @@ describe('appIconFiles', () => {
   test.each(APP_ICONS)('ships the %s icon files', (icon) => {
     const { touchIcon, svg } = appIconFiles(icon)
 
-    expect(existsSync(`public${touchIcon}`)).toBe(true)
-    expect(existsSync(`public${svg}`)).toBe(true)
+    expect(shippedFiles).toContain(`/public${touchIcon}`)
+    expect(shippedFiles).toContain(`/public${svg}`)
   })
 
   test('offers every C icon except the macro one, Graphite first', () => {

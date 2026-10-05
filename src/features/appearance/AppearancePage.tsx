@@ -2,8 +2,11 @@ import { useLocation, useNavigate } from 'react-router'
 import { GroupedSection } from '../../components/ios/GroupedSection'
 import { ListRow } from '../../components/ios/ListRow'
 import { AppColorsPage } from './AppColorsPage'
+import { AppIconPage } from './AppIconPage'
 import {
   APP_COLORS_PATH,
+  APP_ICON_PATH,
+  appIconSummary,
   appColorsSummary,
   CATEGORY_CHIPS_APPEARANCE_PATH,
   categoryChipsSummary,
@@ -21,10 +24,11 @@ export function AppearancePage() {
   if (pathname === APP_COLORS_PATH) return <AppColorsPage />
   if (pathname === PROGRESS_APPEARANCE_PATH) return <ProgressAppearancePage />
   if (pathname === CATEGORY_CHIPS_APPEARANCE_PATH) return <CategoryChipsAppearancePage />
+  if (pathname === APP_ICON_PATH) return <AppIconPage />
   return <AppearanceMenu />
 }
 
-/** How the app looks for you, saved to your account, split into three pages. */
+/** How the app looks for you, saved to your account, split into four pages. */
 function AppearanceMenu() {
   const navigate = useNavigate()
   const { appearance, update } = useAppearanceSettings()
@@ -54,6 +58,11 @@ function AppearanceMenu() {
           title="Category chips"
           detail={categoryChipsSummary(appearance)}
           onClick={() => open(CATEGORY_CHIPS_APPEARANCE_PATH)}
+        />
+        <ListRow
+          title="App icon"
+          detail={appIconSummary(appearance)}
+          onClick={() => open(APP_ICON_PATH)}
         />
       </GroupedSection>
     </AppearanceSubPage>

@@ -15,7 +15,7 @@
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
     "e2e": "playwright test",
-    "icons": "pwa-assets-generator",
+    "icons": "pwa-assets-generator && pwa-assets-generator --config pwa-assets.app-icons.config.ts",
     "test:db": "vitest run --config vitest.integration.config.ts",
     "db:types": "supabase gen types typescript --linked --schema public > src/lib/database.types.ts"
   },
