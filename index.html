@@ -50,6 +50,20 @@
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
+    <!-- TEMPORARY icon probe: does Safari's Add to Home Screen pick up a swapped touch icon?
+         ?icon-probe=early swaps it before load, ?icon-probe=late 3 s after. Remove after the test. -->
+    <script>
+      ;(function () {
+        var mode = new URLSearchParams(location.search).get('icon-probe')
+        if (mode !== 'early' && mode !== 'late') return
+        var swap = function () {
+          var link = document.querySelector('link[rel="apple-touch-icon"]')
+          if (link) link.setAttribute('href', '/icon-probe/' + mode + '-180.png')
+        }
+        if (mode === 'early') swap()
+        else setTimeout(swap, 3000)
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>
