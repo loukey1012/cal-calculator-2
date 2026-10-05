@@ -47,6 +47,7 @@ function dish(overrides: Partial<Dish>): Dish {
     name: null,
     splitMode: 'equal',
     cookedWeightG: null,
+    revision: 'rev-1',
     portions: [portion('p-me', ME), portion('p-her', HER)],
     lines: [],
     ...overrides,

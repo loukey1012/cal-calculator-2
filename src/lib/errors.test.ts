@@ -15,6 +15,11 @@ describe('toUserMessage', () => {
       'Some values aren’t allowed. Check the numbers and try again.',
     ],
     ['duplicate key value violates unique constraint', 'This already exists.'],
+    [
+      'This dish was changed meanwhile',
+      'This dish was changed on another phone meanwhile. Open it again and redo your change.',
+    ],
+    ['This dish was deleted meanwhile', 'This dish was deleted on another phone meanwhile.'],
   ])('maps "%s" to a friendly message', (raw, friendly) => {
     expect(toUserMessage(new Error(raw))).toBe(friendly)
   })

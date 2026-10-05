@@ -11,6 +11,7 @@ export type FakeQuery = {
   readonly eq: Mock
   readonly order: Mock
   readonly single: Mock
+  readonly maybeSingle: Mock
   readonly then: PromiseLike<QueryResult>['then']
 }
 
@@ -26,6 +27,7 @@ export function fakeQuery(result: QueryResult): FakeQuery {
     eq: vi.fn(),
     order: vi.fn(),
     single: vi.fn(() => promise),
+    maybeSingle: vi.fn(() => promise),
     then: promise.then.bind(promise),
   }
   for (const method of [query.select, query.insert, query.upsert, query.update, query.delete]) {

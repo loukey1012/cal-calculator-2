@@ -44,6 +44,21 @@ describe('SyncStatus', () => {
     expect(await screen.findByText('Offline · 2 changes pending')).toBeInTheDocument()
   })
 
+  test('counts queued dish changes like meal changes', async () => {
+    act(() => onlineManager.setOnline(false))
+    const { queryClient } = renderWithProviders(<SyncStatus />)
+
+    act(() => {
+      pendingDayChange(queryClient)
+      void queryClient
+        .getMutationCache()
+        .build(queryClient, { mutationKey: ['dish'], mutationFn: () => new Promise(() => {}) })
+        .execute(undefined)
+    })
+
+    expect(await screen.findByText('Offline · 2 changes pending')).toBeInTheDocument()
+  })
+
   test('shows that changes are being saved once back online', async () => {
     const { queryClient } = renderWithProviders(<SyncStatus />)
 
