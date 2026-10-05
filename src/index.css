@@ -4,7 +4,7 @@
 
 /*
  * Three schemes, chosen per account (Settings › Appearance) and set as <html data-scheme>:
- * light, soft (deep grey dark) and bento (near-black dark with bold display numbers).
+ * light, soft (deep grey dark) and bento (near-black dark with bold display numbers, shown as "Graphite").
  * The inline script in index.html sets the scheme before the first paint; useAppearance keeps
  * it in sync and overrides the accent and goal colors at runtime.
  * Surface colors must match SCHEME_SURFACES in features/appearance/appearance.ts.

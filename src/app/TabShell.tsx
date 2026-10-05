@@ -53,10 +53,14 @@ function startsInSwipeLock(event: MouseEvent | TouchEvent): boolean {
   return event.target instanceof Element && event.target.closest('[data-swipe-lock]') !== null
 }
 
-/** On a sub-page (e.g. Settings › Appearance) the path a back swipe leads to, otherwise null. */
+/**
+ * On a sub-page (e.g. Settings › Appearance › App colors) the page one level up a back swipe
+ * leads to, otherwise null.
+ */
 function backPathFor(pathname: string): string | null {
   const tab = TABS.find((candidate) => pathname.startsWith(`${candidate.path}/`))
-  return tab && 'hasSubPages' in tab ? tab.path : null
+  if (!tab || !('hasSubPages' in tab)) return null
+  return pathname.replace(/\/+$/, '').replace(/\/[^/]*$/, '')
 }
 
 /** The signed-in app: four pages side by side, switched by the tab bar or by swiping. */

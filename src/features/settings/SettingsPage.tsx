@@ -8,7 +8,8 @@ import { GroupedSection } from '../../components/ios/GroupedSection'
 import { ListRow } from '../../components/ios/ListRow'
 import { PageHeader } from '../../components/ios/PageHeader'
 import { toUserMessage } from '../../lib/errors'
-import { parseAppearance, type Appearance } from '../appearance/appearance'
+import { parseAppearance } from '../appearance/appearance'
+import { APPEARANCE_PATH, appColorsSummary } from '../appearance/appearanceLabels'
 import { AppearancePage } from '../appearance/AppearancePage'
 import { CategoriesPage } from '../categories/CategoriesPage'
 import { useSignOut } from '../auth/useSignOut'
@@ -29,7 +30,6 @@ function goalDetail(loading: boolean, missing: boolean, goal: Goal | null): stri
   return missing ? 'Couldn’t load' : describeGoal(goal)
 }
 
-const APPEARANCE_PATH = '/settings/appearance'
 const CATEGORIES_PATH = '/settings/categories'
 
 function memberLabel(member: Profile, currentUserId: string): string {
@@ -37,16 +37,11 @@ function memberLabel(member: Profile, currentUserId: string): string {
   return member.id === currentUserId ? `${name} (you)` : name
 }
 
-function appearanceSummary({ theme, darkStyle }: Appearance): string {
-  const style = darkStyle === 'bento' ? 'Bento' : 'Soft'
-  if (theme === 'light') return 'Light'
-  return theme === 'dark' ? `Dark · ${style}` : `System · ${style}`
-}
-
 /** Settings, or one of its pages (kept in the URL like the selected history day). */
 export function SettingsPage() {
   const { pathname } = useLocation()
-  if (pathname === APPEARANCE_PATH) return <AppearancePage />
+  if (pathname === APPEARANCE_PATH || pathname.startsWith(`${APPEARANCE_PATH}/`))
+    return <AppearancePage />
   if (pathname === CATEGORIES_PATH) return <CategoriesPage />
   return <SettingsOverview />
 }
@@ -82,7 +77,7 @@ function SettingsOverview() {
       <GroupedSection header="Look">
         <ListRow
           title="Appearance"
-          detail={appearanceSummary(parseAppearance(profile.appearance))}
+          detail={appColorsSummary(parseAppearance(profile.appearance))}
           onClick={() => navigate(APPEARANCE_PATH, { replace: true })}
         />
       </GroupedSection>

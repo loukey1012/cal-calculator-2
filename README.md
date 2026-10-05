@@ -57,18 +57,20 @@ Built for a two-person household: both members log their own meals, can see and 
 ### Look and feel
 
 - Rounded cards on a soft background, the Manrope font, meals as a 2×2 grid of cards, avatars (initial on each person's accent color) in the person switch and member list. Bottom sheets (drag down to close), segmented controls, switches and swipe actions.
-- **Floating tab bar** (Today · History · Ingredients · Settings): the active tab shows its label in an accent tint. **Swipe left and right** to switch tabs with an animated settle (on a page inside Settings, like Appearance, a swipe to the right goes back to Settings instead), and tap the active tab to scroll to the top. Pages and sheets scroll without a visible scroll indicator.
+- **Floating tab bar** (Today · History · Ingredients · Settings): the active tab shows its label in an accent tint. **Swipe left and right** to switch tabs with an animated settle (on a page inside Settings, like Appearance, a swipe to the right goes back one level instead), and tap the active tab to scroll to the top. Pages and sheets scroll without a visible scroll indicator.
 - Installable to the home screen (manifest, icons, safe areas, no zoom on input focus).
 
 ### Appearance (Settings › Appearance)
 
-Everything here is saved **to your account**, never to the device: you get the same look on every phone or browser you log in on. Changes apply instantly, with a live preview at the top.
+Everything here is saved **to your account**, never to the device: you get the same look on every phone or browser you log in on. Changes apply instantly. Appearance is a menu of three pages, each row summarising its current choices; the back button or a swipe to the right goes up one level.
 
-- **Theme:** System, Light or Dark.
-- **Dark style:** **Soft** (deep grey, rounded) or **Bento** (near-black, Space Grotesk numbers, uppercase labels). Used whenever the app is dark, also with System at night.
-- **Accent color:** 12 colors (buttons, the active tab, your avatar). Text in the accent color is darkened or lightened automatically so it stays readable, e.g. Lime on a light background.
-- **Goal colors:** Vivid, Pastel, Accent shades or High contrast.
-- **Progress style:** Rings, **Ring + bars** (default: a calorie ring, bars for the macros), Bars or Compact.
+- **App colors**
+  - **Theme:** System, Light or Dark.
+  - **Dark style:** **Soft** (deep grey, rounded) or **Graphite** (near-black, Space Grotesk numbers, uppercase labels; stored as `bento`). Used whenever the app is dark, also with System at night.
+  - **Accent color:** 12 colors (buttons, the active tab, your avatar). Text in the accent color is darkened or lightened automatically so it stays readable, e.g. Lime on a light background.
+- **Progress** (with a live preview at the top)
+  - **Progress style:** Rings, **Ring + bars** (default: a calorie ring, bars for the macros), Bars or Compact.
+  - **Goal colors:** Vivid, Pastel, Accent shades or High contrast.
 - **Category chips** (with a preview): **One line** (default, scrolls sideways), **All on screen** (slimmer chips wrapping into rows) or **Grouped** (broad categories such as Fresh; tapping one filters by it and opens its categories below) for the category filter on the Ingredients page. Wrapped chips are **arranged automatically to fill as few rows as possible** ("All" stays first; alphabetical within each row), measured on the device and re-arranged when the width or fonts change.
 - Your **name** shown to the household is under Settings › Account.
 
