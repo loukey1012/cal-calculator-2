@@ -5,7 +5,7 @@ import { BreakfastIcon, DinnerIcon, LunchIcon, SnackIcon } from '../../component
 import { toUserMessage } from '../../lib/errors'
 import { displayName } from '../household/hooks'
 import type { Profile } from '../household/householdApi'
-import { itemsByMeal, MEAL_TYPES, type MealType } from '../meals/dayModel'
+import { itemsByMeal, mealEntries, MEAL_TYPES, type MealType } from '../meals/dayModel'
 import { useDay, useLatestDayChangeError } from '../meals/hooks'
 import { MealSheet } from '../meals/MealSheet'
 import { formatKcal, macroSummary } from '../nutrition/format'
@@ -78,7 +78,8 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
   const meals = MEAL_TYPES.map(({ type, label }) => ({
     type,
     label,
-    count: byMeal[type].length,
+    // a cooked dish is one item, like it is one block in the meal
+    count: mealEntries(byMeal[type]).length,
     totals: mealTotals(byMeal[type]),
   }))
   const dayTotals = sumTotals(meals.map((meal) => meal.totals))

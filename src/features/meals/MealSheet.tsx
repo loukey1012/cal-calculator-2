@@ -36,6 +36,8 @@ type View =
   | { readonly kind: 'edit'; readonly itemId: string }
   /** cook together: a new dish (null) or an existing one */
   | { readonly kind: 'dish'; readonly dishId: string | null }
+  /** share this meal: its plain items become a new dish */
+  | { readonly kind: 'share' }
 
 type MealSheetProps = {
   readonly open: boolean
@@ -97,6 +99,7 @@ function MealSheetContent({ mealType, userId, date }: Omit<MealSheetProps, 'open
           onEdit={(item) => setView({ kind: 'edit', itemId: item.id })}
           onDelete={(itemId) => remove.mutate(itemId)}
           onCookTogether={() => setView({ kind: 'dish', dishId: null })}
+          onShare={() => setView({ kind: 'share' })}
           onEditDish={(dishId) => setView({ kind: 'dish', dishId })}
         />
       )
@@ -135,6 +138,20 @@ function MealSheetContent({ mealType, userId, date }: Omit<MealSheetProps, 'open
             personId={userId}
             date={date}
             mealType={mealType}
+            onDone={showItems}
+          />
+        </>
+      )
+    case 'share':
+      return (
+        <>
+          <BackButton onClick={showItems} />
+          <DishEditor
+            dishId={null}
+            personId={userId}
+            date={date}
+            mealType={mealType}
+            sharedItems={items.filter((item) => item.dish_portion_id === null)}
             onDone={showItems}
           />
         </>

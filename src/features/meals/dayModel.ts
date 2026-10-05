@@ -28,6 +28,23 @@ export const MEAL_TYPES: ReadonlyArray<{ readonly type: MealType; readonly label
 const MULTIPLIER_DECIMALS = 4
 const AMOUNT_DECIMALS = 2
 
+/** What a meal lists: plain items, and each cooked dish's portion as one entry. */
+export type MealEntry =
+  | { readonly kind: 'item'; readonly item: MealItem }
+  | { readonly kind: 'dish'; readonly portionId: string; readonly items: readonly MealItem[] }
+
+/** Plain items as they are; a dish's items as one entry, where its first item was. */
+export function mealEntries(items: readonly MealItem[]): MealEntry[] {
+  return items.flatMap((item): MealEntry[] => {
+    const portionId = item.dish_portion_id
+    if (portionId === null) return [{ kind: 'item', item }]
+    const first = items.find((candidate) => candidate.dish_portion_id === portionId)
+    if (first !== item) return []
+    const portion = items.filter((candidate) => candidate.dish_portion_id === portionId)
+    return [{ kind: 'dish', portionId, items: portion }]
+  })
+}
+
 export function mealLabel(type: MealType): string {
   return MEAL_TYPES.find((meal) => meal.type === type)?.label ?? type
 }

@@ -6,7 +6,7 @@ import { toUserMessage } from '../../lib/errors'
 import { DishBlock } from '../dishes/DishBlock'
 import { formatKcal, macroSummary } from '../nutrition/format'
 import { itemTotals, mealTotals } from '../nutrition/totals'
-import { describeAmount, type MealItem } from './dayModel'
+import { describeAmount, mealEntries, type MealItem } from './dayModel'
 
 type MealItemsViewProps = {
   readonly items: readonly MealItem[]
@@ -16,23 +16,9 @@ type MealItemsViewProps = {
   readonly onEdit: (item: MealItem) => void
   readonly onDelete: (itemId: string) => void
   readonly onCookTogether: () => void
+  /** "share this meal": shown when the meal has plain items */
+  readonly onShare: () => void
   readonly onEditDish: (dishId: string) => void
-}
-
-type Entry =
-  | { readonly kind: 'item'; readonly item: MealItem }
-  | { readonly kind: 'dish'; readonly portionId: string; readonly items: readonly MealItem[] }
-
-/** Plain items as they are; a dish's items as one entry, where its first item was. */
-function entriesOf(items: readonly MealItem[]): Entry[] {
-  return items.flatMap((item): Entry[] => {
-    const portionId = item.dish_portion_id
-    if (portionId === null) return [{ kind: 'item', item }]
-    const first = items.find((candidate) => candidate.dish_portion_id === portionId)
-    if (first !== item) return []
-    const portion = items.filter((candidate) => candidate.dish_portion_id === portionId)
-    return [{ kind: 'dish', portionId, items: portion }]
-  })
 }
 
 export function MealItemsView({
@@ -43,8 +29,10 @@ export function MealItemsView({
   onEdit,
   onDelete,
   onCookTogether,
+  onShare,
   onEditDish,
 }: MealItemsViewProps) {
+  const hasPlainItems = items.some((item) => item.dish_portion_id === null)
   const totals = mealTotals(items)
 
   return (
@@ -60,7 +48,7 @@ export function MealItemsView({
       )}
       {items.length > 0 && (
         <div className="mt-4 divide-y divide-separator overflow-hidden rounded-3xl bg-bg-elevated shadow-card">
-          {entriesOf(items).map((entry) =>
+          {mealEntries(items).map((entry) =>
             entry.kind === 'dish' ? (
               // a dish's items only change through the dish
               <DishBlock key={entry.portionId} items={entry.items} onEdit={onEditDish} />
@@ -82,6 +70,11 @@ export function MealItemsView({
         <Button variant="secondary" onClick={onCookTogether}>
           Cook together
         </Button>
+        {hasPlainItems && (
+          <Button variant="secondary" onClick={onShare}>
+            Share this meal
+          </Button>
+        )}
       </div>
     </>
   )

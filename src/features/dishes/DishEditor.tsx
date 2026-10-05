@@ -9,7 +9,7 @@ import { toUserMessage } from '../../lib/errors'
 import { displayName, useMembers } from '../household/hooks'
 import type { Profile } from '../household/householdApi'
 import type { Ingredient } from '../ingredients/ingredientsApi'
-import type { MealType } from '../meals/dayModel'
+import type { MealItem, MealType } from '../meals/dayModel'
 import { CustomItemForm } from '../meals/CustomItemForm'
 import { FoodPicker } from '../meals/FoodPicker'
 import { availableUnits } from '../nutrition/amounts'
@@ -18,6 +18,7 @@ import { ingredientNutrition, ingredientSource } from '../nutrition/fromIngredie
 import { itemTotals } from '../nutrition/totals'
 import {
   describeLine,
+  lineFromItem,
   lineWho,
   newDish,
   newId,
@@ -29,7 +30,7 @@ import {
 import { DishLineEditor, type PortionOption } from './DishLineEditor'
 import { DishSplitSection } from './DishSplitSection'
 import { DishTotals } from './DishTotals'
-import { useDeleteDish, useDish, useSaveDish } from './hooks'
+import { useDeleteDish, useDish, useSaveDish, type SaveDishRequest } from './hooks'
 import { buildDishLine, type Dish } from './portions'
 
 type DishEditorProps = {
@@ -39,6 +40,8 @@ type DishEditorProps = {
   readonly personId: string
   readonly date: string
   readonly mealType: MealType
+  /** "share this meal": these plain items of the meal become the new dish's lines */
+  readonly sharedItems?: readonly MealItem[]
   readonly onDone: () => void
 }
 
@@ -62,7 +65,14 @@ function Message({ text }: { readonly text: string }) {
 }
 
 /** Cook together: a new dish, or an existing one loaded for editing. */
-export function DishEditor({ dishId, personId, date, mealType, onDone }: DishEditorProps) {
+export function DishEditor({
+  dishId,
+  personId,
+  date,
+  mealType,
+  sharedItems = [],
+  onDone,
+}: DishEditorProps) {
   const { profile, householdId } = useCurrentUser()
   const members = useMembers(householdId)
   const existing = useDish(dishId)
@@ -76,13 +86,20 @@ export function DishEditor({ dishId, personId, date, mealType, onDone }: DishEdi
     return <Message text="Loading…" />
   }
 
-  const initial =
-    existing.data ?? newDish(people.map((person) => ({ userId: person.id, date, mealType })))
+  const initial = existing.data ?? {
+    ...newDish(people.map((person) => ({ userId: person.id, date, mealType }))),
+    lines: sharedItems.map(lineFromItem),
+  }
+  const replaces =
+    sharedItems.length > 0
+      ? { day: { userId: personId, date }, itemIds: sharedItems.map((item) => item.id) }
+      : undefined
   return (
     <DishForm
       key={dishId ?? 'new'}
       initial={initial}
       isNew={dishId === null}
+      replaces={replaces}
       people={people}
       date={date}
       onDone={onDone}
@@ -93,12 +110,13 @@ export function DishEditor({ dishId, personId, date, mealType, onDone }: DishEdi
 type DishFormProps = {
   readonly initial: Dish
   readonly isNew: boolean
+  readonly replaces?: SaveDishRequest['replaces']
   readonly people: readonly Profile[]
   readonly date: string
   readonly onDone: () => void
 }
 
-function DishForm({ initial, isNew, people, date, onDone }: DishFormProps) {
+function DishForm({ initial, isNew, replaces, people, date, onDone }: DishFormProps) {
   const [draft, setDraft] = useState(initial)
   const [view, setView] = useState<View>({ kind: 'main' })
   const [error, setError] = useState<string | null>(null)
@@ -126,7 +144,7 @@ function DishForm({ initial, isNew, people, date, onDone }: DishFormProps) {
     if (draft.lines.length === 0) return setError('Add at least one ingredient')
     if (eaters.length === 0) return setError('Choose who eats')
     try {
-      saveDish.save({ dish: draft })
+      saveDish.save({ dish: draft, replaces })
       onDone()
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'This dish can’t be saved.')
