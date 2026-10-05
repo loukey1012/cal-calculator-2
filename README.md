@@ -81,19 +81,19 @@ Everything here is saved **to your account**, never to the device: you get the s
 
 ## Coming next
 
-| Area             | Planned                                                                                                  |
-| ---------------- | -------------------------------------------------------------------------------------------------------- |
-| Polish           | Real-device pass on your iPhone                                                                          |
-| Nicknames        | Give household members your own display name (a per-viewer nickname; their account name stays unchanged) |
-| Barcode scanning | Find or create an ingredient by scanning its barcode                                                     |
-| Quick picks      | Recent and favorite ingredients                                                                          |
-| Meal reuse       | Copy a meal to another day, or save it as a template                                                     |
-| Trends           | Charts of calories and macros over weeks and months                                                      |
-| Weight           | Track body weight over time                                                                              |
-| Export           | Download your logged data as CSV                                                                         |
-| Reminders        | Push reminders to log meals                                                                              |
-| Invite code      | Rotate the household invite code                                                                         |
-| Live updates     | See your partner's edits to a meal without reloading                                                     |
+| Area             | Planned                                                                                                                             |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Partner setup    | Your partner joins with the invite code and you both check seeing and editing each other's days; then turn off sign-ups in Supabase |
+| Nicknames        | Give household members your own display name (a per-viewer nickname; their account name stays unchanged)                            |
+| Barcode scanning | Find or create an ingredient by scanning its barcode                                                                                |
+| Quick picks      | Recent and favorite ingredients                                                                                                     |
+| Meal reuse       | Copy a meal to another day, or save it as a template                                                                                |
+| Trends           | Charts of calories and macros over weeks and months                                                                                 |
+| Weight           | Track body weight over time                                                                                                         |
+| Export           | Download your logged data as CSV                                                                                                    |
+| Reminders        | Push reminders to log meals                                                                                                         |
+| Invite code      | Rotate the household invite code                                                                                                    |
+| Live updates     | See your partner's edits to a meal without reloading                                                                                |
 
 ---
 
