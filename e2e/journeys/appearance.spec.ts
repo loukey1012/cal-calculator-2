@@ -14,9 +14,12 @@ test('the chosen look is saved to the account and follows the user to a new devi
     .getByRole('button', { name: /Appearance/ })
     .click()
   const settings = activePage(page)
+  await settings.getByRole('button', { name: /App colors/ }).click()
   await settings.getByRole('radio', { name: 'Dark', exact: true }).click()
-  await settings.getByRole('radio', { name: /Bento/ }).click()
+  await settings.getByRole('radio', { name: /Graphite/ }).click()
   await settings.getByRole('radio', { name: 'Lime' }).click()
+  await settings.getByRole('button', { name: 'Appearance' }).click()
+  await settings.getByRole('button', { name: /Progress/ }).click()
   await settings.getByRole('radio', { name: 'Bars', exact: true }).click()
 
   const html = page.locator('html')

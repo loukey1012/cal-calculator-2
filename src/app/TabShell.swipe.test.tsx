@@ -177,6 +177,15 @@ describe('TabShell swiping', () => {
       expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Settings')
     })
 
+    test('on a page inside Appearance, swiping right goes back to the Appearance menu', () => {
+      renderShell('/settings/appearance/colors')
+
+      drag({ x: 30, y: 300 }, { x: 200, y: 320 })
+
+      expect(screen.getByTestId('path')).toHaveTextContent(/^\/settings\/appearance$/)
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Appearance')
+    })
+
     test.each([
       ['a short drag', { x: 150, y: 300 }],
       ['a mostly vertical drag', { x: 120, y: 500 }],
