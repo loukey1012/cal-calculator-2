@@ -29,7 +29,7 @@ function SignedInGate({ userId }: { readonly userId: string }) {
   // cached data wins over a failed refresh (e.g. offline): only show an error without any data
   if (profile.data === undefined && profile.fetchStatus === 'paused') {
     return (
-      <Screen title="CALculator2">
+      <Screen title="CALculator">
         <p className="mt-4 text-[17px]">You’re offline.</p>
         <p className="mt-1 text-[15px] text-label-secondary">
           Connect to the internet once to load your account. After that the app also works offline.
@@ -40,7 +40,7 @@ function SignedInGate({ userId }: { readonly userId: string }) {
   if (profile.data === undefined && !profile.isError) return <Splash />
   if (profile.data === undefined) {
     return (
-      <Screen title="CALculator2">
+      <Screen title="CALculator">
         <ErrorBanner message={toUserMessage(profile.error)} />
         <div className="mt-4">
           <Button onClick={() => void profile.refetch()}>Try again</Button>

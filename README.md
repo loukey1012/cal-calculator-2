@@ -1,4 +1,4 @@
-# CALculator2
+# CALculator
 
 A household meal and nutrition tracker with a modern, card-based look that each person can customize. It runs as a Progressive Web App (PWA) installed on the iPhone home screen, is hosted on Vercel and stores its data in Supabase.
 

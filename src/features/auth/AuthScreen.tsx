@@ -71,7 +71,7 @@ export function AuthScreen() {
   }
 
   return (
-    <Screen title="CALculator2">
+    <Screen title="CALculator">
       <p className="text-[15px] text-label-secondary">Track your household’s meals together.</p>
       <div className="mt-6">
         <SegmentedControl

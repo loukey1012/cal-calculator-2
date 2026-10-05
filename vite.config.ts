@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
-const APP_NAME = 'CALculator2'
+const APP_NAME = 'CALculator'
 
 export default defineConfig({
   build: {

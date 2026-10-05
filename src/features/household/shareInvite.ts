@@ -7,7 +7,7 @@ export async function shareInviteCode(code: string): Promise<ShareOutcome> {
   const formatted = formatInviteCode(code)
   if (typeof navigator.share === 'function') {
     try {
-      await navigator.share({ text: `Join my household in CALculator2 with the code ${formatted}` })
+      await navigator.share({ text: `Join my household in CALculator with the code ${formatted}` })
       return 'shared'
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') return 'cancelled'
