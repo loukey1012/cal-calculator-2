@@ -42,7 +42,7 @@ Built for a two-person household: both members log their own meals, can see and 
 
 - Shared per household, **grouped by category**, with **accent-insensitive search** (`kase` finds `Käse`) and category filter chips (one sideways-scrolling line, or all on screen; Settings › Appearance).
 - Nutrition **per 100 g and/or per unit**: calories (whole numbers, rounded up), protein, carbs, sugar, fat, saturated fat, fiber, salt. Only calories are required.
-- Unit name and grams per unit, brand, category (created on the fly), note.
+- Unit name and grams per unit, brand, category (created on the fly, optionally inside a **broad category** such as Fresh › Meat & Fish), note.
 - Categories are **deleted automatically** once no ingredient uses them.
 
 ### Works offline
@@ -128,7 +128,7 @@ scripts/
 
 - `households`, `profiles` (one per auth user, created by a trigger; holds the name, accent color and `appearance` JSON)
 - `goal_history` (goal valid from a date)
-- `categories`, `ingredients` (per-100 g and/or per-unit columns; at least one calorie value required)
+- `category_groups` (the household's broad categories), `categories` (optionally in a group; deleting a group leaves its categories ungrouped), `ingredients` (per-100 g and/or per-unit columns; at least one calorie value required)
 - `meals` (unique per user, local date and meal type), `meal_items` (nutrition snapshot plus a basis multiplier)
 - Views `meal_totals` and `daily_totals`. RPCs `create_household`, `join_household` and `ensure_meal`.
 

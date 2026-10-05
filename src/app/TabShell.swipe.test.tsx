@@ -33,6 +33,7 @@ vi.mock('../features/household/householdApi', () => ({
 vi.mock('../features/ingredients/ingredientsApi', () => ({
   fetchIngredients: vi.fn().mockResolvedValue([]),
   fetchCategories: vi.fn().mockResolvedValue([]),
+  fetchCategoryGroups: vi.fn().mockResolvedValue([]),
 }))
 vi.mock('../features/meals/mealsApi', () => ({
   fetchDay: vi.fn().mockResolvedValue([]),

@@ -51,7 +51,7 @@ const SAMPLE_CATEGORIES = [
   'Snacks',
   'Spreads',
   'Veggies & Fruit',
-].map((name) => ({ id: name, name, household_id: '', created_at: '' }))
+].map((name) => ({ id: name, name, group_id: null, household_id: '', created_at: '' }))
 
 function CategoryChipsPreview({ layout }: { readonly layout: CategoryLayout }) {
   return (

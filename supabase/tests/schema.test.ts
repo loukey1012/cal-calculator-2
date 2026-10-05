@@ -281,6 +281,76 @@ describe('ingredients', () => {
   })
 })
 
+describe('category groups', () => {
+  async function groupNamed(client: TestUser['client'], household: string, name: string) {
+    const { data, error } = await client
+      .from('category_groups')
+      .insert({ household_id: household, name })
+      .select('id')
+      .single()
+    return { id: data?.id as string, error }
+  }
+
+  test('members create broad categories; names are unique per household, any case', async () => {
+    const first = await groupNamed(alice.client, householdId, 'Fresh')
+    const dupe = await groupNamed(bob.client, householdId, 'fresh')
+
+    expect(first.error).toBeNull()
+    expect(dupe.error?.code).toBe('23505')
+  })
+
+  test('a broad category needs a name of at most 40 characters', async () => {
+    expect((await groupNamed(alice.client, householdId, '  ')).error?.code).toBe('23514')
+    expect((await groupNamed(alice.client, householdId, 'x'.repeat(41))).error?.code).toBe('23514')
+  })
+
+  test('outsiders can neither see nor add broad categories', async () => {
+    await groupNamed(alice.client, householdId, 'Private group')
+
+    const { data } = await carol.client
+      .from('category_groups')
+      .select('id')
+      .eq('household_id', householdId)
+    const insert = await groupNamed(carol.client, householdId, 'Intruder')
+
+    expect(data).toEqual([])
+    expect(insert.error).not.toBeNull()
+  })
+
+  test('a category can only belong to a broad category of its own household', async () => {
+    const own = await groupNamed(alice.client, householdId, 'Own group')
+    const foreign = await groupNamed(carol.client, carolHouseholdId, 'Carol group')
+
+    const ok = await alice.client
+      .from('categories')
+      .insert({ household_id: householdId, name: 'Grouped', group_id: own.id })
+    const crossed = await alice.client
+      .from('categories')
+      .insert({ household_id: householdId, name: 'Crossed', group_id: foreign.id })
+
+    expect(ok.error).toBeNull()
+    expect(crossed.error?.code).toBe('23503')
+  })
+
+  test('deleting a broad category keeps its categories, ungrouped', async () => {
+    const group = await groupNamed(alice.client, householdId, 'Short-lived')
+    const { data: category } = await alice.client
+      .from('categories')
+      .insert({ household_id: householdId, name: 'Survivor', group_id: group.id })
+      .select('id')
+      .single()
+
+    await bob.client.from('category_groups').delete().eq('id', group.id)
+
+    const { data } = await alice.client
+      .from('categories')
+      .select('group_id')
+      .eq('id', category?.id as string)
+      .single()
+    expect(data).toEqual({ group_id: null })
+  })
+})
+
 describe('empty categories', () => {
   async function categoryNamed(name: string) {
     const { data } = await alice.client

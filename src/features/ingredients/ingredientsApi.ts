@@ -4,6 +4,8 @@ import { supabase } from '../../lib/supabase'
 
 export type Ingredient = Tables<'ingredients'>
 export type Category = Tables<'categories'>
+/** A broad category ("Fresh") holding categories ("Meat & Fish"); editable per household. */
+export type CategoryGroup = Tables<'category_groups'>
 
 /** The columns a user edits; ownership and bookkeeping columns are set by the database. */
 export type IngredientInput = Omit<
@@ -24,6 +26,16 @@ export async function fetchIngredients(householdId: string): Promise<Ingredient[
 export async function fetchCategories(householdId: string): Promise<Category[]> {
   const { data, error } = await supabase
     .from('categories')
+    .select('*')
+    .eq('household_id', householdId)
+    .order('name')
+  if (error) throw ApiError.from(error)
+  return data
+}
+
+export async function fetchCategoryGroups(householdId: string): Promise<CategoryGroup[]> {
+  const { data, error } = await supabase
+    .from('category_groups')
     .select('*')
     .eq('household_id', householdId)
     .order('name')
@@ -61,10 +73,15 @@ export async function deleteIngredient(id: string): Promise<void> {
   if (error) throw ApiError.from(error)
 }
 
-export async function createCategory(householdId: string, name: string): Promise<Category> {
+/** `groupId` null leaves the category ungrouped ("Other"). */
+export async function createCategory(
+  householdId: string,
+  name: string,
+  groupId: string | null,
+): Promise<Category> {
   const { data, error } = await supabase
     .from('categories')
-    .insert({ household_id: householdId, name })
+    .insert({ household_id: householdId, name, group_id: groupId })
     .select()
     .single()
   if (error) throw ApiError.from(error)

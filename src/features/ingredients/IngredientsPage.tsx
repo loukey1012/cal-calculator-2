@@ -11,7 +11,7 @@ import { SearchField } from '../../components/ios/SearchField'
 import { toUserMessage } from '../../lib/errors'
 import { useMyAppearance } from '../appearance/useMyAppearance'
 import { CategoryChips } from './CategoryChips'
-import { useCategories, useIngredients } from './hooks'
+import { useCategories, useCategoryGroups, useIngredients } from './hooks'
 import type { Ingredient } from './ingredientsApi'
 import { IngredientSheet } from './IngredientSheet'
 import { filterIngredients, groupByCategory, nutritionSummary } from './listing'
@@ -22,6 +22,7 @@ export function IngredientsPage() {
   const { householdId } = useCurrentUser()
   const ingredients = useIngredients(householdId)
   const categories = useCategories(householdId)
+  const groups = useCategoryGroups(householdId)
   const { categoryLayout } = useMyAppearance()
   const [query, setQuery] = useState('')
   const [categoryId, setCategoryId] = useState<string | null>(null)
@@ -96,11 +97,12 @@ export function IngredientsPage() {
       )}
       {renderContent()}
       <IngredientSheet
-        // the category picker needs the categories, or it would show "None" for a set category
-        open={editing !== null && !categories.isPending}
+        // the pickers need their lists, or the category would show "None" when it is set
+        open={editing !== null && !categories.isPending && !groups.isPending}
         householdId={householdId}
         ingredient={editing?.ingredient ?? null}
         categories={categoryList}
+        groups={groups.data ?? []}
         onClose={() => setEditing(null)}
       />
     </>

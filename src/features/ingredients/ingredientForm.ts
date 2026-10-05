@@ -29,6 +29,8 @@ export type IngredientFormValues = {
   /** '' = no category, NEW_CATEGORY = create `newCategoryName` */
   readonly categoryId: string
   readonly newCategoryName: string
+  /** broad category of a new category; '' = none ("Other") */
+  readonly newCategoryGroupId: string
   readonly note: string
   readonly per100gEnabled: boolean
   readonly per100g: BasisFormValues
@@ -45,6 +47,7 @@ export const EMPTY_INGREDIENT_FORM: IngredientFormValues = {
   brand: '',
   categoryId: '',
   newCategoryName: '',
+  newCategoryGroupId: '',
   note: '',
   per100gEnabled: false,
   per100g: EMPTY_BASIS,
@@ -57,7 +60,7 @@ export const EMPTY_INGREDIENT_FORM: IngredientFormValues = {
 export type CategoryChoice =
   | { readonly kind: 'none' }
   | { readonly kind: 'existing'; readonly id: string }
-  | { readonly kind: 'new'; readonly name: string }
+  | { readonly kind: 'new'; readonly name: string; readonly groupId: string | null }
 
 export type ParsedIngredientForm = {
   /** category_id is resolved separately, since a new category may need creating first */
@@ -115,6 +118,7 @@ const ingredientFormSchema = z
     brand: optionalText(MAX_BRAND),
     categoryId: z.string(),
     newCategoryName: z.string().trim().max(MAX_CATEGORY, `Use at most ${MAX_CATEGORY} characters`),
+    newCategoryGroupId: z.string(),
     note: optionalText(MAX_NOTE),
     per100gEnabled: z.boolean(),
     per100g: basisSchema(GRAMS_PER_BASIS),
@@ -173,8 +177,18 @@ function perUnitColumns(basis: ParsedBasis | null) {
   }
 }
 
-function categoryChoice(categoryId: string, newCategoryName: string): CategoryChoice {
-  if (categoryId === NEW_CATEGORY) return { kind: 'new', name: newCategoryName }
+type CategoryFields = Pick<
+  IngredientFormValues,
+  'categoryId' | 'newCategoryName' | 'newCategoryGroupId'
+>
+
+function categoryChoice({
+  categoryId,
+  newCategoryName,
+  newCategoryGroupId,
+}: CategoryFields): CategoryChoice {
+  if (categoryId === NEW_CATEGORY)
+    return { kind: 'new', name: newCategoryName, groupId: newCategoryGroupId || null }
   return categoryId === '' ? { kind: 'none' } : { kind: 'existing', id: categoryId }
 }
 
@@ -196,7 +210,7 @@ export function parseIngredientForm(values: IngredientFormValues): IngredientFor
         unit_label: form.unitLabel,
         unit_weight_g: form.unitWeightG,
       },
-      category: categoryChoice(form.categoryId, form.newCategoryName),
+      category: categoryChoice(form),
     },
   }
 }
@@ -209,6 +223,7 @@ export function toFormValues(ingredient: Ingredient): IngredientFormValues {
     brand: asText(ingredient.brand),
     categoryId: ingredient.category_id ?? '',
     newCategoryName: '',
+    newCategoryGroupId: '',
     note: asText(ingredient.note),
     per100gEnabled: ingredient.kcal_100 !== null,
     per100g: {

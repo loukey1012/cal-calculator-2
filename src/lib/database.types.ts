@@ -17,6 +17,45 @@ export type Database = {
       categories: {
         Row: {
           created_at: string
+          group_id: string | null
+          household_id: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          group_id?: string | null
+          household_id: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string | null
+          household_id?: string
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_group_fkey"
+            columns: ["group_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "category_groups"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "categories_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      category_groups: {
+        Row: {
+          created_at: string
           household_id: string
           id: string
           name: string
@@ -35,7 +74,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "categories_household_id_fkey"
+            foreignKeyName: "category_groups_household_id_fkey"
             columns: ["household_id"]
             isOneToOne: false
             referencedRelation: "households"

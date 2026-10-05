@@ -8,6 +8,7 @@ import { category, ingredient } from './testData'
 vi.mock('./ingredientsApi', () => ({
   fetchIngredients: vi.fn(),
   fetchCategories: vi.fn(),
+  fetchCategoryGroups: vi.fn().mockResolvedValue([]),
   createIngredient: vi.fn(),
   updateIngredient: vi.fn(),
   deleteIngredient: vi.fn(),

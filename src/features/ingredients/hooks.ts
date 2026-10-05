@@ -12,15 +12,18 @@ import {
   createIngredient,
   deleteIngredient,
   fetchCategories,
+  fetchCategoryGroups,
   fetchIngredients,
   updateIngredient,
   type Category,
+  type CategoryGroup,
   type Ingredient,
 } from './ingredientsApi'
 
 const ingredientKeys = {
   ingredients: (householdId: string) => ['ingredients', householdId] as const,
   categories: (householdId: string) => ['categories', householdId] as const,
+  categoryGroups: (householdId: string) => ['categoryGroups', householdId] as const,
 }
 
 type IngredientsQueryOptions = {
@@ -46,6 +49,13 @@ export function useCategories(householdId: string): UseQueryResult<Category[]> {
   })
 }
 
+export function useCategoryGroups(householdId: string): UseQueryResult<CategoryGroup[]> {
+  return useQuery({
+    queryKey: ingredientKeys.categoryGroups(householdId),
+    queryFn: () => fetchCategoryGroups(householdId),
+  })
+}
+
 const UNIQUE_VIOLATION = '23505'
 
 function findByName(categories: readonly Category[], name: string): Category | undefined {
@@ -67,7 +77,7 @@ async function resolveCategoryId(
   const known = findByName(categories, choice.name)
   if (known) return known.id
   try {
-    return (await createCategory(householdId, choice.name)).id
+    return (await createCategory(householdId, choice.name, choice.groupId)).id
   } catch (error) {
     if (!(error instanceof ApiError && error.code === UNIQUE_VIOLATION)) throw error
     const existing = findByName(await fetchCategories(householdId), choice.name)

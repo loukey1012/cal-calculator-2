@@ -1,4 +1,4 @@
-import type { Category, Ingredient } from './ingredientsApi'
+import type { Category, CategoryGroup, Ingredient } from './ingredientsApi'
 
 const EMPTY_INGREDIENT: Ingredient = {
   id: 'i0',
@@ -35,6 +35,10 @@ export function ingredient(overrides: Partial<Ingredient>): Ingredient {
   return { ...EMPTY_INGREDIENT, ...overrides }
 }
 
-export function category(id: string, name: string): Category {
+export function category(id: string, name: string, groupId: string | null = null): Category {
+  return { id, name, group_id: groupId, household_id: 'h1', created_at: '' }
+}
+
+export function categoryGroup(id: string, name: string): CategoryGroup {
   return { id, name, household_id: 'h1', created_at: '' }
 }

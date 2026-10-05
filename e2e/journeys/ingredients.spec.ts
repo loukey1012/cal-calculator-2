@@ -1,11 +1,16 @@
 import { activePage, expect, logIn, test } from './backend.ts'
 
-test('add, find, edit and delete an ingredient; its empty category goes with it', async ({
+test('add an ingredient in a new category of a broad category; find, edit and delete it; its empty category goes with it', async ({
   page,
   backend,
 }) => {
   const me = await backend.user('Ingrid')
   const household = await backend.household([me])
+  const { data: group } = await backend.admin
+    .from('category_groups')
+    .insert({ household_id: household, name: 'Dairy & Spreads' })
+    .select('id')
+    .single()
   await logIn(page, me)
   await page
     .getByRole('navigation', { name: 'Tabs' })
@@ -18,10 +23,19 @@ test('add, find, edit and delete an ingredient; its empty category goes with it'
   await sheet.getByLabel('Name', { exact: true }).fill('Käse gerieben')
   await sheet.getByLabel('Category').selectOption({ label: 'New category…' })
   await sheet.getByLabel('New category name').fill('Dairy')
+  await sheet.getByLabel('Broad category').selectOption({ label: 'Dairy & Spreads' })
   await sheet.getByRole('switch', { name: 'Per 100 g' }).click()
   await sheet.getByLabel('Calories per 100 g').fill('350,4')
   await sheet.getByRole('button', { name: 'Save' }).click()
   await expect(sheet).toBeHidden()
+
+  const { data: dairy } = await backend.admin
+    .from('categories')
+    .select('group_id')
+    .eq('household_id', household)
+    .eq('name', 'Dairy')
+    .single()
+  expect(dairy).toEqual({ group_id: group?.id })
 
   await ingredients.getByRole('searchbox', { name: 'Search ingredients' }).fill('kase')
   await expect(ingredients.getByRole('button', { name: /Käse gerieben/ })).toContainText(

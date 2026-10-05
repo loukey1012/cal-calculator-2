@@ -147,7 +147,17 @@ describe('parseIngredientForm', () => {
     })
     expect(
       parsed(form({ ...base, categoryId: NEW_CATEGORY, newCategoryName: ' Dairy ' })).category,
-    ).toEqual({ kind: 'new', name: 'Dairy' })
+    ).toEqual({ kind: 'new', name: 'Dairy', groupId: null })
+    expect(
+      parsed(
+        form({
+          ...base,
+          categoryId: NEW_CATEGORY,
+          newCategoryName: 'Dairy',
+          newCategoryGroupId: 'g1',
+        }),
+      ).category,
+    ).toEqual({ kind: 'new', name: 'Dairy', groupId: 'g1' })
     expect(errorsOf(form({ ...base, categoryId: NEW_CATEGORY }))).toEqual({
       newCategoryName: 'Enter a category name',
     })

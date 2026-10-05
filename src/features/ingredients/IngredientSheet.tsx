@@ -5,7 +5,7 @@ import { toUserMessage } from '../../lib/errors'
 import { useDeleteIngredient, useSaveIngredient } from './hooks'
 import { IngredientForm } from './IngredientForm'
 import { EMPTY_INGREDIENT_FORM, toFormValues } from './ingredientForm'
-import type { Category, Ingredient } from './ingredientsApi'
+import type { Category, CategoryGroup, Ingredient } from './ingredientsApi'
 
 const FORM_ID = 'ingredient-form'
 
@@ -15,6 +15,8 @@ type IngredientSheetProps = {
   /** null adds a new ingredient */
   readonly ingredient: Ingredient | null
   readonly categories: readonly Category[]
+  /** broad categories a new category can be put into */
+  readonly groups: readonly CategoryGroup[]
   readonly onClose: () => void
 }
 
@@ -23,6 +25,7 @@ export function IngredientSheet({
   householdId,
   ingredient,
   categories,
+  groups,
   onClose,
 }: IngredientSheetProps) {
   const save = useSaveIngredient(householdId)
@@ -66,6 +69,7 @@ export function IngredientSheet({
         formId={FORM_ID}
         initialValues={ingredient ? toFormValues(ingredient) : EMPTY_INGREDIENT_FORM}
         categories={categories}
+        groups={groups}
         onSubmit={(form) =>
           save.mutate({ id: ingredient?.id ?? null, form, categories }, { onSuccess: close })
         }

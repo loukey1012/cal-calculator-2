@@ -11,7 +11,7 @@ import {
   type IngredientFormValues,
   type ParsedIngredientForm,
 } from './ingredientForm'
-import type { Category } from './ingredientsApi'
+import type { Category, CategoryGroup } from './ingredientsApi'
 
 type NutrientRow = {
   readonly field: BasisField
@@ -80,6 +80,7 @@ type IngredientFormProps = {
   readonly formId: string
   readonly initialValues: IngredientFormValues
   readonly categories: readonly Category[]
+  readonly groups: readonly CategoryGroup[]
   readonly onSubmit: (data: ParsedIngredientForm) => void
 }
 
@@ -87,6 +88,7 @@ export function IngredientForm({
   formId,
   initialValues,
   categories,
+  groups,
   onSubmit,
 }: IngredientFormProps) {
   const [values, setValues] = useState(initialValues)
@@ -134,12 +136,26 @@ export function IngredientForm({
           <option value={NEW_CATEGORY}>New category…</option>
         </SelectRow>
         {values.categoryId === NEW_CATEGORY && (
-          <TextField
-            label="New category name"
-            value={values.newCategoryName}
-            onChange={(event) => set('newCategoryName', event.target.value)}
-            error={errors.newCategoryName}
-          />
+          <>
+            <TextField
+              label="New category name"
+              value={values.newCategoryName}
+              onChange={(event) => set('newCategoryName', event.target.value)}
+              error={errors.newCategoryName}
+            />
+            <SelectRow
+              label="Broad category"
+              value={values.newCategoryGroupId}
+              onChange={(event) => set('newCategoryGroupId', event.target.value)}
+            >
+              <option value="">None (Other)</option>
+              {groups.map((group) => (
+                <option key={group.id} value={group.id}>
+                  {group.name}
+                </option>
+              ))}
+            </SelectRow>
+          </>
         )}
       </GroupedSection>
 

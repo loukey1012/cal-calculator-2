@@ -10,10 +10,11 @@ import {
   createIngredient,
   deleteIngredient,
   fetchCategories,
+  fetchCategoryGroups,
   fetchIngredients,
   updateIngredient,
 } from './ingredientsApi'
-import { category, ingredient } from './testData'
+import { category, categoryGroup, ingredient } from './testData'
 
 const CREAM = ingredient({ id: 'i1', name: 'Cream', kcal_100: 92 })
 const INPUT = { name: 'Cream', kcal_100: 92, category_id: null }
@@ -38,6 +39,16 @@ describe('ingredientsApi', () => {
 
     await expect(fetchCategories('h1')).resolves.toHaveLength(1)
     expect(supabaseMock.from).toHaveBeenCalledWith('categories')
+    expect(query.order).toHaveBeenCalledWith('name')
+  })
+
+  test('fetchCategoryGroups lists the household’s broad categories by name', async () => {
+    const query = fakeQuery({ data: [categoryGroup('g1', 'Fresh')], error: null })
+    supabaseMock.from.mockReturnValueOnce(query)
+
+    await expect(fetchCategoryGroups('h1')).resolves.toHaveLength(1)
+    expect(supabaseMock.from).toHaveBeenCalledWith('category_groups')
+    expect(query.eq).toHaveBeenCalledWith('household_id', 'h1')
     expect(query.order).toHaveBeenCalledWith('name')
   })
 
@@ -67,21 +78,26 @@ describe('ingredientsApi', () => {
     expect(query.eq).toHaveBeenCalledWith('id', 'i1')
   })
 
-  test('createCategory inserts a named category', async () => {
-    const query = fakeQuery({ data: category('c9', 'Snacks'), error: null })
+  test('createCategory inserts a named category into a broad category', async () => {
+    const query = fakeQuery({ data: category('c9', 'Snacks', 'g1'), error: null })
     supabaseMock.from.mockReturnValueOnce(query)
 
-    await expect(createCategory('h1', 'Snacks')).resolves.toMatchObject({ id: 'c9' })
-    expect(query.insert).toHaveBeenCalledWith({ household_id: 'h1', name: 'Snacks' })
+    await expect(createCategory('h1', 'Snacks', 'g1')).resolves.toMatchObject({ id: 'c9' })
+    expect(query.insert).toHaveBeenCalledWith({
+      household_id: 'h1',
+      name: 'Snacks',
+      group_id: 'g1',
+    })
   })
 
   test.each([
     ['fetchIngredients', () => fetchIngredients('h1')],
     ['fetchCategories', () => fetchCategories('h1')],
+    ['fetchCategoryGroups', () => fetchCategoryGroups('h1')],
     ['createIngredient', () => createIngredient('h1', INPUT)],
     ['updateIngredient', () => updateIngredient('i1', INPUT)],
     ['deleteIngredient', () => deleteIngredient('i1')],
-    ['createCategory', () => createCategory('h1', 'x')],
+    ['createCategory', () => createCategory('h1', 'x', null)],
   ])('%s turns database errors into ApiError', async (_name, call) => {
     supabaseMock.from.mockReturnValueOnce(fakeQuery({ data: null, error: DB_ERROR }))
 
