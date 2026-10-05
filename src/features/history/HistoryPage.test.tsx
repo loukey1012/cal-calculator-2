@@ -6,6 +6,12 @@ import { CurrentUserContext } from '../../app/currentUser'
 import { renderWithProviders } from '../../test/render'
 import { dayMeal, mealItem } from '../meals/testData'
 
+vi.mock('../dishes/dishesApi', () => ({
+  fetchLeftoverDishes: vi.fn().mockResolvedValue([]),
+  fetchDish: vi.fn(),
+  saveDish: vi.fn(),
+  deleteDish: vi.fn(),
+}))
 vi.mock('./historyApi', () => ({ fetchDailyTotals: vi.fn() }))
 vi.mock('../goals/goalsApi', () => ({ fetchGoals: vi.fn(), saveGoal: vi.fn() }))
 vi.mock('../household/householdApi', () => ({ fetchMembers: vi.fn() }))

@@ -10,6 +10,7 @@ import {
   affectedDays,
   applyDishChange,
   applyDishChangeToDay,
+  applyDishChangeToLeftovers,
   DISH_CHANGES_KEY,
   registerDishChangeDefaults,
   type DishChange,
@@ -213,5 +214,46 @@ describe('dish changes survive an app restart', () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['day', 'her', DAY] })
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['month', 'me'] })
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['month', 'her'] })
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['leftovers'] })
+  })
+})
+
+describe('applyDishChangeToLeftovers', () => {
+  const withLeftover = testDish({
+    portions: [
+      { id: 'p-me', eater: ME_LUNCH, splitValue: null },
+      { id: 'p-rest', eater: null, splitValue: null },
+    ],
+  })
+  const otherDish = { ...withLeftover, id: 'dish-2' }
+
+  test('a dish saved with a leftover joins the list, one whose leftover was taken leaves it', () => {
+    const added = applyDishChangeToLeftovers([otherDish], { ...SAVE, dish: withLeftover })
+    const taken = applyDishChangeToLeftovers(added, SAVE)
+
+    expect(added.map((dish) => dish.id)).toEqual(['dish-2', 'dish-1'])
+    expect(taken.map((dish) => dish.id)).toEqual(['dish-2'])
+  })
+
+  test('a thrown-away leftover leaves the list', () => {
+    const thrown = testDish({
+      portions: [
+        { id: 'p-me', eater: ME_LUNCH, splitValue: null },
+        { id: 'p-rest', eater: null, splitValue: null, discarded: true },
+      ],
+    })
+
+    expect(applyDishChangeToLeftovers([withLeftover], { ...SAVE, dish: thrown })).toEqual([])
+  })
+
+  test('a deleted dish leaves the list', () => {
+    const change: DishChange = {
+      kind: 'delete',
+      dishId: 'dish-1',
+      previousPortionIds: [],
+      days: [],
+    }
+
+    expect(applyDishChangeToLeftovers([withLeftover, otherDish], change)).toEqual([otherDish])
   })
 })

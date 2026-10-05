@@ -6,6 +6,12 @@ import { ApiError } from '../../lib/errors'
 import { renderWithProviders } from '../../test/render'
 import { dayMeal, mealItem } from '../meals/testData'
 
+vi.mock('../dishes/dishesApi', () => ({
+  fetchLeftoverDishes: vi.fn().mockResolvedValue([]),
+  fetchDish: vi.fn(),
+  saveDish: vi.fn(),
+  deleteDish: vi.fn(),
+}))
 vi.mock('../meals/mealsApi', () => ({
   fetchDay: vi.fn(),
   addMealItem: vi.fn(),

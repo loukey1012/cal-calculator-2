@@ -5,6 +5,12 @@ import { useLocation } from 'react-router'
 import { renderWithProviders } from '../test/render'
 import { CurrentUserContext } from './currentUser'
 
+vi.mock('../features/dishes/dishesApi', () => ({
+  fetchLeftoverDishes: vi.fn().mockResolvedValue([]),
+  fetchDish: vi.fn(),
+  saveDish: vi.fn(),
+  deleteDish: vi.fn(),
+}))
 vi.mock('../features/household/householdApi', () => ({
   fetchHousehold: vi.fn().mockResolvedValue({
     id: 'h1',

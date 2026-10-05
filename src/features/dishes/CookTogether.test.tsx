@@ -18,13 +18,18 @@ vi.mock('../ingredients/ingredientsApi', () => ({
   fetchCategories: vi.fn().mockResolvedValue([]),
 }))
 vi.mock('../household/householdApi', () => ({ fetchMembers: vi.fn() }))
-vi.mock('./dishesApi', () => ({ fetchDish: vi.fn(), saveDish: vi.fn(), deleteDish: vi.fn() }))
+vi.mock('./dishesApi', () => ({
+  fetchDish: vi.fn(),
+  saveDish: vi.fn(),
+  deleteDish: vi.fn(),
+  fetchLeftoverDishes: vi.fn(),
+}))
 
 import { fetchMembers } from '../household/householdApi'
 import { fetchIngredients } from '../ingredients/ingredientsApi'
 import { fetchDay } from '../meals/mealsApi'
 import { MealSheet } from '../meals/MealSheet'
-import { deleteDish, fetchDish, saveDish } from './dishesApi'
+import { deleteDish, fetchDish, fetchLeftoverDishes, saveDish } from './dishesApi'
 import type { Dish } from './portions'
 import { gramsItem } from './testData'
 
@@ -91,6 +96,7 @@ beforeEach(() => {
   vi.mocked(fetchDish).mockResolvedValue(CHILI)
   vi.mocked(saveDish).mockResolvedValue()
   vi.mocked(deleteDish).mockResolvedValue()
+  vi.mocked(fetchLeftoverDishes).mockResolvedValue([])
 })
 
 afterEach(() => {
@@ -331,5 +337,50 @@ describe('a cooked dish in the meal', () => {
     await user.click(sheet.getByRole('button', { name: 'Remove from dish' }))
 
     expect(sheet.queryByRole('button', { name: /Mince/ })).not.toBeInTheDocument()
+  })
+})
+
+describe('leftovers', () => {
+  const WITH_LEFTOVER: Dish = {
+    ...CHILI,
+    portions: [...CHILI.portions, { id: 'p-rest', eater: null, splitValue: null }],
+  }
+
+  test('cooking one portion more keeps it as a leftover', async () => {
+    const user = userEvent.setup()
+    const sheet = renderSheet()
+
+    await user.click(await sheet.findByRole('button', { name: 'Cook together' }))
+    await user.click(await sheet.findByRole('button', { name: 'More leftover portions' }))
+    await addIngredient(user, sheet, 'Patty')
+    await user.type(sheet.getByLabelText('Amount'), '300')
+    await user.click(sheet.getByRole('button', { name: 'Add to dish' }))
+
+    // 720 kcal in the pot: a third each
+    expect(sheet.getByTestId('dish-totals')).toHaveTextContent(/Leftover.*240 kcal/)
+    await user.click(sheet.getByRole('button', { name: 'Save dish' }))
+    expect(sentDish().portions.map((portion) => portion.eater?.userId ?? null)).toEqual([
+      'u1',
+      'u2',
+      null,
+    ])
+  })
+
+  test('a leftover is offered first when adding food, and logged into this meal', async () => {
+    vi.mocked(fetchLeftoverDishes).mockResolvedValue([WITH_LEFTOVER])
+    const user = userEvent.setup()
+    const sheet = renderSheet()
+
+    await user.click(await sheet.findByRole('button', { name: 'Add food' }))
+    // a third of 400 g mince at 250 kcal
+    await user.click(await sheet.findByRole('button', { name: /Chili.*334 kcal/ }))
+
+    const dish = sentDish()
+    expect(dish.portions.find((portion) => portion.id === 'p-rest')?.eater).toEqual({
+      userId: 'u1',
+      date: DATE,
+      mealType: 'lunch',
+    })
+    expect(vi.mocked(saveDish).mock.calls[0]?.[0].baseRevision).toBe('rev-1')
   })
 })

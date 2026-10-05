@@ -5,7 +5,7 @@ const { supabaseMock } = vi.hoisted(() => ({ supabaseMock: { from: vi.fn(), rpc:
 vi.mock('../../lib/supabase', () => ({ supabase: supabaseMock }))
 
 import { ApiError } from '../../lib/errors'
-import { deleteDish, fetchDish, saveDish } from './dishesApi'
+import { deleteDish, fetchDish, fetchLeftoverDishes, saveDish } from './dishesApi'
 import { gramsItem, HER_LUNCH, ME_LUNCH, testDish } from './testData'
 
 const DB_ERROR = { message: 'permission denied', code: '42501' }
@@ -38,7 +38,15 @@ describe('fetchDish', () => {
       created_at: '',
       updated_at: '',
       dish_portions: [
-        { id: 'p-rest', position: 2, user_id: null, date: null, meal_type: null, split_value: 1 },
+        {
+          id: 'p-rest',
+          position: 2,
+          user_id: null,
+          date: null,
+          meal_type: null,
+          split_value: 1,
+          discarded: true,
+        },
         {
           id: 'p-me',
           position: 0,
@@ -85,7 +93,7 @@ describe('fetchDish', () => {
       portions: [
         { id: 'p-me', eater: ME_LUNCH, splitValue: 3 },
         { id: 'p-her', eater: HER_LUNCH, splitValue: 2 },
-        { id: 'p-rest', eater: null, splitValue: 1 },
+        { id: 'p-rest', eater: null, splitValue: 1, discarded: true },
       ],
       lines: [
         { id: 'l1', allocation: 'shared', item: gramsItem('Line l1', 200, 100), amounts: {} },
@@ -112,13 +120,40 @@ describe('fetchDish', () => {
   })
 })
 
+describe('fetchLeftoverDishes', () => {
+  test('loads the recent dishes that still have a portion nobody has eaten', async () => {
+    const portions = fakeQuery({
+      data: [{ dish_id: 'dish-1' }, { dish_id: 'dish-1' }, { dish_id: 'dish-2' }],
+      error: null,
+    })
+    const dishes = fakeQuery({ data: [], error: null })
+    supabaseMock.from.mockReturnValueOnce(portions).mockReturnValueOnce(dishes)
+
+    await expect(fetchLeftoverDishes('2026-09-28T00:00:00.000Z')).resolves.toEqual([])
+
+    expect(supabaseMock.from).toHaveBeenNthCalledWith(1, 'dish_portions')
+    expect(portions.is).toHaveBeenCalledWith('user_id', null)
+    expect(portions.eq).toHaveBeenCalledWith('discarded', false)
+    expect(supabaseMock.from).toHaveBeenNthCalledWith(2, 'dishes')
+    expect(dishes.in).toHaveBeenCalledWith('id', ['dish-1', 'dish-2'])
+    expect(dishes.gte).toHaveBeenCalledWith('created_at', '2026-09-28T00:00:00.000Z')
+  })
+
+  test('asks for no dishes when there are no leftovers', async () => {
+    supabaseMock.from.mockReturnValueOnce(fakeQuery({ data: [], error: null }))
+
+    await expect(fetchLeftoverDishes('2026-09-28T00:00:00.000Z')).resolves.toEqual([])
+    expect(supabaseMock.from).toHaveBeenCalledTimes(1)
+  })
+})
+
 describe('saveDish', () => {
   test('sends the whole dish, the revision it is based on and the items it replaces', async () => {
     supabaseMock.rpc.mockResolvedValueOnce({ data: null, error: null })
     const dish = testDish({
       portions: [
         { id: 'p-me', eater: ME_LUNCH, splitValue: null },
-        { id: 'p-rest', eater: null, splitValue: null },
+        { id: 'p-rest', eater: null, splitValue: null, discarded: true },
       ],
       lines: [
         {
@@ -140,8 +175,22 @@ describe('saveDish', () => {
         cooked_weight_g: null,
         revision: 'rev-1',
         portions: [
-          { id: 'p-me', user_id: 'me', date: ME_LUNCH.date, meal_type: 'lunch', split_value: null },
-          { id: 'p-rest', user_id: null, date: null, meal_type: null, split_value: null },
+          {
+            id: 'p-me',
+            user_id: 'me',
+            date: ME_LUNCH.date,
+            meal_type: 'lunch',
+            split_value: null,
+            discarded: false,
+          },
+          {
+            id: 'p-rest',
+            user_id: null,
+            date: null,
+            meal_type: null,
+            split_value: null,
+            discarded: true,
+          },
         ],
         lines: [
           {

@@ -47,6 +47,8 @@ type PortionPayload = {
   readonly date: string | null
   readonly meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack' | null
   readonly split_value: number | null
+  /** a leftover nobody will eat; it keeps its share so the others' portions don't change */
+  readonly discarded?: boolean
 }
 
 type DishPayload = {
@@ -364,6 +366,51 @@ describe('changing a dish', () => {
     const { error } = await saveDish(alice.client, alicesStaleEdit, chili.revision)
 
     expect(error?.message).toMatch(/changed meanwhile/i)
+  })
+
+  test('a thrown-away leftover keeps its share, so the eaten portions stay the same', async () => {
+    const chili = withFreshPortionIds(
+      dish({
+        portions: [eats('a', alice), eats('b', bob), leftover('c')],
+        lines: [sharedGrams('Mince', 300, 250)],
+      }),
+    )
+    await saveDish(alice.client, chili)
+    const thrownAway = {
+      ...chili,
+      revision: uuid(),
+      portions: chili.portions.map((portion) =>
+        portion.user_id === null ? { ...portion, discarded: true } : portion,
+      ),
+    }
+
+    const { error } = await saveDish(bob.client, thrownAway, chili.revision)
+    const portions = await alice.client
+      .from('dish_portions')
+      .select('user_id, discarded')
+      .eq('dish_id', chili.id)
+      .order('position')
+
+    expect(error).toBeNull()
+    expect(portions.data).toEqual([
+      { user_id: alice.id, discarded: false },
+      { user_id: bob.id, discarded: false },
+      { user_id: null, discarded: true },
+    ])
+    expect(await dishItemsOf(alice, chili.id)).toEqual({ Mince: [100, 1] })
+  })
+
+  test('an eaten portion cannot be thrown away', async () => {
+    const chili = withFreshPortionIds(
+      dish({
+        portions: [{ ...eats('a', alice), discarded: true }],
+        lines: [sharedGrams('Mince', 300, 250)],
+      }),
+    )
+
+    const { error } = await saveDish(alice.client, chili)
+
+    expect(error?.code).toBe('23514')
   })
 
   test('taking a leftover logs it into that meal', async () => {

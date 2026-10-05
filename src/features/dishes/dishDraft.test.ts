@@ -5,7 +5,11 @@ import {
   lineWho,
   newDish,
   rescaledLine,
+  throwAwayLeftover,
+  takeLeftover,
   withCookedWeight,
+  withLeftoverAdded,
+  withLeftoverRemoved,
   withLine,
   withName,
   withoutLine,
@@ -175,5 +179,41 @@ describe('lines', () => {
     expect(describeLine(sharedLine('l', 'Mince', 400, 250), nameOf)).toBe('400 g · shared')
     expect(describeLine(TOMATO, nameOf)).toBe('20 g · only Lisa')
     expect(describeLine(NOODLES, nameOf)).toBe('Lukas 120 g · Lisa 100 g')
+  })
+})
+
+describe('leftovers', () => {
+  test('a leftover portion can be added and removed again while editing', () => {
+    const more = withLeftoverAdded(withLeftoverAdded(testDish()))
+    const fewer = withLeftoverRemoved(more)
+
+    expect(more.portions.map((portion) => portion.eater)).toEqual([ME_LUNCH, HER_LUNCH, null, null])
+    expect(fewer.portions.map((portion) => portion.eater)).toEqual([ME_LUNCH, HER_LUNCH, null])
+    expect(withLeftoverRemoved(testDish())).toEqual(testDish())
+  })
+
+  test('a leftover added to a count split gets a count of 1', () => {
+    const dish = withLeftoverAdded(withSplitMode(testDish(), 'count'))
+
+    expect(dish.portions.map((portion) => portion.splitValue)).toEqual([1, 1, 1])
+  })
+
+  test('taking a leftover gives it an eater', () => {
+    const dish = withLeftoverAdded(testDish())
+    const leftoverId = dish.portions[2]!.id
+
+    const taken = takeLeftover(dish, leftoverId, { ...ME_LUNCH, mealType: 'dinner' })
+
+    expect(taken.portions[2]?.eater).toEqual({ ...ME_LUNCH, mealType: 'dinner' })
+  })
+
+  test('throwing a leftover away keeps its portion (and share), marked as thrown away', () => {
+    const dish = withLeftoverAdded(testDish())
+    const leftoverId = dish.portions[2]!.id
+
+    const thrown = throwAwayLeftover(dish, leftoverId)
+
+    expect(thrown.portions).toHaveLength(3)
+    expect(thrown.portions[2]).toMatchObject({ eater: null, discarded: true })
   })
 })

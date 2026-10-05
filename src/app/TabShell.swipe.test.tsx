@@ -20,6 +20,12 @@ const embla = vi.hoisted(() => {
   return { handlers, state, api }
 })
 
+vi.mock('../features/dishes/dishesApi', () => ({
+  fetchLeftoverDishes: vi.fn().mockResolvedValue([]),
+  fetchDish: vi.fn(),
+  saveDish: vi.fn(),
+  deleteDish: vi.fn(),
+}))
 vi.mock('embla-carousel-react', () => ({
   default: (options: Record<string, unknown>) => {
     embla.state.options = options
