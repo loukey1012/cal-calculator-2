@@ -10,6 +10,8 @@ describe('PageHeader', () => {
       screen.getByRole('button', { name: 'Add' }),
     )
     expect(screen.getByRole('heading', { name: 'Ingredients' })).toBeInTheDocument()
+    // the bar row itself keeps the title clear of the iOS status bar fade
+    expect(screen.getByRole('banner')).toHaveClass('pt-3')
   })
 
   test('leaves out the empty bar row when there are no buttons, to save height', () => {
@@ -17,5 +19,11 @@ describe('PageHeader', () => {
 
     expect(screen.queryByTestId('page-header-bar')).not.toBeInTheDocument()
     expect(screen.getByText('Monday, 5 October')).toBeInTheDocument()
+  })
+
+  test('without buttons, extra room keeps the date clear of the iOS status bar fade', () => {
+    render(<PageHeader title="Today" subtitle="Monday, 5 October" />)
+
+    expect(screen.getByRole('banner')).toHaveClass('pt-6')
   })
 })
