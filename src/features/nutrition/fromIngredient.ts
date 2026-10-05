@@ -50,6 +50,15 @@ export function ingredientNutrition(row: IngredientRow): IngredientNutrition {
   }
 }
 
+export function ingredientSource(ingredient: IngredientRow): MealItemSource {
+  return {
+    ingredientId: ingredient.id,
+    name: ingredient.name,
+    brand: ingredient.brand,
+    nutrition: ingredientNutrition(ingredient),
+  }
+}
+
 /** Snapshots the nutrition of the basis used, so later ingredient edits never rewrite history. */
 export function buildMealItem(
   source: MealItemSource,

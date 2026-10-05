@@ -2,7 +2,11 @@ import type { Enums, Tables } from '../../lib/database.types'
 import { roundTo } from '../../lib/numbers'
 
 export type MealType = Enums<'meal_type'>
-export type MealItem = Tables<'meal_items'>
+/** The dish a cooked portion's item belongs to (name for display, id to open it). */
+export type DishRef = { readonly id: string; readonly name: string | null }
+
+/** `dish` is set for items of a cooked dish; it may be missing in data cached by older versions. */
+export type MealItem = Tables<'meal_items'> & { readonly dish?: DishRef | null }
 
 /** One meal of a day as loaded for the Today screen. */
 export type DayMeal = {
@@ -45,7 +49,10 @@ export function itemsByMeal(
  * New amount in the unit it was logged in. The multiplier scales proportionally, which works
  * for every basis (e.g. grams of a per-unit bar) without needing the ingredient again.
  */
-export function scaleItemAmount(item: MealItem, newAmount: number): AmountPatch {
+export function scaleItemAmount(
+  item: Pick<MealItem, 'basis_multiplier' | 'entered_amount'>,
+  newAmount: number,
+): AmountPatch {
   if (!Number.isFinite(newAmount) || newAmount <= 0) {
     throw new RangeError('Amount must be a positive number')
   }
@@ -60,7 +67,10 @@ export function scaleItemAmount(item: MealItem, newAmount: number): AmountPatch 
 }
 
 /** e.g. "150 g", "1 unit", "2,5 units" */
-export function describeAmount(item: MealItem, locale?: string): string {
+export function describeAmount(
+  item: Pick<MealItem, 'entered_amount' | 'entered_unit'>,
+  locale?: string,
+): string {
   const amount = new Intl.NumberFormat(locale, { maximumFractionDigits: AMOUNT_DECIMALS }).format(
     item.entered_amount,
   )

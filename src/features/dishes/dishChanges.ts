@@ -74,7 +74,7 @@ export function affectedDays(
   )
 }
 
-function optimisticItem(portionId: string, { lineId, draft }: PortionItem): MealItem {
+function optimisticItem(dish: Dish, portionId: string, { lineId, draft }: PortionItem): MealItem {
   const now = new Date().toISOString()
   return {
     ...draft,
@@ -83,6 +83,7 @@ function optimisticItem(portionId: string, { lineId, draft }: PortionItem): Meal
     meal_id: '',
     dish_portion_id: portionId,
     dish_line_id: lineId,
+    dish: { id: dish.id, name: dish.name },
     created_at: now,
     updated_at: now,
   }
@@ -114,7 +115,7 @@ export function applyDishChangeToDay(
     if (!eater || eater.userId !== day.userId || eater.date !== day.date) return current
     return items.reduce<DayMeal[]>(
       (withItems, item) =>
-        withItemAdded(withItems, eater.mealType, optimisticItem(portionId, item)),
+        withItemAdded(withItems, eater.mealType, optimisticItem(change.dish, portionId, item)),
       current,
     )
   }, cleared)

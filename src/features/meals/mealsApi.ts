@@ -1,7 +1,7 @@
 import { ApiError } from '../../lib/errors'
 import { supabase } from '../../lib/supabase'
 import type { MealItemDraft } from '../nutrition/fromIngredient'
-import type { AmountPatch, DayMeal, MealType } from './dayModel'
+import type { AmountPatch, DayMeal, DishRef, MealType } from './dayModel'
 
 export type AddMealItemInput = {
   /** generated on the device, so retrying the same add can never create a duplicate */
@@ -12,15 +12,27 @@ export type AddMealItemInput = {
   readonly draft: MealItemDraft
 }
 
+type DishPortionJoin = { readonly dish_id: string; readonly dishes: { name: string | null } | null }
+
+function dishOf(portion: DishPortionJoin | null): DishRef | null {
+  return portion ? { id: portion.dish_id, name: portion.dishes?.name ?? null } : null
+}
+
 export async function fetchDay(userId: string, date: string): Promise<DayMeal[]> {
   const { data, error } = await supabase
     .from('meals')
-    .select('id, meal_type, meal_items(*)')
+    .select('id, meal_type, meal_items(*, dish_portions(dish_id, dishes(name)))')
     .eq('user_id', userId)
     .eq('date', date)
     .order('created_at', { referencedTable: 'meal_items' })
   if (error) throw ApiError.from(error)
-  return data
+  return data.map((meal) => ({
+    ...meal,
+    meal_items: meal.meal_items.map(({ dish_portions, ...item }) => ({
+      ...item,
+      dish: dishOf(dish_portions),
+    })),
+  }))
 }
 
 export async function addMealItem({

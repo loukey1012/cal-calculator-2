@@ -122,6 +122,8 @@ describe('cooking together', () => {
     )
     expect(sheet.getByRole('button', { name: /Tomato.*only Lisa/ })).toBeInTheDocument()
 
+    // still being sent: the meal shows the dish right away
+    vi.mocked(saveDish).mockReturnValueOnce(new Promise(() => {}))
     await user.click(sheet.getByRole('button', { name: 'Save dish' }))
     const dish = sentDish()
     expect(dish.name).toBe('Burger')

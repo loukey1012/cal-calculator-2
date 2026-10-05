@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import { Button } from '../../components/ios/Button'
 import { Sheet } from '../../components/ios/Sheet'
+import { DishEditor } from '../dishes/DishEditor'
+import { useLatestDishChangeError } from '../dishes/hooks'
 import type { Ingredient } from '../ingredients/ingredientsApi'
 import { availableUnits } from '../nutrition/amounts'
 import {
   buildMealItem,
   ingredientNutrition,
+  ingredientSource,
   type MealItemSource,
 } from '../nutrition/fromIngredient'
 import type { AmountUnit } from '../nutrition/types'
@@ -31,6 +34,8 @@ type View =
   | { readonly kind: 'custom' }
   /** by id: the item is looked up live, so a partner's change or delete is noticed */
   | { readonly kind: 'edit'; readonly itemId: string }
+  /** cook together: a new dish (null) or an existing one */
+  | { readonly kind: 'dish'; readonly dishId: string | null }
 
 type MealSheetProps = {
   readonly open: boolean
@@ -57,15 +62,6 @@ function BackButton({ onClick }: { readonly onClick: () => void }) {
   )
 }
 
-function sourceOf(ingredient: Ingredient): MealItemSource {
-  return {
-    ingredientId: ingredient.id,
-    name: ingredient.name,
-    brand: ingredient.brand,
-    nutrition: ingredientNutrition(ingredient),
-  }
-}
-
 function MealSheetContent({ mealType, userId, date }: Omit<MealSheetProps, 'open' | 'onClose'>) {
   const [requestedView, setView] = useState<View>({ kind: 'items' })
   const day = useDay(userId, date)
@@ -73,6 +69,7 @@ function MealSheetContent({ mealType, userId, date }: Omit<MealSheetProps, 'open
   const update = useUpdateMealItem(userId, date)
   const remove = useDeleteMealItem(userId, date)
   const latestChangeError = useLatestDayChangeError(userId, date)
+  const latestDishError = useLatestDishChangeError()
   const items = itemsByMeal(day.data ?? [])[mealType]
   const editedItem =
     requestedView.kind === 'edit'
@@ -95,10 +92,12 @@ function MealSheetContent({ mealType, userId, date }: Omit<MealSheetProps, 'open
         <MealItemsView
           items={items}
           loading={day.isPending}
-          error={latestChangeError ?? day.error}
+          error={latestChangeError ?? latestDishError ?? day.error}
           onAdd={() => setView({ kind: 'pick' })}
           onEdit={(item) => setView({ kind: 'edit', itemId: item.id })}
           onDelete={(itemId) => remove.mutate(itemId)}
+          onCookTogether={() => setView({ kind: 'dish', dishId: null })}
+          onEditDish={(dishId) => setView({ kind: 'dish', dishId })}
         />
       )
     case 'pick':
@@ -122,11 +121,24 @@ function MealSheetContent({ mealType, userId, date }: Omit<MealSheetProps, 'open
             unitLabel={view.ingredient.unit_label}
             confirmLabel={`Add to ${label}`}
             preview={(amount, unit) => previewNewItem(nutrition, amount, unit)}
-            onConfirm={(amount, unit) => addItem(sourceOf(view.ingredient), amount, unit)}
+            onConfirm={(amount, unit) => addItem(ingredientSource(view.ingredient), amount, unit)}
           />
         </>
       )
     }
+    case 'dish':
+      return (
+        <>
+          <BackButton onClick={showItems} />
+          <DishEditor
+            dishId={view.dishId}
+            personId={userId}
+            date={date}
+            mealType={mealType}
+            onDone={showItems}
+          />
+        </>
+      )
     case 'custom':
       return (
         <>

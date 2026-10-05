@@ -1,0 +1,42 @@
+import { ErrorBanner } from '../../components/ios/ErrorBanner'
+import { GroupedSection } from '../../components/ios/GroupedSection'
+import { ListRow } from '../../components/ios/ListRow'
+import { formatKcal, macroSummary } from '../nutrition/format'
+import { mealTotals } from '../nutrition/totals'
+import { portionItems, type Dish, type PortionItems } from './portions'
+
+type DishTotalsProps = {
+  readonly dish: Dish
+  readonly nameOf: (portionId: string) => string
+}
+
+function splitOrError(dish: Dish): readonly PortionItems[] | string {
+  try {
+    return portionItems(dish)
+  } catch (error) {
+    return error instanceof Error ? error.message : 'This split doesn’t work.'
+  }
+}
+
+/** What everyone gets, live while editing. */
+export function DishTotals({ dish, nameOf }: DishTotalsProps) {
+  const split = splitOrError(dish)
+  if (typeof split === 'string') return <ErrorBanner message={split} />
+  return (
+    <div data-testid="dish-totals">
+      <GroupedSection header="Everyone gets">
+        {split.map(({ portionId, items }) => {
+          const totals = mealTotals(items.map(({ draft }) => draft))
+          return (
+            <ListRow
+              key={portionId}
+              title={nameOf(portionId)}
+              subtitle={macroSummary(totals)}
+              detail={`${formatKcal(totals.kcal)} kcal`}
+            />
+          )
+        })}
+      </GroupedSection>
+    </div>
+  )
+}

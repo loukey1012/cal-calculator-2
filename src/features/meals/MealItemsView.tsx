@@ -3,6 +3,7 @@ import { ErrorBanner } from '../../components/ios/ErrorBanner'
 import { ListRow } from '../../components/ios/ListRow'
 import { SwipeableRow } from '../../components/ios/SwipeableRow'
 import { toUserMessage } from '../../lib/errors'
+import { DishBlock } from '../dishes/DishBlock'
 import { formatKcal, macroSummary } from '../nutrition/format'
 import { itemTotals, mealTotals } from '../nutrition/totals'
 import { describeAmount, type MealItem } from './dayModel'
@@ -14,6 +15,24 @@ type MealItemsViewProps = {
   readonly onAdd: () => void
   readonly onEdit: (item: MealItem) => void
   readonly onDelete: (itemId: string) => void
+  readonly onCookTogether: () => void
+  readonly onEditDish: (dishId: string) => void
+}
+
+type Entry =
+  | { readonly kind: 'item'; readonly item: MealItem }
+  | { readonly kind: 'dish'; readonly portionId: string; readonly items: readonly MealItem[] }
+
+/** Plain items as they are; a dish's items as one entry, where its first item was. */
+function entriesOf(items: readonly MealItem[]): Entry[] {
+  return items.flatMap((item): Entry[] => {
+    const portionId = item.dish_portion_id
+    if (portionId === null) return [{ kind: 'item', item }]
+    const first = items.find((candidate) => candidate.dish_portion_id === portionId)
+    if (first !== item) return []
+    const portion = items.filter((candidate) => candidate.dish_portion_id === portionId)
+    return [{ kind: 'dish', portionId, items: portion }]
+  })
 }
 
 export function MealItemsView({
@@ -23,6 +42,8 @@ export function MealItemsView({
   onAdd,
   onEdit,
   onDelete,
+  onCookTogether,
+  onEditDish,
 }: MealItemsViewProps) {
   const totals = mealTotals(items)
 
@@ -39,20 +60,28 @@ export function MealItemsView({
       )}
       {items.length > 0 && (
         <div className="mt-4 divide-y divide-separator overflow-hidden rounded-3xl bg-bg-elevated shadow-card">
-          {items.map((item) => (
-            <SwipeableRow key={item.id} onDelete={() => onDelete(item.id)}>
-              <ListRow
-                title={item.name}
-                subtitle={describeAmount(item)}
-                detail={`${formatKcal(itemTotals(item).kcal)} kcal`}
-                onClick={() => onEdit(item)}
-              />
-            </SwipeableRow>
-          ))}
+          {entriesOf(items).map((entry) =>
+            entry.kind === 'dish' ? (
+              // a dish's items only change through the dish
+              <DishBlock key={entry.portionId} items={entry.items} onEdit={onEditDish} />
+            ) : (
+              <SwipeableRow key={entry.item.id} onDelete={() => onDelete(entry.item.id)}>
+                <ListRow
+                  title={entry.item.name}
+                  subtitle={describeAmount(entry.item)}
+                  detail={`${formatKcal(itemTotals(entry.item).kcal)} kcal`}
+                  onClick={() => onEdit(entry.item)}
+                />
+              </SwipeableRow>
+            ),
+          )}
         </div>
       )}
-      <div className="mt-6">
+      <div className="mt-6 flex flex-col gap-3">
         <Button onClick={onAdd}>Add food</Button>
+        <Button variant="secondary" onClick={onCookTogether}>
+          Cook together
+        </Button>
       </div>
     </>
   )

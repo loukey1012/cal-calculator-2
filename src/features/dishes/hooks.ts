@@ -1,5 +1,6 @@
 import {
   useMutation,
+  useMutationState,
   useQuery,
   useQueryClient,
   type QueryClient,
@@ -88,6 +89,16 @@ function useDishChange(): DishChangeMutation {
     onSettled: (_data, _error, change) =>
       hasOtherPendingChanges(queryClient) ? undefined : refreshAfterDishChange(queryClient, change),
   })
+}
+
+/** The error of the latest dish change, or null once a later one succeeded (survives closing). */
+export function useLatestDishChangeError(): Error | null {
+  const changes = useMutationState({
+    filters: { mutationKey: DISH_CHANGES_KEY },
+    select: (mutation) => mutation.state,
+  })
+  const latest = changes.at(-1)
+  return latest?.status === 'error' ? latest.error : null
 }
 
 export type SaveDishRequest = {

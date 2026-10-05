@@ -21,6 +21,14 @@ Built for a two-person household: both members log their own meals, can see and 
 - The whole Today page (person switch, goal card and all four meals) **fits an iPhone screen without scrolling**.
 - "Today" moves on at midnight, and when the app comes back to the foreground on a later day.
 
+### Cooking together (meal sheet › Cook together)
+
+- Log a dish you cooked together **once**: everyone eating gets their portion in their own meal (each person can be in a different meal, or not eat along).
+- Each ingredient is **Shared** (split by the dish's split), **only for one person** (e.g. the tomato on her burger) or has **own amounts** per person (noodles 120 g / 100 g).
+- The split for shared ingredients: **Equal**, **Count** (3 toasts : 2 toasts), **%**, or **Weight** (weigh the cooked dish and each plate). What everyone gets is shown live before saving; a split that can't work (e.g. 110 %) says why.
+- In the meal the dish is **one block** with your share, opening to its ingredients and **Edit dish**. Either of you can change or delete it; both portions follow. If both of you changed it at the same time, the later save is refused instead of overwriting the other.
+- Works offline like any meal change (same queue, in order).
+
 ### Daily goals and progress
 
 - Per-person daily goal: **calories required**; protein, carbs and fat optional.
@@ -83,7 +91,7 @@ Everything here is saved **to your account**, never to the device: you get the s
 
 | Area             | Planned                                                                                                  |
 | ---------------- | -------------------------------------------------------------------------------------------------------- |
-| Cook together    | _In progress._ Log a dish cooked together once; each person gets their portion (see below)               |
+| Cook together    | _In progress._ Still to come: "Share this meal" for a meal logged alone, and leftovers (see below)       |
 | Recipes          | Save dishes and meals by name as recipes, and cook or log them again (with remembered own amounts)       |
 | Nicknames        | Give household members your own display name (a per-viewer nickname; their account name stays unchanged) |
 | Barcode scanning | Find or create an ingredient by scanning its barcode                                                     |
