@@ -18,6 +18,7 @@ Built for a two-person household: both members log their own meals, can see and 
 - Change an item's amount by tapping it, or remove it with **swipe to delete**.
 - Every logged item keeps a **snapshot of its nutrition values**, so editing an ingredient later never changes past meals.
 - **Day total** and per-meal totals. Unknown nutrients show as "–" instead of a misleading 0.
+- The whole Today page (person switch, goal card and all four meals) **fits an iPhone screen without scrolling**, checked by an end-to-end journey at the iPhone's home-screen size.
 - "Today" moves on at midnight, and when the app comes back to the foreground on a later day.
 
 ### Daily goals and progress
@@ -180,7 +181,7 @@ pnpm lint && pnpm typecheck && pnpm format:check
 pnpm db:types       # regenerate src/lib/database.types.ts from the linked project
 ```
 
-**End-to-end journeys** (log a meal, goals and partner, history, ingredients, category management, offline, appearance following the account to a new device) run the real app against the dev project. Build it against dev and pass the test credentials:
+**End-to-end journeys** (log a meal, goals and partner, Today fitting the screen, history, ingredients, category management, offline, appearance following the account to a new device) run the real app against the dev project. Build it against dev and pass the test credentials:
 
 ```bash
 set -a; . ./.env.test.local; set +a

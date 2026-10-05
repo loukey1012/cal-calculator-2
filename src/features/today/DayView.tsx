@@ -42,16 +42,17 @@ function MealCard({ type, label, subtitle, onOpen }: MealCardProps) {
     <button
       type="button"
       onClick={onOpen}
-      className="flex flex-col gap-3 rounded-[22px] bg-bg-elevated p-4 text-left shadow-card transition-transform active:scale-[0.98]"
+      className="flex min-w-0 flex-col gap-1.5 rounded-[22px] bg-bg-elevated p-3 text-left shadow-card transition-transform active:scale-[0.98]"
     >
-      <span className="grid h-9 w-9 place-items-center rounded-xl bg-accent-soft text-accent-ink">
-        <MealIcon className="h-5 w-5" />
-      </span>
-      <span className="min-w-0">
-        <span className="block text-[16px] font-extrabold">{label}</span>
-        <span className="block truncate text-[13px] font-semibold text-label-secondary">
-          {subtitle}
+      {/* icon beside the name keeps the 2×2 grid short enough for Today to fit the screen */}
+      <span className="flex items-center gap-2">
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent-ink">
+          <MealIcon className="h-4 w-4" />
         </span>
+        <span className="text-[16px] font-extrabold">{label}</span>
+      </span>
+      <span className="block truncate px-0.5 text-[13px] font-semibold text-label-secondary">
+        {subtitle}
       </span>
     </button>
   )
@@ -106,7 +107,7 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
             date={date}
             totals={dayTotals}
           />
-          <section className="mt-6">
+          <section className="mt-4">
             <div data-testid="day-total" className="mb-3 px-1">
               <div className="flex items-baseline justify-between gap-3">
                 <h2 className="font-display text-[20px] font-bold">Meals</h2>

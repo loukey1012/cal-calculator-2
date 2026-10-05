@@ -108,8 +108,8 @@ function macrosAsRings(style: ProgressStyle): boolean {
   return style === 'rings'
 }
 
-const KCAL_RING_SIZE = 148
-const KCAL_RING_STROKE = 14
+const KCAL_RING_SIZE = 128
+const KCAL_RING_STROKE = 12
 const MACRO_RING_SIZE = 52
 const MACRO_RING_STROKE = 7
 
@@ -125,7 +125,7 @@ function KcalHero({ goal, style }: { goal: GoalProgress; style: ProgressStyle })
         <div className="relative">
           <Ring goal={goal} color={color} size={KCAL_RING_SIZE} stroke={KCAL_RING_STROKE} />
           <p className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="font-display text-[28px] leading-none font-bold tracking-tight">
+            <span className="font-display text-[26px] leading-none font-bold tracking-tight">
               {remaining}
             </span>{' '}
             <span className="mt-1 text-[12px] font-semibold text-label-secondary">
@@ -210,7 +210,7 @@ export function GoalProgressView({ progress, style }: GoalProgressViewProps) {
   return (
     <ul
       aria-label="Goals"
-      className={`grid gap-x-3 ${style === 'compact' ? 'gap-y-3' : 'gap-y-5'}`}
+      className={`grid gap-x-3 ${style === 'compact' ? 'gap-y-3' : 'gap-y-4'}`}
       style={{ gridTemplateColumns: `repeat(${Math.max(macros.length, 1)}, minmax(0, 1fr))` }}
     >
       {kcal && <KcalHero goal={kcal} style={style} />}

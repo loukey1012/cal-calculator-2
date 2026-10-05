@@ -59,7 +59,7 @@ export function GoalCard({ userId, isOwnGoal, name, date, totals }: GoalCardProp
   }
 
   return (
-    <section className="mt-4 rounded-[28px] bg-bg-elevated p-5 shadow-card">
+    <section className="mt-3 rounded-[28px] bg-bg-elevated p-4 shadow-card">
       {renderContent()}
       {isOwnGoal && (
         <GoalSheet

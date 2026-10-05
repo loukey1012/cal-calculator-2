@@ -14,10 +14,13 @@ export function PageHeader({ title, subtitle, action, leading }: PageHeaderProps
   return (
     // keeps the bar buttons clear of the fade iOS draws below the status bar
     <header className="pt-3 pb-2">
-      <div className="flex min-h-11 items-center justify-between">
-        <div>{leading}</div>
-        <div>{action}</div>
-      </div>
+      {/* without buttons the row would only cost height (Today must fit the screen) */}
+      {(leading || action) && (
+        <div data-testid="page-header-bar" className="flex min-h-11 items-center justify-between">
+          <div>{leading}</div>
+          <div>{action}</div>
+        </div>
+      )}
       {subtitle && <p className="caption">{subtitle}</p>}
       <h1 className="font-display text-[32px] leading-tight font-extrabold tracking-tight">
         {title}
