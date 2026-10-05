@@ -102,7 +102,7 @@ describe('SettingsPage', () => {
     renderPage()
 
     const row = screen.getByRole('button', { name: /Appearance/ })
-    expect(row).toHaveTextContent('System · Soft')
+    expect(row).toHaveTextContent('System · Classic / Soft')
     await user.click(row)
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Appearance' })).toBeInTheDocument()

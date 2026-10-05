@@ -1,6 +1,8 @@
+import { readFileSync } from 'node:fs'
 import { describe, expect, test } from 'vitest'
 import { contrastRatio } from '../../lib/color'
 import {
+  ACCENT_COLORS,
   appearanceVariables,
   DEFAULT_APPEARANCE,
   goalColors,
@@ -13,6 +15,7 @@ describe('parseAppearance', () => {
   test('reads a stored appearance', () => {
     const stored = {
       theme: 'dark',
+      lightStyle: 'pink',
       darkStyle: 'bento',
       goalPalette: 'pastel',
       progressStyle: 'bars',
@@ -38,6 +41,11 @@ describe('parseAppearance', () => {
     expect(DEFAULT_APPEARANCE.categoryLayout).toBe('line')
   })
 
+  test('the light style is classic until changed', () => {
+    expect(DEFAULT_APPEARANCE.lightStyle).toBe('classic')
+    expect(parseAppearance({ lightStyle: 'pink' }).lightStyle).toBe('pink')
+  })
+
   test('an unknown value only resets that one field', () => {
     expect(parseAppearance({ theme: 'sepia', darkStyle: 'bento' })).toEqual({
       ...DEFAULT_APPEARANCE,
@@ -59,6 +67,70 @@ describe('resolveScheme', () => {
     expect(resolveScheme({ ...bento, theme: 'dark' }, false)).toBe('bento')
     expect(resolveScheme({ ...DEFAULT_APPEARANCE, theme: 'dark' }, false)).toBe('soft')
   })
+})
+
+describe('resolveScheme with the pink light style', () => {
+  const pink = { ...DEFAULT_APPEARANCE, lightStyle: 'pink' } as const
+
+  test('light paints pink', () => {
+    expect(resolveScheme({ ...pink, theme: 'light' }, true)).toBe('pink')
+  })
+
+  test('system is pink by day and the dark style at night', () => {
+    expect(resolveScheme(pink, false)).toBe('pink')
+    expect(resolveScheme(pink, true)).toBe('soft')
+  })
+
+  test('dark ignores the light style', () => {
+    expect(resolveScheme({ ...pink, theme: 'dark' }, false)).toBe('soft')
+  })
+})
+
+describe('the pink scheme', () => {
+  const css = readFileSync('src/index.css', 'utf8')
+
+  function cssToken(scheme: string, name: string): string | undefined {
+    const selector = scheme === 'light' ? ':root {' : `:root[data-scheme='${scheme}'] {`
+    const block = css.slice(css.indexOf(selector), css.indexOf('}', css.indexOf(selector)))
+    return new RegExp(`${name}:\\s*(#[0-9a-f]{6})`, 'i').exec(block)?.[1]?.toLowerCase()
+  }
+
+  test.each(Object.entries(SCHEME_SURFACES))(
+    '%s surfaces match the tokens in index.css',
+    (scheme, { bg, card, label }) => {
+      expect(cssToken(scheme, '--bg')).toBe(bg)
+      expect(cssToken(scheme, '--bg-elevated')).toBe(card)
+      expect(cssToken(scheme, '--label')).toBe(label)
+    },
+  )
+
+  test('text stays readable on the pink page and cards', () => {
+    const { bg, card, label } = SCHEME_SURFACES.pink
+    const secondary = cssToken('pink', '--label-secondary') ?? ''
+
+    for (const surface of [bg, card]) {
+      expect(contrastRatio(label, surface)).toBeGreaterThanOrEqual(4.5)
+      expect(contrastRatio(secondary, surface)).toBeGreaterThanOrEqual(4.5)
+    }
+  })
+
+  test('pink has its own goal colors in every fixed palette', () => {
+    for (const palette of ['vivid', 'pastel', 'contrast'] as const) {
+      expect(goalColors(palette, 'pink', '#007aff')).not.toEqual(
+        goalColors(palette, 'light', '#007aff'),
+      )
+    }
+  })
+
+  test.each(ACCENT_COLORS.map((color) => [color.name, color.value]))(
+    'accent text in %s stays readable on pink',
+    (_name, accent) => {
+      const ink = appearanceVariables('vivid', 'pink', accent)['--accent-ink'] ?? ''
+
+      expect(contrastRatio(ink, SCHEME_SURFACES.pink.bg)).toBeGreaterThanOrEqual(4.5)
+      expect(contrastRatio(ink, SCHEME_SURFACES.pink.card)).toBeGreaterThanOrEqual(4.5)
+    },
+  )
 })
 
 describe('goalColors', () => {

@@ -40,6 +40,19 @@ describe('useAppearance', () => {
     expect(variable('--accent')).toBe('')
   })
 
+  test('paints the pink light style', () => {
+    renderHook(() =>
+      useAppearance({
+        accent_color: '#d6409f',
+        appearance: { theme: 'light', lightStyle: 'pink' },
+      }),
+    )
+
+    expect(root.dataset.scheme).toBe('pink')
+    const cache = JSON.parse(localStorage.getItem(APPEARANCE_CACHE_KEY) ?? 'null')
+    expect(cache).toMatchObject({ theme: 'light', lightStyle: 'pink' })
+  })
+
   test('mirrors the look to localStorage for the next app start', () => {
     renderHook(() =>
       useAppearance({ accent_color: '#007aff', appearance: { theme: 'dark', darkStyle: 'bento' } }),

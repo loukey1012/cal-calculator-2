@@ -97,10 +97,22 @@ describe('Appearance menu', () => {
   })
 })
 
+test.each([
+  [{ theme: 'light' }, 'Light · Classic'],
+  [{ theme: 'light', lightStyle: 'pink' }, 'Light · Pink'],
+  [{ theme: 'dark', lightStyle: 'pink' }, 'Dark · Soft'],
+  [{ lightStyle: 'pink', darkStyle: 'bento' }, 'System · Pink / Graphite'],
+])('the App colors row summarises %j as %s', (appearance, summary) => {
+  renderPage(MENU, appearance)
+
+  expect(screen.getByRole('button', { name: /App colors/ })).toHaveTextContent(summary)
+})
+
 describe('Appearance pages', () => {
   test('show the current choices, defaults for a new account', () => {
     renderPage(COLORS)
     expect(radio('Theme', 'System')).toHaveAttribute('aria-checked', 'true')
+    expect(radio('Light style', /Classic/)).toHaveAttribute('aria-checked', 'true')
     expect(radio('Dark style', /Soft/)).toHaveAttribute('aria-checked', 'true')
     expect(radio('Accent color', 'Blue')).toHaveAttribute('aria-checked', 'true')
   })
@@ -126,6 +138,7 @@ describe('Appearance pages', () => {
   test.each([
     [COLORS, 'Theme', 'Dark', { theme: 'dark' }],
     [COLORS, 'Dark style', /Graphite/, { darkStyle: 'bento' }],
+    [COLORS, 'Light style', /Pink/, { lightStyle: 'pink' }],
     [PROGRESS, 'Goal colors', /Pastel/, { goalPalette: 'pastel' }],
     [PROGRESS, 'Progress style', 'Compact', { progressStyle: 'compact' }],
     [PROGRESS, 'Progress style', 'Ring + bars', { progressStyle: 'ringBars' }],
