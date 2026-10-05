@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import {
   describeLine,
+  lineFromItem,
   lineWho,
   newDish,
   rescaledLine,
@@ -29,6 +30,28 @@ const TOMATO: DishLine = {
   item: gramsItem('Tomato', 20, 18),
   amounts: { 'p-her': 20 },
 }
+
+describe('lineFromItem', () => {
+  test('a logged item becomes a shared line with the same amount and nutrition', () => {
+    const logged = { ...gramsItem('Oats', 160, 370), id: 'oats', meal_id: 'm1' }
+
+    const line = lineFromItem({
+      ...logged,
+      dish_portion_id: null,
+      dish_line_id: null,
+      created_at: '',
+      updated_at: '',
+    })
+
+    expect(line).toEqual({
+      id: expect.any(String),
+      allocation: 'shared',
+      item: gramsItem('Oats', 160, 370),
+      amounts: {},
+    })
+    expect(line.id).not.toBe('oats')
+  })
+})
 
 describe('newDish', () => {
   test('one portion per eater, split equally, nothing in it yet', () => {

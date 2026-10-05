@@ -231,6 +231,37 @@ describe('cooking together', () => {
   })
 })
 
+describe('sharing a meal logged alone', () => {
+  const APPLE = mealItem({ id: 'apple', name: 'Apple', entered_amount: 150, basis_multiplier: 1.5 })
+  const OATS = mealItem({ id: 'oats', name: 'Oats', entered_amount: 80, basis_multiplier: 0.8 })
+
+  test('turns its items into a dish for both and takes them out of the meal', async () => {
+    vi.mocked(fetchDay).mockResolvedValue([dayMeal('m1', 'lunch', [APPLE, OATS])])
+    const user = userEvent.setup()
+    const sheet = renderSheet()
+
+    await user.click(await sheet.findByRole('button', { name: 'Share this meal' }))
+    expect(await sheet.findByRole('button', { name: /Apple.*150 g · shared/ })).toBeInTheDocument()
+    expect(sheet.getByRole('combobox', { name: 'Lisa' })).toHaveValue('lunch')
+    await user.click(sheet.getByRole('button', { name: 'Save dish' }))
+
+    const request = vi.mocked(saveDish).mock.calls[0]?.[0]
+    expect(request?.replaceItemIds).toEqual(['apple', 'oats'])
+    expect(request?.dish.lines.map((line) => [line.item.name, line.item.entered_amount])).toEqual([
+      ['Apple', 150],
+      ['Oats', 80],
+    ])
+    expect(request?.dish.portions).toHaveLength(2)
+  })
+
+  test('is only offered when the meal has food of its own', async () => {
+    const sheet = renderSheet()
+
+    await sheet.findByRole('button', { name: 'Cook together' })
+    expect(sheet.queryByRole('button', { name: 'Share this meal' })).not.toBeInTheDocument()
+  })
+})
+
 describe('a cooked dish in the meal', () => {
   const MY_CHILI = mealItem({
     id: 'srv-1',

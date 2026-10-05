@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import {
+  mealEntries,
   describeAmount,
   itemsByMeal,
   MEAL_TYPES,
@@ -40,6 +41,23 @@ describe('itemsByMeal', () => {
     expect(grouped.lunch).toEqual([CREAM, BAR])
     expect(grouped.breakfast).toEqual([])
     expect(grouped.snack).toEqual([])
+  })
+})
+
+describe('mealEntries', () => {
+  test('plain items stay single, a dish’s items become one entry where the dish starts', () => {
+    const apple = mealItem({ id: 'apple' })
+    const mince = mealItem({ id: 'mince', dish_portion_id: 'p1', dish_line_id: 'l1' })
+    const beans = mealItem({ id: 'beans', dish_portion_id: 'p1', dish_line_id: 'l2' })
+    const bread = mealItem({ id: 'bread' })
+
+    const entries = mealEntries([apple, mince, bread, beans])
+
+    expect(entries).toEqual([
+      { kind: 'item', item: apple },
+      { kind: 'dish', portionId: 'p1', items: [mince, beans] },
+      { kind: 'item', item: bread },
+    ])
   })
 })
 

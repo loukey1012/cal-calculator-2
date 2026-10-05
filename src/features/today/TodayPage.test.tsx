@@ -98,6 +98,24 @@ describe('TodayPage', () => {
     expect(screen.getByTestId('day-total')).toHaveTextContent('538 kcal')
   })
 
+  test('a cooked dish counts as one item, however many ingredients it has', async () => {
+    const dishItem = (id: string, lineId: string) =>
+      mealItem({ id, dish_portion_id: 'p1', dish_line_id: lineId, kcal: 100 })
+    vi.mocked(fetchDay).mockResolvedValue([
+      dayMeal('m1', 'lunch', [
+        mealItem({ id: 'apple', kcal: 50 }),
+        dishItem('x', 'l1'),
+        dishItem('y', 'l2'),
+        dishItem('z', 'l3'),
+      ]),
+    ])
+    renderPage()
+
+    const lunch = screen.getByRole('button', { name: /Lunch/ })
+    await waitFor(() => expect(lunch).toHaveTextContent('2 items'))
+    expect(lunch).toHaveTextContent('350 kcal')
+  })
+
   test('shows that the day is still loading instead of an empty day', () => {
     vi.mocked(fetchDay).mockReturnValue(new Promise(() => {}))
     renderPage()
