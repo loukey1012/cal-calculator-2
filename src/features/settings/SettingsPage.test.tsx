@@ -12,6 +12,11 @@ vi.mock('../household/householdApi', () => ({
 }))
 vi.mock('../auth/authApi', () => ({ signOut: vi.fn() }))
 vi.mock('../goals/goalsApi', () => ({ fetchGoals: vi.fn(), saveGoal: vi.fn() }))
+vi.mock('../ingredients/ingredientsApi', () => ({
+  fetchIngredients: vi.fn().mockResolvedValue([]),
+  fetchCategories: vi.fn().mockResolvedValue([]),
+  fetchCategoryGroups: vi.fn().mockResolvedValue([]),
+}))
 
 import { signOut } from '../auth/authApi'
 import { fetchGoals } from '../goals/goalsApi'
@@ -101,6 +106,15 @@ describe('SettingsPage', () => {
     await user.click(row)
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Appearance' })).toBeInTheDocument()
+  })
+
+  test('opens the category management', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(screen.getByRole('button', { name: /^Categories/ }))
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Categories' })).toBeInTheDocument()
   })
 
   test('explains when a profile change fails', async () => {
