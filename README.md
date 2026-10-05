@@ -55,7 +55,7 @@ Built for a two-person household: both members log their own meals, can see and 
 ### Look and feel
 
 - Rounded cards on a soft background, the Manrope font, meals as a 2×2 grid of cards, avatars (initial on each person's accent color) in the person switch and member list. Bottom sheets (drag down to close), segmented controls, switches and swipe actions.
-- **Floating tab bar** (Today · History · Ingredients · Settings): the active tab shows its label in an accent tint. **Swipe left and right** to switch tabs with an animated settle, and tap the active tab to scroll to the top. Pages and sheets scroll without a visible scroll indicator.
+- **Floating tab bar** (Today · History · Ingredients · Settings): the active tab shows its label in an accent tint. **Swipe left and right** to switch tabs with an animated settle (on a page inside Settings, like Appearance, a swipe to the right goes back to Settings instead), and tap the active tab to scroll to the top. Pages and sheets scroll without a visible scroll indicator.
 - Installable to the home screen (manifest, icons, safe areas, no zoom on input focus).
 
 ### Appearance (Settings › Appearance)
@@ -67,7 +67,7 @@ Everything here is saved **to your account**, never to the device: you get the s
 - **Accent color:** 12 colors (buttons, the active tab, your avatar). Text in the accent color is darkened or lightened automatically so it stays readable, e.g. Lime on a light background.
 - **Goal colors:** Vivid, Pastel, Accent shades or High contrast.
 - **Progress style:** Rings, **Ring + bars** (default: a calorie ring, bars for the macros), Bars or Compact.
-- **Category chips:** **One line** (default, scrolls sideways) or **All on screen** (slimmer chips wrapping into rows) for the category filter on the Ingredients page.
+- **Category chips** (with a preview): **One line** (default, scrolls sideways) or **All on screen** (slimmer chips wrapping into rows) for the category filter on the Ingredients page.
 - Your **name** shown to the household is under Settings › Account.
 
 ### Coming next

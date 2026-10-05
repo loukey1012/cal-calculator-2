@@ -10,6 +10,7 @@ import { TodayPage } from '../features/today/TodayPage'
 import { useCurrentUser } from './currentUser'
 import { useResumeOfflineChanges, useSaveWhenHidden } from './offlineLifecycle'
 import { SyncStatus } from './SyncStatus'
+import { useSwipeBack } from './swipeBack'
 import { useAppearance } from '../features/appearance/useAppearance'
 
 const TABS = [
@@ -28,6 +29,8 @@ const TABS = [
     path: '/settings',
     icon: <SettingsIcon />,
     Page: SettingsPage,
+    // /settings/appearance etc. are pages pushed on top of Settings: a swipe goes back
+    hasSubPages: true,
   },
 ] as const
 
@@ -46,8 +49,14 @@ function tabIndexForPath(pathname: string): number {
 }
 
 /** Lets horizontal gestures that start inside `[data-swipe-lock]` (e.g. chip scrollers) stay local. */
-function allowTabSwipe(_embla: unknown, event: MouseEvent | TouchEvent): boolean {
-  return !(event.target instanceof Element && event.target.closest('[data-swipe-lock]'))
+function startsInSwipeLock(event: MouseEvent | TouchEvent): boolean {
+  return event.target instanceof Element && event.target.closest('[data-swipe-lock]') !== null
+}
+
+/** On a sub-page (e.g. Settings › Appearance) the path a back swipe leads to, otherwise null. */
+function backPathFor(pathname: string): string | null {
+  const tab = TABS.find((candidate) => pathname.startsWith(`${candidate.path}/`))
+  return tab && 'hasSubPages' in tab ? tab.path : null
 }
 
 /** The signed-in app: four pages side by side, switched by the tab bar or by swiping. */
@@ -63,11 +72,16 @@ export function TabShell() {
   const activeIndex = Math.max(routeIndex, 0)
   const activeIndexRef = useRef(activeIndex)
   const pageRefs = useRef<(HTMLDivElement | null)[]>([])
+  const [track, setTrack] = useState<HTMLDivElement | null>(null)
+  const backPath = backPathFor(pathname)
+  const backPathRef = useRef(backPath)
 
   // created once: new options make Embla re-init, which jumps and cuts the settle animation
   const [carouselOptions] = useState(() => ({
     startIndex: activeIndex,
-    watchDrag: allowTabSwipe,
+    // on a sub-page a sideways swipe means "back", not "next tab"
+    watchDrag: (_embla: unknown, event: MouseEvent | TouchEvent) =>
+      backPathRef.current === null && !startsInSwipeLock(event),
     duration: SWIPE_SETTLE_DURATION,
   }))
   const [emblaRef, emblaApi] = useEmblaCarousel(carouselOptions)
@@ -75,6 +89,12 @@ export function TabShell() {
   useEffect(() => {
     activeIndexRef.current = activeIndex
   }, [activeIndex])
+
+  useEffect(() => {
+    backPathRef.current = backPath
+  }, [backPath])
+
+  useSwipeBack(track, backPath === null ? null : () => navigate(backPath, { replace: true }))
 
   // URL changed (tab tap, link) → jump without animation, like UITabBarController
   useEffect(() => {
@@ -133,7 +153,7 @@ export function TabShell() {
   return (
     <div className="flex h-screen-full flex-col bg-bg text-label">
       <div ref={emblaRef} className="min-h-0 flex-1 overflow-hidden">
-        <div className="flex h-full touch-pan-y">
+        <div ref={setTrack} className="flex h-full touch-pan-y">
           {TABS.map(({ id, Page }, index) => {
             const active = index === activeIndex
             return (

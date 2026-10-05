@@ -1,4 +1,4 @@
-import { act, screen } from '@testing-library/react'
+import { act, fireEvent, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { useLocation } from 'react-router'
 import { renderWithProviders } from '../test/render'
@@ -71,6 +71,16 @@ function renderShell(route: string) {
   )
 }
 
+const watchDrag = () => embla.state.options.watchDrag as (api: unknown, event: Event) => boolean
+const activePage = () =>
+  screen.getAllByTestId('tab-page').find((page) => !page.hasAttribute('inert')) as HTMLElement
+
+function drag(from: { x: number; y: number }, to: { x: number; y: number }) {
+  const page = activePage()
+  fireEvent.touchStart(page, { touches: [{ clientX: from.x, clientY: from.y }] })
+  fireEvent.touchEnd(page, { changedTouches: [{ clientX: to.x, clientY: to.y }] })
+}
+
 function swipeTo(index: number) {
   embla.state.snap = index
   act(() => embla.handlers.get('select')?.())
@@ -117,14 +127,13 @@ describe('TabShell swiping', () => {
 
   test('gestures starting inside a swipe lock do not switch tabs', () => {
     renderShell('/today')
-    const watchDrag = embla.state.options.watchDrag as (api: unknown, event: Event) => boolean
     const locked = document.createElement('div')
     locked.setAttribute('data-swipe-lock', '')
     const inner = document.createElement('span')
     locked.append(inner)
 
-    expect(watchDrag(embla.api, { target: inner } as unknown as Event)).toBe(false)
-    expect(watchDrag(embla.api, { target: document.body } as unknown as Event)).toBe(true)
+    expect(watchDrag()(embla.api, { target: inner } as unknown as Event)).toBe(false)
+    expect(watchDrag()(embla.api, { target: document.body } as unknown as Event)).toBe(true)
   })
 
   test('when a swipe comes to rest, the carousel snaps exactly onto the current tab', () => {
@@ -154,5 +163,43 @@ describe('TabShell swiping', () => {
     unmount()
 
     expect(embla.api.off).toHaveBeenCalledWith('select', expect.any(Function))
+  })
+
+  describe('on a settings sub-page', () => {
+    test('swiping right goes back to Settings instead of switching tabs', () => {
+      renderShell('/settings/appearance')
+
+      expect(watchDrag()(embla.api, { target: document.body } as unknown as Event)).toBe(false)
+      drag({ x: 30, y: 300 }, { x: 200, y: 320 })
+
+      expect(screen.getByTestId('path')).toHaveTextContent(/^\/settings$/)
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Settings')
+    })
+
+    test.each([
+      ['a short drag', { x: 150, y: 300 }],
+      ['a mostly vertical drag', { x: 120, y: 500 }],
+      ['a drag to the left', { x: -100, y: 300 }],
+    ])('%s stays on the page', (_name, to) => {
+      renderShell('/settings/appearance')
+
+      drag({ x: 100, y: 300 }, to)
+
+      expect(screen.getByTestId('path')).toHaveTextContent('/settings/appearance')
+    })
+
+    test('back on Settings, swiping switches tabs again', () => {
+      renderShell('/settings')
+
+      expect(watchDrag()(embla.api, { target: document.body } as unknown as Event)).toBe(true)
+    })
+  })
+
+  test('a selected history day is not a sub-page: swiping still switches tabs', () => {
+    renderShell('/history/2026-10-01')
+
+    expect(watchDrag()(embla.api, { target: document.body } as unknown as Event)).toBe(true)
+    drag({ x: 30, y: 300 }, { x: 200, y: 300 })
+    expect(screen.getByTestId('path')).toHaveTextContent('/history/2026-10-01')
   })
 })

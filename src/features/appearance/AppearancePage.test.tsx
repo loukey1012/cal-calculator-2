@@ -93,6 +93,17 @@ describe('AppearancePage', () => {
     expect(within(preview).queryByTestId('ring')).not.toBeInTheDocument()
   })
 
+  test.each([
+    ['line', 'overflow-x-auto'],
+    ['wrap', 'flex-wrap'],
+  ] as const)('the category chips preview shows the %s layout', (categoryLayout, layoutClass) => {
+    renderPage({ categoryLayout })
+
+    const preview = screen.getByRole('img', { name: 'Category chips preview' })
+
+    expect(preview.querySelector('[aria-label="Categories"]')).toHaveClass(layoutClass)
+  })
+
   test('explains when saving fails', async () => {
     vi.mocked(updateProfile).mockRejectedValue(new TypeError('Load failed'))
     const user = userEvent.setup()
