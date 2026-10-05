@@ -168,7 +168,7 @@ describe('SettingsPage', () => {
     await user.click(await screen.findByRole('button', { name: 'Share invite code' }))
 
     expect(share).toHaveBeenCalledWith({
-      text: 'Join my household in CALculator2 with the code 4Y5R-FXKY-MJ4P',
+      text: 'Join my household in CALculator with the code 4Y5R-FXKY-MJ4P',
     })
   })
 

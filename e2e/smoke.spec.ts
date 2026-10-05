@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 test('app shell loads with the app name', async ({ page }) => {
   await page.goto('/')
 
-  await expect(page.getByRole('heading', { level: 1, name: 'CALculator2' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: 'CALculator' })).toBeVisible()
 })
 
 test('is installable as an iOS PWA', async ({ page, request }) => {
@@ -18,5 +18,5 @@ test('is installable as an iOS PWA', async ({ page, request }) => {
   expect(touchIcon.ok()).toBe(true)
 
   const manifest = await (await request.get('/manifest.webmanifest')).json()
-  expect(manifest).toMatchObject({ name: 'CALculator2', display: 'standalone' })
+  expect(manifest).toMatchObject({ name: 'CALculator', display: 'standalone' })
 })

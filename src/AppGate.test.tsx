@@ -55,7 +55,7 @@ describe('AppGate', () => {
     vi.mocked(useAuth).mockReturnValue({ status: 'signedOut' })
     renderWithProviders(<AppGate />)
 
-    expect(screen.getByRole('heading', { level: 1, name: 'CALculator2' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'CALculator' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Log in' })).toBeInTheDocument()
   })
 

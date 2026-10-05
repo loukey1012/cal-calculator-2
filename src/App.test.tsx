@@ -17,6 +17,6 @@ describe('App', () => {
     render(<App />)
 
     expect(await screen.findByRole('button', { name: 'Log in' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { level: 1, name: 'CALculator2' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'CALculator' })).toBeInTheDocument()
   })
 })
