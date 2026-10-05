@@ -6,6 +6,7 @@
 // Env: MIGRATION_SUPABASE_URL, MIGRATION_SUPABASE_SERVICE_ROLE_KEY,
 //      FIREBASE_SERVICE_ACCOUNT (default: secrets/firebase-service-account.json)
 //
+// Known source-data errors are fixed on the way in (corrections.ts).
 // Firebase is only read. Re-running is safe: ingredients are upserted on (household_id, legacy_id).
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { cert, initializeApp } from 'firebase-admin/app'
@@ -13,7 +14,13 @@ import { getFirestore } from 'firebase-admin/firestore'
 import { readFileSync } from 'node:fs'
 import { parseArgs } from 'node:util'
 import type { Database } from '../../src/lib/database.types.ts'
-import { transformFoods, type ImportedIngredient, type TransformResult } from './transform.ts'
+import { applyCorrections, CORRECTIONS, type AppliedChange } from './corrections.ts'
+import {
+  distinctCategories,
+  transformFoods,
+  type ImportedIngredient,
+  type TransformResult,
+} from './transform.ts'
 
 const COLLECTION = 'foods'
 const BATCH_SIZE = 100
@@ -43,6 +50,29 @@ async function existingCategories(admin: Admin, householdId: string) {
     .eq('household_id', householdId)
   if (error) throw new Error(`Reading categories failed: ${error.message}`)
   return data
+}
+
+/** Applies the known source-data fixes; categories are derived afterwards so merged ones vanish. */
+function corrected(transformed: TransformResult) {
+  const { ingredients, applied, unmatched } = applyCorrections(transformed.ingredients, CORRECTIONS)
+  if (unmatched.length > 0) {
+    throw new Error(`Corrections for foods that were not imported: ${unmatched.join(', ')}`)
+  }
+  const result: TransformResult = {
+    ...transformed,
+    ingredients,
+    categories: distinctCategories(ingredients),
+  }
+  return { result, applied }
+}
+
+function reportCorrections(applied: readonly AppliedChange[]) {
+  console.log(`Corrections:         ${applied.length}`)
+  for (const change of applied) {
+    console.log(
+      `  - "${change.name}" ${change.field}: ${JSON.stringify(change.from)} -> ${JSON.stringify(change.to)}`,
+    )
+  }
 }
 
 function report(foodCount: number, result: TransformResult, knownCategories: readonly string[]) {
@@ -137,13 +167,14 @@ async function main() {
   console.log(`Target household:    ${household.name} (${household.id})`)
 
   const foods = await readFoods(process.env.FIREBASE_SERVICE_ACCOUNT ?? DEFAULT_SERVICE_ACCOUNT)
-  const result = transformFoods(foods)
+  const { result, applied } = corrected(transformFoods(foods))
   const known = await existingCategories(admin, household.id)
   report(
     foods.length,
     result,
     known.map((category) => category.name),
   )
+  reportCorrections(applied)
 
   if (!values.apply) {
     console.log('\nDry run only. Re-run with --apply to import.')

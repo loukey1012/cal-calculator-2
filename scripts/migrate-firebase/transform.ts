@@ -87,7 +87,7 @@ function toIngredient(id: string, data: FirestoreFood): ImportedIngredient {
   return {
     legacy_id: id,
     name,
-    brand: limitedText(data.fire, MAX_BRAND, 'brand'),
+    brand: limitedText(data.brand, MAX_BRAND, 'brand'),
     note: limitedText(data.note, MAX_NOTE, 'note'),
     categoryName: limitedText(data.category, MAX_CATEGORY, 'category'),
     kcal_100: kcal100,
@@ -122,12 +122,16 @@ export function transformFoods(
   const results = docs.map(({ id, data }) => transformFood(id, data))
   const ingredients = results.flatMap((result) => (result.ok ? [result.ingredient] : []))
   const skipped = results.flatMap((result) => (result.ok ? [] : [result.skipped]))
-  const categories = ingredients
+  return { ingredients, skipped, categories: distinctCategories(ingredients) }
+}
+
+/** distinct category names (first spelling wins, compared case-insensitively) */
+export function distinctCategories(ingredients: readonly ImportedIngredient[]): readonly string[] {
+  return ingredients
     .map((ingredient) => ingredient.categoryName)
     .filter((name): name is string => name !== null)
     .filter(
       (name, index, names) =>
         names.findIndex((other) => other.toLowerCase() === name.toLowerCase()) === index,
     )
-  return { ingredients, skipped, categories }
 }

@@ -202,7 +202,7 @@ pnpm test:db                    # prove it on dev first
 
 ### Importing the old Firebase data
 
-`scripts/migrate-firebase/migrate.ts` reads the Firebase `foods` collection (read-only) and imports it into a household's ingredients. It does a dry run by default and is safe to re-run (upserts on `household_id + legacy_id`).
+`scripts/migrate-firebase/migrate.ts` reads the Firebase `foods` collection (read-only) and imports it into a household's ingredients. It does a dry run by default and is safe to re-run (upserts on `household_id + legacy_id`). Known errors in the source data are fixed on the way in by `corrections.ts` (Firebase itself is never changed); the dry run lists every correction.
 
 ```bash
 MIGRATION_SUPABASE_URL=... MIGRATION_SUPABASE_SERVICE_ROLE_KEY=... \

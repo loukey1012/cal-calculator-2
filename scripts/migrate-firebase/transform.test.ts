@@ -3,7 +3,7 @@ import { transformFood, transformFoods } from './transform.ts'
 
 // shape of a document in the old Firebase `foods` collection
 const CREAM = {
-  fire: 'Milbona',
+  brand: 'Milbona',
   cal_100: 92,
   cal_unit: null,
   category: 'Dairy',
@@ -63,7 +63,7 @@ describe('transformFood', () => {
   })
 
   test('numbers stored as text and empty strings are understood', () => {
-    const result = transformFood('x', { ...CREAM, cal_100: '92,5', prot_100: '', fire: '  ' })
+    const result = transformFood('x', { ...CREAM, cal_100: '92,5', prot_100: '', brand: '  ' })
 
     expect(result).toMatchObject({
       ok: true,
