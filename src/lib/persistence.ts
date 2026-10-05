@@ -9,8 +9,13 @@ export const CACHE_BUSTER = '1'
 // short, so a change logged right before iOS suspends the app is still written (also see
 // useSaveWhenHidden). Never bump CACHE_BUSTER while changes could be queued: they would be lost.
 const SAVE_THROTTLE_MS = 250
-// mutation keys of meal changes start with this (see features/meals/dayChanges.ts)
-const DAY_CHANGE_KEY_ROOT = 'day'
+// mutation keys of queued changes start with one of these (meals/dayChanges.ts, dishes/dishChanges.ts)
+const QUEUED_CHANGE_KEY_ROOTS: readonly unknown[] = ['day', 'dish']
+
+/** Meal and dish changes: queued offline, stored on the phone and sent in order. */
+export function isQueuedChange(mutationKey: readonly unknown[] | undefined): boolean {
+  return QUEUED_CHANGE_KEY_ROOTS.includes(mutationKey?.[0])
+}
 
 /** Private browsing (or full storage) can make localStorage unusable; then nothing is persisted. */
 function availableStorage(): Storage | undefined {
@@ -48,11 +53,10 @@ export const persister = createAsyncStoragePersister({
 
 export const DEHYDRATE_OPTIONS: DehydrateOptions = {
   shouldDehydrateQuery: defaultShouldDehydrateQuery,
-  // every unfinished meal change, paused or still being sent; only these can be resumed after a
-  // restart (they have registered defaults)
+  // every unfinished meal or dish change, paused or still being sent; only these can be resumed
+  // after a restart (they have registered defaults)
   shouldDehydrateMutation: (mutation) =>
-    mutation.state.status === 'pending' &&
-    mutation.options.mutationKey?.[0] === DAY_CHANGE_KEY_ROOT,
+    mutation.state.status === 'pending' && isQueuedChange(mutation.options.mutationKey),
 }
 
 /** Removes this account's cached data and queued changes from the phone. */

@@ -43,6 +43,8 @@ export type Dish = {
   readonly splitMode: SplitMode
   /** the whole cooked pot, for the weight split */
   readonly cookedWeightG: number | null
+  /** changes with every save; a save names the revision it was based on */
+  readonly revision: string
   readonly portions: readonly DishPortion[]
   readonly lines: readonly DishLine[]
 }

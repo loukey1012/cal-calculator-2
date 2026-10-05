@@ -13,6 +13,11 @@ const KNOWN_MESSAGES: ReadonlyArray<readonly [RegExp, string]> = [
   [/invalid invite code/i, 'That invite code doesn’t match any household.'],
   [/violates check constraint/i, 'Some values aren’t allowed. Check the numbers and try again.'],
   [/duplicate key/i, 'This already exists.'],
+  [
+    /dish was changed meanwhile/i,
+    'This dish was changed on another phone meanwhile. Open it again and redo your change.',
+  ],
+  [/dish was deleted meanwhile/i, 'This dish was deleted on another phone meanwhile.'],
 ]
 
 /** An error returned by Supabase (PostgREST/RPC), kept as a real Error with its SQLSTATE code. */

@@ -1,6 +1,6 @@
 import { onlineManager, useMutationState } from '@tanstack/react-query'
 import { useSyncExternalStore } from 'react'
-import { DAY_CHANGES_KEY } from '../features/meals/dayChanges'
+import { isQueuedChange } from '../lib/persistence'
 
 function useIsOnline(): boolean {
   return useSyncExternalStore(
@@ -18,11 +18,14 @@ function statusText(online: boolean, pending: number): string | null {
   return pending > 0 ? `Saving ${changes(pending)}…` : null
 }
 
-/** Small pill above the tab bar while offline or while meal changes are still being saved. */
+/** Small pill above the tab bar while offline or while meal or dish changes are still being saved. */
 export function SyncStatus() {
   const online = useIsOnline()
   const pending = useMutationState({
-    filters: { mutationKey: DAY_CHANGES_KEY, status: 'pending' },
+    filters: {
+      predicate: (mutation) => isQueuedChange(mutation.options.mutationKey),
+      status: 'pending',
+    },
   }).length
   const text = statusText(online, pending)
   if (text === null) return null

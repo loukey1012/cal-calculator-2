@@ -100,7 +100,14 @@ export function retryDelayFor(failureCount: number): number {
   return Math.min(FIRST_RETRY_DELAY_MS * 2 ** failureCount, MAX_RETRY_DELAY_MS)
 }
 
-export const DAY_CHANGE_OPTIONS = {
+/**
+ * Meal and dish changes all reach the server one after another, in the order they were made:
+ * e.g. an item added offline and then shared into a dish must be saved before the dish takes it.
+ */
+export const MEAL_CHANGES_SCOPE = { id: 'meal-changes' } as const
+
+/** How queued meal and dish changes are sent. */
+export const QUEUED_CHANGE_OPTIONS = {
   // wait (paused) while offline and send when the connection is back
   networkMode: 'online',
   retry: retryNetworkErrors,
@@ -111,7 +118,7 @@ export const DAY_CHANGE_OPTIONS = {
 export function registerDayChangeDefaults(queryClient: QueryClient): void {
   queryClient.setMutationDefaults(DAY_CHANGES_KEY, {
     mutationFn: (change: DayChange) => applyDayChange(change),
-    ...DAY_CHANGE_OPTIONS,
+    ...QUEUED_CHANGE_OPTIONS,
     // restored changes have no optimistic handlers: show the server's version of their day after
     onSettled: (_data, _error, change: DayChange) =>
       Promise.all([

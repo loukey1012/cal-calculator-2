@@ -1,5 +1,12 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
+import {
+  buildDishLine,
+  portionItems,
+  type Dish,
+  type DishPortion,
+} from '../../src/features/dishes/portions'
+import { values } from '../../src/features/nutrition/testData'
 import { anonClient, createTestUser, deleteTestUsers, type TestUser } from './helpers'
 
 // Alice and Bob cook together; Carol is in another household.
@@ -504,6 +511,120 @@ describe('invalid dishes are rejected', () => {
     const { error } = await saveDish(alice.client, payload)
 
     expect(error).not.toBeNull()
+  })
+})
+
+describe('the app and the server split a dish the same way', () => {
+  function source(
+    name: string,
+    per100g: number | null,
+    perUnit: number | null,
+    unitWeightG: number | null,
+  ) {
+    return {
+      ingredientId: null,
+      name,
+      brand: null,
+      nutrition: {
+        per100g: per100g === null ? null : values(per100g, { protein: 7.3 }),
+        perUnit: perUnit === null ? null : values(perUnit, { protein: 2.1 }),
+        unitWeightG,
+      },
+    }
+  }
+
+  function toPayload(dishToSave: Dish): DishPayload {
+    return {
+      id: dishToSave.id,
+      name: dishToSave.name,
+      split_mode: dishToSave.splitMode,
+      cooked_weight_g: dishToSave.cookedWeightG,
+      revision: dishToSave.revision,
+      portions: dishToSave.portions.map((portion) => ({
+        id: portion.id,
+        user_id: portion.eater?.userId ?? null,
+        date: portion.eater?.date ?? null,
+        meal_type: portion.eater?.mealType ?? null,
+        split_value: portion.splitValue,
+      })),
+      lines: dishToSave.lines.map((line) => ({
+        ...line.item,
+        id: line.id,
+        allocation: line.allocation,
+        amounts: Object.entries(line.amounts).map(([portion_id, amount]) => ({
+          portion_id,
+          amount,
+        })),
+      })) as unknown as LinePayload[],
+    }
+  }
+
+  test.each([
+    ['equal thirds with a leftover', 'equal', null, [null, null, null]],
+    ['count 3 : 2', 'count', null, [3, 2, 0]],
+    ['percent 45 / 35 / 20', 'percent', null, [45, 35, 20]],
+    ['weight 517 g / 389 g of 1333 g', 'weight', 1333, [517, 389, 0]],
+  ] as const)('%s', async (_name, splitMode, cookedWeightG, splitValues) => {
+    // Arrange: per-100g, per-unit, unit converted to grams, and own amounts
+    const [mine, hers, rest] = [uuid(), uuid(), uuid()]
+    const eater = (user: TestUser) => ({ userId: user.id, date: DAY, mealType: 'dinner' as const })
+    const portions: DishPortion[] = [
+      { id: mine, eater: eater(alice), splitValue: splitValues[0] },
+      { id: hers, eater: eater(bob), splitValue: splitValues[1] },
+      { id: rest, eater: null, splitValue: splitValues[2] },
+    ]
+    const cooked: Dish = {
+      id: uuid(),
+      name: 'Parity',
+      splitMode,
+      cookedWeightG,
+      revision: uuid(),
+      portions,
+      lines: [
+        buildDishLine({
+          id: uuid(),
+          source: source('Rice', 351, null, null),
+          unit: 'g',
+          allocation: 'shared',
+          amount: 333.33,
+        }),
+        buildDishLine({
+          id: uuid(),
+          source: source('Eggs', null, 78, 58),
+          unit: 'unit',
+          allocation: 'shared',
+          amount: 7,
+        }),
+        buildDishLine({
+          id: uuid(),
+          source: source('Cheese', 402, null, 21),
+          unit: 'unit',
+          allocation: 'shared',
+          amount: 3,
+        }),
+        buildDishLine({
+          id: uuid(),
+          source: source('Noodles', 357, null, null),
+          unit: 'g',
+          allocation: 'per_portion',
+          amounts: { [mine]: 123.45, [hers]: 98.7, [rest]: 77 },
+        }),
+      ],
+    }
+    const expected = (portionId: string) =>
+      Object.fromEntries(
+        (portionItems(cooked).find((entry) => entry.portionId === portionId)?.items ?? []).map(
+          ({ draft }) => [draft.name, [draft.entered_amount, draft.basis_multiplier]],
+        ),
+      )
+
+    // Act
+    const { error } = await saveDish(alice.client, toPayload(cooked))
+
+    // Assert
+    expect(error).toBeNull()
+    expect(await dishItemsOf(alice, cooked.id, 'dinner')).toEqual(expected(mine))
+    expect(await dishItemsOf(bob, cooked.id, 'dinner')).toEqual(expected(hers))
   })
 })
 

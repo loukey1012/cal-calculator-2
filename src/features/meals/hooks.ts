@@ -6,12 +6,14 @@ import {
   type UseMutationResult,
   type UseQueryResult,
 } from '@tanstack/react-query'
+import { isQueuedChange } from '../../lib/persistence'
 import { monthKeys } from '../history/hooks'
 import type { MealItemDraft } from '../nutrition/fromIngredient'
 import {
   applyDayChange,
   applyDayChangeLocally,
-  DAY_CHANGE_OPTIONS,
+  MEAL_CHANGES_SCOPE,
+  QUEUED_CHANGE_OPTIONS,
   dayChangeKey,
   type DayChange,
 } from './dayChanges'
@@ -33,21 +35,24 @@ type DayChangeMutation = UseMutationResult<void, Error, DayChange, Rollback>
  * Applies a change to the cached day at once and saves it in the background.
  * - Offline, changes wait (paused) and are sent when the connection is back; queued changes are
  *   stored on the phone, so they also survive the app being closed.
- * - Changes to one day reach the server one after another (`scope`), so e.g. deleting an item
- *   right after adding it can't overtake the add. The optimistic update still happens at once.
- * - A failed change restores the old day only if nothing else is pending for that day, since the
- *   snapshot would also erase later changes; otherwise the final re-fetch sets things right.
+ * - All meal and dish changes reach the server one after another (`scope`), so e.g. deleting an
+ *   item right after adding it can't overtake the add. The optimistic update still happens at once.
+ * - A failed change restores the old day only if no other change is pending, since the snapshot
+ *   would also erase later changes; otherwise the final re-fetch sets things right.
  * - The server's version (and partner edits) win via a re-fetch once the last change is done.
  */
 function useDayChange(userId: string, date: string): DayChangeMutation {
   const queryClient = useQueryClient()
   const queryKey = dayKeys.day(userId, date)
   const mutationKey = dayChangeKey(userId, date)
-  const isOnlyPendingChange = () => queryClient.isMutating({ mutationKey }) <= 1
+  const isOnlyPendingChange = () =>
+    queryClient.isMutating({
+      predicate: (mutation) => isQueuedChange(mutation.options.mutationKey),
+    }) <= 1
   return useMutation({
     mutationKey,
-    scope: { id: mutationKey.join(':') },
-    ...DAY_CHANGE_OPTIONS,
+    scope: MEAL_CHANGES_SCOPE,
+    ...QUEUED_CHANGE_OPTIONS,
     mutationFn: (change: DayChange) => applyDayChange(change),
     onMutate: async (change) => {
       await queryClient.cancelQueries({ queryKey })

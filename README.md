@@ -129,6 +129,7 @@ src/
     ingredients/  ingredient database: API, form parsing, listing, category chips, screens
     categories/   Settings › Categories: broad categories and categories (create, rename, move, delete)
     meals/        day model, meal sheet, offline-capable day changes
+    dishes/       cook together: share maths (portions.ts), dish API, offline dish changes (same queue as meal changes)
     goals/        goal history, goal form, progress card (rings / ring + bars / bars / compact)
     nutrition/    pure nutrition math: units, totals, goals, formatting
     today/ history/ settings/   tab pages
