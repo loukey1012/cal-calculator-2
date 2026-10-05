@@ -66,6 +66,7 @@ Everything here is saved **to your account**, never to the device: you get the s
 
 - **App colors**
   - **Theme:** System, Light or Dark.
+  - **Light style:** **Classic** (cool grey and white) or **Pink** (blush page, rose-tinted cards, text and tracks, pink-leaning goal colors). Used whenever the app is light, also with System during the day.
   - **Dark style:** **Soft** (deep grey, rounded) or **Graphite** (near-black, Space Grotesk numbers, uppercase labels; stored as `bento`). Used whenever the app is dark, also with System at night.
   - **Accent color:** 12 colors (buttons, the active tab, your avatar). Text in the accent color is darkened or lightened automatically so it stays readable, e.g. Lime on a light background.
 - **Progress** (with a live preview at the top)
@@ -183,7 +184,7 @@ pnpm lint && pnpm typecheck && pnpm format:check
 pnpm db:types       # regenerate src/lib/database.types.ts from the linked project
 ```
 
-**End-to-end journeys** (log a meal, goals and partner, Today fitting the screen, history, ingredients, category management, offline, appearance following the account to a new device) run the real app against the dev project. Build it against dev and pass the test credentials:
+**End-to-end journeys** (log a meal, goals and partner, Today fitting the screen, history, ingredients, category management, offline, appearance following the account to a new device, the Pink style surviving a restart) run the real app against the dev project. Build it against dev and pass the test credentials:
 
 ```bash
 set -a; . ./.env.test.local; set +a

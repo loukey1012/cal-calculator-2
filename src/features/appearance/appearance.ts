@@ -2,11 +2,13 @@ import { z } from 'zod'
 import { mixHex, onColor, readableInk } from '../../lib/color'
 
 const THEMES = ['system', 'light', 'dark'] as const
+const LIGHT_STYLES = ['classic', 'pink'] as const
 const DARK_STYLES = ['soft', 'bento'] as const
 const GOAL_PALETTES = ['vivid', 'pastel', 'accent', 'contrast'] as const
 const PROGRESS_STYLES = ['rings', 'ringBars', 'bars', 'compact'] as const
 const CATEGORY_LAYOUTS = ['line', 'wrap', 'grouped'] as const
 
+export type LightStyle = (typeof LIGHT_STYLES)[number]
 export type DarkStyle = (typeof DARK_STYLES)[number]
 export type GoalPalette = (typeof GOAL_PALETTES)[number]
 export type ProgressStyle = (typeof PROGRESS_STYLES)[number]
@@ -15,11 +17,12 @@ export type ProgressStyle = (typeof PROGRESS_STYLES)[number]
  * grouped into broad categories that open their categories.
  */
 export type CategoryLayout = (typeof CATEGORY_LAYOUTS)[number]
-/** What is actually painted: light, or one of the two dark styles. */
-export type Scheme = 'light' | DarkStyle
+/** What is actually painted: light (the classic light style), pink, or one of the dark styles. */
+export type Scheme = 'light' | 'pink' | DarkStyle
 
 export const DEFAULT_APPEARANCE = {
   theme: 'system',
+  lightStyle: 'classic',
   darkStyle: 'soft',
   goalPalette: 'vivid',
   progressStyle: 'ringBars',
@@ -31,6 +34,7 @@ export const DEFAULT_APPEARANCE = {
 const appearanceSchema = z
   .object({
     theme: z.enum(THEMES).catch(DEFAULT_APPEARANCE.theme),
+    lightStyle: z.enum(LIGHT_STYLES).catch(DEFAULT_APPEARANCE.lightStyle),
     darkStyle: z.enum(DARK_STYLES).catch(DEFAULT_APPEARANCE.darkStyle),
     goalPalette: z.enum(GOAL_PALETTES).catch(DEFAULT_APPEARANCE.goalPalette),
     progressStyle: z.enum(PROGRESS_STYLES).catch(DEFAULT_APPEARANCE.progressStyle),
@@ -62,14 +66,18 @@ export const ACCENT_COLORS = [
 
 export function resolveScheme(appearance: Appearance, prefersDark: boolean): Scheme {
   const dark = appearance.theme === 'dark' || (appearance.theme === 'system' && prefersDark)
-  return dark ? appearance.darkStyle : 'light'
+  if (dark) return appearance.darkStyle
+  return appearance.lightStyle === 'pink' ? 'pink' : 'light'
 }
 
-/** Page and card colors per scheme; must match the tokens in index.css. */
-export const SCHEME_SURFACES: Record<Scheme, { readonly bg: string; readonly card: string }> = {
-  light: { bg: '#f3f4f7', card: '#ffffff' },
-  soft: { bg: '#0b0c0f', card: '#17191e' },
-  bento: { bg: '#0c0c0d', card: '#18181a' },
+type Surfaces = { readonly bg: string; readonly card: string; readonly label: string }
+
+/** Page, card and text colors per scheme; must match the tokens in index.css. */
+export const SCHEME_SURFACES: Record<Scheme, Surfaces> = {
+  light: { bg: '#f3f4f7', card: '#ffffff', label: '#12151a' },
+  pink: { bg: '#fbedf3', card: '#fff8fb', label: '#3b1a2c' },
+  soft: { bg: '#0b0c0f', card: '#17191e', label: '#f3f4f6' },
+  bento: { bg: '#0c0c0d', card: '#18181a', label: '#f5f5f4' },
 }
 
 type GoalColors = readonly [kcal: string, protein: string, carbs: string, fat: string]
@@ -77,16 +85,19 @@ type GoalColors = readonly [kcal: string, protein: string, carbs: string, fat: s
 const FIXED_PALETTES: Record<Exclude<GoalPalette, 'accent'>, Record<Scheme, GoalColors>> = {
   vivid: {
     light: ['#ff375f', '#1f9d6b', '#e8930c', '#2f9bd6'],
+    pink: ['#e8457c', '#2fa889', '#f0874a', '#9466d6'],
     soft: ['#ff5f7e', '#3cc48a', '#f0a63a', '#5ec8f2'],
     bento: ['#ff5f7e', '#5ee0ff', '#ffb547', '#ff7aa8'],
   },
   pastel: {
     light: ['#e5738f', '#5fb48c', '#e0a94f', '#6f9de0'],
+    pink: ['#ee8db0', '#7cc7a9', '#f3b088', '#b49fe6'],
     soft: ['#f08aa4', '#7cc9a5', '#f2c27a', '#93b8f0'],
     bento: ['#f08aa4', '#7cc9a5', '#f2c27a', '#93b8f0'],
   },
   contrast: {
     light: ['#d1002f', '#007a3d', '#b35c00', '#0050b3'],
+    pink: ['#c8004f', '#007a4d', '#b34700', '#5a2db3'],
     soft: ['#ff4d6d', '#2ee59d', '#ffb020', '#4db8ff'],
     bento: ['#ff4d6d', '#2ee59d', '#ffb020', '#4db8ff'],
   },

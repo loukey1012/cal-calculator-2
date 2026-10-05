@@ -1,5 +1,5 @@
-import { readFileSync } from 'node:fs'
 import { describe, expect, test } from 'vitest'
+import css from '../../index.css?raw'
 import { contrastRatio } from '../../lib/color'
 import {
   ACCENT_COLORS,
@@ -87,8 +87,6 @@ describe('resolveScheme with the pink light style', () => {
 })
 
 describe('the pink scheme', () => {
-  const css = readFileSync('src/index.css', 'utf8')
-
   function cssToken(scheme: string, name: string): string | undefined {
     const selector = scheme === 'light' ? ':root {' : `:root[data-scheme='${scheme}'] {`
     const block = css.slice(css.indexOf(selector), css.indexOf('}', css.indexOf(selector)))

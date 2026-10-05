@@ -48,3 +48,38 @@ test('the chosen look is saved to the account and follows the user to a new devi
   await expect(otherPage.locator('html')).toHaveAttribute('data-scheme', 'bento')
   await otherDevice.close()
 })
+
+test('the pink light style paints the app pink and is kept across a restart', async ({
+  page,
+  backend,
+}) => {
+  const me = await backend.user('Anna')
+  await backend.household([me])
+  await logIn(page, me)
+
+  await page.getByRole('button', { name: 'Settings' }).click()
+  await activePage(page)
+    .getByRole('button', { name: /Appearance/ })
+    .click()
+  const settings = activePage(page)
+  await settings.getByRole('button', { name: /App colors/ }).click()
+  await settings.getByRole('radio', { name: 'Light', exact: true }).click()
+  await settings.getByRole('radio', { name: /Pink/ }).first().click()
+
+  const html = page.locator('html')
+  await expect(html).toHaveAttribute('data-scheme', 'pink')
+  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(251, 237, 243)')
+  await expect
+    .poll(async () => {
+      const { data } = await backend.admin
+        .from('profiles')
+        .select('appearance')
+        .eq('id', me.id)
+        .single()
+      return data?.appearance
+    })
+    .toMatchObject({ theme: 'light', lightStyle: 'pink' })
+
+  await page.reload()
+  await expect(html).toHaveAttribute('data-scheme', 'pink')
+})

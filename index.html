@@ -22,12 +22,14 @@
         var root = document.documentElement
         var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
         var theme = 'system'
+        var lightStyle = 'light'
         var darkStyle = 'soft'
         var variables = {}
         try {
           var cache = JSON.parse(localStorage.getItem('calculator-appearance') || 'null')
           if (cache && typeof cache === 'object') {
             theme = cache.theme
+            lightStyle = cache.lightStyle === 'pink' ? 'pink' : 'light'
             darkStyle = cache.darkStyle === 'bento' ? 'bento' : 'soft'
             variables = cache.variables || {}
           }
@@ -35,7 +37,7 @@
           // no storage (private browsing): the device's light/dark look
         }
         var dark = theme === 'dark' || (theme !== 'light' && prefersDark)
-        root.dataset.scheme = dark ? darkStyle : 'light'
+        root.dataset.scheme = dark ? darkStyle : lightStyle
         for (var name in variables) {
           var value = variables[name]
           if (/^--[a-z-]+$/.test(name) && /^#[0-9a-f]{6}$/i.test(value)) {

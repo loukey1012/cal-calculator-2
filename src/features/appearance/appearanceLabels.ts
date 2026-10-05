@@ -3,6 +3,7 @@ import type {
   CategoryLayout,
   DarkStyle,
   GoalPalette,
+  LightStyle,
   ProgressStyle,
 } from './appearance'
 
@@ -16,6 +17,11 @@ export const THEME_OPTIONS = [
   { value: 'light', label: 'Light' },
   { value: 'dark', label: 'Dark' },
 ] as const
+
+export const LIGHT_STYLE_LABELS: Record<LightStyle, string> = {
+  classic: 'Classic',
+  pink: 'Pink',
+}
 
 // the stored value stays 'bento' so saved choices keep working after the rename
 export const DARK_STYLE_LABELS: Record<DarkStyle, string> = {
@@ -50,10 +56,13 @@ function labelOf<T extends string>(
   return options.find((option) => option.value === value)?.label ?? value
 }
 
-/** e.g. "Light", "Dark · Graphite" or "System · Soft" */
-export function appColorsSummary({ theme, darkStyle }: Appearance): string {
-  if (theme === 'light') return 'Light'
-  return `${labelOf(THEME_OPTIONS, theme)} · ${DARK_STYLE_LABELS[darkStyle]}`
+/** e.g. "Light · Pink", "Dark · Graphite" or "System · Classic / Soft" */
+export function appColorsSummary({ theme, lightStyle, darkStyle }: Appearance): string {
+  const light = LIGHT_STYLE_LABELS[lightStyle]
+  const dark = DARK_STYLE_LABELS[darkStyle]
+  if (theme === 'light') return `Light · ${light}`
+  if (theme === 'dark') return `Dark · ${dark}`
+  return `System · ${light} / ${dark}`
 }
 
 /** e.g. "Ring + bars · Vivid" */

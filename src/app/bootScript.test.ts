@@ -1,9 +1,8 @@
-import { readFileSync } from 'node:fs'
 import { afterEach, describe, expect, test } from 'vitest'
+import html from '../../index.html?raw'
 import { APPEARANCE_CACHE_KEY } from '../lib/persistence'
 
 // the inline script in index.html that paints the cached look before the app has loaded
-const html = readFileSync('index.html', 'utf8')
 const bootScript = /<script>([\s\S]*?)<\/script>/.exec(html)?.[1] ?? ''
 
 function boot(cache: object | null): string | undefined {

@@ -1,29 +1,55 @@
 import { SegmentedControl } from '../../components/ios/SegmentedControl'
-import { ACCENT_COLORS, SCHEME_SURFACES, type DarkStyle } from './appearance'
-import { APPEARANCE_PATH, DARK_STYLE_LABELS, THEME_OPTIONS } from './appearanceLabels'
+import {
+  ACCENT_COLORS,
+  SCHEME_SURFACES,
+  type DarkStyle,
+  type LightStyle,
+  type Scheme,
+} from './appearance'
+import {
+  APPEARANCE_PATH,
+  DARK_STYLE_LABELS,
+  LIGHT_STYLE_LABELS,
+  THEME_OPTIONS,
+} from './appearanceLabels'
 import { OptionCards, SettingSection, SwatchPicker } from './AppearanceOptions'
 import { AppearanceSubPage } from './AppearanceSubPage'
 import { useAppearanceSettings } from './useAppearanceSettings'
 
-const DARK_STYLES: ReadonlyArray<{
-  value: DarkStyle
-  description: string
-  fontFamily: string
-}> = [
-  {
-    value: 'soft',
-    description: 'Deep grey, rounded',
-    fontFamily: "'Manrope Variable', sans-serif",
-  },
+const MANROPE = "'Manrope Variable', sans-serif"
+const SPACE_GROTESK = "'Space Grotesk Variable', sans-serif"
+
+type StyleOption<T extends string> = {
+  readonly value: T
+  readonly scheme: Scheme
+  readonly description: string
+  readonly fontFamily: string
+}
+
+const LIGHT_STYLES: ReadonlyArray<StyleOption<LightStyle>> = [
+  { value: 'classic', scheme: 'light', description: 'Cool grey and white', fontFamily: MANROPE },
+  { value: 'pink', scheme: 'pink', description: 'Soft blush tones', fontFamily: MANROPE },
+]
+
+const DARK_STYLES: ReadonlyArray<StyleOption<DarkStyle>> = [
+  { value: 'soft', scheme: 'soft', description: 'Deep grey, rounded', fontFamily: MANROPE },
   {
     value: 'bento',
+    scheme: 'bento',
     description: 'Near-black, bold numbers',
-    fontFamily: "'Space Grotesk Variable', sans-serif",
+    fontFamily: SPACE_GROTESK,
   },
 ]
 
-function DarkStylePreview({ style }: { readonly style: (typeof DARK_STYLES)[number] }) {
-  const { bg, card } = SCHEME_SURFACES[style.value]
+/** A tiny page and card painted in the style's own colors, whatever the app shows now. */
+function StylePreview({
+  scheme,
+  fontFamily,
+}: {
+  readonly scheme: Scheme
+  readonly fontFamily: string
+}) {
+  const { bg, card, label } = SCHEME_SURFACES[scheme]
   return (
     <span
       aria-hidden="true"
@@ -35,7 +61,7 @@ function DarkStylePreview({ style }: { readonly style: (typeof DARK_STYLES)[numb
         style={{ backgroundColor: card }}
       >
         <span className="h-4 w-4 rounded-full border-[3px] border-accent" />
-        <span className="text-[13px] font-bold text-white" style={{ fontFamily: style.fontFamily }}>
+        <span className="text-[13px] font-bold" style={{ fontFamily, color: label }}>
           1,340
         </span>
       </span>
@@ -44,7 +70,19 @@ function DarkStylePreview({ style }: { readonly style: (typeof DARK_STYLES)[numb
   )
 }
 
-/** Settings › Appearance › App colors: theme, dark style and accent color. */
+function styleCards<T extends string>(
+  styles: ReadonlyArray<StyleOption<T>>,
+  labels: Record<T, string>,
+) {
+  return styles.map((style) => ({
+    value: style.value,
+    label: labels[style.value],
+    description: style.description,
+    preview: <StylePreview scheme={style.scheme} fontFamily={style.fontFamily} />,
+  }))
+}
+
+/** Settings › Appearance › App colors: theme, light and dark style, accent color. */
 export function AppColorsPage() {
   const { profile, appearance, update, change } = useAppearanceSettings()
 
@@ -64,6 +102,18 @@ export function AppColorsPage() {
       </SettingSection>
 
       <SettingSection
+        title="Light style"
+        footer="Used whenever the app is light, also with System during the day."
+      >
+        <OptionCards
+          label="Light style"
+          value={appearance.lightStyle}
+          onChange={(lightStyle) => change('lightStyle', lightStyle)}
+          options={styleCards(LIGHT_STYLES, LIGHT_STYLE_LABELS)}
+        />
+      </SettingSection>
+
+      <SettingSection
         title="Dark style"
         footer="Used whenever the app is dark, also with System at night."
       >
@@ -71,12 +121,7 @@ export function AppColorsPage() {
           label="Dark style"
           value={appearance.darkStyle}
           onChange={(darkStyle) => change('darkStyle', darkStyle)}
-          options={DARK_STYLES.map((style) => ({
-            value: style.value,
-            label: DARK_STYLE_LABELS[style.value],
-            description: style.description,
-            preview: <DarkStylePreview style={style} />,
-          }))}
+          options={styleCards(DARK_STYLES, DARK_STYLE_LABELS)}
         />
       </SettingSection>
 
