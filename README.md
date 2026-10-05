@@ -83,6 +83,8 @@ Everything here is saved **to your account**, never to the device: you get the s
 
 | Area             | Planned                                                                                                  |
 | ---------------- | -------------------------------------------------------------------------------------------------------- |
+| Cook together    | _In progress._ Log a dish cooked together once; each person gets their portion (see below)               |
+| Recipes          | Save dishes and meals by name as recipes, and cook or log them again (with remembered own amounts)       |
 | Nicknames        | Give household members your own display name (a per-viewer nickname; their account name stays unchanged) |
 | Barcode scanning | Find or create an ingredient by scanning its barcode                                                     |
 | Quick picks      | Recent and favorite ingredients                                                                          |
@@ -93,6 +95,8 @@ Everything here is saved **to your account**, never to the device: you get the s
 | Reminders        | Push reminders to log meals                                                                              |
 | Invite code      | Rotate the household invite code                                                                         |
 | Live updates     | See your partner's edits to a meal without reloading                                                     |
+
+**Cook together (planned shape).** A _dish_ is one cooking: its ingredients plus one or more portions. Each ingredient is either **shared** (split by the dish's split: equal, count such as 3 : 2 toasts, percent, or by weight of the cooked pot and each plate) or has **own amounts** per portion (noodles 120 g / 100 g; "only her" for the tomato). A portion not yet eaten is a **leftover** that can be logged later. Each eaten portion shows as one grouped, expandable block in that person's meal, either of you can edit the dish, and a meal logged alone can be turned into a dish afterwards ("Share this meal"). Recipes will reuse the same ingredient lines and splits.
 
 ---
 
