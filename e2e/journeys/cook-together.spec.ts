@@ -83,3 +83,51 @@ test('cook together: one dish logged for both, edited, and a meal shared afterwa
   await sheet.getByRole('button', { name: 'Close' }).click()
   await expect(activePage(page).getByRole('button', { name: /Lunch/ })).toContainText('1 item')
 })
+
+test('leftovers: cook a portion more, see it on Today, eat it later', async ({ page, backend }) => {
+  const me = await backend.user('Lukas')
+  const partner = await backend.user('Lisa')
+  const household = await backend.household([me, partner])
+  await backend.admin
+    .from('ingredients')
+    .insert({ household_id: household, name: 'Chili', kcal_100: 150 })
+  await logIn(page, me)
+  const sheet = page.getByRole('dialog')
+
+  await activePage(page)
+    .getByRole('button', { name: /Dinner/ })
+    .click()
+  await sheet.getByRole('button', { name: 'Cook together' }).click()
+  await sheet.getByLabel('Dish name (optional)').fill('Chili')
+  await sheet.getByRole('button', { name: 'More leftover portions' }).click()
+  await sheet.getByRole('button', { name: 'Add ingredient' }).click()
+  await sheet.getByRole('button', { name: /Chili/ }).click()
+  await sheet.getByLabel('Amount').fill('1200')
+  await sheet.getByRole('button', { name: 'Add to dish' }).click()
+  await expect(sheet.getByTestId('dish-totals')).toContainText(/Leftover.*600 kcal/)
+  await sheet.getByRole('button', { name: 'Save dish' }).click()
+  await sheet.getByRole('button', { name: 'Close' }).click()
+
+  // the leftover shows on Today; eat it for lunch
+  await activePage(page).getByRole('button', { name: 'Chili left' }).click()
+  const leftovers = page.getByRole('dialog', { name: 'Leftovers' })
+  await leftovers.getByRole('button', { name: /Chili.*600 kcal/ }).click()
+  await leftovers.getByRole('button', { name: 'Add to Lunch' }).click()
+  await expect(activePage(page).getByRole('button', { name: 'Chili left' })).toBeHidden()
+
+  await expect
+    .poll(async () => {
+      const { data } = await backend.admin
+        .from('meal_items')
+        .select('entered_amount, meals!inner(user_id, meal_type)')
+        .eq('meals.user_id', me.id)
+        .order('entered_amount')
+      // one meal per item (inner join), typed as a list by supabase-js
+      return data?.map((item) => {
+        const meal = item.meals as unknown as { meal_type: string }
+        return `${meal.meal_type} ${item.entered_amount}`
+      })
+    })
+    .toEqual(expect.arrayContaining(['dinner 400', 'lunch 400']))
+  await expect(activePage(page).getByRole('button', { name: /Lunch/ })).toContainText('600 kcal')
+})

@@ -3,6 +3,7 @@ import { Button } from '../../components/ios/Button'
 import { ErrorBanner } from '../../components/ios/ErrorBanner'
 import { BreakfastIcon, DinnerIcon, LunchIcon, SnackIcon } from '../../components/ios/icons'
 import { toUserMessage } from '../../lib/errors'
+import { LeftoversPill } from '../dishes/LeftoversPill'
 import { displayName } from '../household/hooks'
 import type { Profile } from '../household/householdApi'
 import { itemsByMeal, mealEntries, MEAL_TYPES, type MealType } from '../meals/dayModel'
@@ -112,6 +113,10 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
             <div data-testid="day-total" className="mb-3 px-1">
               <div className="flex items-baseline justify-between gap-3">
                 <h2 className="font-display text-[20px] font-bold">Meals</h2>
+                {/* in the heading row, so Today still fits the screen */}
+                <span className="flex min-w-0 flex-1">
+                  <LeftoversPill userId={person.id} date={date} />
+                </span>
                 {!day.isPending && (
                   <span className="text-[15px] font-bold">{formatKcal(dayTotals.kcal)} kcal</span>
                 )}

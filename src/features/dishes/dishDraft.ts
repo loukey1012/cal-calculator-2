@@ -1,6 +1,13 @@
 import { roundTo } from '../../lib/numbers'
 import { describeAmount, scaleItemAmount, type MealItem, type MealType } from '../meals/dayModel'
-import type { Dish, DishLine, DishPortion, Eater, SplitMode } from './portions'
+import {
+  isLeftover,
+  type Dish,
+  type DishLine,
+  type DishPortion,
+  type Eater,
+  type SplitMode,
+} from './portions'
 
 /**
  * Immutable edits of a dish in the editor. Lines are rescaled from their own nutrition snapshot,
@@ -126,6 +133,27 @@ export function withoutPortion(dish: Dish, portionId: string): Dish {
     return [rescaledLine(line, { allocation: 'per_portion', amounts })]
   })
   return { ...dish, portions: dish.portions.filter((portion) => portion.id !== portionId), lines }
+}
+
+/** One portion more than the eaters: kept as a leftover. */
+export function withLeftoverAdded(dish: Dish): Dish {
+  const splitValue = dish.splitMode === 'count' ? DEFAULT_COUNT : null
+  return { ...dish, portions: [...dish.portions, { id: newId(), eater: null, splitValue }] }
+}
+
+/** Removes the last leftover portion (while editing, before anyone took it). */
+export function withLeftoverRemoved(dish: Dish): Dish {
+  const last = dish.portions.findLast(isLeftover)
+  return last ? withoutPortion(dish, last.id) : dish
+}
+
+export function takeLeftover(dish: Dish, portionId: string, eater: Eater): Dish {
+  return withPortionChange(dish, portionId, (portion) => ({ ...portion, eater }))
+}
+
+/** Keeps the portion (and its share), so the eaten portions stay as they are. */
+export function throwAwayLeftover(dish: Dish, portionId: string): Dish {
+  return withPortionChange(dish, portionId, (portion) => ({ ...portion, discarded: true }))
 }
 
 /** Adds the line, or replaces the line with the same id where it is. */

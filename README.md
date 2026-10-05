@@ -29,6 +29,7 @@ Built for a two-person household: both members log their own meals, can see and 
 - In the meal the dish is **one block** with your share, opening to its ingredients and **Edit dish**. Either of you can change or delete it; both portions follow. If both of you changed it at the same time, the later save is refused instead of overwriting the other.
 - **Share this meal:** logged a meal alone and then shared it? "Share this meal" turns its food into a dish (everything shared equally to start with) and takes it out of the meal, all in one save.
 - On the Today cards a dish counts as **one item**.
+- **Leftovers:** cook a portion more ("Leftover portions" + / −); it takes its share like a person would. While it is uneaten, a small **"Chili left"** pill sits next to "Meals" on Today, and leftovers come first in **Add food**. Log it into any meal later, or **throw it away** (it keeps its share, so the eaten portions never change). Leftovers of the last 7 days are offered.
 - Works offline like any meal change (same queue, in order).
 
 ### Daily goals and progress
@@ -93,7 +94,6 @@ Everything here is saved **to your account**, never to the device: you get the s
 
 | Area             | Planned                                                                                                  |
 | ---------------- | -------------------------------------------------------------------------------------------------------- |
-| Cook together    | _In progress._ Still to come: leftovers, shown on Today until eaten (see below)                          |
 | Recipes          | Save dishes and meals by name as recipes, and cook or log them again (with remembered own amounts)       |
 | Nicknames        | Give household members your own display name (a per-viewer nickname; their account name stays unchanged) |
 | Barcode scanning | Find or create an ingredient by scanning its barcode                                                     |
@@ -106,7 +106,7 @@ Everything here is saved **to your account**, never to the device: you get the s
 | Invite code      | Rotate the household invite code                                                                         |
 | Live updates     | See your partner's edits to a meal without reloading                                                     |
 
-**Cook together (planned shape).** A _dish_ is one cooking: its ingredients plus one or more portions. Each ingredient is either **shared** (split by the dish's split: equal, count such as 3 : 2 toasts, percent, or by weight of the cooked pot and each plate) or has **own amounts** per portion (noodles 120 g / 100 g; "only her" for the tomato). A portion not yet eaten is a **leftover** that can be logged later. Each eaten portion shows as one grouped, expandable block in that person's meal, either of you can edit the dish, and a meal logged alone can be turned into a dish afterwards ("Share this meal"). Recipes will reuse the same ingredient lines and splits.
+**Recipes** will build on cooked dishes: the same ingredient lines (shared or own amounts) and splits, saved by name; cooking one starts a dish.
 
 ---
 
@@ -161,7 +161,7 @@ scripts/
 - `category_groups` (the household's broad categories), `categories` (optionally in a group; deleting a group leaves its categories ungrouped), `ingredients` (per-100 g and/or per-unit columns; at least one calorie value required)
 - `meals` (unique per user, local date and meal type), `meal_items` (nutrition snapshot plus a basis multiplier)
 - `meal_items` of a cooked dish point to their `dish_portions` row and `dish_lines` row; plain items leave both empty
-- `dishes` (a cooking; split mode equal / count / percent / weight, cooked weight, a revision changed by every save), `dish_portions` (who ate it on which day and meal, or nobody yet = a leftover; split value), `dish_lines` (ingredient snapshot like `meal_items`, either `shared` or `per_portion`), `dish_line_amounts` (own amount of a `per_portion` line per portion)
+- `dishes` (a cooking; split mode equal / count / percent / weight, cooked weight, a revision changed by every save), `dish_portions` (who ate it on which day and meal, or nobody yet = a leftover; split value; `discarded` for a thrown-away leftover, which keeps its share), `dish_lines` (ingredient snapshot like `meal_items`, either `shared` or `per_portion`), `dish_line_amounts` (own amount of a `per_portion` line per portion)
 - Views `meal_totals` and `daily_totals`. RPCs `create_household`, `join_household`, `ensure_meal`, `save_dish` and `delete_dish`.
 - `save_dish` stores a whole dish at once and re-logs every eaten portion as meal items in its eater's meal (shared lines × the portion's share, own amounts as entered), so the totals views count dishes like any other food. Resending the same save does nothing; a save based on an outdated revision is rejected ("changed meanwhile"). It can also take over plain items of a meal ("share this meal").
 
@@ -216,7 +216,7 @@ pnpm icons          # regenerate the icon PNGs: the default set from public/icon
 
 To add an app icon choice: put its SVG in `public/icons/<name>/icon.svg`, add `<name>` to `APP_ICONS` (`src/features/appearance/appearance.ts`) and a label to `APP_ICON_OPTIONS`, then run `pnpm icons`.
 
-**End-to-end journeys** (log a meal, cooking together for two and sharing a meal afterwards, goals and partner, Today fitting the screen, history, ingredients, category management, offline, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color) run the real app against the dev project. Build it against dev and pass the test credentials:
+**End-to-end journeys** (log a meal, cooking together for two, sharing a meal afterwards, leftovers, goals and partner, Today fitting the screen, history, ingredients, category management, offline, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color) run the real app against the dev project. Build it against dev and pass the test credentials:
 
 ```bash
 set -a; . ./.env.test.local; set +a

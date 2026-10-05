@@ -26,6 +26,13 @@ export type DishPortion = {
   readonly eater: Eater | null
   /** count, percent or plate grams, depending on the split; unused for equal */
   readonly splitValue: number | null
+  /** a leftover nobody will eat; it keeps its share so the other portions don't change */
+  readonly discarded?: boolean
+}
+
+/** Not eaten yet and not thrown away. */
+export function isLeftover(portion: DishPortion): boolean {
+  return portion.eater === null && !portion.discarded
 }
 
 export type DishLine = {

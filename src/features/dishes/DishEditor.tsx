@@ -31,7 +31,7 @@ import { DishLineEditor, type PortionOption } from './DishLineEditor'
 import { DishSplitSection } from './DishSplitSection'
 import { DishTotals } from './DishTotals'
 import { useDeleteDish, useDish, useSaveDish, type SaveDishRequest } from './hooks'
-import { buildDishLine, type Dish } from './portions'
+import { buildDishLine, isLeftover, type Dish } from './portions'
 
 type DishEditorProps = {
   /** null for a new dish */
@@ -107,6 +107,19 @@ export function DishEditor({
   )
 }
 
+/** "Lisa", "Leftover" (or "Leftover 2" when there are several), "Thrown away" */
+function portionName(dish: Dish, people: readonly Profile[], portionId: string): string {
+  const portion = dish.portions.find((candidate) => candidate.id === portionId)
+  if (portion?.eater) {
+    const person = people.find((candidate) => candidate.id === portion.eater?.userId)
+    return person ? displayName(person) : 'Someone else'
+  }
+  if (portion?.discarded) return 'Thrown away'
+  const leftovers = dish.portions.filter(isLeftover)
+  const index = leftovers.findIndex((candidate) => candidate.id === portionId)
+  return leftovers.length > 1 ? `Leftover ${index + 1}` : 'Leftover'
+}
+
 type DishFormProps = {
   readonly initial: Dish
   readonly isNew: boolean
@@ -123,13 +136,10 @@ function DishForm({ initial, isNew, replaces, people, date, onDone }: DishFormPr
   const saveDish = useSaveDish()
   const deleteDish = useDeleteDish()
   const showMain = () => setView({ kind: 'main' })
-  const nameOf = (portionId: string) => {
-    const userId = draft.portions.find((portion) => portion.id === portionId)?.eater?.userId
-    const person = people.find((candidate) => candidate.id === userId)
-    return person ? displayName(person) : 'Leftover'
-  }
+  const nameOf = (portionId: string) => portionName(draft, people, portionId)
+  // own amounts can go to leftovers too, e.g. noodles for tomorrow
   const eaters: PortionOption[] = draft.portions.flatMap((portion) =>
-    portion.eater ? [{ id: portion.id, name: nameOf(portion.id) }] : [],
+    portion.discarded ? [] : [{ id: portion.id, name: nameOf(portion.id) }],
   )
   const change = (next: Dish) => {
     setDraft(next)
@@ -142,7 +152,7 @@ function DishForm({ initial, isNew, replaces, people, date, onDone }: DishFormPr
 
   function save() {
     if (draft.lines.length === 0) return setError('Add at least one ingredient')
-    if (eaters.length === 0) return setError('Choose who eats')
+    if (!draft.portions.some((portion) => portion.eater)) return setError('Choose who eats')
     try {
       saveDish.save({ dish: draft, replaces })
       onDone()
@@ -241,7 +251,13 @@ function DishForm({ initial, isNew, replaces, people, date, onDone }: DishFormPr
               onChange={(event) => change(withName(draft, event.target.value))}
             />
           </GroupedSection>
-          <DishSplitSection dish={draft} people={people} date={date} onChange={change} />
+          <DishSplitSection
+            dish={draft}
+            people={people}
+            date={date}
+            nameOf={nameOf}
+            onChange={change}
+          />
           {draft.lines.length > 0 && (
             <GroupedSection header="Ingredients">
               {draft.lines.map((line) => (

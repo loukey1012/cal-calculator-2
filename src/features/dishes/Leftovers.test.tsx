@@ -111,6 +111,8 @@ describe('leftovers on Today', () => {
     await user.click(await screen.findByRole('button', { name: /Chili left/ }))
     const sheet = within(screen.getByRole('dialog', { name: 'Leftovers' }))
     await user.click(sheet.getByRole('button', { name: /Chili/ }))
+    // still being sent: Today updates right away
+    vi.mocked(saveDish).mockReturnValueOnce(new Promise(() => {}))
     await user.click(sheet.getByRole('button', { name: 'Throw away' }))
 
     expect(sentDish().portions[1]).toMatchObject({ id: 'p-rest', eater: null, discarded: true })

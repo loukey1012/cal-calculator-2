@@ -2,7 +2,10 @@ import { useState } from 'react'
 import { Button } from '../../components/ios/Button'
 import { Sheet } from '../../components/ios/Sheet'
 import { DishEditor } from '../dishes/DishEditor'
-import { useLatestDishChangeError } from '../dishes/hooks'
+import { takeLeftover } from '../dishes/dishDraft'
+import { useLatestDishChangeError, useLeftovers, useSaveDish } from '../dishes/hooks'
+import { leftoverOffers } from '../dishes/leftovers'
+import { formatKcal } from '../nutrition/format'
 import type { Ingredient } from '../ingredients/ingredientsApi'
 import { availableUnits } from '../nutrition/amounts'
 import {
@@ -72,6 +75,8 @@ function MealSheetContent({ mealType, userId, date }: Omit<MealSheetProps, 'open
   const remove = useDeleteMealItem(userId, date)
   const latestChangeError = useLatestDayChangeError(userId, date)
   const latestDishError = useLatestDishChangeError()
+  const leftovers = useLeftovers()
+  const saveDish = useSaveDish()
   const items = itemsByMeal(day.data ?? [])[mealType]
   const editedItem =
     requestedView.kind === 'edit'
@@ -110,6 +115,16 @@ function MealSheetContent({ mealType, userId, date }: Omit<MealSheetProps, 'open
           <FoodPicker
             onPick={(ingredient) => setView({ kind: 'amount', ingredient })}
             onCustom={() => setView({ kind: 'custom' })}
+            leftovers={leftoverOffers(leftovers.data ?? []).map((offer) => ({
+              key: offer.portionId,
+              title: offer.title,
+              subtitle: `Leftover · ${formatKcal(offer.totals.kcal)} kcal`,
+              onPick: () => {
+                const eater = { userId, date, mealType }
+                saveDish.save({ dish: takeLeftover(offer.dish, offer.portionId, eater) })
+                showItems()
+              },
+            }))}
           />
         </>
       )

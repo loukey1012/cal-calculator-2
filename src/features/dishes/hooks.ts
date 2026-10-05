@@ -16,13 +16,15 @@ import {
   applyDishChange,
   applyDishChangeToDay,
   dishIdOf,
+  applyDishChangeToLeftovers,
   dishKey,
   DISH_CHANGES_KEY,
+  LEFTOVERS_KEY,
   refreshAfterDishChange,
   type DayRef,
   type DishChange,
 } from './dishChanges'
-import { fetchDish } from './dishesApi'
+import { fetchDish, fetchLeftoverDishes } from './dishesApi'
 import { portionItems, type Dish } from './portions'
 
 /** null while no dish is selected */
@@ -31,6 +33,26 @@ export function useDish(dishId: string | null): UseQueryResult<Dish | null> {
     queryKey: dishKey(dishId ?? ''),
     queryFn: () => fetchDish(dishId ?? ''),
     enabled: dishId !== null,
+  })
+}
+
+const LEFTOVER_MAX_AGE_DAYS = 7
+const DAY_MS = 24 * 60 * 60 * 1000
+
+/**
+ * The household's dishes cooked in the last week that still have a leftover. Each dish is also
+ * cached on its own, so taking or throwing away a leftover saves on top of this version.
+ */
+export function useLeftovers(): UseQueryResult<Dish[]> {
+  const queryClient = useQueryClient()
+  return useQuery({
+    queryKey: LEFTOVERS_KEY,
+    queryFn: async () => {
+      const since = new Date(Date.now() - LEFTOVER_MAX_AGE_DAYS * DAY_MS).toISOString()
+      const dishes = await fetchLeftoverDishes(since)
+      for (const dish of dishes) queryClient.setQueryData(dishKey(dish.id), dish)
+      return dishes
+    },
   })
 }
 
@@ -67,7 +89,7 @@ function useDishChange(): DishChangeMutation {
     mutationFn: (change: DishChange) => applyDishChange(change),
     onMutate: async (change) => {
       const dayKeys = change.days.map((day) => dayChangeKey(day.userId, day.date))
-      const keys: QueryKey[] = [dishKey(dishIdOf(change)), ...dayKeys]
+      const keys: QueryKey[] = [dishKey(dishIdOf(change)), LEFTOVERS_KEY, ...dayKeys]
       await Promise.all(keys.map((queryKey) => queryClient.cancelQueries({ queryKey })))
       const snapshots = keys.map((key) => ({ key, data: queryClient.getQueryData(key) }))
 
@@ -75,6 +97,10 @@ function useDishChange(): DishChangeMutation {
         dishKey(dishIdOf(change)),
         change.kind === 'save' ? change.dish : null,
       )
+      const leftovers = queryClient.getQueryData<Dish[]>(LEFTOVERS_KEY)
+      if (leftovers) {
+        queryClient.setQueryData(LEFTOVERS_KEY, applyDishChangeToLeftovers(leftovers, change))
+      }
       change.days.forEach((day, index) => {
         const key = dayKeys[index]
         const meals = key && queryClient.getQueryData<DayMeal[]>(key)

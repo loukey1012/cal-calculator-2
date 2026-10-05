@@ -28,7 +28,12 @@ function portionFromRow(row: PortionRow): DishPortion {
     row.user_id !== null && row.date !== null && row.meal_type !== null
       ? { userId: row.user_id, date: row.date, mealType: row.meal_type }
       : null
-  return { id: row.id, eater, splitValue: row.split_value }
+  return {
+    id: row.id,
+    eater,
+    splitValue: row.split_value,
+    ...(row.discarded ? { discarded: true } : {}),
+  }
 }
 
 function lineFromRow(row: LineRow): DishLine {
@@ -81,6 +86,7 @@ function dishPayload(dish: Dish) {
       date: portion.eater?.date ?? null,
       meal_type: portion.eater?.mealType ?? null,
       split_value: portion.splitValue,
+      discarded: portion.discarded ?? false,
     })),
     lines: dish.lines.map((line) => ({
       ...line.item,
@@ -91,15 +97,38 @@ function dishPayload(dish: Dish) {
   }
 }
 
+const DISH_COLUMNS = '*, dish_portions(*), dish_lines(*, dish_line_amounts(*))'
+
 /** null when the dish doesn't exist (any more). */
 export async function fetchDish(dishId: string): Promise<Dish | null> {
   const { data, error } = await supabase
     .from('dishes')
-    .select('*, dish_portions(*), dish_lines(*, dish_line_amounts(*))')
+    .select(DISH_COLUMNS)
     .eq('id', dishId)
     .maybeSingle()
   if (error) throw ApiError.from(error)
   return data ? dishFromRow(data) : null
+}
+
+/** Dishes cooked since `since` (ISO time) with a portion nobody has eaten or thrown away. */
+export async function fetchLeftoverDishes(since: string): Promise<Dish[]> {
+  const leftovers = await supabase
+    .from('dish_portions')
+    .select('dish_id')
+    .is('user_id', null)
+    .eq('discarded', false)
+  if (leftovers.error) throw ApiError.from(leftovers.error)
+  const dishIds = [...new Set(leftovers.data.map((row) => row.dish_id))]
+  if (dishIds.length === 0) return []
+
+  const { data, error } = await supabase
+    .from('dishes')
+    .select(DISH_COLUMNS)
+    .in('id', dishIds)
+    .gte('created_at', since)
+    .order('created_at')
+  if (error) throw ApiError.from(error)
+  return data.map(dishFromRow)
 }
 
 export async function saveDish({

@@ -206,6 +206,7 @@ export type Database = {
         Row: {
           created_at: string
           date: string | null
+          discarded: boolean
           dish_id: string
           id: string
           meal_type: Database["public"]["Enums"]["meal_type"] | null
@@ -216,6 +217,7 @@ export type Database = {
         Insert: {
           created_at?: string
           date?: string | null
+          discarded?: boolean
           dish_id: string
           id: string
           meal_type?: Database["public"]["Enums"]["meal_type"] | null
@@ -226,6 +228,7 @@ export type Database = {
         Update: {
           created_at?: string
           date?: string | null
+          discarded?: boolean
           dish_id?: string
           id?: string
           meal_type?: Database["public"]["Enums"]["meal_type"] | null

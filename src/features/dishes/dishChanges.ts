@@ -3,7 +3,7 @@ import { monthKeys } from '../history/hooks'
 import { dayChangeKey, QUEUED_CHANGE_OPTIONS } from '../meals/dayChanges'
 import { withItemAdded, type DayMeal, type MealItem } from '../meals/dayModel'
 import { deleteDish, saveDish } from './dishesApi'
-import { portionItems, type Dish, type PortionItem } from './portions'
+import { isLeftover, portionItems, type Dish, type PortionItem } from './portions'
 
 /** One person's day. */
 export type DayRef = { readonly userId: string; readonly date: string }
@@ -37,6 +37,9 @@ export const DISH_CHANGES_KEY = ['dish'] as const
 export function dishKey(dishId: string) {
   return ['dish', dishId] as const
 }
+
+/** Query key of the household's dishes with leftovers. */
+export const LEFTOVERS_KEY = ['leftovers'] as const
 
 export function dishIdOf(change: DishChange): string {
   return change.kind === 'save' ? change.dish.id : change.dishId
@@ -121,6 +124,16 @@ export function applyDishChangeToDay(
   }, cleared)
 }
 
+/** The change applied to the cached leftovers: a dish is listed while it has a leftover. */
+export function applyDishChangeToLeftovers(dishes: readonly Dish[], change: DishChange): Dish[] {
+  const others = dishes.filter((dish) => dish.id !== dishIdOf(change))
+  if (change.kind === 'delete' || !change.dish.portions.some(isLeftover)) return others
+  const listed = dishes.some((dish) => dish.id === change.dish.id)
+  return listed
+    ? dishes.map((dish) => (dish.id === change.dish.id ? change.dish : dish))
+    : [...dishes, change.dish]
+}
+
 /** After a change: load the dish, every touched day and those people's months again. */
 export function refreshAfterDishChange(
   queryClient: QueryClient,
@@ -129,6 +142,7 @@ export function refreshAfterDishChange(
   const userIds = [...new Set(change.days.map((day) => day.userId))]
   return Promise.all([
     queryClient.invalidateQueries({ queryKey: dishKey(dishIdOf(change)) }),
+    queryClient.invalidateQueries({ queryKey: LEFTOVERS_KEY }),
     ...change.days.map((day) =>
       queryClient.invalidateQueries({ queryKey: dayChangeKey(day.userId, day.date) }),
     ),
