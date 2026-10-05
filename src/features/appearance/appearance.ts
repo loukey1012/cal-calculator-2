@@ -5,12 +5,15 @@ const THEMES = ['system', 'light', 'dark'] as const
 const DARK_STYLES = ['soft', 'bento'] as const
 const GOAL_PALETTES = ['vivid', 'pastel', 'accent', 'contrast'] as const
 const PROGRESS_STYLES = ['rings', 'ringBars', 'bars', 'compact'] as const
-const CATEGORY_LAYOUTS = ['line', 'wrap'] as const
+const CATEGORY_LAYOUTS = ['line', 'wrap', 'grouped'] as const
 
 export type DarkStyle = (typeof DARK_STYLES)[number]
 export type GoalPalette = (typeof GOAL_PALETTES)[number]
 export type ProgressStyle = (typeof PROGRESS_STYLES)[number]
-/** Ingredients category chips: one sideways-scrolling line, or wrapped so all fit on screen. */
+/**
+ * Ingredients category chips: one sideways-scrolling line, wrapped so all fit on screen, or
+ * grouped into broad categories that open their categories.
+ */
 export type CategoryLayout = (typeof CATEGORY_LAYOUTS)[number]
 /** What is actually painted: light, or one of the two dark styles. */
 export type Scheme = 'light' | DarkStyle

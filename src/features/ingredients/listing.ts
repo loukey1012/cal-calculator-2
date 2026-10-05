@@ -1,7 +1,23 @@
 import { formatKcal } from '../nutrition/format'
-import type { Category, Ingredient } from './ingredientsApi'
+import type { Category, CategoryGroup, Ingredient } from './ingredientsApi'
 
-export type IngredientFilter = { readonly query: string; readonly categoryId: string | null }
+/** Which ingredients the category chips let through. A broad category id of null is "Other". */
+export type CategoryFilter =
+  | { readonly kind: 'all' }
+  | { readonly kind: 'category'; readonly id: string }
+  | { readonly kind: 'group'; readonly id: string | null }
+
+export const ALL_CATEGORIES: CategoryFilter = { kind: 'all' }
+
+export type IngredientFilter = { readonly query: string; readonly category: CategoryFilter }
+
+/** A broad category with its categories, as the grouped chips show it. */
+export type ChipGroup = {
+  /** null = "Other": ungrouped categories and ingredients without a category */
+  readonly id: string | null
+  readonly name: string
+  readonly categories: readonly Category[]
+}
 
 export type IngredientSection = {
   readonly id: string
@@ -10,6 +26,7 @@ export type IngredientSection = {
 }
 
 const UNCATEGORIZED = { id: 'uncategorized', title: 'Other' } as const
+const OTHER_GROUP_NAME = 'Other'
 const DEFAULT_UNIT_LABEL = 'unit'
 
 /** Lowercase without accents, so "kase" finds "Käse". */
@@ -23,17 +40,63 @@ function searchable(text: string): string {
 
 const byName = (a: Ingredient, b: Ingredient) => a.name.localeCompare(b.name)
 
+/** The broad category of each known category (null when ungrouped). */
+function groupIdsByCategory(categories: readonly Category[]): ReadonlyMap<string, string | null> {
+  return new Map(categories.map((category) => [category.id, category.group_id]))
+}
+
+function matchesCategory(
+  ingredient: Ingredient,
+  filter: CategoryFilter,
+  groupIds: ReadonlyMap<string, string | null>,
+): boolean {
+  if (filter.kind === 'all') return true
+  if (filter.kind === 'category') return ingredient.category_id === filter.id
+  const groupId = ingredient.category_id === null ? null : groupIds.get(ingredient.category_id)
+  return (groupId ?? null) === filter.id
+}
+
+/** `categories` tell which broad category each category is in; only broad filters need them. */
 export function filterIngredients(
   ingredients: readonly Ingredient[],
-  { query, categoryId }: IngredientFilter,
+  { query, category }: IngredientFilter,
+  categories: readonly Category[] = [],
 ): readonly Ingredient[] {
   const needle = searchable(query)
+  const groupIds = groupIdsByCategory(categories)
   return ingredients.filter(
     (ingredient) =>
-      (categoryId === null || ingredient.category_id === categoryId) &&
+      matchesCategory(ingredient, category, groupIds) &&
       (needle === '' ||
         searchable(`${ingredient.name} ${ingredient.brand ?? ''}`).includes(needle)),
   )
+}
+
+/**
+ * Broad categories by name, each with its categories by name. Broad categories without any are
+ * hidden; "Other" comes last and only when something ends up in it.
+ */
+export function chipGroups(
+  groups: readonly CategoryGroup[],
+  categories: readonly Category[],
+  ingredients: readonly Ingredient[],
+): readonly ChipGroup[] {
+  const sortedCategories = [...categories].sort((a, b) => a.name.localeCompare(b.name))
+  const knownGroupIds = new Set(groups.map((group) => group.id))
+  const named = [...groups]
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((group) => ({
+      id: group.id,
+      name: group.name,
+      categories: sortedCategories.filter((category) => category.group_id === group.id),
+    }))
+    .filter((group) => group.categories.length > 0)
+  const ungrouped = sortedCategories.filter(
+    (category) => category.group_id === null || !knownGroupIds.has(category.group_id),
+  )
+  const hasUncategorized = ingredients.some((ingredient) => ingredient.category_id === null)
+  const other = { id: null, name: OTHER_GROUP_NAME, categories: ungrouped }
+  return ungrouped.length > 0 || hasUncategorized ? [...named, other] : named
 }
 
 /** Sections sorted by category name; ingredients without a (known) category come last. */

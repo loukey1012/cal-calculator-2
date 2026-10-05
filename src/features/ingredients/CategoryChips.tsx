@@ -1,14 +1,21 @@
 import type { CategoryLayout } from '../appearance/appearance'
+import { FilterChip } from './FilterChip'
 import type { Category } from './ingredientsApi'
 
 type CategoryChipsProps = {
-  readonly layout: CategoryLayout
+  readonly layout: FlatLayout
   readonly categories: readonly Category[]
   readonly selectedId: string | null
   readonly onSelect: (categoryId: string | null) => void
 }
 
-const LAYOUT_CLASSES: Record<CategoryLayout, { readonly group: string; readonly chip: string }> = {
+/** the wrapped layouts: slimmer chips flowing into rows */
+export const WRAPPED_ROW_CLASSES = 'flex flex-wrap gap-1.5'
+export const SLIM_CHIP_CLASSES = 'min-h-8 px-3 text-[13px]'
+
+type FlatLayout = Exclude<CategoryLayout, 'grouped'>
+
+const LAYOUT_CLASSES: Record<FlatLayout, { readonly group: string; readonly chip: string }> = {
   // one row that scrolls sideways, running to the screen edges
   line: {
     group: 'no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1',
@@ -16,8 +23,8 @@ const LAYOUT_CLASSES: Record<CategoryLayout, { readonly group: string; readonly 
   },
   // slimmer chips wrapping into rows, so every category is on screen at once
   wrap: {
-    group: 'mt-3 flex flex-wrap gap-1.5',
-    chip: 'min-h-8 px-3 text-[13px]',
+    group: `mt-3 ${WRAPPED_ROW_CLASSES}`,
+    chip: SLIM_CHIP_CLASSES,
   },
 }
 
@@ -33,22 +40,16 @@ export function CategoryChips({ layout, categories, selectedId, onSelect }: Cate
       data-swipe-lock={layout === 'line' ? '' : undefined}
       className={classes.group}
     >
-      {chips.map((chip) => {
-        const selected = chip.id === selectedId
-        return (
-          <button
-            key={chip.id ?? 'all'}
-            type="button"
-            aria-pressed={selected}
-            onClick={() => onSelect(chip.id)}
-            className={`${classes.chip} rounded-full font-bold ${
-              selected ? 'bg-accent text-on-accent' : 'bg-bg-elevated text-label shadow-card'
-            }`}
-          >
-            {chip.name}
-          </button>
-        )
-      })}
+      {chips.map((chip) => (
+        <FilterChip
+          key={chip.id ?? 'all'}
+          selected={chip.id === selectedId}
+          onClick={() => onSelect(chip.id)}
+          className={classes.chip}
+        >
+          {chip.name}
+        </FilterChip>
+      ))}
     </div>
   )
 }

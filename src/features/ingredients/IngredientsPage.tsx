@@ -10,11 +10,17 @@ import { PageHeader } from '../../components/ios/PageHeader'
 import { SearchField } from '../../components/ios/SearchField'
 import { toUserMessage } from '../../lib/errors'
 import { useMyAppearance } from '../appearance/useMyAppearance'
-import { CategoryChips } from './CategoryChips'
+import { CategoryFilterChips } from './CategoryFilterChips'
 import { useCategories, useCategoryGroups, useIngredients } from './hooks'
 import type { Ingredient } from './ingredientsApi'
 import { IngredientSheet } from './IngredientSheet'
-import { filterIngredients, groupByCategory, nutritionSummary } from './listing'
+import {
+  ALL_CATEGORIES,
+  filterIngredients,
+  groupByCategory,
+  nutritionSummary,
+  type CategoryFilter,
+} from './listing'
 
 type Editing = { readonly ingredient: Ingredient | null } | null
 
@@ -25,7 +31,7 @@ export function IngredientsPage() {
   const groups = useCategoryGroups(householdId)
   const { categoryLayout } = useMyAppearance()
   const [query, setQuery] = useState('')
-  const [categoryId, setCategoryId] = useState<string | null>(null)
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>(ALL_CATEGORIES)
   const [editing, setEditing] = useState<Editing>(null)
   const categoryList = categories.data ?? []
 
@@ -51,7 +57,7 @@ export function IngredientsPage() {
       return <EmptyState title="No ingredients yet" message="Tap + to add your first ingredient." />
     }
     const sections = groupByCategory(
-      filterIngredients(ingredients.data, { query, categoryId }),
+      filterIngredients(ingredients.data, { query, category: categoryFilter }, categoryList),
       categoryList,
     )
     if (sections.length === 0) {
@@ -88,11 +94,13 @@ export function IngredientsPage() {
       />
       <SearchField label="Search ingredients" value={query} onChange={setQuery} />
       {categoryList.length > 0 && (
-        <CategoryChips
+        <CategoryFilterChips
           layout={categoryLayout}
           categories={categoryList}
-          selectedId={categoryId}
-          onSelect={setCategoryId}
+          groups={groups.data ?? []}
+          ingredients={ingredients.data ?? []}
+          filter={categoryFilter}
+          onChange={setCategoryFilter}
         />
       )}
       {renderContent()}

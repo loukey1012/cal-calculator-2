@@ -7,7 +7,6 @@ import { PageHeader } from '../../components/ios/PageHeader'
 import { SegmentedControl } from '../../components/ios/SegmentedControl'
 import { toUserMessage } from '../../lib/errors'
 import { GoalProgressView } from '../goals/GoalProgressView'
-import { CategoryChips } from '../ingredients/CategoryChips'
 import { useUpdateProfile } from '../household/hooks'
 import type { GoalProgress } from '../nutrition/goals'
 import {
@@ -17,11 +16,11 @@ import {
   resolveScheme,
   SCHEME_SURFACES,
   type Appearance,
-  type CategoryLayout,
   type DarkStyle,
   type GoalPalette,
 } from './appearance'
 import { OptionCards, SettingSection, SwatchPicker } from './AppearanceOptions'
+import { CategoryChipsPreview } from './CategoryChipsPreview'
 import { usePrefersDark } from './useAppearance'
 
 const THEME_OPTIONS = [
@@ -40,37 +39,8 @@ const PROGRESS_OPTIONS = [
 const CATEGORY_LAYOUT_OPTIONS = [
   { value: 'line', label: 'One line' },
   { value: 'wrap', label: 'All on screen' },
+  { value: 'grouped', label: 'Grouped' },
 ] as const
-
-const SAMPLE_CATEGORIES = [
-  'Bread',
-  'Dairy',
-  'Drinks',
-  'Meat & Fish',
-  'Sauces',
-  'Snacks',
-  'Spreads',
-  'Veggies & Fruit',
-].map((name) => ({ id: name, name, group_id: null, household_id: '', created_at: '' }))
-
-function CategoryChipsPreview({ layout }: { readonly layout: CategoryLayout }) {
-  return (
-    // a picture of the Ingredients filter: not tappable, read out as one image
-    <div
-      role="img"
-      aria-label="Category chips preview"
-      inert
-      className="mb-3 overflow-hidden rounded-[20px] bg-bg px-4 pb-3 shadow-card"
-    >
-      <CategoryChips
-        layout={layout}
-        categories={SAMPLE_CATEGORIES}
-        selectedId={null}
-        onSelect={() => {}}
-      />
-    </div>
-  )
-}
 
 const DARK_STYLES: ReadonlyArray<{
   value: DarkStyle

@@ -7,7 +7,7 @@ import { SearchField } from '../../components/ios/SearchField'
 import { toUserMessage } from '../../lib/errors'
 import { useIngredients } from '../ingredients/hooks'
 import type { Ingredient } from '../ingredients/ingredientsApi'
-import { filterIngredients, nutritionSummary } from '../ingredients/listing'
+import { ALL_CATEGORIES, filterIngredients, nutritionSummary } from '../ingredients/listing'
 
 type FoodPickerProps = {
   readonly onPick: (ingredient: Ingredient) => void
@@ -19,7 +19,7 @@ export function FoodPicker({ onPick, onCustom }: FoodPickerProps) {
   // a partner may have added ingredients since the list was loaded
   const ingredients = useIngredients(householdId, { alwaysRefresh: true })
   const [query, setQuery] = useState('')
-  const matches = filterIngredients(ingredients.data ?? [], { query, categoryId: null })
+  const matches = filterIngredients(ingredients.data ?? [], { query, category: ALL_CATEGORIES })
 
   return (
     <>
