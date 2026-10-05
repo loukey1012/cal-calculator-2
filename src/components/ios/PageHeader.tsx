@@ -11,11 +11,14 @@ type PageHeaderProps = {
 
 /** Large page title with optional bar buttons above it. */
 export function PageHeader({ title, subtitle, action, leading }: PageHeaderProps) {
+  const hasBar = Boolean(leading || action)
   return (
-    // keeps the bar buttons clear of the fade iOS draws below the status bar
-    <header className="pt-3 pb-2">
+    // iOS draws a fade below the translucent status bar (and offers web apps no way to turn
+    // it off): the bar row clears it for the title; without that row the date or title needs
+    // more room of its own
+    <header className={`${hasBar ? 'pt-3' : 'pt-6'} pb-2`}>
       {/* without buttons the row would only cost height (Today must fit the screen) */}
-      {(leading || action) && (
+      {hasBar && (
         <div data-testid="page-header-bar" className="flex min-h-11 items-center justify-between">
           <div>{leading}</div>
           <div>{action}</div>

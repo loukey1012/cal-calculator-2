@@ -18,7 +18,7 @@ Built for a two-person household: both members log their own meals, can see and 
 - Change an item's amount by tapping it, or remove it with **swipe to delete**.
 - Every logged item keeps a **snapshot of its nutrition values**, so editing an ingredient later never changes past meals.
 - **Day total** and per-meal totals. Unknown nutrients show as "–" instead of a misleading 0.
-- The whole Today page (person switch, goal card and all four meals) **fits an iPhone screen without scrolling**, checked by an end-to-end journey at the iPhone's home-screen size.
+- The whole Today page (person switch, goal card and all four meals) **fits an iPhone screen without scrolling**, checked by an end-to-end journey at the iPhone's home-screen size. Headers without buttons (Today, History, Settings) leave extra room at the top so the date and title stay clear of the fade iOS draws below the status bar.
 - "Today" moves on at midnight, and when the app comes back to the foreground on a later day.
 
 ### Daily goals and progress
