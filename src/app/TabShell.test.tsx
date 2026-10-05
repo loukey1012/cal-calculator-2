@@ -134,4 +134,11 @@ describe('TabShell', () => {
 
     for (const page of screen.getAllByTestId('tab-page')) expect(page).toHaveClass('no-scrollbar')
   })
+
+  test('pages keep their own paint layer, so WebKit redraws them when content shrinks', () => {
+    renderShell('/today')
+
+    for (const page of screen.getAllByTestId('tab-page'))
+      expect(page).toHaveClass('stable-paint-layer')
+  })
 })

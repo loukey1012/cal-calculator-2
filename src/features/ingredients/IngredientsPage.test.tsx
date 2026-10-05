@@ -84,6 +84,22 @@ describe('IngredientsPage', () => {
     expect(screen.getByText('Käse')).toBeInTheDocument()
   })
 
+  test('rapidly switching categories always keeps the header, search and results', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    const chips = within(await screen.findByRole('group', { name: 'Categories' }))
+
+    for (const name of ['Dairy', 'Bakery', 'All', 'Bakery', 'Dairy', 'Bakery']) {
+      await user.click(chips.getByRole('button', { name }))
+    }
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Ingredients' })).toBeInTheDocument()
+    expect(screen.getByRole('searchbox', { name: 'Search ingredients' })).toBeInTheDocument()
+    expect(chips.getByRole('button', { name: 'Bakery' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByText('Bread')).toBeInTheDocument()
+    expect(screen.queryByText('Cream 7%')).not.toBeInTheDocument()
+  })
+
   test('says when nothing matches the search', async () => {
     const user = userEvent.setup()
     renderPage()

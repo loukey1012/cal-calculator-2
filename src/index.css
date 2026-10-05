@@ -183,6 +183,13 @@
   }
 }
 
+/* a permanent compositing layer. WebKit (iOS and Safari) stops redrawing a scroller inside the
+   transformed tab carousel when its content shrinks until it no longer scrolls: the page went
+   blank except for the chip row (its own layer) until the next swipe */
+@utility stable-paint-layer {
+  transform: translateZ(0);
+}
+
 /* soft accent tint behind icons and the active tab */
 @utility bg-accent-soft {
   background-color: color-mix(in srgb, var(--accent) 16%, transparent);
