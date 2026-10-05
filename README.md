@@ -81,19 +81,18 @@ Everything here is saved **to your account**, never to the device: you get the s
 
 ## Coming next
 
-| Area             | Planned                                                                                                                             |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Partner setup    | Your partner joins with the invite code and you both check seeing and editing each other's days; then turn off sign-ups in Supabase |
-| Nicknames        | Give household members your own display name (a per-viewer nickname; their account name stays unchanged)                            |
-| Barcode scanning | Find or create an ingredient by scanning its barcode                                                                                |
-| Quick picks      | Recent and favorite ingredients                                                                                                     |
-| Meal reuse       | Copy a meal to another day, or save it as a template                                                                                |
-| Trends           | Charts of calories and macros over weeks and months                                                                                 |
-| Weight           | Track body weight over time                                                                                                         |
-| Export           | Download your logged data as CSV                                                                                                    |
-| Reminders        | Push reminders to log meals                                                                                                         |
-| Invite code      | Rotate the household invite code                                                                                                    |
-| Live updates     | See your partner's edits to a meal without reloading                                                                                |
+| Area             | Planned                                                                                                  |
+| ---------------- | -------------------------------------------------------------------------------------------------------- |
+| Nicknames        | Give household members your own display name (a per-viewer nickname; their account name stays unchanged) |
+| Barcode scanning | Find or create an ingredient by scanning its barcode                                                     |
+| Quick picks      | Recent and favorite ingredients                                                                          |
+| Meal reuse       | Copy a meal to another day, or save it as a template                                                     |
+| Trends           | Charts of calories and macros over weeks and months                                                      |
+| Weight           | Track body weight over time                                                                              |
+| Export           | Download your logged data as CSV                                                                         |
+| Reminders        | Push reminders to log meals                                                                              |
+| Invite code      | Rotate the household invite code                                                                         |
+| Live updates     | See your partner's edits to a meal without reloading                                                     |
 
 ---
 
@@ -153,7 +152,7 @@ scripts/
 - **Row Level Security on every table.** Household members can read each other's data and edit each other's meals. Goals and profiles can only be changed by their owner. Other households and signed-out visitors see nothing.
 - Joining a household only works through an invite code. Profiles can't be moved between households directly.
 - The anon key in the app is public by design; RLS is the protection. The service-role key is only used in local scripts and CI (dev project), never in the app.
-- Sign-ups should be **disabled in Supabase** once both accounts exist (see [Installing on the iPhone](#installing-on-the-iphone)).
+- **Sign-ups are disabled in Supabase**, since both accounts exist. Nobody new can create an account.
 
 ---
 
@@ -241,4 +240,4 @@ MIGRATION_SUPABASE_URL=... MIGRATION_SUPABASE_SERVICE_ROLE_KEY=... \
 
 Open the live URL in Safari, then **Share → Add to Home Screen**. The app then starts full-screen like a native app, keeps you signed in, and updates itself when a new version is deployed (fully close and reopen the app to pick it up; occasionally twice). The home-screen icon is the one chosen under Settings › Appearance › App icon at the moment you add the app; to change it later, pick a new one, remove the app from the home screen and add it again.
 
-Once everyone in the household has an account, turn off **Allow new users to sign up** in Supabase (Authentication → Sign In / Providers).
+New accounts are turned off in Supabase (Authentication → Sign In / Providers → **Allow new users to sign up**). To add someone, switch it on briefly, let them sign up and join with the invite code, then switch it off again.
