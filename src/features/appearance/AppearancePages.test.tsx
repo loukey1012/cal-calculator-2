@@ -2,6 +2,7 @@ import { fireEvent, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { CurrentUserContext } from '../../app/currentUser'
+import type { Json } from '../../lib/database.types'
 import { renderWithProviders } from '../../test/render'
 
 vi.mock('../household/householdApi', () => ({
@@ -31,7 +32,7 @@ const COLORS = '/settings/appearance/colors'
 const PROGRESS = '/settings/appearance/progress'
 const CHIPS = '/settings/appearance/category-chips'
 
-function renderPage(route: string, appearance: Record<string, unknown> = {}) {
+function renderPage(route: string, appearance: { [key: string]: Json } = {}) {
   return renderWithProviders(
     <CurrentUserContext value={{ profile: { ...ME, appearance }, householdId: 'h1' }}>
       <SettingsPage />

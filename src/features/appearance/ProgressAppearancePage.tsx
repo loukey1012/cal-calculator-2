@@ -1,10 +1,11 @@
 import { SegmentedControl } from '../../components/ios/SegmentedControl'
 import { GoalProgressView } from '../goals/GoalProgressView'
 import type { GoalProgress } from '../nutrition/goals'
-import { goalColors } from './appearance'
+import { goalColors, type Appearance, type CustomGoalColors, type GoalPalette } from './appearance'
 import { APPEARANCE_PATH, PALETTE_OPTIONS, PROGRESS_OPTIONS } from './appearanceLabels'
 import { OptionCards, SettingSection } from './AppearanceOptions'
 import { AppearanceSubPage } from './AppearanceSubPage'
+import { RingColors } from './RingColors'
 import { useAppearanceSettings } from './useAppearanceSettings'
 
 function sample(key: GoalProgress['key'], consumed: number, target: number): GoalProgress {
@@ -31,6 +32,18 @@ const SAMPLE_PROGRESS = [
 /** Settings › Appearance › Progress: how the goal rings and bars look. */
 export function ProgressAppearancePage() {
   const { profile, appearance, scheme, update, change } = useAppearanceSettings()
+  const custom = appearance.customGoalColors ?? {}
+
+  function save(next: Partial<Appearance>, nextCustom: CustomGoalColors) {
+    const { customGoalColors: _previous, ...others } = appearance
+    const hasCustom = Object.keys(nextCustom).length > 0
+    update.mutate({
+      appearance: { ...others, ...next, ...(hasCustom ? { customGoalColors: nextCustom } : {}) },
+    })
+  }
+
+  // a palette is a fresh start: it replaces every custom ring color
+  const choosePalette = (goalPalette: GoalPalette) => save({ goalPalette }, {})
 
   return (
     <AppearanceSubPage
@@ -55,7 +68,7 @@ export function ProgressAppearancePage() {
         <OptionCards
           label="Goal colors"
           value={appearance.goalPalette}
-          onChange={(palette) => change('goalPalette', palette)}
+          onChange={choosePalette}
           options={PALETTE_OPTIONS.map((palette) => ({
             ...palette,
             preview: (
@@ -72,6 +85,12 @@ export function ProgressAppearancePage() {
           }))}
         />
       </SettingSection>
+
+      <RingColors
+        colors={goalColors(appearance.goalPalette, scheme, profile.accent_color, custom)}
+        custom={custom}
+        onChange={(nextCustom) => save({}, nextCustom)}
+      />
     </AppearanceSubPage>
   )
 }

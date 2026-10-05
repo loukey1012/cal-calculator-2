@@ -72,6 +72,7 @@ Everything here is saved **to your account**, never to the device: you get the s
 - **Progress** (with a live preview at the top)
   - **Progress style:** Rings, **Ring + bars** (default: a calorie ring, bars for the macros), Bars or Compact.
   - **Goal colors:** Vivid, Pastel, Accent shades or High contrast.
+  - **Ring colors:** give Calories, Protein, Carbs or Fat **its own color** (18 swatches, or any color with the color picker); the others keep the palette's. "Use palette color" undoes one, and choosing a palette resets them all. A custom color stays the same in every theme.
 - **Category chips** (with a preview): **One line** (default, scrolls sideways), **All on screen** (slimmer chips wrapping into rows) or **Grouped** (broad categories such as Fresh; tapping one filters by it and opens its categories below) for the category filter on the Ingredients page. Wrapped chips are **arranged automatically to fill as few rows as possible** ("All" stays first; alphabetical within each row), measured on the device and re-arranged when the width or fonts change.
 - Your **name** shown to the household is under Settings › Account.
 
@@ -184,7 +185,7 @@ pnpm lint && pnpm typecheck && pnpm format:check
 pnpm db:types       # regenerate src/lib/database.types.ts from the linked project
 ```
 
-**End-to-end journeys** (log a meal, goals and partner, Today fitting the screen, history, ingredients, category management, offline, appearance following the account to a new device, the Pink style surviving a restart) run the real app against the dev project. Build it against dev and pass the test credentials:
+**End-to-end journeys** (log a meal, goals and partner, Today fitting the screen, history, ingredients, category management, offline, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color) run the real app against the dev project. Build it against dev and pass the test credentials:
 
 ```bash
 set -a; . ./.env.test.local; set +a

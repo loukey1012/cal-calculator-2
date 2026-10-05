@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { mixHex, onColor, readableInk } from '../../lib/color'
+import type { RingKey } from '../nutrition/goals'
 
 const THEMES = ['system', 'light', 'dark'] as const
 const LIGHT_STYLES = ['classic', 'pink'] as const
@@ -29,6 +30,24 @@ export const DEFAULT_APPEARANCE = {
   categoryLayout: 'line',
 } as const satisfies Record<string, string>
 
+/** A color picked for one goal's ring and bar, on top of the palette. */
+export type CustomGoalColors = Partial<Record<RingKey, string>>
+
+const goalColor = z
+  .string()
+  .regex(/^#[0-9a-f]{6}$/i)
+  .transform((color) => color.toLowerCase())
+  .optional()
+  .catch(undefined)
+
+// each goal's color is checked on its own; invalid ones fall back to the palette
+const customGoalColorsSchema = z
+  .object({ kcal: goalColor, protein: goalColor, carbs: goalColor, fat: goalColor })
+  .catch({})
+  .transform((colors): CustomGoalColors =>
+    Object.fromEntries(Object.entries(colors).filter(([, color]) => color !== undefined)),
+  )
+
 // every field falls back on its own, so one unknown value (e.g. from a newer app version)
 // never resets the other choices
 const appearanceSchema = z
@@ -39,6 +58,7 @@ const appearanceSchema = z
     goalPalette: z.enum(GOAL_PALETTES).catch(DEFAULT_APPEARANCE.goalPalette),
     progressStyle: z.enum(PROGRESS_STYLES).catch(DEFAULT_APPEARANCE.progressStyle),
     categoryLayout: z.enum(CATEGORY_LAYOUTS).catch(DEFAULT_APPEARANCE.categoryLayout),
+    customGoalColors: customGoalColorsSchema.optional(),
   })
   .catch(DEFAULT_APPEARANCE)
 
@@ -106,7 +126,7 @@ const FIXED_PALETTES: Record<Exclude<GoalPalette, 'accent'>, Record<Scheme, Goal
 // the accent fading towards the card color, ring by ring
 const ACCENT_SHADE_WEIGHTS = [0, 0.25, 0.45, 0.6] as const
 
-export function goalColors(palette: GoalPalette, scheme: Scheme, accent: string): GoalColors {
+function paletteColors(palette: GoalPalette, scheme: Scheme, accent: string): GoalColors {
   if (palette !== 'accent') return FIXED_PALETTES[palette][scheme]
   const [kcal, protein, carbs, fat] = ACCENT_SHADE_WEIGHTS.map((weight) =>
     mixHex(accent, SCHEME_SURFACES[scheme].card, weight),
@@ -114,14 +134,26 @@ export function goalColors(palette: GoalPalette, scheme: Scheme, accent: string)
   return [kcal, protein, carbs, fat] as GoalColors
 }
 
+/** The palette's colors, with any custom goal color in place of its palette color. */
+export function goalColors(
+  palette: GoalPalette,
+  scheme: Scheme,
+  accent: string,
+  custom: CustomGoalColors = {},
+): GoalColors {
+  const [kcal, protein, carbs, fat] = paletteColors(palette, scheme, accent)
+  return [custom.kcal ?? kcal, custom.protein ?? protein, custom.carbs ?? carbs, custom.fat ?? fat]
+}
+
 /** CSS custom properties that depend on the user's choices (the rest come from the scheme). */
 export function appearanceVariables(
   goalPalette: GoalPalette,
   scheme: Scheme,
   accent: string,
+  customGoalColors: CustomGoalColors = {},
 ): Record<string, string> {
   const { bg, card } = SCHEME_SURFACES[scheme]
-  const [kcal, protein, carbs, fat] = goalColors(goalPalette, scheme, accent)
+  const [kcal, protein, carbs, fat] = goalColors(goalPalette, scheme, accent, customGoalColors)
   return {
     '--accent': accent,
     // accent used as text must stay readable on both the page and the cards

@@ -31,17 +31,19 @@ function writeCache(cache: AppearanceCache): void {
   }
 }
 
-/** Paints the whole app in the profile's theme, light and dark style, accent and goal colors. */
+/** Paints the whole app in the profile's theme, light and dark style, accent and goal colors (custom ones included). */
 export function useAppearance(profile: Pick<Profile, 'appearance' | 'accent_color'>): void {
   const prefersDark = usePrefersDark()
   const appearance = parseAppearance(profile.appearance)
   const scheme: Scheme = resolveScheme(appearance, prefersDark)
   const accent = profile.accent_color.toLowerCase()
   const { theme, lightStyle, darkStyle, goalPalette } = appearance
+  // a string, so a new but equal object from the next profile load doesn't repaint
+  const customColors = JSON.stringify(appearance.customGoalColors ?? {})
 
   useEffect(() => {
     const root = document.documentElement
-    const variables = appearanceVariables(goalPalette, scheme, accent)
+    const variables = appearanceVariables(goalPalette, scheme, accent, JSON.parse(customColors))
     root.dataset.scheme = scheme
     for (const [name, value] of Object.entries(variables)) root.style.setProperty(name, value)
     writeCache({ theme, lightStyle, darkStyle, variables })
@@ -50,5 +52,5 @@ export function useAppearance(profile: Pick<Profile, 'appearance' | 'accent_colo
       root.dataset.scheme = window.matchMedia(DARK_QUERY).matches ? 'soft' : 'light'
       for (const name of Object.keys(variables)) root.style.removeProperty(name)
     }
-  }, [scheme, accent, theme, lightStyle, darkStyle, goalPalette])
+  }, [scheme, accent, theme, lightStyle, darkStyle, goalPalette, customColors])
 }
