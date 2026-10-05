@@ -16,6 +16,7 @@ describe('parseAppearance', () => {
       darkStyle: 'bento',
       goalPalette: 'pastel',
       progressStyle: 'bars',
+      categoryLayout: 'wrap',
     }
 
     expect(parseAppearance(stored)).toEqual(stored)
@@ -27,6 +28,10 @@ describe('parseAppearance', () => {
 
   test('new accounts get ring + bars', () => {
     expect(DEFAULT_APPEARANCE.progressStyle).toBe('ringBars')
+  })
+
+  test('category chips stay on one line until changed', () => {
+    expect(DEFAULT_APPEARANCE.categoryLayout).toBe('line')
   })
 
   test('an unknown value only resets that one field', () => {

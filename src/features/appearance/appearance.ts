@@ -5,10 +5,13 @@ const THEMES = ['system', 'light', 'dark'] as const
 const DARK_STYLES = ['soft', 'bento'] as const
 const GOAL_PALETTES = ['vivid', 'pastel', 'accent', 'contrast'] as const
 const PROGRESS_STYLES = ['rings', 'ringBars', 'bars', 'compact'] as const
+const CATEGORY_LAYOUTS = ['line', 'wrap'] as const
 
 export type DarkStyle = (typeof DARK_STYLES)[number]
 export type GoalPalette = (typeof GOAL_PALETTES)[number]
 export type ProgressStyle = (typeof PROGRESS_STYLES)[number]
+/** Ingredients category chips: one sideways-scrolling line, or wrapped so all fit on screen. */
+export type CategoryLayout = (typeof CATEGORY_LAYOUTS)[number]
 /** What is actually painted: light, or one of the two dark styles. */
 export type Scheme = 'light' | DarkStyle
 
@@ -17,6 +20,7 @@ export const DEFAULT_APPEARANCE = {
   darkStyle: 'soft',
   goalPalette: 'vivid',
   progressStyle: 'ringBars',
+  categoryLayout: 'line',
 } as const satisfies Record<string, string>
 
 // every field falls back on its own, so one unknown value (e.g. from a newer app version)
@@ -27,6 +31,7 @@ const appearanceSchema = z
     darkStyle: z.enum(DARK_STYLES).catch(DEFAULT_APPEARANCE.darkStyle),
     goalPalette: z.enum(GOAL_PALETTES).catch(DEFAULT_APPEARANCE.goalPalette),
     progressStyle: z.enum(PROGRESS_STYLES).catch(DEFAULT_APPEARANCE.progressStyle),
+    categoryLayout: z.enum(CATEGORY_LAYOUTS).catch(DEFAULT_APPEARANCE.categoryLayout),
   })
   .catch(DEFAULT_APPEARANCE)
 

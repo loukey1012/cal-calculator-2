@@ -55,6 +55,7 @@ describe('AppearancePage', () => {
     expect(radio('Accent color', 'Blue')).toHaveAttribute('aria-checked', 'true')
     expect(radio('Goal colors', /Vivid/)).toHaveAttribute('aria-checked', 'true')
     expect(radio('Progress style', 'Ring + bars')).toHaveAttribute('aria-checked', 'true')
+    expect(radio('Category chips', 'One line')).toHaveAttribute('aria-checked', 'true')
   })
 
   test.each([
@@ -63,6 +64,7 @@ describe('AppearancePage', () => {
     ['Goal colors', /Pastel/, { goalPalette: 'pastel' }],
     ['Progress style', 'Compact', { progressStyle: 'compact' }],
     ['Progress style', 'Ring + bars', { progressStyle: 'ringBars' }],
+    ['Category chips', 'All on screen', { categoryLayout: 'wrap' }],
   ] as const)('saves %s to the account, keeping the other choices', async (group, name, change) => {
     const user = userEvent.setup()
     renderPage({ theme: 'light', progressStyle: 'bars' })

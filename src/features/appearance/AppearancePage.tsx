@@ -35,6 +35,11 @@ const PROGRESS_OPTIONS = [
   { value: 'compact', label: 'Compact' },
 ] as const
 
+const CATEGORY_LAYOUT_OPTIONS = [
+  { value: 'line', label: 'One line' },
+  { value: 'wrap', label: 'All on screen' },
+] as const
+
 const DARK_STYLES: ReadonlyArray<{
   value: DarkStyle
   label: string
@@ -205,6 +210,18 @@ export function AppearancePage() {
           options={PROGRESS_OPTIONS}
           value={appearance.progressStyle}
           onChange={(style) => change('progressStyle', style)}
+        />
+      </SettingSection>
+
+      <SettingSection
+        title="Category chips"
+        footer="How the category filter on the Ingredients page is laid out."
+      >
+        <SegmentedControl
+          label="Category chips"
+          options={CATEGORY_LAYOUT_OPTIONS}
+          value={appearance.categoryLayout}
+          onChange={(layout) => change('categoryLayout', layout)}
         />
       </SettingSection>
     </>

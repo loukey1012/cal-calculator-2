@@ -40,7 +40,7 @@ Built for a two-person household: both members log their own meals, can see and 
 
 ### Ingredient database (Ingredients tab)
 
-- Shared per household, **grouped by category**, with **accent-insensitive search** (`kase` finds `Käse`) and category filter chips.
+- Shared per household, **grouped by category**, with **accent-insensitive search** (`kase` finds `Käse`) and category filter chips (one sideways-scrolling line, or all on screen; Settings › Appearance).
 - Nutrition **per 100 g and/or per unit**: calories (whole numbers, rounded up), protein, carbs, sugar, fat, saturated fat, fiber, salt. Only calories are required.
 - Unit name and grams per unit, brand, category (created on the fly), note.
 - Categories are **deleted automatically** once no ingredient uses them.
@@ -67,6 +67,7 @@ Everything here is saved **to your account**, never to the device: you get the s
 - **Accent color:** 12 colors (buttons, the active tab, your avatar). Text in the accent color is darkened or lightened automatically so it stays readable, e.g. Lime on a light background.
 - **Goal colors:** Vivid, Pastel, Accent shades or High contrast.
 - **Progress style:** Rings, **Ring + bars** (default: a calorie ring, bars for the macros), Bars or Compact.
+- **Category chips:** **One line** (default, scrolls sideways) or **All on screen** (slimmer chips wrapping into rows) for the category filter on the Ingredients page.
 - Your **name** shown to the household is under Settings › Account.
 
 ### Coming next
@@ -104,7 +105,7 @@ src/
   app/            tab shell, swipe navigation, current user, offline lifecycle, sync status
   components/ios/ UI building blocks (Sheet, ListRow, TabBar, SegmentedControl, Avatar, …)
   features/
-    appearance/   per-account theme, dark style, accent, goal colors, progress style; Appearance page
+    appearance/   per-account theme, dark style, accent, goal colors, progress style, category chips; Appearance page
     auth/         login, sign-up, session (clears cached data on sign-out / account change)
     household/    profile, household, invite codes, onboarding
     ingredients/  ingredient database: API, form parsing, listing, screens

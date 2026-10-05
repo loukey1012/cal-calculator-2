@@ -9,53 +9,20 @@ import { ListRow } from '../../components/ios/ListRow'
 import { PageHeader } from '../../components/ios/PageHeader'
 import { SearchField } from '../../components/ios/SearchField'
 import { toUserMessage } from '../../lib/errors'
+import { useMyAppearance } from '../appearance/useMyAppearance'
+import { CategoryChips } from './CategoryChips'
 import { useCategories, useIngredients } from './hooks'
-import type { Category, Ingredient } from './ingredientsApi'
+import type { Ingredient } from './ingredientsApi'
 import { IngredientSheet } from './IngredientSheet'
 import { filterIngredients, groupByCategory, nutritionSummary } from './listing'
 
 type Editing = { readonly ingredient: Ingredient | null } | null
 
-type CategoryChipsProps = {
-  readonly categories: readonly Category[]
-  readonly selectedId: string | null
-  readonly onSelect: (categoryId: string | null) => void
-}
-
-function CategoryChips({ categories, selectedId, onSelect }: CategoryChipsProps) {
-  const chips = [{ id: null, name: 'All' }, ...categories]
-  return (
-    // horizontal scrolling here must not switch tabs
-    <div
-      role="group"
-      aria-label="Categories"
-      data-swipe-lock=""
-      className="no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1"
-    >
-      {chips.map((chip) => {
-        const selected = chip.id === selectedId
-        return (
-          <button
-            key={chip.id ?? 'all'}
-            type="button"
-            aria-pressed={selected}
-            onClick={() => onSelect(chip.id)}
-            className={`min-h-9 shrink-0 rounded-full px-4 text-[14px] font-bold ${
-              selected ? 'bg-accent text-on-accent' : 'bg-bg-elevated text-label shadow-card'
-            }`}
-          >
-            {chip.name}
-          </button>
-        )
-      })}
-    </div>
-  )
-}
-
 export function IngredientsPage() {
   const { householdId } = useCurrentUser()
   const ingredients = useIngredients(householdId)
   const categories = useCategories(householdId)
+  const { categoryLayout } = useMyAppearance()
   const [query, setQuery] = useState('')
   const [categoryId, setCategoryId] = useState<string | null>(null)
   const [editing, setEditing] = useState<Editing>(null)
@@ -120,7 +87,12 @@ export function IngredientsPage() {
       />
       <SearchField label="Search ingredients" value={query} onChange={setQuery} />
       {categoryList.length > 0 && (
-        <CategoryChips categories={categoryList} selectedId={categoryId} onSelect={setCategoryId} />
+        <CategoryChips
+          layout={categoryLayout}
+          categories={categoryList}
+          selectedId={categoryId}
+          onSelect={setCategoryId}
+        />
       )}
       {renderContent()}
       <IngredientSheet

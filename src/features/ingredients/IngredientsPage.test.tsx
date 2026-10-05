@@ -33,9 +33,9 @@ const INGREDIENTS = [
   ingredient({ id: 'bread', name: 'Bread', category_id: 'c2', kcal_100: 250 }),
 ]
 
-function renderPage() {
+function renderPage(appearance: Record<string, string> = {}) {
   return renderWithProviders(
-    <CurrentUserContext value={{ profile: PROFILE, householdId: 'h1' }}>
+    <CurrentUserContext value={{ profile: { ...PROFILE, appearance }, householdId: 'h1' }}>
       <IngredientsPage />
     </CurrentUserContext>,
   )
@@ -98,6 +98,29 @@ describe('IngredientsPage', () => {
     expect(chips.getByRole('button', { name: 'Bakery' })).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByText('Bread')).toBeInTheDocument()
     expect(screen.queryByText('Cream 7%')).not.toBeInTheDocument()
+  })
+
+  test('category chips scroll sideways on one line by default', async () => {
+    renderPage()
+
+    const chips = await screen.findByRole('group', { name: 'Categories' })
+
+    expect(chips).toHaveClass('overflow-x-auto')
+    expect(chips).not.toHaveClass('flex-wrap')
+  })
+
+  test('with "All on screen" the chips wrap into rows and never scroll sideways', async () => {
+    const user = userEvent.setup()
+    renderPage({ categoryLayout: 'wrap' })
+    const group = await screen.findByRole('group', { name: 'Categories' })
+
+    expect(group).toHaveClass('flex-wrap')
+    expect(group).not.toHaveClass('overflow-x-auto')
+    expect(group).not.toHaveAttribute('data-swipe-lock')
+
+    await user.click(within(group).getByRole('button', { name: 'Bakery' }))
+    expect(screen.getByText('Bread')).toBeInTheDocument()
+    expect(screen.queryByText('Käse')).not.toBeInTheDocument()
   })
 
   test('says when nothing matches the search', async () => {
