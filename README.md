@@ -149,11 +149,15 @@ scripts/
 - `goal_history` (goal valid from a date)
 - `category_groups` (the household's broad categories), `categories` (optionally in a group; deleting a group leaves its categories ungrouped), `ingredients` (per-100 g and/or per-unit columns; at least one calorie value required)
 - `meals` (unique per user, local date and meal type), `meal_items` (nutrition snapshot plus a basis multiplier)
-- Views `meal_totals` and `daily_totals`. RPCs `create_household`, `join_household` and `ensure_meal`.
+- `meal_items` of a cooked dish point to their `dish_portions` row and `dish_lines` row; plain items leave both empty
+- `dishes` (a cooking; split mode equal / count / percent / weight, cooked weight, a revision changed by every save), `dish_portions` (who ate it on which day and meal, or nobody yet = a leftover; split value), `dish_lines` (ingredient snapshot like `meal_items`, either `shared` or `per_portion`), `dish_line_amounts` (own amount of a `per_portion` line per portion)
+- Views `meal_totals` and `daily_totals`. RPCs `create_household`, `join_household`, `ensure_meal`, `save_dish` and `delete_dish`.
+- `save_dish` stores a whole dish at once and re-logs every eaten portion as meal items in its eater's meal (shared lines × the portion's share, own amounts as entered), so the totals views count dishes like any other food. Resending the same save does nothing; a save based on an outdated revision is rejected ("changed meanwhile"). It can also take over plain items of a meal ("share this meal").
 
 ### Security
 
 - **Row Level Security on every table.** Household members can read each other's data and edit each other's meals. Goals and profiles can only be changed by their owner. Other households and signed-out visitors see nothing.
+- Dishes and their meal items are only written through `save_dish` / `delete_dish`, which check that every portion goes to a household member and every ingredient belongs to the household.
 - Joining a household only works through an invite code. Profiles can't be moved between households directly.
 - The anon key in the app is public by design; RLS is the protection. The service-role key is only used in local scripts and CI (dev project), never in the app.
 - **Sign-ups are disabled in Supabase**, since both accounts exist. Nobody new can create an account.

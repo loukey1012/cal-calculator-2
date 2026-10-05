@@ -507,6 +507,38 @@ describe('invalid dishes are rejected', () => {
   })
 })
 
+describe('ingredients deleted meanwhile', () => {
+  test('a line keeps its snapshot but loses the link (e.g. a save queued offline)', async () => {
+    const { data: ingredient } = await alice.client
+      .from('ingredients')
+      .select('household_id')
+      .eq('id', aliceIngredientId)
+      .single()
+    const created = await alice.client
+      .from('ingredients')
+      .insert({ household_id: ingredient!.household_id, name: 'Gone soon', kcal_100: 100 })
+      .select('id')
+      .single()
+    await bob.client.from('ingredients').delete().eq('id', created.data!.id)
+    const payload = withFreshPortionIds(
+      dish({
+        portions: [eats('a', alice)],
+        lines: [{ ...sharedGrams('Gone soon', 100, 100), ingredient_id: created.data!.id }],
+      }),
+    )
+
+    const { error } = await saveDish(alice.client, payload)
+    const lines = await alice.client
+      .from('dish_lines')
+      .select('ingredient_id')
+      .eq('dish_id', payload.id)
+
+    expect(error).toBeNull()
+    expect(lines.data).toEqual([{ ingredient_id: null }])
+    expect(await dishItemsOf(alice, payload.id)).toEqual({ 'Gone soon': [100, 1] })
+  })
+})
+
 describe('household boundaries', () => {
   test('a portion for someone outside the household is rejected', async () => {
     const payload = withFreshPortionIds(

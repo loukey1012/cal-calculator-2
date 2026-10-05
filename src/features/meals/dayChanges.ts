@@ -64,7 +64,15 @@ export async function applyDayChange(change: DayChange): Promise<void> {
 
 function optimisticItem(id: string, draft: MealItemDraft): MealItem {
   const now = new Date().toISOString()
-  return { ...draft, id, meal_id: '', created_at: now, updated_at: now }
+  return {
+    ...draft,
+    id,
+    meal_id: '',
+    dish_portion_id: null,
+    dish_line_id: null,
+    created_at: now,
+    updated_at: now,
+  }
 }
 
 /** The same change applied to the cached day, so it shows before the server has it. */

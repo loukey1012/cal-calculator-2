@@ -82,6 +82,225 @@ export type Database = {
           },
         ]
       }
+      dish_line_amounts: {
+        Row: {
+          amount: number
+          dish_id: string
+          line_id: string
+          portion_id: string
+        }
+        Insert: {
+          amount: number
+          dish_id: string
+          line_id: string
+          portion_id: string
+        }
+        Update: {
+          amount?: number
+          dish_id?: string
+          line_id?: string
+          portion_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dish_line_amounts_line_fkey"
+            columns: ["line_id", "dish_id"]
+            isOneToOne: false
+            referencedRelation: "dish_lines"
+            referencedColumns: ["id", "dish_id"]
+          },
+          {
+            foreignKeyName: "dish_line_amounts_portion_fkey"
+            columns: ["portion_id", "dish_id"]
+            isOneToOne: false
+            referencedRelation: "dish_portions"
+            referencedColumns: ["id", "dish_id"]
+          },
+        ]
+      }
+      dish_lines: {
+        Row: {
+          allocation: Database["public"]["Enums"]["dish_line_allocation"]
+          basis: Database["public"]["Enums"]["nutrition_basis"]
+          basis_multiplier: number
+          brand: string | null
+          carbs: number | null
+          created_at: string
+          dish_id: string
+          entered_amount: number
+          entered_unit: Database["public"]["Enums"]["amount_unit"]
+          fat: number | null
+          fiber: number | null
+          id: string
+          ingredient_id: string | null
+          kcal: number
+          name: string
+          position: number
+          protein: number | null
+          salt: number | null
+          sat_fat: number | null
+          sugar: number | null
+        }
+        Insert: {
+          allocation: Database["public"]["Enums"]["dish_line_allocation"]
+          basis: Database["public"]["Enums"]["nutrition_basis"]
+          basis_multiplier: number
+          brand?: string | null
+          carbs?: number | null
+          created_at?: string
+          dish_id: string
+          entered_amount: number
+          entered_unit: Database["public"]["Enums"]["amount_unit"]
+          fat?: number | null
+          fiber?: number | null
+          id: string
+          ingredient_id?: string | null
+          kcal: number
+          name: string
+          position: number
+          protein?: number | null
+          salt?: number | null
+          sat_fat?: number | null
+          sugar?: number | null
+        }
+        Update: {
+          allocation?: Database["public"]["Enums"]["dish_line_allocation"]
+          basis?: Database["public"]["Enums"]["nutrition_basis"]
+          basis_multiplier?: number
+          brand?: string | null
+          carbs?: number | null
+          created_at?: string
+          dish_id?: string
+          entered_amount?: number
+          entered_unit?: Database["public"]["Enums"]["amount_unit"]
+          fat?: number | null
+          fiber?: number | null
+          id?: string
+          ingredient_id?: string | null
+          kcal?: number
+          name?: string
+          position?: number
+          protein?: number | null
+          salt?: number | null
+          sat_fat?: number | null
+          sugar?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dish_lines_dish_id_fkey"
+            columns: ["dish_id"]
+            isOneToOne: false
+            referencedRelation: "dishes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dish_lines_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dish_portions: {
+        Row: {
+          created_at: string
+          date: string | null
+          dish_id: string
+          id: string
+          meal_type: Database["public"]["Enums"]["meal_type"] | null
+          position: number
+          split_value: number | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          date?: string | null
+          dish_id: string
+          id: string
+          meal_type?: Database["public"]["Enums"]["meal_type"] | null
+          position: number
+          split_value?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          date?: string | null
+          dish_id?: string
+          id?: string
+          meal_type?: Database["public"]["Enums"]["meal_type"] | null
+          position?: number
+          split_value?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dish_portions_dish_id_fkey"
+            columns: ["dish_id"]
+            isOneToOne: false
+            referencedRelation: "dishes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dish_portions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dishes: {
+        Row: {
+          cooked_weight_g: number | null
+          created_at: string
+          created_by: string | null
+          household_id: string
+          id: string
+          name: string | null
+          revision: string
+          split_mode: Database["public"]["Enums"]["dish_split_mode"]
+          updated_at: string
+        }
+        Insert: {
+          cooked_weight_g?: number | null
+          created_at?: string
+          created_by?: string | null
+          household_id: string
+          id: string
+          name?: string | null
+          revision: string
+          split_mode?: Database["public"]["Enums"]["dish_split_mode"]
+          updated_at?: string
+        }
+        Update: {
+          cooked_weight_g?: number | null
+          created_at?: string
+          created_by?: string | null
+          household_id?: string
+          id?: string
+          name?: string | null
+          revision?: string
+          split_mode?: Database["public"]["Enums"]["dish_split_mode"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dishes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dishes_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       goal_history: {
         Row: {
           carbs_g: number | null
@@ -266,6 +485,8 @@ export type Database = {
           brand: string | null
           carbs: number | null
           created_at: string
+          dish_line_id: string | null
+          dish_portion_id: string | null
           entered_amount: number
           entered_unit: Database["public"]["Enums"]["amount_unit"]
           fat: number | null
@@ -287,6 +508,8 @@ export type Database = {
           brand?: string | null
           carbs?: number | null
           created_at?: string
+          dish_line_id?: string | null
+          dish_portion_id?: string | null
           entered_amount: number
           entered_unit: Database["public"]["Enums"]["amount_unit"]
           fat?: number | null
@@ -308,6 +531,8 @@ export type Database = {
           brand?: string | null
           carbs?: number | null
           created_at?: string
+          dish_line_id?: string | null
+          dish_portion_id?: string | null
           entered_amount?: number
           entered_unit?: Database["public"]["Enums"]["amount_unit"]
           fat?: number | null
@@ -324,6 +549,20 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "meal_items_dish_line_id_fkey"
+            columns: ["dish_line_id"]
+            isOneToOne: false
+            referencedRelation: "dish_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_items_dish_portion_id_fkey"
+            columns: ["dish_portion_id"]
+            isOneToOne: false
+            referencedRelation: "dish_portions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "meal_items_ingredient_id_fkey"
             columns: ["ingredient_id"]
@@ -503,6 +742,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      delete_dish: { Args: { p_dish_id: string }; Returns: undefined }
       ensure_meal: {
         Args: {
           p_date: string
@@ -526,9 +766,19 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      save_dish: {
+        Args: {
+          p_base_revision?: string
+          p_dish: Json
+          p_replace_item_ids?: string[]
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       amount_unit: "g" | "unit"
+      dish_line_allocation: "shared" | "per_portion"
+      dish_split_mode: "equal" | "count" | "percent" | "weight"
       meal_type: "breakfast" | "lunch" | "dinner" | "snack"
       nutrition_basis: "per_100g" | "per_unit"
     }
@@ -659,6 +909,8 @@ export const Constants = {
   public: {
     Enums: {
       amount_unit: ["g", "unit"],
+      dish_line_allocation: ["shared", "per_portion"],
+      dish_split_mode: ["equal", "count", "percent", "weight"],
       meal_type: ["breakfast", "lunch", "dinner", "snack"],
       nutrition_basis: ["per_100g", "per_unit"],
     },

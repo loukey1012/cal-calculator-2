@@ -19,6 +19,8 @@ export function mealItem(overrides: Partial<MealItem>): MealItem {
     sat_fat: null,
     fiber: null,
     salt: null,
+    dish_portion_id: null,
+    dish_line_id: null,
     created_at: '2026-10-01T08:00:00Z',
     updated_at: '2026-10-01T08:00:00Z',
     ...overrides,
