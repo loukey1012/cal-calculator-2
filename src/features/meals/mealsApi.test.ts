@@ -31,13 +31,31 @@ beforeEach(() => vi.clearAllMocks())
 
 describe('mealsApi', () => {
   test('fetchDay loads one user’s meals of a day with their items in logging order', async () => {
-    const day = [dayMeal('m1', 'lunch', [mealItem({})])]
-    const query = fakeQuery({ data: day, error: null })
+    const plain = mealItem({ id: 'plain' })
+    const fromDish = mealItem({ id: 'dish-item', dish_portion_id: 'p1', dish_line_id: 'l1' })
+    const rows = [
+      {
+        id: 'm1',
+        meal_type: 'lunch',
+        meal_items: [
+          { ...plain, dish_portions: null },
+          { ...fromDish, dish_portions: { dish_id: 'd1', dishes: { name: 'Chili' } } },
+        ],
+      },
+    ]
+    const query = fakeQuery({ data: rows, error: null })
     supabaseMock.from.mockReturnValueOnce(query)
 
-    await expect(fetchDay('u1', '2026-10-01')).resolves.toEqual(day)
+    await expect(fetchDay('u1', '2026-10-01')).resolves.toEqual([
+      dayMeal('m1', 'lunch', [
+        { ...plain, dish: null },
+        { ...fromDish, dish: { id: 'd1', name: 'Chili' } },
+      ]),
+    ])
     expect(supabaseMock.from).toHaveBeenCalledWith('meals')
-    expect(query.select).toHaveBeenCalledWith('id, meal_type, meal_items(*)')
+    expect(query.select).toHaveBeenCalledWith(
+      'id, meal_type, meal_items(*, dish_portions(dish_id, dishes(name)))',
+    )
     expect(query.eq).toHaveBeenCalledWith('user_id', 'u1')
     expect(query.eq).toHaveBeenCalledWith('date', '2026-10-01')
     expect(query.order).toHaveBeenCalledWith('created_at', { referencedTable: 'meal_items' })
