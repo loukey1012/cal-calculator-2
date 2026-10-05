@@ -18,7 +18,7 @@ Built for a two-person household: both members log their own meals, can see and 
 - Change an item's amount by tapping it, or remove it with **swipe to delete**.
 - Every logged item keeps a **snapshot of its nutrition values**, so editing an ingredient later never changes past meals.
 - **Day total** and per-meal totals. Unknown nutrients show as "–" instead of a misleading 0.
-- The whole Today page (person switch, goal card and all four meals) **fits an iPhone screen without scrolling**, checked by an end-to-end journey at the iPhone's home-screen size. Headers without buttons (Today, History, Settings) leave extra room at the top so the date and title stay clear of the fade iOS draws below the status bar.
+- The whole Today page (person switch, goal card and all four meals) **fits an iPhone screen without scrolling**.
 - "Today" moves on at midnight, and when the app comes back to the foreground on a later day.
 
 ### Daily goals and progress
@@ -38,6 +38,7 @@ Built for a two-person household: both members log their own meals, can see and 
 
 - Accounts with email and password. One person creates a **household**, the other joins with a **12-character invite code** (shareable through the iOS share sheet).
 - A **person switch** on Today shows a household member's day, rings and meals. Members can log and edit meals for each other.
+- Your **name** shown to the household is under Settings › Account.
 
 ### Ingredient database (Ingredients tab)
 
@@ -58,7 +59,7 @@ Built for a two-person household: both members log their own meals, can see and 
 
 - Rounded cards on a soft background, the Manrope font, meals as a 2×2 grid of cards, avatars (initial on each person's accent color) in the person switch and member list. Bottom sheets (drag down to close), segmented controls, switches and swipe actions.
 - **Floating tab bar** (Today · History · Ingredients · Settings): the active tab shows its label in an accent tint. **Swipe left and right** to switch tabs with an animated settle (on a page inside Settings, like Appearance, a swipe to the right goes back one level instead), and tap the active tab to scroll to the top. Pages and sheets scroll without a visible scroll indicator.
-- Installable to the home screen (manifest, icons, safe areas, no zoom on input focus).
+- Installable to the home screen (manifest, icons, safe areas, no zoom on input focus). Headers without buttons (Today, History, Settings) leave extra room at the top so titles stay clear of the fade iOS draws below the status bar.
 
 ### Appearance (Settings › Appearance)
 
@@ -74,18 +75,25 @@ Everything here is saved **to your account**, never to the device: you get the s
   - **Goal colors:** Vivid, Pastel, Accent shades or High contrast.
   - **Ring colors:** give Calories, Protein, Carbs or Fat **its own color** (18 swatches, or any color with the color picker); the others keep the palette's. "Use palette color" undoes one, and choosing a palette resets them all. A custom color stays the same in every theme.
 - **Category chips** (with a preview): **One line** (default, scrolls sideways), **All on screen** (slimmer chips wrapping into rows) or **Grouped** (broad categories such as Fresh; tapping one filters by it and opens its categories below) for the category filter on the Ingredients page. Wrapped chips are **arranged automatically to fill as few rows as possible** ("All" stays first; alphabetical within each row), measured on the device and re-arranged when the width or fonts change.
-- **App icon:** eight versions of the C-ring icon: **Graphite** (default), Classic, Pink, Sunset, Progress, Ember, Leaf and Violet. The choice is offered when you add the app to the home screen (also before signing in on a phone you used before, from the cached look) and shows in the browser tab. iPhone keeps the icon an app had when it was added, so after switching, remove CALculator from the home screen and add it again from Safari; the page says so.
-- Your **name** shown to the household is under Settings › Account.
+- **App icon:** eight versions of the C-ring icon: **Graphite** (default), Classic, Pink, Sunset, Progress, Ember, Leaf and Violet. Used when you add the app to the home screen (also before signing in, on a phone you used before) and in the browser tab. To change an installed icon, see [Installing on the iPhone](#installing-on-the-iphone).
 
-### Coming next
+---
 
-| Area      | Planned                                                                                                  |
-| --------- | -------------------------------------------------------------------------------------------------------- |
-| Polish    | Real-device pass on your iPhone                                                                          |
-| Rename    | App name **CALculator** (without the 2): title, manifest, login screen, README                           |
-| Nicknames | Give household members your own display name (a per-viewer nickname, their account name stays unchanged) |
+## Coming next
 
-Ideas for later (not planned yet): barcode scanning, recent/favorite ingredients, copying meals or saving templates, trend charts, weight tracking, CSV export, push reminders, rotating the invite code, live updates when your partner edits a meal.
+| Area             | Planned                                                                                                  |
+| ---------------- | -------------------------------------------------------------------------------------------------------- |
+| Polish           | Real-device pass on your iPhone                                                                          |
+| Nicknames        | Give household members your own display name (a per-viewer nickname; their account name stays unchanged) |
+| Barcode scanning | Find or create an ingredient by scanning its barcode                                                     |
+| Quick picks      | Recent and favorite ingredients                                                                          |
+| Meal reuse       | Copy a meal to another day, or save it as a template                                                     |
+| Trends           | Charts of calories and macros over weeks and months                                                      |
+| Weight           | Track body weight over time                                                                              |
+| Export           | Download your logged data as CSV                                                                         |
+| Reminders        | Push reminders to log meals                                                                              |
+| Invite code      | Rotate the household invite code                                                                         |
+| Live updates     | See your partner's edits to a meal without reloading                                                     |
 
 ---
 
@@ -112,7 +120,7 @@ src/
   app/            tab shell, swipe navigation, current user, offline lifecycle, sync status
   components/ios/ UI building blocks (Sheet, ListRow, TabBar, SegmentedControl, Avatar, …)
   features/
-    appearance/   per-account theme, dark style, accent, goal colors, progress style, category chips; Appearance page
+    appearance/   per-account theme, light/dark style, accent, goal and ring colors, progress style, category chips, app icon; Appearance pages
     auth/         login, sign-up, session (clears cached data on sign-out / account change)
     household/    profile, household, invite codes, onboarding
     ingredients/  ingredient database: API, form parsing, listing, category chips, screens
@@ -145,7 +153,7 @@ scripts/
 - **Row Level Security on every table.** Household members can read each other's data and edit each other's meals. Goals and profiles can only be changed by their owner. Other households and signed-out visitors see nothing.
 - Joining a household only works through an invite code. Profiles can't be moved between households directly.
 - The anon key in the app is public by design; RLS is the protection. The service-role key is only used in local scripts and CI (dev project), never in the app.
-- Sign-ups should be **disabled in Supabase** once both accounts exist.
+- Sign-ups should be **disabled in Supabase** once both accounts exist (see [Installing on the iPhone](#installing-on-the-iphone)).
 
 ---
 
