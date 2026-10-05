@@ -1,5 +1,6 @@
 import type { CategoryLayout } from '../appearance/appearance'
 import { FilterChip } from './FilterChip'
+import { arrange, usePackedOrder } from './usePackedOrder'
 import type { Category } from './ingredientsApi'
 
 type CategoryChipsProps = {
@@ -28,21 +29,28 @@ const LAYOUT_CLASSES: Record<FlatLayout, { readonly group: string; readonly chip
   },
 }
 
+const ALL_KEY = 'all'
+
 /** Filter chips for the ingredient categories, with "All" first. */
 export function CategoryChips({ layout, categories, selectedId, onSelect }: CategoryChipsProps) {
   const chips = [{ id: null, name: 'All' }, ...categories]
   const classes = LAYOUT_CLASSES[layout]
+  const keyOf = (chip: { readonly id: string | null }) => chip.id ?? ALL_KEY
+  // the line scrolls, so only the wrapped chips are rearranged to fill fewer rows
+  const { ref, order } = usePackedOrder<HTMLDivElement>(chips.map(keyOf), layout === 'wrap')
   return (
     <div
+      ref={ref}
       role="group"
       aria-label="Categories"
       // horizontal scrolling in the line must not switch tabs
       data-swipe-lock={layout === 'line' ? '' : undefined}
       className={classes.group}
     >
-      {chips.map((chip) => (
+      {arrange(chips, keyOf, order).map((chip) => (
         <FilterChip
-          key={chip.id ?? 'all'}
+          key={keyOf(chip)}
+          chipKey={keyOf(chip)}
           selected={chip.id === selectedId}
           onClick={() => onSelect(chip.id)}
           className={classes.chip}

@@ -7,6 +7,8 @@ import { ALL_CATEGORIES, type ChipGroup } from './listing'
 import { category } from './testData'
 
 const ROW = 358
+// gap-1.5
+const GAP = 6
 
 // widths of the grouped chips on the user's iPhone, by label
 const WIDTHS: Record<string, number> = {
@@ -23,8 +25,21 @@ const GROUPS: readonly ChipGroup[] = Object.keys(WIDTHS)
   .filter((name) => name !== 'All')
   .map((name) => ({ id: name, name, categories: [category(`c-${name}`, `${name} 1`, name)] }))
 
-/** jsdom has no layout: give chips their measured widths and the chip row the iPhone's width. */
+/** jsdom has no layout: give chips their measured widths, the chip row the iPhone's width and gap. */
 function fakeLayout() {
+  const realStyle = window.getComputedStyle.bind(window)
+  vi.spyOn(window, 'getComputedStyle').mockImplementation((element, pseudo) => {
+    const style = realStyle(element, pseudo)
+    if (element.getAttribute('role') !== 'group') return style
+    // the real style (Testing Library reads it too), with the chip gap jsdom doesn't compute
+    return new Proxy(style, {
+      get(target, property) {
+        if (property === 'columnGap') return `${GAP}px`
+        const value: unknown = Reflect.get(target, property, target)
+        return typeof value === 'function' ? value.bind(target) : value
+      },
+    })
+  })
   vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockImplementation(function (
     this: HTMLElement,
   ) {
@@ -49,11 +64,10 @@ afterEach(() => {
 describe('packed chip order', () => {
   test('grouped chips are arranged to fill as few rows as possible, All first', () => {
     fakeLayout()
-    // jsdom computes no CSS gap, so the chips are packed with a gap of 0
     const expected = packChipOrder(
       Object.entries(WIDTHS).map(([key, width]) => ({ key, width })),
       ROW,
-      0,
+      GAP,
     )
 
     render(<GroupedCategoryChips groups={GROUPS} filter={ALL_CATEGORIES} onChange={() => {}} />)

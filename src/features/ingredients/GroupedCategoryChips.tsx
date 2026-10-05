@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { SLIM_CHIP_CLASSES, WRAPPED_ROW_CLASSES } from './CategoryChips'
 import { FilterChip } from './FilterChip'
+import { arrange, usePackedOrder } from './usePackedOrder'
 import { ALL_CATEGORIES, type CategoryFilter, type ChipGroup } from './listing'
 
 type GroupedCategoryChipsProps = {
@@ -13,6 +14,10 @@ type GroupedCategoryChipsProps = {
 
 // "no panel open"; null can't mean that, it is the id of "Other"
 const CLOSED = undefined
+// chip keys that can't clash with database ids (uuids)
+const ALL_KEY = 'all'
+const OTHER_KEY = 'other'
+const WHOLE_GROUP_KEY = 'whole-group'
 
 function groupOfFilter(groups: readonly ChipGroup[], filter: CategoryFilter) {
   if (filter.kind === 'group') return groups.find((group) => group.id === filter.id)
@@ -27,33 +32,66 @@ type PanelProps = {
   readonly onChange: (filter: CategoryFilter) => void
 }
 
-/** The categories of one broad category, opened below the broad chips. */
-function GroupPanel({ group, filter, onChange }: PanelProps) {
-  const wholeGroup: CategoryFilter = { kind: 'group', id: group.id }
+/** One chip of a packed row: its key, label, and what tapping it does. */
+type ChipSpec = {
+  readonly key: string
+  readonly label: string
+  readonly selected: boolean
+  readonly expanded?: boolean
+  readonly onClick: () => void
+}
+
+type PackedRowProps = {
+  readonly label: string
+  readonly chips: readonly ChipSpec[]
+  readonly className: string
+}
+
+/** Wrapping chips, arranged to fill as few rows as possible (the first chip stays first). */
+function PackedRow({ label, chips, className }: PackedRowProps) {
+  const { ref, order } = usePackedOrder<HTMLDivElement>(chips.map((chip) => chip.key))
   return (
-    <div
-      role="group"
-      aria-label={`${group.name} categories`}
-      className={`mt-2 animate-fade-in rounded-2xl bg-bg-elevated/60 p-2 ${WRAPPED_ROW_CLASSES}`}
-    >
-      <FilterChip
-        selected={filter.kind === 'group' && filter.id === group.id}
-        onClick={() => onChange(wholeGroup)}
-        className={SLIM_CHIP_CLASSES}
-      >
-        All {group.name}
-      </FilterChip>
-      {group.categories.map((category) => (
+    <div ref={ref} role="group" aria-label={label} className={className}>
+      {arrange(chips, (chip) => chip.key, order).map((chip) => (
         <FilterChip
-          key={category.id}
-          selected={filter.kind === 'category' && filter.id === category.id}
-          onClick={() => onChange({ kind: 'category', id: category.id })}
+          key={chip.key}
+          chipKey={chip.key}
+          selected={chip.selected}
+          expanded={chip.expanded}
+          onClick={chip.onClick}
           className={SLIM_CHIP_CLASSES}
         >
-          {category.name}
+          {chip.label}
         </FilterChip>
       ))}
     </div>
+  )
+}
+
+/** The categories of one broad category, opened below the broad chips. */
+function GroupPanel({ group, filter, onChange }: PanelProps) {
+  const chips: readonly ChipSpec[] = [
+    {
+      key: WHOLE_GROUP_KEY,
+      label: `All ${group.name}`,
+      selected: filter.kind === 'group' && filter.id === group.id,
+      onClick: () => onChange({ kind: 'group', id: group.id }),
+    },
+    ...group.categories.map((category) => ({
+      key: category.id,
+      label: category.name,
+      selected: filter.kind === 'category' && filter.id === category.id,
+      onClick: () => onChange({ kind: 'category', id: category.id }),
+    })),
+  ]
+  return (
+    <PackedRow
+      // a new broad category is measured afresh
+      key={group.id ?? OTHER_KEY}
+      label={`${group.name} categories`}
+      chips={chips}
+      className={`mt-2 animate-fade-in rounded-2xl bg-bg-elevated/60 p-2 ${WRAPPED_ROW_CLASSES}`}
+    />
   )
 }
 
@@ -82,28 +120,20 @@ export function GroupedCategoryChips({
     onChange({ kind: 'group', id: group.id })
   }
 
+  const chips: readonly ChipSpec[] = [
+    { key: ALL_KEY, label: 'All', selected: filter.kind === 'all', onClick: selectAll },
+    ...groups.map((group) => ({
+      key: group.id ?? OTHER_KEY,
+      label: group.name,
+      selected: selectedGroup === group,
+      expanded: group.categories.length > 0 ? openGroup === group : undefined,
+      onClick: () => toggleGroup(group),
+    })),
+  ]
+
   return (
     <div className="mt-3">
-      <div role="group" aria-label="Categories" className={WRAPPED_ROW_CLASSES}>
-        <FilterChip
-          selected={filter.kind === 'all'}
-          onClick={selectAll}
-          className={SLIM_CHIP_CLASSES}
-        >
-          All
-        </FilterChip>
-        {groups.map((group) => (
-          <FilterChip
-            key={group.id ?? 'other'}
-            selected={selectedGroup === group}
-            expanded={group.categories.length > 0 ? openGroup === group : undefined}
-            onClick={() => toggleGroup(group)}
-            className={SLIM_CHIP_CLASSES}
-          >
-            {group.name}
-          </FilterChip>
-        ))}
-      </div>
+      <PackedRow label="Categories" chips={chips} className={WRAPPED_ROW_CLASSES} />
       {openGroup && <GroupPanel group={openGroup} filter={filter} onChange={onChange} />}
     </div>
   )
