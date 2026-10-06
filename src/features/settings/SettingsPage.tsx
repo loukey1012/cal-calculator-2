@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import { useCurrentUser } from '../../app/currentUser'
-import { Avatar } from '../../components/ios/Avatar'
 import { Button } from '../../components/ios/Button'
 import { ErrorBanner } from '../../components/ios/ErrorBanner'
 import { GroupedSection } from '../../components/ios/GroupedSection'
@@ -16,8 +15,11 @@ import { useSignOut } from '../auth/useSignOut'
 import { describeGoal } from '../goals/goalForm'
 import { GoalSheet } from '../goals/GoalSheet'
 import { useGoals } from '../goals/hooks'
-import { displayName, useHousehold, useMembers } from '../household/hooks'
-import type { Profile } from '../household/householdApi'
+import { useHousehold, useMembers } from '../household/hooks'
+import { PARTNER_PATH, PartnerPage } from '../household/PartnerPage'
+import { displayName, type PersonLook } from '../household/partnerLook'
+import { PersonBadge } from '../household/PersonBadge'
+import { useLookOf } from '../household/usePersonLook'
 import { formatInviteCode } from '../household/inviteCode'
 import { shareInviteCode } from '../household/shareInvite'
 import { goalForDate, type Goal } from '../nutrition/goals'
@@ -32,9 +34,8 @@ function goalDetail(loading: boolean, missing: boolean, goal: Goal | null): stri
 
 const CATEGORIES_PATH = '/settings/categories'
 
-function memberLabel(member: Profile, currentUserId: string): string {
-  const name = displayName(member)
-  return member.id === currentUserId ? `${name} (you)` : name
+function memberLabel(look: PersonLook, isYou: boolean): string {
+  return isYou ? `${look.name} (you)` : look.name
 }
 
 /** Settings, or one of its pages (kept in the URL like the selected history day). */
@@ -43,6 +44,7 @@ export function SettingsPage() {
   if (pathname === APPEARANCE_PATH || pathname.startsWith(`${APPEARANCE_PATH}/`))
     return <AppearancePage />
   if (pathname === CATEGORIES_PATH) return <CategoriesPage />
+  if (pathname === PARTNER_PATH) return <PartnerPage />
   return <SettingsOverview />
 }
 
@@ -51,6 +53,7 @@ function SettingsOverview() {
   const { profile, householdId } = useCurrentUser()
   const household = useHousehold(householdId)
   const members = useMembers(householdId)
+  const lookOf = useLookOf()
   const signOutMutation = useSignOut()
   const [copied, setCopied] = useState(false)
   const [shareError, setShareError] = useState<string | null>(null)
@@ -122,13 +125,20 @@ function SettingsOverview() {
       {shareError && <ErrorBanner message={shareError} />}
       {members.data && (
         <GroupedSection header="Members">
-          {members.data.map((member) => (
-            <ListRow
-              key={member.id}
-              leading={<Avatar name={displayName(member)} color={member.accent_color} />}
-              title={memberLabel(member, profile.id)}
-            />
-          ))}
+          {members.data.map((member) => {
+            const look = lookOf(member)
+            const isYou = member.id === profile.id
+            return (
+              <ListRow
+                key={member.id}
+                leading={<PersonBadge look={look} />}
+                title={memberLabel(look, isYou)}
+                // your partner's account name, next to the nickname you gave them
+                detail={isYou ? undefined : displayName(member)}
+                onClick={isYou ? undefined : () => navigate(PARTNER_PATH, { replace: true })}
+              />
+            )
+          })}
         </GroupedSection>
       )}
       {signOutMutation.isError && <ErrorBanner message={toUserMessage(signOutMutation.error)} />}

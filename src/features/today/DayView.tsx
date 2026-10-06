@@ -4,8 +4,8 @@ import { ErrorBanner } from '../../components/ios/ErrorBanner'
 import { BreakfastIcon, DinnerIcon, LunchIcon, SnackIcon } from '../../components/ios/icons'
 import { toUserMessage } from '../../lib/errors'
 import { LeftoversPill } from '../dishes/LeftoversPill'
-import { displayName } from '../household/hooks'
 import type { Profile } from '../household/householdApi'
+import { useLookOf } from '../household/usePersonLook'
 import { itemsByMeal, mealEntries, MEAL_TYPES, type MealType } from '../meals/dayModel'
 import { useDay, useLatestDayChangeError } from '../meals/hooks'
 import { MealSheet } from '../meals/MealSheet'
@@ -69,6 +69,7 @@ type DayViewProps = {
 /** A person's day: goal progress, total and the four meals, each opening an editable meal sheet. */
 export function DayView({ person, isOwnDay, date }: DayViewProps) {
   const day = useDay(person.id, date)
+  const lookOf = useLookOf()
   // the sheet belongs to the day it was opened on, so it closes when the day rolls over
   const [openMeal, setOpenMeal] = useState<{ type: MealType; date: string } | null>(null)
   const openMealType = openMeal?.date === date ? openMeal.type : null
@@ -105,7 +106,7 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
             key={person.id}
             userId={person.id}
             isOwnGoal={isOwnDay}
-            name={displayName(person)}
+            name={lookOf(person).name}
             date={date}
             totals={dayTotals}
           />

@@ -34,7 +34,7 @@ test('cook together: one dish logged for both, edited, and a meal shared afterwa
   // a burger: shared patty, tomato only for her
   await activePage(page).getByRole('button', { name: /Lunch/ }).click()
   await sheet.getByRole('button', { name: 'Cook together' }).click()
-  await expect(sheet.getByRole('combobox', { name: 'Lisa' })).toHaveValue('lunch')
+  await expect(sheet.getByRole('combobox', { name: 'baby' })).toHaveValue('lunch')
   await sheet.getByLabel('Dish name (optional)').fill('Burger')
   await sheet.getByRole('button', { name: 'Add ingredient' }).click()
   await sheet.getByRole('button', { name: /Patty/ }).click()
@@ -42,7 +42,7 @@ test('cook together: one dish logged for both, edited, and a meal shared afterwa
   await sheet.getByRole('button', { name: 'Add to dish' }).click()
   await sheet.getByRole('button', { name: 'Add ingredient' }).click()
   await sheet.getByRole('button', { name: /Tomato/ }).click()
-  await sheet.getByRole('radio', { name: 'Only Lisa' }).click()
+  await sheet.getByRole('radio', { name: 'Only baby' }).click()
   await sheet.getByLabel('Amount').fill('20')
   await sheet.getByRole('button', { name: 'Add to dish' }).click()
   await expect(sheet.getByTestId('dish-totals')).toContainText('300 kcal')

@@ -27,8 +27,8 @@ test('set a goal, see the rings, and log a meal for the partner', async ({ page,
   await expect(goals).toContainText('315 / 2,000 kcal')
   await expect(goals).toContainText('55.0 / 120 g')
 
-  await today.getByRole('radio', { name: 'Anna' }).click()
-  await expect(today.getByText('Anna hasn’t set a daily goal yet.')).toBeVisible()
+  await today.getByRole('radio', { name: 'baby' }).click()
+  await expect(today.getByText('baby hasn’t set a daily goal yet.')).toBeVisible()
   await today.getByRole('button', { name: /Breakfast/ }).click()
   await sheet.getByRole('button', { name: 'Add food' }).click()
   await sheet.getByRole('button', { name: /Haferflocken/ }).click()

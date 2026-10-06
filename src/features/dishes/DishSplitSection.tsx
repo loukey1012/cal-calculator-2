@@ -2,8 +2,8 @@ import { Button } from '../../components/ios/Button'
 import { SelectRow } from '../../components/ios/FormRows'
 import { GroupedSection } from '../../components/ios/GroupedSection'
 import { SegmentedControl } from '../../components/ios/SegmentedControl'
-import { displayName } from '../household/hooks'
 import type { Profile } from '../household/householdApi'
+import { useLookOf } from '../household/usePersonLook'
 import { MEAL_TYPES, type MealType } from '../meals/dayModel'
 import { DecimalRow } from './DecimalRow'
 import {
@@ -47,13 +47,14 @@ type DishSplitSectionProps = {
   readonly people: readonly Profile[]
   /** the day new portions are logged on */
   readonly date: string
-  /** e.g. "Lisa", "Leftover" */
+  /** e.g. "baby", "Leftover" */
   readonly nameOf: (portionId: string) => string
   readonly onChange: (dish: Dish) => void
 }
 
 /** Who eats in which meal, and how the shared ingredients are divided. */
 export function DishSplitSection({ dish, people, date, nameOf, onChange }: DishSplitSectionProps) {
+  const lookOf = useLookOf()
   const portionOf = (userId: string) =>
     dish.portions.find((portion) => portion.eater?.userId === userId)
   const splitInput = dish.splitMode === 'equal' ? null : SPLIT_INPUT[dish.splitMode]
@@ -79,7 +80,7 @@ export function DishSplitSection({ dish, people, date, nameOf, onChange }: DishS
         {people.map((person) => (
           <SelectRow
             key={person.id}
-            label={displayName(person)}
+            label={lookOf(person).name}
             value={portionOf(person.id)?.eater?.mealType ?? NOT_EATING}
             onChange={(event) => setMeal(person, event.target.value)}
           >

@@ -6,8 +6,9 @@ import { GroupedSection } from '../../components/ios/GroupedSection'
 import { ListRow } from '../../components/ios/ListRow'
 import { TextField } from '../../components/ios/TextField'
 import { toUserMessage } from '../../lib/errors'
-import { displayName, useMembers } from '../household/hooks'
+import { useMembers } from '../household/hooks'
 import type { Profile } from '../household/householdApi'
+import { useLookOf } from '../household/usePersonLook'
 import type { Ingredient } from '../ingredients/ingredientsApi'
 import type { MealItem, MealType } from '../meals/dayModel'
 import { CustomItemForm } from '../meals/CustomItemForm'
@@ -107,12 +108,17 @@ export function DishEditor({
   )
 }
 
-/** "Lisa", "Leftover" (or "Leftover 2" when there are several), "Thrown away" */
-function portionName(dish: Dish, people: readonly Profile[], portionId: string): string {
+/** "baby", "Leftover" (or "Leftover 2" when there are several), "Thrown away" */
+function portionName(
+  dish: Dish,
+  people: readonly Profile[],
+  nameOfPerson: (person: Profile) => string,
+  portionId: string,
+): string {
   const portion = dish.portions.find((candidate) => candidate.id === portionId)
   if (portion?.eater) {
     const person = people.find((candidate) => candidate.id === portion.eater?.userId)
-    return person ? displayName(person) : 'Someone else'
+    return person ? nameOfPerson(person) : 'Someone else'
   }
   if (portion?.discarded) return 'Thrown away'
   const leftovers = dish.portions.filter(isLeftover)
@@ -136,7 +142,9 @@ function DishForm({ initial, isNew, replaces, people, date, onDone }: DishFormPr
   const saveDish = useSaveDish()
   const deleteDish = useDeleteDish()
   const showMain = () => setView({ kind: 'main' })
-  const nameOf = (portionId: string) => portionName(draft, people, portionId)
+  const lookOf = useLookOf()
+  const nameOf = (portionId: string) =>
+    portionName(draft, people, (person) => lookOf(person).name, portionId)
   // own amounts can go to leftovers too, e.g. noodles for tomorrow
   const eaters: PortionOption[] = draft.portions.flatMap((portion) =>
     portion.discarded ? [] : [{ id: portion.id, name: nameOf(portion.id) }],

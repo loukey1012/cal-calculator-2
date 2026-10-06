@@ -50,6 +50,7 @@ Built for a two-person household: both members log their own meals, can see and 
 - Accounts with email and password. One person creates a **household**, the other joins with a **12-character invite code** (shareable through the iOS share sheet).
 - A **person switch** on Today shows a household member's day, rings and meals. Members can log and edit meals for each other.
 - Your **name** shown to the household is under Settings › Account.
+- **Your partner, your way** (Settings › Members › your partner): give them a **nickname** (default **“baby”**, up to 20 characters) and a **symbol** in place of the initial: a **heart** (default) or one of 17 cute emojis (💕 🌸 🐻 🧸 🐰 🐱 🦋 🍓 🌙 …), in one of 12 soft colors (default Rose). Only you see it, everywhere they appear (person switch, goal card, cooking together, members); their account name stays unchanged and is shown next to the nickname in Settings. Saved to your account in `profiles.appearance` (`partnerLooks`, by member id), so it follows you to every device. Leaving the nickname empty goes back to “baby”; **Reset** goes back to “baby” and the heart.
 
 ### Ingredient database (Ingredients tab)
 
@@ -68,7 +69,7 @@ Built for a two-person household: both members log their own meals, can see and 
 
 ### Look and feel
 
-- Rounded cards on a soft background, the Manrope font, meals as a 2×2 grid of cards, avatars (initial on each person's accent color) in the person switch and member list. Bottom sheets (drag down to close), segmented controls, switches and swipe actions.
+- Rounded cards on a soft background, the Manrope font, meals as a 2×2 grid of cards, avatars (your initial on your accent color, your partner's symbol on a soft tint of its color) in the person switch and member list. Bottom sheets (drag down to close), segmented controls, switches and swipe actions.
 - **Floating tab bar** (Today · History · Ingredients · Settings): the active tab shows its label in an accent tint. **Swipe left and right** to switch tabs with an animated settle (on a page inside Settings, like Appearance, a swipe to the right goes back one level instead), and tap the active tab to scroll to the top. Pages and sheets scroll without a visible scroll indicator.
 - Installable to the home screen (manifest, icons, safe areas, no zoom on input focus). Headers without buttons (Today, History, Settings) leave extra room at the top so titles stay clear of the fade iOS draws below the status bar.
 
@@ -92,19 +93,18 @@ Everything here is saved **to your account**, never to the device: you get the s
 
 ## Coming next
 
-| Area             | Planned                                                                                                  |
-| ---------------- | -------------------------------------------------------------------------------------------------------- |
-| Recipes          | Save dishes and meals by name as recipes, and cook or log them again (with remembered own amounts)       |
-| Nicknames        | Give household members your own display name (a per-viewer nickname; their account name stays unchanged) |
-| Barcode scanning | Find or create an ingredient by scanning its barcode                                                     |
-| Quick picks      | Recent and favorite ingredients                                                                          |
-| Meal reuse       | Copy a meal to another day, or save it as a template                                                     |
-| Trends           | Charts of calories and macros over weeks and months                                                      |
-| Weight           | Track body weight over time                                                                              |
-| Export           | Download your logged data as CSV                                                                         |
-| Reminders        | Push reminders to log meals                                                                              |
-| Invite code      | Rotate the household invite code                                                                         |
-| Live updates     | See your partner's edits to a meal without reloading                                                     |
+| Area             | Planned                                                                                            |
+| ---------------- | -------------------------------------------------------------------------------------------------- |
+| Recipes          | Save dishes and meals by name as recipes, and cook or log them again (with remembered own amounts) |
+| Barcode scanning | Find or create an ingredient by scanning its barcode                                               |
+| Quick picks      | Recent and favorite ingredients                                                                    |
+| Meal reuse       | Copy a meal to another day, or save it as a template                                               |
+| Trends           | Charts of calories and macros over weeks and months                                                |
+| Weight           | Track body weight over time                                                                        |
+| Export           | Download your logged data as CSV                                                                   |
+| Reminders        | Push reminders to log meals                                                                        |
+| Invite code      | Rotate the household invite code                                                                   |
+| Live updates     | See your partner's edits to a meal without reloading                                               |
 
 **Recipes** will build on cooked dishes: the same ingredient lines (shared or own amounts) and splits, saved by name; cooking one starts a dish.
 
@@ -216,7 +216,7 @@ pnpm icons          # regenerate the icon PNGs: the default set from public/icon
 
 To add an app icon choice: put its SVG in `public/icons/<name>/icon.svg`, add `<name>` to `APP_ICONS` (`src/features/appearance/appearance.ts`) and a label to `APP_ICON_OPTIONS`, then run `pnpm icons`.
 
-**End-to-end journeys** (log a meal, cooking together for two, sharing a meal afterwards, leftovers, goals and partner, Today fitting the screen, history, ingredients, category management, offline, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color) run the real app against the dev project. Build it against dev and pass the test credentials:
+**End-to-end journeys** (log a meal, cooking together for two, sharing a meal afterwards, leftovers, goals and partner, partner nickname and symbol, Today fitting the screen, history, ingredients, category management, offline, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color) run the real app against the dev project. Build it against dev and pass the test credentials:
 
 ```bash
 set -a; . ./.env.test.local; set +a

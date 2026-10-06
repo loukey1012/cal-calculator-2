@@ -61,7 +61,7 @@ const LUNCH = dayMeal('m1', 'lunch', [
 ])
 
 const GOAL = { validFrom: '2026-09-01', kcal: 2000, proteinG: 120, carbsG: null, fatG: null }
-const PARTNER = { ...PROFILE, id: 'u2', display_name: 'Anna' }
+const PARTNER = { ...PROFILE, id: 'u2', display_name: 'baby' }
 
 function renderPage() {
   return renderWithProviders(
@@ -228,12 +228,12 @@ describe('TodayPage', () => {
     const person = await screen.findByRole('radiogroup', { name: 'Person' })
     const [first, second, ...rest] = within(person).getAllByRole('radio')
     expect(first).toHaveAccessibleName('Lukas')
-    expect(second).toHaveAccessibleName('Anna')
+    expect(second).toHaveAccessibleName('baby')
     expect(rest).toHaveLength(0)
-    await user.click(within(person).getByRole('radio', { name: 'Anna' }))
+    await user.click(within(person).getByRole('radio', { name: 'baby' }))
 
     expect(fetchDay).toHaveBeenLastCalledWith('u2', '2026-10-01')
-    expect(await screen.findByText('Anna hasn’t set a daily goal yet.')).toBeInTheDocument()
+    expect(await screen.findByText('baby hasn’t set a daily goal yet.')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Set goal' })).not.toBeInTheDocument()
   })
 

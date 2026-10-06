@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { mixHex, onColor, readableInk } from '../../lib/color'
+import { partnerLooksSchema } from '../household/partnerLook'
 import type { RingKey } from '../nutrition/goals'
 
 const THEMES = ['system', 'light', 'dark'] as const
@@ -73,6 +74,8 @@ const appearanceSchema = z
     categoryLayout: z.enum(CATEGORY_LAYOUTS).catch(DEFAULT_APPEARANCE.categoryLayout),
     appIcon: z.enum(APP_ICONS).catch(DEFAULT_APPEARANCE.appIcon),
     customGoalColors: customGoalColorsSchema.optional(),
+    // the nickname and symbol you gave each household member
+    partnerLooks: partnerLooksSchema,
   })
   .catch(DEFAULT_APPEARANCE)
 

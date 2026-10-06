@@ -46,7 +46,11 @@ function profile(id: string, name: string) {
     updated_at: '',
   }
 }
-const ME = profile('u1', 'Lukas')
+// the nickname I gave her is what the dish shows, not her account name
+const ME = {
+  ...profile('u1', 'Lukas'),
+  appearance: { partnerLooks: { u2: { nickname: 'Schatz' } } },
+}
 const HER = profile('u2', 'Lisa')
 
 const PATTY = ingredient({ id: 'patty', name: 'Patty', kcal_100: 240, protein_100: 20 })
@@ -111,13 +115,13 @@ describe('cooking together', () => {
 
     // Act
     await user.click(await sheet.findByRole('button', { name: 'Cook together' }))
-    expect(await sheet.findByRole('combobox', { name: 'Lisa' })).toHaveValue('lunch')
+    expect(await sheet.findByRole('combobox', { name: 'Schatz' })).toHaveValue('lunch')
     await user.type(sheet.getByLabelText('Dish name (optional)'), 'Burger')
     await addIngredient(user, sheet, 'Patty')
     await user.type(sheet.getByLabelText('Amount'), '250')
     await user.click(sheet.getByRole('button', { name: 'Add to dish' }))
     await addIngredient(user, sheet, 'Tomato')
-    await user.click(sheet.getByRole('radio', { name: 'Only Lisa' }))
+    await user.click(sheet.getByRole('radio', { name: 'Only Schatz' }))
     await user.type(sheet.getByLabelText('Amount'), '20')
     await user.click(sheet.getByRole('button', { name: 'Add to dish' }))
 
@@ -126,7 +130,7 @@ describe('cooking together', () => {
     expect(within(totals).getByText('Lukas').closest('div')?.parentElement).toHaveTextContent(
       '300 kcal',
     )
-    expect(sheet.getByRole('button', { name: /Tomato.*only Lisa/ })).toBeInTheDocument()
+    expect(sheet.getByRole('button', { name: /Tomato.*only Schatz/ })).toBeInTheDocument()
 
     // still being sent: the meal shows the dish right away
     vi.mocked(saveDish).mockReturnValueOnce(new Promise(() => {}))
@@ -157,7 +161,7 @@ describe('cooking together', () => {
     await addIngredient(user, sheet, 'Noodles')
     await user.click(await sheet.findByRole('radio', { name: 'Own amounts' }))
     await user.type(sheet.getByLabelText('Lukas amount'), '120')
-    await user.type(sheet.getByLabelText('Lisa amount'), '100')
+    await user.type(sheet.getByLabelText('Schatz amount'), '100')
     await user.click(sheet.getByRole('button', { name: 'Add to dish' }))
     await user.click(sheet.getByRole('button', { name: 'Save dish' }))
 
@@ -180,12 +184,12 @@ describe('cooking together', () => {
     await user.click(sheet.getByRole('radio', { name: 'Count' }))
     await user.clear(sheet.getByLabelText('Lukas count'))
     await user.type(sheet.getByLabelText('Lukas count'), '3')
-    await user.clear(sheet.getByLabelText('Lisa count'))
-    await user.type(sheet.getByLabelText('Lisa count'), '2')
+    await user.clear(sheet.getByLabelText('Schatz count'))
+    await user.type(sheet.getByLabelText('Schatz count'), '2')
 
     // 1200 kcal in the pot: 720 for me, 480 for her
     expect(sheet.getByTestId('dish-totals')).toHaveTextContent(/Lukas.*720 kcal/)
-    expect(sheet.getByTestId('dish-totals')).toHaveTextContent(/Lisa.*480 kcal/)
+    expect(sheet.getByTestId('dish-totals')).toHaveTextContent(/Schatz.*480 kcal/)
     await user.click(sheet.getByRole('button', { name: 'Save dish' }))
     expect(sentDish()).toMatchObject({ splitMode: 'count' })
     expect(sentDish().portions.map((portion) => portion.splitValue)).toEqual([3, 2])
@@ -196,7 +200,7 @@ describe('cooking together', () => {
     const sheet = renderSheet()
 
     await user.click(await sheet.findByRole('button', { name: 'Cook together' }))
-    await user.selectOptions(await sheet.findByRole('combobox', { name: 'Lisa' }), 'none')
+    await user.selectOptions(await sheet.findByRole('combobox', { name: 'Schatz' }), 'none')
     await addIngredient(user, sheet, 'Patty')
     await user.type(sheet.getByLabelText('Amount'), '100')
     await user.click(sheet.getByRole('button', { name: 'Add to dish' }))
@@ -229,7 +233,7 @@ describe('cooking together', () => {
     const sheet = renderSheet()
 
     await user.click(await sheet.findByRole('button', { name: 'Cook together' }))
-    await sheet.findByRole('combobox', { name: 'Lisa' })
+    await sheet.findByRole('combobox', { name: 'Schatz' })
     await user.click(sheet.getByRole('button', { name: 'Save dish' }))
 
     expect(sheet.getByText('Add at least one ingredient')).toBeInTheDocument()
@@ -248,7 +252,7 @@ describe('sharing a meal logged alone', () => {
 
     await user.click(await sheet.findByRole('button', { name: 'Share this meal' }))
     expect(await sheet.findByRole('button', { name: /Apple.*150 g · shared/ })).toBeInTheDocument()
-    expect(sheet.getByRole('combobox', { name: 'Lisa' })).toHaveValue('lunch')
+    expect(sheet.getByRole('combobox', { name: 'Schatz' })).toHaveValue('lunch')
     await user.click(sheet.getByRole('button', { name: 'Save dish' }))
 
     const request = vi.mocked(saveDish).mock.calls[0]?.[0]

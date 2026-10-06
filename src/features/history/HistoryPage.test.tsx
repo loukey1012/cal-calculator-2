@@ -41,7 +41,7 @@ const PROFILE = {
   created_at: '',
   updated_at: '',
 }
-const PARTNER = { ...PROFILE, id: 'u2', display_name: 'Anna' }
+const PARTNER = { ...PROFILE, id: 'u2', display_name: 'baby' }
 const GOAL = { validFrom: '2026-09-01', kcal: 2000, proteinG: null, carbsG: null, fatG: null }
 
 function LocationProbe() {
@@ -178,7 +178,7 @@ describe('HistoryPage', () => {
     const user = userEvent.setup()
     renderPage()
 
-    await user.click(await screen.findByRole('radio', { name: 'Anna' }))
+    await user.click(await screen.findByRole('radio', { name: 'baby' }))
 
     await waitFor(() =>
       expect(fetchDailyTotals).toHaveBeenCalledWith('u2', '2026-10-01', '2026-10-31'),
