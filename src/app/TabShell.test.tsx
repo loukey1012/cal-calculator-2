@@ -35,6 +35,7 @@ vi.mock('../features/history/historyApi', () => ({
   fetchDailyTotals: vi.fn().mockResolvedValue([]),
 }))
 vi.mock('../features/auth/authApi', () => ({ signOut: vi.fn() }))
+vi.mock('../features/live/liveChannel', () => ({ openLiveChannel: () => ({ close: () => {} }) }))
 
 import { TabShell } from './TabShell'
 

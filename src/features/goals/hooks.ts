@@ -9,7 +9,7 @@ import type { Goal } from '../nutrition/goals'
 import type { GoalInput } from './goalForm'
 import { fetchGoals, saveGoal } from './goalsApi'
 
-const goalKeys = { goals: (userId: string) => ['goals', userId] as const }
+export const goalKeys = { goals: (userId: string) => ['goals', userId] as const }
 
 export function useGoals(userId: string): UseQueryResult<Goal[]> {
   return useQuery({ queryKey: goalKeys.goals(userId), queryFn: () => fetchGoals(userId) })

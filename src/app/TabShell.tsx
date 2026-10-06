@@ -19,6 +19,7 @@ import { useResumeOfflineChanges, useSaveWhenHidden } from './offlineLifecycle'
 import { PageStack } from './PageStack'
 import { SyncStatus } from './SyncStatus'
 import { useAppearance } from '../features/appearance/useAppearance'
+import { useLiveUpdates } from '../features/live/useLiveUpdates'
 
 const TABS = [
   { id: 'today', label: 'Today', path: '/today', icon: <TodayIcon />, Page: TodayPage },
@@ -83,10 +84,11 @@ function backPathFor(pathname: string): string | null {
 
 /** The signed-in app: five pages side by side, switched by the tab bar or by swiping. */
 export function TabShell() {
-  const { profile } = useCurrentUser()
+  const { profile, householdId } = useCurrentUser()
   useAppearance(profile)
   useResumeOfflineChanges()
   useSaveWhenHidden()
+  useLiveUpdates(householdId)
 
   const { pathname } = useLocation()
   const navigate = useNavigate()

@@ -99,7 +99,11 @@ const MY_BANANA = mealItem({
 })
 
 function renderSheet() {
-  renderWithProviders(
+  return within(renderSheetWithCache().getByRole('dialog', { name: 'Lunch' }))
+}
+
+function renderSheetWithCache() {
+  const { queryClient } = renderWithProviders(
     <CurrentUserContext value={{ profile: ME, householdId: 'h1' }}>
       <MealSheet
         open
@@ -111,7 +115,7 @@ function renderSheet() {
       />
     </CurrentUserContext>,
   )
-  return within(screen.getByRole('dialog', { name: 'Lunch' }))
+  return { getByRole: screen.getByRole, queryClient }
 }
 
 function sentDish(): Dish {
@@ -166,6 +170,70 @@ describe('a shared dish in the meal', () => {
 
     expect(vi.mocked(saveDish).mock.calls[0]?.[0].baseRevision).toBe('rev-1')
     expect(sentDish().lines[0]?.item).toMatchObject({ entered_amount: 600, basis_multiplier: 6 })
+  })
+
+  test("a partner's newer version while editing: my draft stays, a notice offers it", async () => {
+    // Arrange: I'm editing the chili
+    const user = userEvent.setup()
+    const { getByRole, queryClient } = renderSheetWithCache()
+    const sheet = within(getByRole('dialog', { name: 'Lunch' }))
+    await user.click(await sheet.findByRole('button', { name: /Chili/ }))
+    await user.click(sheet.getByRole('button', { name: 'Edit dish' }))
+    const name = await sheet.findByLabelText('Dish name (optional)')
+    await user.clear(name)
+    await user.type(name, 'My chili')
+
+    // Act: she saves the same dish meanwhile (a live update reloads it)
+    vi.mocked(fetchDish).mockResolvedValue({ ...CHILI, name: 'Her chili', revision: 'rev-2' })
+    await queryClient.invalidateQueries({ queryKey: ['dish', 'dish-1'] })
+
+    // Assert
+    expect(await sheet.findByText('Updated on another phone')).toBeInTheDocument()
+    expect(name).toHaveValue('My chili')
+  })
+
+  test("saving over a partner's newer version is held back, keeping my draft", async () => {
+    // Arrange: I changed the name, then she saved the same dish
+    const user = userEvent.setup()
+    const { getByRole, queryClient } = renderSheetWithCache()
+    const sheet = within(getByRole('dialog', { name: 'Lunch' }))
+    await user.click(await sheet.findByRole('button', { name: /Chili/ }))
+    await user.click(sheet.getByRole('button', { name: 'Edit dish' }))
+    const name = await sheet.findByLabelText('Dish name (optional)')
+    await user.clear(name)
+    await user.type(name, 'My chili')
+    vi.mocked(fetchDish).mockResolvedValue({ ...CHILI, name: 'Her chili', revision: 'rev-2' })
+    await queryClient.invalidateQueries({ queryKey: ['dish', 'dish-1'] })
+    await sheet.findByText('Updated on another phone')
+
+    // Act
+    await user.click(sheet.getByRole('button', { name: 'Save dish' }))
+
+    // Assert: nothing is sent (it would overwrite hers, or be refused after the sheet closed)
+    expect(await sheet.findByRole('alert')).toHaveTextContent(/updated on another phone/i)
+    expect(saveDish).not.toHaveBeenCalled()
+    expect(name).toHaveValue('My chili')
+  })
+
+  test("loading a partner's newer version replaces my draft with it", async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const { getByRole, queryClient } = renderSheetWithCache()
+    const sheet = within(getByRole('dialog', { name: 'Lunch' }))
+    await user.click(await sheet.findByRole('button', { name: /Chili/ }))
+    await user.click(sheet.getByRole('button', { name: 'Edit dish' }))
+    await sheet.findByLabelText('Dish name (optional)')
+    vi.mocked(fetchDish).mockResolvedValue({ ...CHILI, name: 'Her chili', revision: 'rev-2' })
+    await queryClient.invalidateQueries({ queryKey: ['dish', 'dish-1'] })
+
+    // Act
+    await user.click(await sheet.findByRole('button', { name: 'Load changes' }))
+
+    // Assert
+    expect(sheet.getByLabelText('Dish name (optional)')).toHaveValue('Her chili')
+    expect(sheet.queryByText('Updated on another phone')).not.toBeInTheDocument()
+    await user.click(sheet.getByRole('button', { name: 'Save dish' }))
+    expect(vi.mocked(saveDish).mock.calls[0]?.[0].baseRevision).toBe('rev-2')
   })
 
   test('sharing afterwards: she can be added while editing', async () => {

@@ -67,6 +67,13 @@ Built for a two-person household: both members log their own meals, can see and 
 - A pill above the tab bar shows the state: _Offline_, _Offline · 2 changes pending_, _Saving 2 changes…_
 - iOS doesn't run web apps in the background, so queued changes go out the next time the app is open with a connection.
 
+### Live updates
+
+- **Your partner's changes appear on your phone within about a second**, without reloading: food they log or change (also in your meals, e.g. a shared dish), leftovers, ingredients and categories, goals, and their name. The same works for your own changes made on another phone. Nothing pops up; the numbers just change in place.
+- **While you edit a dish your partner saves the same dish**: your draft stays as it is, and a line _Updated on another phone · Load changes_ lets you load their version. Saving over it is held back with a short explanation (your draft stays), so neither edit is lost silently.
+- While your own changes are still being saved, a partner's change waits until yours are through, so your change never briefly flickers back.
+- iOS cuts the connection when the app goes to the background; when it comes back, it reconnects and catches up on everything that changed meanwhile.
+
 ### Look and feel
 
 - Rounded cards on a soft background, the Manrope font, meals as a 2×2 grid of cards, avatars (your initial on your accent color, your partner's symbol on a soft tint of its color) in the person switch and member list. Bottom sheets (drag down to close), segmented controls, switches and swipe actions.
@@ -104,8 +111,6 @@ Everything here is saved **to your account**, never to the device: you get the s
 | Weight           | Track body weight over time                                                                        |
 | Export           | Download your logged data as CSV                                                                   |
 | Reminders        | Push reminders to log meals                                                                        |
-| Invite code      | Rotate the household invite code                                                                   |
-| Live updates     | See your partner's edits to a meal without reloading                                               |
 
 **Recipes** and meal templates will build on the Cook tab: a recipe fills in a dish (the same ingredient lines and splits), saved by name.
 
@@ -143,6 +148,7 @@ src/
     meals/        day model, meal sheet (show, change, delete), offline-capable day changes
     dishes/       dishes: share maths (portions.ts), composer and editor, dish API, offline dish changes (same queue as meal changes)
     goals/        goal history, goal form, progress card (rings / ring + bars / bars / compact)
+    live/         live updates: the household's Realtime channel, hint → query mapping, batched refreshes
     nutrition/    pure nutrition math: units, totals, goals, formatting
     today/ history/ settings/   tab pages
   lib/            supabase client, env validation, errors, persistence, dates, numbers
@@ -165,12 +171,14 @@ scripts/
 - `meal_items` of a cooked dish point to their `dish_portions` row and `dish_lines` row; plain items leave both empty
 - `dishes` (a cooking; split mode equal / count / percent / weight, cooked weight, a revision changed by every save), `dish_portions` (who ate it on which day and meal, or nobody yet = a leftover; split value; `discarded` for a thrown-away leftover, which keeps its share), `dish_lines` (ingredient snapshot like `meal_items`, either `shared` or `per_portion`), `dish_line_amounts` (own amount of a `per_portion` line per portion)
 - Views `meal_totals` and `daily_totals`. RPCs `create_household`, `join_household`, `ensure_meal`, `save_dish` and `delete_dish`.
+- **Live updates:** triggers on the household's tables send a small hint over Supabase Realtime Broadcast to the private channel `household:<id>` (what changed: a person's day, a dish, the ingredient database, …). Hints carry no data: the app marks the matching queries out of date, and what's on screen re-fetches through the normal RLS-checked queries. A failed hint never fails a save.
 - `save_dish` stores a whole dish at once and re-logs every eaten portion as meal items in its eater's meal (shared lines × the portion's share, own amounts as entered), so the totals views count dishes like any other food. Resending the same save does nothing; a save based on an outdated revision is rejected ("changed meanwhile"). It can also take over plain items of a meal ("share this meal").
 
 ### Security
 
 - **Row Level Security on every table.** Household members can read each other's data and edit each other's meals. Goals and profiles can only be changed by their owner. Other households and signed-out visitors see nothing.
 - Dishes and their meal items are only written through `save_dish` / `delete_dish`, which check that every portion goes to a household member and every ingredient belongs to the household.
+- Only household members can listen to their household's live channel (a policy on `realtime.messages`), and nobody can send on it from a phone: hints come from the database alone.
 - Joining a household only works through an invite code. Profiles can't be moved between households directly.
 - The anon key in the app is public by design; RLS is the protection. The service-role key is only used in local scripts and CI (dev project), never in the app.
 - **Sign-ups are disabled in Supabase**, since both accounts exist. Nobody new can create an account.
@@ -218,7 +226,7 @@ pnpm icons          # regenerate the icon PNGs: the default set from public/icon
 
 To add an app icon choice: put its SVG in `public/icons/<name>/icon.svg`, add `<name>` to `APP_ICONS` (`src/features/appearance/appearance.ts`) and a label to `APP_ICON_OPTIONS`, then run `pnpm icons`.
 
-**End-to-end journeys** (log a meal on Cook, a single food changed in place, cooking together for two, sharing a meal afterwards, leftovers, goals and partner, partner nickname and symbol, Today fitting the screen, history, ingredients, category management, offline, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color) run the real app against the dev project. Build it against dev and pass the test credentials:
+**End-to-end journeys** (log a meal on Cook, a single food changed in place, cooking together for two, sharing a meal afterwards, leftovers, goals and partner, partner nickname and symbol, Today fitting the screen, history, ingredients, category management, offline, a partner's change showing up live and after the app was in the background, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color) run the real app against the dev project. Build it against dev and pass the test credentials:
 
 ```bash
 set -a; . ./.env.test.local; set +a

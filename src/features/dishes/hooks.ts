@@ -129,6 +129,12 @@ export function useLatestDishChangeError(): Error | null {
 export type SaveDishRequest = {
   /** the edited dish; it gets a new revision when saved */
   readonly dish: Dish
+  /**
+   * The revision the edit started from. An editor names it, so a newer version that arrived
+   * while editing (e.g. a partner's live update) is refused instead of overwritten.
+   * Defaults to the cached version, for quick changes that start from it at once.
+   */
+  readonly baseRevision?: string | null
 }
 
 export function newRevision(): string {
@@ -145,14 +151,14 @@ export function useSaveDish(): DishChangeMutation & {
 } {
   const queryClient = useQueryClient()
   const change = useDishChange()
-  const save = ({ dish: edited }: SaveDishRequest) => {
+  const save = ({ dish: edited, baseRevision }: SaveDishRequest) => {
     portionItems(edited)
     const previous = queryClient.getQueryData<Dish | null>(dishKey(edited.id)) ?? null
     const dish = { ...edited, revision: newRevision() }
     change.mutate({
       kind: 'save',
       dish,
-      baseRevision: previous?.revision ?? null,
+      baseRevision: baseRevision === undefined ? (previous?.revision ?? null) : baseRevision,
       previousPortionIds: previous?.portions.map((portion) => portion.id) ?? [],
       replaceItemIds: [],
       days: affectedDays(previous, dish, null),

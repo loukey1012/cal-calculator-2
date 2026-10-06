@@ -20,7 +20,7 @@ import {
   type Ingredient,
 } from './ingredientsApi'
 
-const ingredientKeys = {
+export const ingredientKeys = {
   ingredients: (householdId: string) => ['ingredients', householdId] as const,
   categories: (householdId: string) => ['categories', householdId] as const,
   categoryGroups: (householdId: string) => ['categoryGroups', householdId] as const,
