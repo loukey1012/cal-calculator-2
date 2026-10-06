@@ -61,6 +61,35 @@ describe('mealEntries', () => {
   })
 })
 
+describe('mealEntries for dishes logged alone', () => {
+  const solo = { id: 'd1', name: null, portionCount: 1, eaterCount: 1 }
+
+  test('one food logged alone and unnamed shows as a single food of its dish', () => {
+    const banana = mealItem({ id: 'banana', dish_portion_id: 'p1', dish_line_id: 'l1', dish: solo })
+
+    expect(mealEntries([banana])).toEqual([{ kind: 'food', item: banana, dishId: 'd1' }])
+  })
+
+  test.each([
+    ['it has a name', { ...solo, name: 'Smoothie' }],
+    ['it has more portions', { ...solo, portionCount: 2 }],
+    ['its portions are not known (older data)', { id: 'd1', name: null }],
+  ])('stays a dish when %s', (_reason, dish) => {
+    const banana = mealItem({ id: 'banana', dish_portion_id: 'p1', dish_line_id: 'l1', dish })
+
+    expect(mealEntries([banana])[0]?.kind).toBe('dish')
+  })
+
+  test('several foods logged alone stay one dish', () => {
+    const oats = mealItem({ id: 'oats', dish_portion_id: 'p1', dish_line_id: 'l1', dish: solo })
+    const milk = mealItem({ id: 'milk', dish_portion_id: 'p1', dish_line_id: 'l2', dish: solo })
+
+    expect(mealEntries([oats, milk])).toEqual([
+      { kind: 'dish', portionId: 'p1', items: [oats, milk] },
+    ])
+  })
+})
+
 describe('scaleItemAmount', () => {
   test('rescales the multiplier proportionally, whatever the basis', () => {
     expect(scaleItemAmount(CREAM, 200)).toEqual({ entered_amount: 200, basis_multiplier: 2 })
