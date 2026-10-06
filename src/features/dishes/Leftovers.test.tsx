@@ -1,4 +1,5 @@
-import { screen, within } from '@testing-library/react'
+import { screen } from '@testing-library/react'
+import { useLocation } from 'react-router'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { CurrentUserContext } from '../../app/currentUser'
@@ -28,11 +29,10 @@ import { fetchGoals } from '../goals/goalsApi'
 import { fetchMembers } from '../household/householdApi'
 import { fetchDay } from '../meals/mealsApi'
 import { TodayPage } from '../today/TodayPage'
-import { fetchLeftoverDishes, saveDish } from './dishesApi'
+import { fetchLeftoverDishes } from './dishesApi'
 import type { Dish } from './portions'
 import { gramsItem } from './testData'
 
-const TODAY = '2026-10-01'
 const PROFILE = {
   id: 'u1',
   household_id: 'h1',
@@ -59,18 +59,18 @@ const CHILI: Dish = {
   lines: [{ id: 'l-mince', allocation: 'shared', item: gramsItem('Mince', 400, 250), amounts: {} }],
 }
 
+function LocationProbe() {
+  return <output data-testid="path">{useLocation().pathname}</output>
+}
+
 function renderToday() {
   renderWithProviders(
     <CurrentUserContext value={{ profile: PROFILE, householdId: 'h1' }}>
       <TodayPage />
+      <LocationProbe />
     </CurrentUserContext>,
+    { route: '/today' },
   )
-}
-
-function sentDish(): Dish {
-  const call = vi.mocked(saveDish).mock.calls.at(-1)
-  if (!call) throw new Error('saveDish was not called')
-  return call[0].dish
 }
 
 beforeEach(() => {
@@ -81,7 +81,6 @@ beforeEach(() => {
   vi.mocked(fetchGoals).mockResolvedValue([])
   vi.mocked(fetchMembers).mockResolvedValue([PROFILE])
   vi.mocked(fetchLeftoverDishes).mockResolvedValue([CHILI])
-  vi.mocked(saveDish).mockResolvedValue()
 })
 
 afterEach(() => {
@@ -89,35 +88,14 @@ afterEach(() => {
 })
 
 describe('leftovers on Today', () => {
-  test('shows that food is left and logs it into a meal of today', async () => {
+  test('shows that food is left and opens Cook, where leftovers are eaten', async () => {
     const user = userEvent.setup()
     renderToday()
 
     await user.click(await screen.findByRole('button', { name: /Chili left/ }))
-    const sheet = within(screen.getByRole('dialog', { name: 'Leftovers' }))
-    await user.click(sheet.getByRole('button', { name: /Chili.*500 kcal/ }))
-    await user.click(sheet.getByRole('button', { name: 'Add to Lunch' }))
 
-    expect(sentDish().portions[1]).toMatchObject({
-      id: 'p-rest',
-      eater: { userId: 'u1', date: TODAY, mealType: 'lunch' },
-    })
-  })
-
-  test('can be thrown away', async () => {
-    const user = userEvent.setup()
-    renderToday()
-
-    await user.click(await screen.findByRole('button', { name: /Chili left/ }))
-    const sheet = within(screen.getByRole('dialog', { name: 'Leftovers' }))
-    await user.click(sheet.getByRole('button', { name: /Chili/ }))
-    // still being sent: Today updates right away
-    vi.mocked(saveDish).mockReturnValueOnce(new Promise(() => {}))
-    await user.click(sheet.getByRole('button', { name: 'Throw away' }))
-
-    expect(sentDish().portions[1]).toMatchObject({ id: 'p-rest', eater: null, discarded: true })
-    // gone from Today at once
-    expect(screen.queryByRole('button', { name: /Chili left/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByTestId('path')).toHaveTextContent('/cook')
   })
 
   test('nothing shows without leftovers', async () => {

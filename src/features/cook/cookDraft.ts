@@ -90,10 +90,13 @@ export function hasContent(draft: CookDraft): boolean {
   return draft.dish.lines.length > 0 || draft.dish.name !== null
 }
 
-/** The dish as it is saved: everyone eating eats on the draft's day, in its meal. */
-export function resolvedDish(draft: CookDraft, today: string, now: Date): Dish {
+/**
+ * The dish as it is saved: everyone eating eats on the draft's day, in its meal (or the meal
+ * for the time of day shown, `mealOfDay`).
+ */
+export function resolvedDish(draft: CookDraft, today: string, mealOfDay: MealType): Dish {
   const date = draft.date ?? today
-  const mealType = draft.mealType ?? mealForTime(now)
+  const mealType = draft.mealType ?? mealOfDay
   return {
     ...draft.dish,
     portions: draft.dish.portions.map((portion) =>
@@ -110,4 +113,24 @@ export function withPrefill(draft: CookDraft, prefill: CookPrefill, today: strin
   const base = hasContent(draft) ? draft : newCookDraft(prefill.userId)
   const withPerson = withEater(base, prefill.userId, true)
   return withMealType(withDate(withPerson, prefill.date, today), prefill.mealType)
+}
+
+/** People who left the household stop eating; with nobody left, the cook eats. */
+export function keepEaters(
+  draft: CookDraft,
+  memberIds: readonly string[],
+  cookId: string,
+): CookDraft {
+  const strangers = draft.dish.portions.filter(
+    (portion) => portion.eater && !memberIds.includes(portion.eater.userId),
+  )
+  if (strangers.length === 0) return draft
+  const dish = strangers.reduce(
+    (current, portion) => withoutPortion(current, portion.id),
+    draft.dish,
+  )
+  const kept = { ...draft, dish }
+  return draftEaterIds(kept).length > 0
+    ? kept
+    : { ...kept, dish: withPortion(dish, { userId: cookId, ...UNRESOLVED }) }
 }

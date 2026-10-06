@@ -1,8 +1,11 @@
 import { useState, type ComponentType, type SVGProps } from 'react'
+import { useLocation, useNavigate } from 'react-router'
 import { Button } from '../../components/ios/Button'
 import { ErrorBanner } from '../../components/ios/ErrorBanner'
 import { BreakfastIcon, DinnerIcon, LunchIcon, SnackIcon } from '../../components/ios/icons'
 import { toUserMessage } from '../../lib/errors'
+import { cookLink } from '../cook/cookLink'
+import { useLatestDishChangeError } from '../dishes/hooks'
 import { LeftoversPill } from '../dishes/LeftoversPill'
 import type { Profile } from '../household/householdApi'
 import { useLookOf } from '../household/usePersonLook'
@@ -66,15 +69,22 @@ type DayViewProps = {
   readonly date: string
 }
 
-/** A person's day: goal progress, total and the four meals, each opening an editable meal sheet. */
+/**
+ * A person's day: goal progress, total and the four meals. A meal with food opens to be looked
+ * at, changed or removed; an empty one opens Cook for it.
+ */
 export function DayView({ person, isOwnDay, date }: DayViewProps) {
   const day = useDay(person.id, date)
   const lookOf = useLookOf()
   // the sheet belongs to the day it was opened on, so it closes when the day rolls over
   const [openMeal, setOpenMeal] = useState<{ type: MealType; date: string } | null>(null)
   const openMealType = openMeal?.date === date ? openMeal.type : null
-  // reported here too, so a save that fails after the sheet was closed isn't silent
-  const latestChangeError = useLatestDayChangeError(person.id, date)
+  // reported here too, so a save that fails after the sheet was closed (or on Cook) isn't silent
+  const latestDayError = useLatestDayChangeError(person.id, date)
+  const latestDishError = useLatestDishChangeError()
+  const latestChangeError = latestDayError ?? latestDishError
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
 
   const byMeal = itemsByMeal(day.data ?? [])
   const meals = MEAL_TYPES.map(({ type, label }) => ({
@@ -116,7 +126,7 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
                 <h2 className="font-display text-[20px] font-bold">Meals</h2>
                 {/* in the heading row, so Today still fits the screen */}
                 <span className="flex min-w-0 flex-1">
-                  <LeftoversPill userId={person.id} date={date} />
+                  <LeftoversPill />
                 </span>
                 {!day.isPending && (
                   <span className="text-[15px] font-bold">{formatKcal(dayTotals.kcal)} kcal</span>
@@ -138,7 +148,14 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
                     count,
                     totals.kcal,
                   )}
-                  onOpen={() => setOpenMeal({ type, date })}
+                  onOpen={() =>
+                    !day.isPending && count === 0
+                      ? void navigate(
+                          cookLink({ userId: person.id, date, mealType: type }, pathname),
+                          { replace: true },
+                        )
+                      : setOpenMeal({ type, date })
+                  }
                 />
               ))}
             </div>

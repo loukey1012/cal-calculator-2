@@ -103,6 +103,20 @@ describe('TabShell', () => {
     expect(visibleTitle()).toHaveTextContent('Ingredients')
   })
 
+  test('Cook is the second tab, where food is logged', async () => {
+    const user = userEvent.setup()
+    renderShell('/today')
+
+    const labels = tabs()
+      .getAllByRole('button')
+      .map((tab) => tab.getAttribute('aria-label'))
+    await user.click(tabs().getByRole('button', { name: 'Cook' }))
+
+    expect(labels).toEqual(['Today', 'Cook', 'History', 'Ingredients', 'Settings'])
+    expect(screen.getByTestId('path')).toHaveTextContent('/cook')
+    expect(visibleTitle()).toHaveTextContent('Cook')
+  })
+
   test('tapping the active tab scrolls its page back to the top', async () => {
     const user = userEvent.setup()
     renderShell('/history')

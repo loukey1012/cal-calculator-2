@@ -47,6 +47,7 @@ export function dayChangeKey(userId: string, date: string) {
 
 export async function applyDayChange(change: DayChange): Promise<void> {
   switch (change.kind) {
+    // food is logged as dishes now; this still sends adds queued by earlier versions
     case 'add':
       return addMealItem({
         id: change.id,

@@ -5,6 +5,7 @@ import { DinnerIcon } from '../../components/ios/icons'
 import { describeAmount, type MealItem } from '../meals/dayModel'
 import { formatKcal } from '../nutrition/format'
 import { itemTotals, mealTotals } from '../nutrition/totals'
+import { autoTitle } from './dishTitle'
 
 type DishBlockProps = {
   /** one person's portion: the items of one dish in this meal */
@@ -16,7 +17,13 @@ function ingredientCount(count: number): string {
   return count === 1 ? '1 ingredient' : `${count} ingredients`
 }
 
-/** A cooked dish in a meal: one row with this person's share, opening to its ingredients. */
+/** e.g. "Shared · 3 ingredients" */
+function blockSubtitle(eaterCount: number | undefined, count: number): string {
+  const ingredients = ingredientCount(count)
+  return eaterCount !== undefined && eaterCount > 1 ? `Shared · ${ingredients}` : ingredients
+}
+
+/** A dish in a meal: one row with this person's share, opening to its ingredients. */
 export function DishBlock({ items, onEdit }: DishBlockProps) {
   const [open, setOpen] = useState(false)
   const dish = items.find((item) => item.dish)?.dish ?? null
@@ -35,10 +42,10 @@ export function DishBlock({ items, onEdit }: DishBlockProps) {
         </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[16px] font-semibold">
-            {dish?.name ?? 'Cooked together'}
+            {dish?.name ?? autoTitle(items.map((item) => item.name))}
           </span>
           <span className="block truncate text-[13px] font-medium text-label-secondary">
-            Cooked together · {ingredientCount(items.length)}
+            {blockSubtitle(dish?.eaterCount, items.length)}
           </span>
         </span>
         <span className="shrink-0 text-[15px] font-semibold text-label-secondary">

@@ -4,6 +4,7 @@ import { gramsItem, sharedLine } from '../dishes/testData'
 import {
   draftEaterIds,
   hasContent,
+  keepEaters,
   linesOnlyFor,
   mealForTime,
   newCookDraft,
@@ -16,7 +17,6 @@ import {
 } from './cookDraft'
 
 const TODAY = '2026-10-06'
-const NOON = new Date(2026, 9, 6, 12, 30)
 
 function at(hours: number, minutes = 0): Date {
   return new Date(2026, 9, 6, hours, minutes)
@@ -103,7 +103,7 @@ describe('resolvedDish', () => {
     const draft = withEater(newCookDraft('me'), 'her', true)
 
     // Act
-    const dish = resolvedDish(draft, TODAY, NOON)
+    const dish = resolvedDish(draft, TODAY, 'lunch')
 
     // Assert
     expect(dish.portions.map((portion) => portion.eater)).toEqual([
@@ -114,7 +114,7 @@ describe('resolvedDish', () => {
 
   test('a chosen day and meal win', () => {
     const draft = withMealType(withDate(newCookDraft('me'), '2026-10-04'), 'dinner')
-    expect(resolvedDish(draft, TODAY, NOON).portions[0]?.eater).toEqual({
+    expect(resolvedDish(draft, TODAY, 'lunch').portions[0]?.eater).toEqual({
       userId: 'me',
       date: '2026-10-04',
       mealType: 'dinner',
@@ -124,7 +124,7 @@ describe('resolvedDish', () => {
   test('picking today again follows today, so a draft never sticks to an old day', () => {
     const draft = withDate(withDate(newCookDraft('me'), '2026-10-04'), TODAY, TODAY)
     expect(draft.date).toBeNull()
-    expect(resolvedDish(draft, '2026-10-07', NOON).portions[0]?.eater?.date).toBe('2026-10-07')
+    expect(resolvedDish(draft, '2026-10-07', 'lunch').portions[0]?.eater?.date).toBe('2026-10-07')
   })
 
   test('leftover portions stay uneaten', () => {
@@ -136,7 +136,7 @@ describe('resolvedDish', () => {
         portions: [...draft.dish.portions, { id: 'left', eater: null, splitValue: null }],
       },
     }
-    expect(resolvedDish(withLeftover, TODAY, NOON).portions[1]?.eater).toBeNull()
+    expect(resolvedDish(withLeftover, TODAY, 'lunch').portions[1]?.eater).toBeNull()
   })
 })
 
@@ -179,5 +179,32 @@ describe('withPrefill', () => {
     expect(draftEaterIds(draft)).toEqual(['me', 'her'])
     expect(draft.dish.lines).toHaveLength(1)
     expect(draft.mealType).toBe('dinner')
+  })
+})
+
+describe('keepEaters', () => {
+  test('people no longer in the household stop eating', () => {
+    const draft = withEater(withEater(newCookDraft('me'), 'her', true), 'gone', true)
+    expect(draftEaterIds(keepEaters(draft, ['me', 'her'], 'me'))).toEqual(['me', 'her'])
+  })
+
+  test('when nobody is left the cook eats, and the ingredients stay', () => {
+    // Arrange
+    const draft = {
+      ...newCookDraft('gone'),
+      dish: withLine(newCookDraft('gone').dish, sharedLine('l-rice', 'Rice', 200, 130)),
+    }
+
+    // Act
+    const kept = keepEaters(draft, ['me'], 'me')
+
+    // Assert
+    expect(draftEaterIds(kept)).toEqual(['me'])
+    expect(kept.dish.lines).toHaveLength(1)
+  })
+
+  test('a draft of household members is left as it is', () => {
+    const draft = newCookDraft('me')
+    expect(keepEaters(draft, ['me', 'her'], 'me')).toBe(draft)
   })
 })

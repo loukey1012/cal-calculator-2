@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { CurrentUserContext } from '../../app/currentUser'
 import { ApiError } from '../../lib/errors'
+import { useLocation } from 'react-router'
 import { renderWithProviders } from '../../test/render'
 import { dayMeal, mealItem } from '../meals/testData'
 
@@ -27,7 +28,7 @@ vi.mock('../ingredients/ingredientsApi', () => ({
 
 import { fetchGoals } from '../goals/goalsApi'
 import { fetchMembers } from '../household/householdApi'
-import { addMealItem, fetchDay } from '../meals/mealsApi'
+import { fetchDay, updateMealItem } from '../meals/mealsApi'
 import { TodayPage } from './TodayPage'
 
 const PROFILE = {
@@ -63,11 +64,18 @@ const LUNCH = dayMeal('m1', 'lunch', [
 const GOAL = { validFrom: '2026-09-01', kcal: 2000, proteinG: 120, carbsG: null, fatG: null }
 const PARTNER = { ...PROFILE, id: 'u2', display_name: 'baby' }
 
+function LocationProbe() {
+  const { pathname, search } = useLocation()
+  return <output data-testid="location">{pathname + search}</output>
+}
+
 function renderPage() {
   return renderWithProviders(
     <CurrentUserContext value={{ profile: PROFILE, householdId: 'h1' }}>
       <TodayPage />
+      <LocationProbe />
     </CurrentUserContext>,
+    { route: '/today' },
   )
 }
 
@@ -141,29 +149,41 @@ describe('TodayPage', () => {
   })
 
   test('a save that fails after the sheet was closed is still reported', async () => {
-    let failAdd = (_error: Error) => {}
-    vi.mocked(addMealItem).mockReturnValue(
-      new Promise<void>((_resolve, reject) => (failAdd = reject)),
+    let failUpdate = (_error: Error) => {}
+    vi.mocked(updateMealItem).mockReturnValue(
+      new Promise<void>((_resolve, reject) => (failUpdate = reject)),
     )
     const user = userEvent.setup()
     renderPage()
 
     await user.click(await screen.findByRole('button', { name: /Lunch/ }))
     const sheet = within(screen.getByRole('dialog', { name: 'Lunch' }))
-    await user.click(sheet.getByRole('button', { name: 'Add food' }))
-    await user.click(sheet.getByRole('button', { name: /Custom item/ }))
-    await user.type(sheet.getByLabelText('Name'), 'Apple')
-    await user.type(sheet.getByLabelText('Calories'), '52')
-    await user.type(sheet.getByLabelText('Amount'), '150')
-    await user.click(sheet.getByRole('button', { name: 'Add to Lunch' }))
+    await user.click(sheet.getByRole('button', { name: /Cream/ }))
+    const amount = sheet.getByLabelText('Amount')
+    await user.clear(amount)
+    await user.type(amount, '200')
+    await user.click(sheet.getByRole('button', { name: 'Save' }))
     await user.click(sheet.getByRole('button', { name: 'Close' }))
     act(() =>
-      failAdd(new ApiError('new row for relation "meal_items" violates check constraint', '23514')),
+      failUpdate(
+        new ApiError('new row for relation "meal_items" violates check constraint', '23514'),
+      ),
     )
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Some values aren’t allowed.')
   })
 
+  test('an empty meal opens Cook for it', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: /Dinner.*Nothing logged/ }))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      '/cook?person=u1&date=2026-10-01&meal=dinner&from=%2Ftoday',
+    )
+  })
   test('the open meal closes when the day rolls over at midnight', async () => {
     vi.useRealTimers()
     vi.useFakeTimers({ shouldAdvanceTime: true })

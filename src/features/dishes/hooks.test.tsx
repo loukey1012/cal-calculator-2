@@ -1,7 +1,7 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
-import { beforeEach, describe, expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 vi.mock('./dishesApi', () => ({ saveDish: vi.fn(), deleteDish: vi.fn(), fetchDish: vi.fn() }))
 vi.mock('../meals/mealsApi', () => ({
@@ -13,12 +13,12 @@ vi.mock('../meals/mealsApi', () => ({
 
 import { ApiError, toUserMessage } from '../../lib/errors'
 import type { DayMeal } from '../meals/dayModel'
-import { useAddMealItem } from '../meals/hooks'
-import { addMealItem } from '../meals/mealsApi'
+import { useUpdateMealItem } from '../meals/hooks'
+import { updateMealItem } from '../meals/mealsApi'
 import { dayMeal, mealItem } from '../meals/testData'
 import { deleteDish, fetchDish, saveDish } from './dishesApi'
 import { useDeleteDish, useDish, useSaveDish } from './hooks'
-import { DAY, gramsItem, sharedLine, testDish } from './testData'
+import { DAY, sharedLine, testDish } from './testData'
 
 const MY_DAY_KEY = ['day', 'me', DAY]
 const HER_DAY_KEY = ['day', 'her', DAY]
@@ -46,6 +46,10 @@ beforeEach(() => {
   vi.mocked(deleteDish).mockResolvedValue()
 })
 
+afterEach(() => {
+  act(() => onlineManager.setOnline(true))
+})
+
 describe('useDish', () => {
   test('loads a dish by id', async () => {
     vi.mocked(fetchDish).mockResolvedValueOnce(testDish())
@@ -59,6 +63,35 @@ describe('useDish', () => {
 })
 
 describe('useSaveDish', () => {
+  test('offline, a cooked meal shows right away and is sent once back online', async () => {
+    // Arrange
+    const { queryClient, wrapper } = setup()
+    queryClient.setQueryData(MY_DAY_KEY, [])
+    const { result } = renderHook(() => useSaveDish(), { wrapper })
+
+    // Act
+    act(() => onlineManager.setOnline(false))
+    act(() => result.current.save({ dish: testDish() }))
+
+    // Assert
+    await waitFor(() => expect(namesIn(queryClient, MY_DAY_KEY)).toEqual(['Mince']))
+    expect(saveDish).not.toHaveBeenCalled()
+    act(() => onlineManager.setOnline(true))
+    await waitFor(() => expect(saveDish).toHaveBeenCalledTimes(1))
+  })
+
+  test('a dropped connection is retried with the same dish and revision', async () => {
+    vi.mocked(saveDish).mockRejectedValueOnce(new TypeError('Load failed')).mockResolvedValueOnce()
+    const { wrapper } = setup()
+    const { result } = renderHook(() => useSaveDish(), { wrapper })
+
+    act(() => result.current.save({ dish: testDish() }))
+
+    await waitFor(() => expect(saveDish).toHaveBeenCalledTimes(2), { timeout: 4000 })
+    const [first, second] = vi.mocked(saveDish).mock.calls
+    expect(second?.[0].dish).toEqual(first?.[0].dish)
+  })
+
   test('shows the portions in both people’s days at once and saves on top of the cached revision', async () => {
     // Arrange
     const { queryClient, wrapper } = setup()
@@ -89,28 +122,6 @@ describe('useSaveDish', () => {
 
     await waitFor(() => expect(saveDish).toHaveBeenCalledTimes(1))
     expect(vi.mocked(saveDish).mock.calls[0]?.[0].baseRevision).toBeNull()
-  })
-
-  test('"share this meal" sends the replaced items and hides them at once', async () => {
-    const { queryClient, wrapper } = setup()
-    queryClient.setQueryData(MY_DAY_KEY, [
-      dayMeal('m1', 'lunch', [mealItem({ id: 'oats', name: 'Oats' })]),
-    ])
-    vi.mocked(saveDish).mockReturnValueOnce(new Promise(() => {}))
-    const { result } = renderHook(() => useSaveDish(), { wrapper })
-
-    act(() =>
-      result.current.save({
-        dish: testDish({ lines: [sharedLine('l-oats', 'Oats', 100, 370)] }),
-        replaces: { day: { userId: 'me', date: DAY }, itemIds: ['oats'] },
-      }),
-    )
-
-    await waitFor(() => expect(saveDish).toHaveBeenCalledTimes(1))
-    expect(vi.mocked(saveDish).mock.calls[0]?.[0].replaceItemIds).toEqual(['oats'])
-    expect(
-      queryClient.getQueryData<DayMeal[]>(MY_DAY_KEY)?.[0]?.meal_items.map((item) => item.id),
-    ).not.toContain('oats')
   })
 
   test('an invalid dish is refused before anything is queued', () => {
@@ -184,28 +195,23 @@ describe('useDeleteDish', () => {
 
 describe('one queue for all meal changes', () => {
   test('a dish save waits behind an earlier meal change, so it can never overtake it', async () => {
-    // e.g. an item added offline and then shared: the add must reach the server first
+    // e.g. an older item changed offline, then a meal cooked: the change reaches the server first
     const { queryClient, wrapper } = setup()
-    vi.mocked(addMealItem).mockReturnValueOnce(new Promise(() => {}))
-    const { result } = renderHook(() => ({ add: useAddMealItem('me', DAY), dish: useSaveDish() }), {
-      wrapper,
-    })
+    vi.mocked(updateMealItem).mockReturnValueOnce(new Promise(() => {}))
+    const { result } = renderHook(
+      () => ({ update: useUpdateMealItem('me', DAY), dish: useSaveDish() }),
+      { wrapper },
+    )
 
     act(() =>
-      result.current.add.mutate({
+      result.current.update.mutate({
         id: 'oats',
-        mealType: 'lunch',
-        draft: gramsItem('Oats', 100, 370),
+        patch: { entered_amount: 50, basis_multiplier: 0.5 },
       }),
     )
-    act(() =>
-      result.current.dish.save({
-        dish: testDish(),
-        replaces: { day: { userId: 'me', date: DAY }, itemIds: ['oats'] },
-      }),
-    )
+    act(() => result.current.dish.save({ dish: testDish() }))
 
-    await waitFor(() => expect(addMealItem).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(updateMealItem).toHaveBeenCalledTimes(1))
     expect(saveDish).not.toHaveBeenCalled()
     const scopes = queryClient
       .getMutationCache()

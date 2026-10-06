@@ -103,13 +103,13 @@ describe('TabShell swiping', () => {
   test('starts the carousel on the tab from the URL', () => {
     renderShell('/ingredients')
 
-    expect(embla.state.options).toMatchObject({ startIndex: 2 })
+    expect(embla.state.options).toMatchObject({ startIndex: 3 })
   })
 
   test('a swipe that settles on another page updates the URL', () => {
     renderShell('/today')
 
-    swipeTo(1)
+    swipeTo(2)
 
     expect(screen.getByTestId('path')).toHaveTextContent('/history')
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('History')
@@ -127,7 +127,7 @@ describe('TabShell swiping', () => {
   test('settling on the current page keeps a nested URL', () => {
     renderShell('/history/2026-10-01')
 
-    swipeTo(1)
+    swipeTo(2)
 
     expect(screen.getByTestId('path')).toHaveTextContent('/history/2026-10-01')
   })
@@ -145,23 +145,23 @@ describe('TabShell swiping', () => {
 
   test('when a swipe comes to rest, the carousel snaps exactly onto the current tab', () => {
     renderShell('/settings')
-    embla.state.snap = 3
+    embla.state.snap = 4
     embla.api.scrollTo.mockClear()
 
     // e.g. after an iOS rubber-band pull past the last page
     act(() => embla.handlers.get('settle')?.())
 
-    expect(embla.api.scrollTo).toHaveBeenCalledWith(3, true)
+    expect(embla.api.scrollTo).toHaveBeenCalledWith(4, true)
   })
 
   test('returning to the app re-aligns the carousel', () => {
     renderShell('/ingredients')
-    embla.state.snap = 2
+    embla.state.snap = 3
     embla.api.scrollTo.mockClear()
 
     act(() => window.dispatchEvent(new Event('pageshow')))
 
-    expect(embla.api.scrollTo).toHaveBeenCalledWith(2, true)
+    expect(embla.api.scrollTo).toHaveBeenCalledWith(3, true)
   })
 
   test('stops listening when unmounted', () => {

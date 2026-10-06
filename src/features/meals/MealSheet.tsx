@@ -1,46 +1,27 @@
 import { useState } from 'react'
 import { Button } from '../../components/ios/Button'
+import { ErrorBanner } from '../../components/ios/ErrorBanner'
 import { Sheet } from '../../components/ios/Sheet'
+import { toUserMessage } from '../../lib/errors'
+import { confirmDeleteDish } from '../dishes/confirmDelete'
+import { lineWho, rescaledLine } from '../dishes/dishDraft'
 import { DishEditor } from '../dishes/DishEditor'
-import { takeLeftover } from '../dishes/dishDraft'
-import { useLatestDishChangeError, useLeftovers, useSaveDish } from '../dishes/hooks'
-import { leftoverOffers } from '../dishes/leftovers'
-import { formatKcal } from '../nutrition/format'
-import type { Ingredient } from '../ingredients/ingredientsApi'
-import { availableUnits } from '../nutrition/amounts'
-import {
-  buildMealItem,
-  ingredientNutrition,
-  ingredientSource,
-  type MealItemSource,
-} from '../nutrition/fromIngredient'
-import type { AmountUnit } from '../nutrition/types'
+import { useDeleteDish, useDish, useLatestDishChangeError, useSaveDish } from '../dishes/hooks'
+import type { Dish } from '../dishes/portions'
 import { AmountEditor } from './AmountEditor'
-import { CustomItemForm } from './CustomItemForm'
-import { itemsByMeal, mealLabel, scaleItemAmount, type MealType } from './dayModel'
-import { FoodPicker } from './FoodPicker'
-import {
-  newMealItemId,
-  useAddMealItem,
-  useDay,
-  useDeleteMealItem,
-  useLatestDayChangeError,
-  useUpdateMealItem,
-} from './hooks'
+import { itemsByMeal, mealLabel, scaleItemAmount, type MealItem, type MealType } from './dayModel'
+import { useDay, useDeleteMealItem, useLatestDayChangeError, useUpdateMealItem } from './hooks'
 import { MealItemsView } from './MealItemsView'
-import { previewChangedItem, previewNewItem } from './preview'
+import { previewChangedItem } from './preview'
 
+/** Items are looked up live by id, so a partner's change or delete is noticed. */
 type View =
   | { readonly kind: 'items' }
-  | { readonly kind: 'pick' }
-  | { readonly kind: 'amount'; readonly ingredient: Ingredient }
-  | { readonly kind: 'custom' }
-  /** by id: the item is looked up live, so a partner's change or delete is noticed */
+  /** a plain item, logged before the Cook tab */
   | { readonly kind: 'edit'; readonly itemId: string }
-  /** cook together: a new dish (null) or an existing one */
-  | { readonly kind: 'dish'; readonly dishId: string | null }
-  /** share this meal: its plain items become a new dish */
-  | { readonly kind: 'share' }
+  /** a single food logged alone: its amount, changed through its dish */
+  | { readonly kind: 'food'; readonly itemId: string; readonly dishId: string }
+  | { readonly kind: 'dish'; readonly dishId: string }
 
 type MealSheetProps = {
   readonly open: boolean
@@ -51,6 +32,7 @@ type MealSheetProps = {
   readonly onClose: () => void
 }
 
+/** A meal of a day: what was eaten, to look at, change or remove. Food is added on Cook. */
 export function MealSheet({ open, mealType, userId, date, onClose }: MealSheetProps) {
   return (
     <Sheet open={open} onClose={onClose} title={mealLabel(mealType)}>
@@ -70,26 +52,27 @@ function BackButton({ onClick }: { readonly onClick: () => void }) {
 function MealSheetContent({ mealType, userId, date }: Omit<MealSheetProps, 'open' | 'onClose'>) {
   const [requestedView, setView] = useState<View>({ kind: 'items' })
   const day = useDay(userId, date)
-  const add = useAddMealItem(userId, date)
   const update = useUpdateMealItem(userId, date)
   const remove = useDeleteMealItem(userId, date)
+  const deleteDish = useDeleteDish()
   const latestChangeError = useLatestDayChangeError(userId, date)
   const latestDishError = useLatestDishChangeError()
-  const leftovers = useLeftovers()
-  const saveDish = useSaveDish()
   const items = itemsByMeal(day.data ?? [])[mealType]
   const editedItem =
-    requestedView.kind === 'edit'
+    requestedView.kind === 'edit' || requestedView.kind === 'food'
       ? items.find((candidate) => candidate.id === requestedView.itemId)
       : undefined
   // an item deleted meanwhile (e.g. by a partner) sends the editor back to the list
   const view: View =
-    requestedView.kind === 'edit' && !editedItem ? { kind: 'items' } : requestedView
+    (requestedView.kind === 'edit' || requestedView.kind === 'food') && !editedItem
+      ? { kind: 'items' }
+      : requestedView
   const label = mealLabel(mealType)
   const showItems = () => setView({ kind: 'items' })
 
-  function addItem(source: MealItemSource, amount: number, unit: AmountUnit) {
-    add.mutate({ id: newMealItemId(), mealType, draft: buildMealItem(source, amount, unit) })
+  function removeDish(dishId: string, portionCount: number | undefined) {
+    if (!confirmDeleteDish(portionCount)) return
+    deleteDish.remove(dishId)
     showItems()
   }
 
@@ -100,84 +83,31 @@ function MealSheetContent({ mealType, userId, date }: Omit<MealSheetProps, 'open
           items={items}
           loading={day.isPending}
           error={latestChangeError ?? latestDishError ?? day.error}
-          onAdd={() => setView({ kind: 'pick' })}
           onEdit={(item) => setView({ kind: 'edit', itemId: item.id })}
           onDelete={(itemId) => remove.mutate(itemId)}
-          onCookTogether={() => setView({ kind: 'dish', dishId: null })}
-          onShare={() => setView({ kind: 'share' })}
+          onEditFood={(item, dishId) => setView({ kind: 'food', itemId: item.id, dishId })}
           onEditDish={(dishId) => setView({ kind: 'dish', dishId })}
+          onDeleteDish={removeDish}
         />
       )
-    case 'pick':
-      return (
-        <>
-          <BackButton onClick={showItems} />
-          <FoodPicker
-            onPick={(ingredient) => setView({ kind: 'amount', ingredient })}
-            onCustom={() => setView({ kind: 'custom' })}
-            leftovers={leftoverOffers(leftovers.data ?? []).map((offer) => ({
-              key: offer.portionId,
-              title: offer.title,
-              subtitle: `Leftover · ${formatKcal(offer.totals.kcal)} kcal`,
-              onPick: () => {
-                const eater = { userId, date, mealType }
-                saveDish.save({ dish: takeLeftover(offer.dish, offer.portionId, eater) })
-                showItems()
-              },
-            }))}
-          />
-        </>
-      )
-    case 'amount': {
-      const nutrition = ingredientNutrition(view.ingredient)
-      return (
-        <>
-          <BackButton onClick={() => setView({ kind: 'pick' })} />
-          <AmountEditor
-            title={view.ingredient.name}
-            units={availableUnits(nutrition)}
-            unitLabel={view.ingredient.unit_label}
-            confirmLabel={`Add to ${label}`}
-            preview={(amount, unit) => previewNewItem(nutrition, amount, unit)}
-            onConfirm={(amount, unit) => addItem(ingredientSource(view.ingredient), amount, unit)}
-          />
-        </>
-      )
-    }
     case 'dish':
       return (
         <>
           <BackButton onClick={showItems} />
-          <DishEditor
-            dishId={view.dishId}
-            personId={userId}
-            date={date}
-            mealType={mealType}
-            onDone={showItems}
-          />
+          <DishEditor dishId={view.dishId} date={date} onDone={showItems} />
         </>
       )
-    case 'share':
+    case 'food':
+      if (!editedItem) return null
       return (
         <>
           <BackButton onClick={showItems} />
-          <DishEditor
-            dishId={null}
-            personId={userId}
-            date={date}
-            mealType={mealType}
-            sharedItems={items.filter((item) => item.dish_portion_id === null)}
+          <FoodEditor
+            item={editedItem}
+            dishId={view.dishId}
+            label={label}
             onDone={showItems}
-          />
-        </>
-      )
-    case 'custom':
-      return (
-        <>
-          <BackButton onClick={() => setView({ kind: 'pick' })} />
-          <CustomItemForm
-            confirmLabel={`Add to ${label}`}
-            onConfirm={({ source, amount, unit }) => addItem(source, amount, unit)}
+            onRemove={() => removeDish(view.dishId, editedItem.dish?.portionCount)}
           />
         </>
       )
@@ -213,4 +143,65 @@ function MealSheetContent({ mealType, userId, date }: Omit<MealSheetProps, 'open
       )
     }
   }
+}
+
+/** The new amount of a food logged alone; its one-line dish is saved with it. */
+function withFoodAmount(dish: Dish, amount: number): Dish {
+  const [line] = dish.lines
+  const [portion] = dish.portions
+  if (!line || !portion) throw new RangeError('This food can’t be changed here.')
+  const changed =
+    lineWho(line).kind === 'shared'
+      ? rescaledLine(line, { allocation: 'shared', amount })
+      : rescaledLine(line, { allocation: 'per_portion', amounts: { [portion.id]: amount } })
+  return { ...dish, lines: [changed] }
+}
+
+type FoodEditorProps = {
+  readonly item: MealItem
+  readonly dishId: string
+  readonly label: string
+  readonly onDone: () => void
+  readonly onRemove: () => void
+}
+
+function FoodEditor({ item, dishId, label, onDone, onRemove }: FoodEditorProps) {
+  const dish = useDish(dishId)
+  const saveDish = useSaveDish()
+  const [error, setError] = useState<string | null>(null)
+
+  if (dish.isError) return <ErrorBanner message={toUserMessage(dish.error)} />
+  if (dish.isPending || dish.data === null) {
+    return (
+      <p className="mt-6 text-center text-[15px] text-label-secondary">
+        {dish.isPending ? 'Loading…' : 'This food was deleted.'}
+      </p>
+    )
+  }
+  const loaded = dish.data
+  return (
+    <>
+      <AmountEditor
+        title={item.name}
+        units={[item.entered_unit]}
+        initialAmount={String(item.entered_amount)}
+        confirmLabel="Save"
+        preview={(amount) => previewChangedItem(item, amount)}
+        onConfirm={(amount) => {
+          try {
+            saveDish.save({ dish: withFoodAmount(loaded, amount) })
+            onDone()
+          } catch (failure) {
+            setError(failure instanceof Error ? failure.message : 'This food can’t be changed.')
+          }
+        }}
+        secondaryAction={
+          <Button variant="destructive" onClick={onRemove}>
+            Remove from {label}
+          </Button>
+        }
+      />
+      {error && <ErrorBanner message={error} />}
+    </>
+  )
 }

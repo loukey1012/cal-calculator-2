@@ -26,6 +26,14 @@ export function TodayIcon() {
   )
 }
 
+export function CookIcon() {
+  return (
+    <Icon>
+      <path d="M4 10.5h16v5.5a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4v-5.5ZM2.5 10.5h1.5M20 10.5h1.5M9 3.5c-.8.9-.8 2.1 0 3M12.5 3.5c-.8.9-.8 2.1 0 3M16 3.5c-.8.9-.8 2.1 0 3" />
+    </Icon>
+  )
+}
+
 export function HistoryIcon() {
   return (
     <Icon>

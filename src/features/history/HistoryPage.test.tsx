@@ -117,21 +117,10 @@ describe('HistoryPage', () => {
     await waitFor(() => expect(fetchDay).toHaveBeenCalledWith('u1', '2026-10-01'))
     expect(within(day).getByTestId('day-total')).toBeInTheDocument()
 
-    // add the forgotten dinner to that day
+    // the forgotten dinner is added on Cook, which comes back to this day
     await user.click(screen.getByRole('button', { name: /Dinner/ }))
-    const sheet = within(screen.getByRole('dialog', { name: 'Dinner' }))
-    await user.click(sheet.getByRole('button', { name: 'Add food' }))
-    await user.click(sheet.getByRole('button', { name: /Custom item/ }))
-    await user.type(sheet.getByLabelText('Name'), 'Soup')
-    await user.type(sheet.getByLabelText('Calories'), '80')
-    await user.type(sheet.getByLabelText('Amount'), '300')
-    await user.click(sheet.getByRole('button', { name: 'Add to Dinner' }))
-
-    await waitFor(() =>
-      expect(addMealItem).toHaveBeenCalledWith(
-        expect.objectContaining({ userId: 'u1', date: '2026-10-01', mealType: 'dinner' }),
-      ),
-    )
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByTestId('path')).toHaveTextContent('/cook')
   })
 
   test('the protein average is left out when nothing logged had protein data', async () => {

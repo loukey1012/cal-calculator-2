@@ -1,5 +1,5 @@
 import { roundTo } from '../../lib/numbers'
-import { describeAmount, scaleItemAmount, type MealItem, type MealType } from '../meals/dayModel'
+import { describeAmount, scaleItemAmount, type MealType } from '../meals/dayModel'
 import {
   isLeftover,
   type Dish,
@@ -29,32 +29,6 @@ export type LineWho =
 
 export function newId(): string {
   return crypto.randomUUID()
-}
-
-/** "Share this meal": a logged plain item as a shared line (same amount and nutrition). */
-export function lineFromItem(item: MealItem): DishLine {
-  return {
-    id: newId(),
-    allocation: 'shared',
-    item: {
-      ingredient_id: item.ingredient_id,
-      name: item.name,
-      brand: item.brand,
-      entered_amount: item.entered_amount,
-      entered_unit: item.entered_unit,
-      basis: item.basis,
-      basis_multiplier: item.basis_multiplier,
-      kcal: item.kcal,
-      protein: item.protein,
-      carbs: item.carbs,
-      sugar: item.sugar,
-      fat: item.fat,
-      sat_fat: item.sat_fat,
-      fiber: item.fiber,
-      salt: item.salt,
-    },
-    amounts: {},
-  }
 }
 
 export function newDish(eaters: readonly Eater[]): Dish {

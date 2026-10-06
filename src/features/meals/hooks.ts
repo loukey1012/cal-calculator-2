@@ -8,7 +8,6 @@ import {
 } from '@tanstack/react-query'
 import { isQueuedChange } from '../../lib/persistence'
 import { monthKeys } from '../history/hooks'
-import type { MealItemDraft } from '../nutrition/fromIngredient'
 import {
   applyDayChange,
   applyDayChangeLocally,
@@ -17,7 +16,7 @@ import {
   dayChangeKey,
   type DayChange,
 } from './dayChanges'
-import type { AmountPatch, DayMeal, MealType } from './dayModel'
+import type { AmountPatch, DayMeal } from './dayModel'
 import { fetchDay } from './mealsApi'
 
 const dayKeys = {
@@ -87,24 +86,8 @@ export function useLatestDayChangeError(userId: string, date: string): Error | n
   return latest?.status === 'error' ? latest.error : null
 }
 
-export type NewMealItem = {
-  /** from `newMealItemId()`, so a retry or resend reuses it */
-  readonly id: string
-  readonly mealType: MealType
-  readonly draft: MealItemDraft
-}
-
-export function newMealItemId(): string {
-  return crypto.randomUUID()
-}
-
 type DayChangeActions<TInput> = Omit<DayChangeMutation, 'mutate'> & {
   readonly mutate: (input: TInput) => void
-}
-
-export function useAddMealItem(userId: string, date: string): DayChangeActions<NewMealItem> {
-  const change = useDayChange(userId, date)
-  return { ...change, mutate: (input) => change.mutate({ kind: 'add', userId, date, ...input }) }
 }
 
 export type MealItemAmountChange = { readonly id: string; readonly patch: AmountPatch }

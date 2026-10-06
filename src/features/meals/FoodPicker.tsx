@@ -9,22 +9,12 @@ import { useIngredients } from '../ingredients/hooks'
 import type { Ingredient } from '../ingredients/ingredientsApi'
 import { ALL_CATEGORIES, filterIngredients, nutritionSummary } from '../ingredients/listing'
 
-/** Something to log that isn't an ingredient, e.g. a leftover portion. */
-export type PickerOffer = {
-  readonly key: string
-  readonly title: string
-  readonly subtitle: string
-  readonly onPick: () => void
-}
-
 type FoodPickerProps = {
   readonly onPick: (ingredient: Ingredient) => void
   readonly onCustom: () => void
-  /** shown first, e.g. leftovers */
-  readonly leftovers?: readonly PickerOffer[]
 }
 
-export function FoodPicker({ onPick, onCustom, leftovers = [] }: FoodPickerProps) {
+export function FoodPicker({ onPick, onCustom }: FoodPickerProps) {
   const { householdId } = useCurrentUser()
   // a partner may have added ingredients since the list was loaded
   const ingredients = useIngredients(householdId, { alwaysRefresh: true })
@@ -34,18 +24,6 @@ export function FoodPicker({ onPick, onCustom, leftovers = [] }: FoodPickerProps
   return (
     <>
       <SearchField label="Search ingredients" value={query} onChange={setQuery} />
-      {leftovers.length > 0 && (
-        <GroupedSection header="Leftovers">
-          {leftovers.map((offer) => (
-            <ListRow
-              key={offer.key}
-              title={offer.title}
-              subtitle={offer.subtitle}
-              onClick={offer.onPick}
-            />
-          ))}
-        </GroupedSection>
-      )}
       <GroupedSection>
         <ListRow
           title="Custom item"

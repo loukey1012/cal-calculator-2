@@ -1,8 +1,15 @@
 import useEmblaCarousel from 'embla-carousel-react'
 import { memo, useEffect, useRef, useState, type ComponentType } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router'
-import { HistoryIcon, IngredientsIcon, SettingsIcon, TodayIcon } from '../components/ios/icons'
+import {
+  CookIcon,
+  HistoryIcon,
+  IngredientsIcon,
+  SettingsIcon,
+  TodayIcon,
+} from '../components/ios/icons'
 import { TabBar } from '../components/ios/TabBar'
+import { CookPage } from '../features/cook/CookPage'
 import { HistoryPage } from '../features/history/HistoryPage'
 import { IngredientsPage } from '../features/ingredients/IngredientsPage'
 import { SettingsPage } from '../features/settings/SettingsPage'
@@ -15,6 +22,8 @@ import { useAppearance } from '../features/appearance/useAppearance'
 
 const TABS = [
   { id: 'today', label: 'Today', path: '/today', icon: <TodayIcon />, Page: TodayPage },
+  // the one place food is logged
+  { id: 'cook', label: 'Cook', path: '/cook', icon: <CookIcon />, Page: CookPage },
   { id: 'history', label: 'History', path: '/history', icon: <HistoryIcon />, Page: HistoryPage },
   {
     id: 'ingredients',
@@ -63,7 +72,7 @@ function backPathFor(pathname: string): string | null {
   return pathname.replace(/\/+$/, '').replace(/\/[^/]*$/, '')
 }
 
-/** The signed-in app: four pages side by side, switched by the tab bar or by swiping. */
+/** The signed-in app: five pages side by side, switched by the tab bar or by swiping. */
 export function TabShell() {
   const { profile } = useCurrentUser()
   useAppearance(profile)

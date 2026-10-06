@@ -21,7 +21,6 @@ import {
   DISH_CHANGES_KEY,
   LEFTOVERS_KEY,
   refreshAfterDishChange,
-  type DayRef,
   type DishChange,
 } from './dishChanges'
 import { fetchDish, fetchLeftoverDishes } from './dishesApi'
@@ -130,8 +129,6 @@ export function useLatestDishChangeError(): Error | null {
 export type SaveDishRequest = {
   /** the edited dish; it gets a new revision when saved */
   readonly dish: Dish
-  /** "share this meal": plain items of that day the dish takes over */
-  readonly replaces?: { readonly day: DayRef; readonly itemIds: readonly string[] }
 }
 
 export function newRevision(): string {
@@ -148,7 +145,7 @@ export function useSaveDish(): DishChangeMutation & {
 } {
   const queryClient = useQueryClient()
   const change = useDishChange()
-  const save = ({ dish: edited, replaces }: SaveDishRequest) => {
+  const save = ({ dish: edited }: SaveDishRequest) => {
     portionItems(edited)
     const previous = queryClient.getQueryData<Dish | null>(dishKey(edited.id)) ?? null
     const dish = { ...edited, revision: newRevision() }
@@ -157,8 +154,8 @@ export function useSaveDish(): DishChangeMutation & {
       dish,
       baseRevision: previous?.revision ?? null,
       previousPortionIds: previous?.portions.map((portion) => portion.id) ?? [],
-      replaceItemIds: replaces?.itemIds ?? [],
-      days: affectedDays(previous, dish, replaces?.day ?? null),
+      replaceItemIds: [],
+      days: affectedDays(previous, dish, null),
     })
   }
   return { ...change, save }
