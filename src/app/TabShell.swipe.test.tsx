@@ -1,5 +1,6 @@
-import { act, fireEvent, screen } from '@testing-library/react'
-import { beforeEach, describe, expect, test, vi } from 'vitest'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { useLocation } from 'react-router'
 import { renderWithProviders } from '../test/render'
 import { CurrentUserContext } from './currentUser'
@@ -82,10 +83,50 @@ const watchDrag = () => embla.state.options.watchDrag as (api: unknown, event: E
 const activePage = () =>
   screen.getAllByTestId('tab-page').find((page) => !page.hasAttribute('inert')) as HTMLElement
 
-function drag(from: { x: number; y: number }, to: { x: number; y: number }) {
+type Point = { x: number; y: number }
+
+// a steady drag: one move every 50 ms (the clock is the one the swipe measures speed with)
+let stepMs = 50
+let clock = 0
+
+/** Starts a drag and moves the finger in steps; returns whether a move was taken over. */
+function dragTo(from: Point, to: Point): boolean {
+  vi.spyOn(performance, 'now').mockImplementation(() => clock)
   const page = activePage()
   fireEvent.touchStart(page, { touches: [{ clientX: from.x, clientY: from.y }] })
-  fireEvent.touchEnd(page, { changedTouches: [{ clientX: to.x, clientY: to.y }] })
+  let notPrevented = true
+  for (const step of [0.25, 0.5, 0.75, 1]) {
+    clock += stepMs
+    const point = {
+      clientX: from.x + (to.x - from.x) * step,
+      clientY: from.y + (to.y - from.y) * step,
+    }
+    notPrevented = fireEvent.touchMove(page, { touches: [point] }) && notPrevented
+  }
+  return !notPrevented
+}
+
+function release(to: Point) {
+  fireEvent.touchEnd(activePage(), { changedTouches: [{ clientX: to.x, clientY: to.y }] })
+}
+
+function drag(from: Point, to: Point) {
+  dragTo(from, to)
+  release(to)
+}
+
+const layers = () => screen.getAllByTestId('stack-layer')
+
+function reduceMotion(reduce: boolean) {
+  vi.spyOn(window, 'matchMedia').mockImplementation(
+    (query: string) =>
+      ({
+        matches: reduce && query.includes('reduce'),
+        media: query,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      }) as unknown as MediaQueryList,
+  )
 }
 
 function swipeTo(index: number) {
@@ -173,22 +214,43 @@ describe('TabShell swiping', () => {
   })
 
   describe('on a settings sub-page', () => {
-    test('swiping right goes back to Settings instead of switching tabs', () => {
+    // an iPhone-wide screen (jsdom has no layout)
+    beforeEach(() => vi.spyOn(window, 'innerWidth', 'get').mockReturnValue(390))
+    afterEach(() => vi.restoreAllMocks())
+
+    test('swiping right goes back to Settings instead of switching tabs', async () => {
       renderShell('/settings/appearance')
 
       expect(watchDrag()(embla.api, { target: document.body } as unknown as Event)).toBe(false)
       drag({ x: 30, y: 300 }, { x: 200, y: 320 })
 
-      expect(screen.getByTestId('path')).toHaveTextContent(/^\/settings$/)
+      await waitFor(() => expect(screen.getByTestId('path')).toHaveTextContent(/^\/settings$/))
       expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Settings')
+      expect(layers()).toHaveLength(1)
     })
 
-    test('on a page inside Appearance, swiping right goes back to the Appearance menu', () => {
+    test('while dragging, the page below is already there, not usable, and the page follows', () => {
+      renderShell('/settings/appearance/colors')
+
+      const takenOver = dragTo({ x: 30, y: 300 }, { x: 130, y: 310 })
+
+      // sideways drags are ours, so the page doesn't scroll meanwhile
+      expect(takenOver).toBe(true)
+      const [below, top] = layers()
+      expect(below).toHaveAttribute('inert')
+      expect(within(below as HTMLElement).getByText('Appearance', { selector: 'h1' })).toBeTruthy()
+      expect(top?.style.transform).toBe('translate3d(100px, 0, 0)')
+      expect(screen.getByTestId('path')).toHaveTextContent('/settings/appearance/colors')
+    })
+
+    test('on a page inside Appearance, swiping right goes back to the Appearance menu', async () => {
       renderShell('/settings/appearance/colors')
 
       drag({ x: 30, y: 300 }, { x: 200, y: 320 })
 
-      expect(screen.getByTestId('path')).toHaveTextContent(/^\/settings\/appearance$/)
+      await waitFor(() =>
+        expect(screen.getByTestId('path')).toHaveTextContent(/^\/settings\/appearance$/),
+      )
       expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Appearance')
     })
 
@@ -196,12 +258,70 @@ describe('TabShell swiping', () => {
       ['a short drag', { x: 150, y: 300 }],
       ['a mostly vertical drag', { x: 120, y: 500 }],
       ['a drag to the left', { x: -100, y: 300 }],
-    ])('%s stays on the page', (_name, to) => {
+    ])('%s stays on the page', async (_name, to) => {
       renderShell('/settings/appearance')
 
       drag({ x: 100, y: 300 }, to)
 
+      await waitFor(() => expect(layers()).toHaveLength(1))
       expect(screen.getByTestId('path')).toHaveTextContent('/settings/appearance')
+    })
+
+    test('a short but quick flick goes back too', async () => {
+      stepMs = 10
+      renderShell('/settings/appearance')
+
+      drag({ x: 100, y: 300 }, { x: 160, y: 300 })
+      stepMs = 50
+
+      await waitFor(() => expect(screen.getByTestId('path')).toHaveTextContent(/^\/settings$/))
+    })
+
+    test('a vertical drag is left to scrolling', () => {
+      renderShell('/settings/appearance')
+
+      expect(dragTo({ x: 100, y: 300 }, { x: 110, y: 500 })).toBe(false)
+      expect(layers()).toHaveLength(1)
+    })
+
+    test('the Back button slides the page away too', async () => {
+      const user = userEvent.setup()
+      renderShell('/settings/appearance')
+
+      await user.click(within(activePage()).getByRole('button', { name: 'Settings' }))
+
+      expect(layers()).toHaveLength(2)
+      // the page sliding away can't be used any more
+      expect(layers()[1]).toHaveAttribute('inert')
+      await waitFor(() => expect(layers()).toHaveLength(1))
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Settings')
+    })
+
+    test('opening a page slides it in over the one it was opened from', async () => {
+      const user = userEvent.setup()
+      renderShell('/settings')
+
+      await user.click(screen.getByRole('button', { name: /Appearance/ }))
+
+      const [below, top] = layers()
+      expect(below).toHaveAttribute('inert')
+      expect(within(top as HTMLElement).getByRole('heading', { level: 1 })).toHaveTextContent(
+        'Appearance',
+      )
+      // usable right away, while it is still sliding in
+      expect(top).not.toHaveAttribute('inert')
+      await waitFor(() => expect(layers()).toHaveLength(1))
+    })
+
+    test('with Reduce Motion, pages switch at once', async () => {
+      reduceMotion(true)
+      const user = userEvent.setup()
+      renderShell('/settings/appearance')
+
+      await user.click(within(activePage()).getByRole('button', { name: 'Settings' }))
+
+      expect(layers()).toHaveLength(1)
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Settings')
     })
 
     test('back on Settings, swiping switches tabs again', () => {

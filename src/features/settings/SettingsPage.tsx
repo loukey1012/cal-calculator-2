@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { useLocation, useNavigate } from 'react-router'
+import { useNavigate } from 'react-router'
+import { usePagePath } from '../../app/pagePath'
 import { useCurrentUser } from '../../app/currentUser'
 import { Button } from '../../components/ios/Button'
 import { ErrorBanner } from '../../components/ios/ErrorBanner'
@@ -40,7 +41,7 @@ function memberLabel(look: PersonLook, isYou: boolean): string {
 
 /** Settings, or one of its pages (kept in the URL like the selected history day). */
 export function SettingsPage() {
-  const { pathname } = useLocation()
+  const pathname = usePagePath()
   if (pathname === APPEARANCE_PATH || pathname.startsWith(`${APPEARANCE_PATH}/`))
     return <AppearancePage />
   if (pathname === CATEGORIES_PATH) return <CategoriesPage />

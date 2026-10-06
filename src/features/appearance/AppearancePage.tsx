@@ -1,4 +1,5 @@
-import { useLocation, useNavigate } from 'react-router'
+import { useNavigate } from 'react-router'
+import { usePagePath } from '../../app/pagePath'
 import { GroupedSection } from '../../components/ios/GroupedSection'
 import { ListRow } from '../../components/ios/ListRow'
 import { AppColorsPage } from './AppColorsPage'
@@ -20,7 +21,7 @@ import { useAppearanceSettings } from './useAppearanceSettings'
 
 /** Settings › Appearance, or one of its pages; anything unknown shows the menu. */
 export function AppearancePage() {
-  const { pathname } = useLocation()
+  const pathname = usePagePath()
   if (pathname === APP_COLORS_PATH) return <AppColorsPage />
   if (pathname === PROGRESS_APPEARANCE_PATH) return <ProgressAppearancePage />
   if (pathname === CATEGORY_CHIPS_APPEARANCE_PATH) return <CategoryChipsAppearancePage />

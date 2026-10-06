@@ -70,7 +70,8 @@ Built for a two-person household: both members log their own meals, can see and 
 ### Look and feel
 
 - Rounded cards on a soft background, the Manrope font, meals as a 2×2 grid of cards, avatars (your initial on your accent color, your partner's symbol on a soft tint of its color) in the person switch and member list. Bottom sheets (drag down to close), segmented controls, switches and swipe actions.
-- **Floating tab bar** (Today · History · Ingredients · Settings): the active tab shows its label in an accent tint. **Swipe left and right** to switch tabs with an animated settle (on a page inside Settings, like Appearance, a swipe to the right goes back one level instead), and tap the active tab to scroll to the top. Pages and sheets scroll without a visible scroll indicator.
+- **Floating tab bar** (Today · Cook · History · Ingredients · Settings): the active tab shows its label in an accent tint. **Swipe left and right** to switch tabs with an animated settle, and tap the active tab to scroll to the top.
+- **Pages inside Settings** (Appearance and its pages, Categories, your partner) behave like an iOS navigation stack: an opened page slides in over the one it came from, Back slides it away, and **swiping right drags it away with your finger** while the page below moves in from the left (let go past a third of the screen, or flick, to go back; otherwise it springs back). Each page keeps its scroll position. With Reduce Motion on, pages switch at once. Pages and sheets scroll without a visible scroll indicator.
 - Installable to the home screen (manifest, icons, safe areas, no zoom on input focus). Headers without buttons (Today, History, Settings) leave extra room at the top so titles stay clear of the fade iOS draws below the status bar.
 
 ### Appearance (Settings › Appearance)
@@ -87,7 +88,7 @@ Everything here is saved **to your account**, never to the device: you get the s
   - **Goal colors:** Vivid, Pastel, Accent shades or High contrast.
   - **Ring colors:** give Calories, Protein, Carbs or Fat **its own color** (18 swatches, or any color with the color picker); the others keep the palette's. "Use palette color" undoes one, and choosing a palette resets them all. A custom color stays the same in every theme.
 - **Category chips** (with a preview): **One line** (default, scrolls sideways), **All on screen** (slimmer chips wrapping into rows) or **Grouped** (broad categories such as Fresh; tapping one filters by it and opens its categories below) for the category filter on the Ingredients page. Wrapped chips are **arranged automatically to fill as few rows as possible** ("All" stays first; alphabetical within each row), measured on the device and re-arranged when the width or fonts change.
-- **App icon:** eight versions of the C-ring icon: **Graphite** (default), Classic, Pink, Sunset, Progress, Ember, Leaf and Violet. Used when you add the app to the home screen (also before signing in, on a phone you used before) and in the browser tab. To change an installed icon, see [Installing on the iPhone](#installing-on-the-iphone).
+- **App icon:** eight versions of the C-ring icon: **Graphite** (default), Classic, Pink, Sunset, Progress, Ember, Leaf and Violet. Used when you add the app to the home screen (also before signing in, on a phone you used before) and in the browser tab. Picking a new icon **copies the app's link** (a short message confirms it), ready to paste into Safari when adding the app again. To change an installed icon, see [Installing on the iPhone](#installing-on-the-iphone).
 
 ---
 
@@ -130,7 +131,7 @@ Everything here is saved **to your account**, never to the device: you get the s
 
 ```
 src/
-  app/            tab shell, swipe navigation, current user, offline lifecycle, sync status
+  app/            tab shell, swipe navigation, page stack (sub-page push/pop and back swipe), current user, offline lifecycle, sync status
   components/ios/ UI building blocks (Sheet, ListRow, TabBar, SegmentedControl, Avatar, …)
   features/
     appearance/   per-account theme, light/dark style, accent, goal and ring colors, progress style, category chips, app icon; Appearance pages
@@ -258,6 +259,6 @@ MIGRATION_SUPABASE_URL=... MIGRATION_SUPABASE_SERVICE_ROLE_KEY=... \
 
 ## Installing on the iPhone
 
-Open the live URL in Safari, then **Share → Add to Home Screen**. The app then starts full-screen like a native app, keeps you signed in, and updates itself when a new version is deployed (fully close and reopen the app to pick it up; occasionally twice). The home-screen icon is the one chosen under Settings › Appearance › App icon at the moment you add the app; to change it later, pick a new one, remove the app from the home screen and add it again.
+Open the live URL in Safari, then **Share → Add to Home Screen**. The app then starts full-screen like a native app, keeps you signed in, and updates itself when a new version is deployed (fully close and reopen the app to pick it up; occasionally twice). The home-screen icon is the one chosen under Settings › Appearance › App icon at the moment you add the app; to change it later, pick a new one (this copies the app's link), remove the app from the home screen, paste the link into Safari and add it again.
 
 New accounts are turned off in Supabase (Authentication → Sign In / Providers → **Allow new users to sign up**). To add someone, switch it on briefly, let them sign up and join with the invite code, then switch it off again.

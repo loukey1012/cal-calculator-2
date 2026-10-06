@@ -1,5 +1,5 @@
 import useEmblaCarousel from 'embla-carousel-react'
-import { memo, useEffect, useRef, useState, type ComponentType } from 'react'
+import { memo, useEffect, useRef, useState, type ComponentType, type ReactNode } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router'
 import {
   CookIcon,
@@ -16,8 +16,8 @@ import { SettingsPage } from '../features/settings/SettingsPage'
 import { TodayPage } from '../features/today/TodayPage'
 import { useCurrentUser } from './currentUser'
 import { useResumeOfflineChanges, useSaveWhenHidden } from './offlineLifecycle'
+import { PageStack } from './PageStack'
 import { SyncStatus } from './SyncStatus'
-import { useSwipeBack } from './swipeBack'
 import { useAppearance } from '../features/appearance/useAppearance'
 
 const TABS = [
@@ -53,6 +53,15 @@ const TabPageContent = memo(function TabPageContent({ Page }: { readonly Page: C
   return <Page />
 })
 
+/** A page's padding (clear of the status bar and the tab bar) and width. */
+function PageFrame({ children }: { readonly children: ReactNode }) {
+  return (
+    <div className="pt-safe-top pb-tabbar">
+      <div className="mx-auto max-w-md px-4">{children}</div>
+    </div>
+  )
+}
+
 function tabIndexForPath(pathname: string): number {
   return TABS.findIndex((tab) => pathname === tab.path || pathname.startsWith(`${tab.path}/`))
 }
@@ -85,7 +94,8 @@ export function TabShell() {
   const activeIndex = Math.max(routeIndex, 0)
   const activeIndexRef = useRef(activeIndex)
   const pageRefs = useRef<(HTMLDivElement | null)[]>([])
-  const [track, setTrack] = useState<HTMLDivElement | null>(null)
+  // the scroll container of the tab with sub-pages, where its page stack lives
+  const [stackContainer, setStackContainer] = useState<HTMLDivElement | null>(null)
   const backPath = backPathFor(pathname)
   const backPathRef = useRef(backPath)
 
@@ -106,8 +116,6 @@ export function TabShell() {
   useEffect(() => {
     backPathRef.current = backPath
   }, [backPath])
-
-  useSwipeBack(track, backPath === null ? null : () => navigate(backPath, { replace: true }))
 
   // URL changed (tab tap, link) → jump without animation, like UITabBarController
   useEffect(() => {
@@ -166,23 +174,41 @@ export function TabShell() {
   return (
     <div className="flex h-screen-full flex-col bg-bg text-label">
       <div ref={emblaRef} className="min-h-0 flex-1 overflow-hidden">
-        <div ref={setTrack} className="flex h-full touch-pan-y">
-          {TABS.map(({ id, Page }, index) => {
+        <div className="flex h-full touch-pan-y">
+          {TABS.map((tab, index) => {
+            const { id, Page } = tab
             const active = index === activeIndex
+            const hasSubPages = 'hasSubPages' in tab
             return (
               <div
                 key={id}
                 data-testid="tab-page"
                 ref={(element) => {
                   pageRefs.current[index] = element
+                  if (hasSubPages && element) setStackContainer(element)
                 }}
                 inert={!active}
                 aria-hidden={active ? undefined : true}
-                className="no-scrollbar stable-paint-layer h-full min-w-0 flex-[0_0_100%] overflow-x-hidden overflow-y-auto overscroll-contain pt-safe-top pb-tabbar"
+                className="no-scrollbar stable-paint-layer relative h-full min-w-0 flex-[0_0_100%] overflow-x-hidden overflow-y-auto overscroll-contain"
               >
-                <div className="mx-auto max-w-md px-4">
-                  <TabPageContent Page={Page} />
-                </div>
+                {hasSubPages ? (
+                  <PageStack
+                    path={active ? pathname : tab.path}
+                    backPath={active ? backPath : null}
+                    animated={active}
+                    container={stackContainer}
+                    renderPage={() => (
+                      <PageFrame>
+                        <Page />
+                      </PageFrame>
+                    )}
+                    onBack={(path) => navigate(path, { replace: true })}
+                  />
+                ) : (
+                  <PageFrame>
+                    <TabPageContent Page={Page} />
+                  </PageFrame>
+                )}
               </div>
             )
           })}
