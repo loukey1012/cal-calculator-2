@@ -24,7 +24,7 @@ export function DishTotals({ dish, nameOf }: DishTotalsProps) {
   if (typeof split === 'string') return <ErrorBanner message={split} />
   return (
     <div data-testid="dish-totals">
-      <GroupedSection header="Everyone gets">
+      <GroupedSection header="Per portion">
         {split.map(({ portionId, items }) => {
           const totals = mealTotals(items.map(({ draft }) => draft))
           return (

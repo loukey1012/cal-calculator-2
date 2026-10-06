@@ -1,3 +1,4 @@
+import { Button } from '../../components/ios/Button'
 import { ErrorBanner } from '../../components/ios/ErrorBanner'
 import { ListRow } from '../../components/ios/ListRow'
 import { SwipeableRow } from '../../components/ios/SwipeableRow'
@@ -19,6 +20,8 @@ type MealItemsViewProps = {
   readonly onEditDish: (dishId: string) => void
   /** asks first when the dish has more portions */
   readonly onDeleteDish: (dishId: string, portionCount: number | undefined) => void
+  /** opens Cook for this meal */
+  readonly onCook: () => void
 }
 
 function FoodRow({ item, onClick }: { readonly item: MealItem; readonly onClick: () => void }) {
@@ -41,6 +44,7 @@ export function MealItemsView({
   onEditFood,
   onEditDish,
   onDeleteDish,
+  onCook,
 }: MealItemsViewProps) {
   const totals = mealTotals(items)
 
@@ -56,6 +60,11 @@ export function MealItemsView({
         <div className="mt-6 text-center text-[15px] text-label-secondary">
           <p>Nothing logged yet.</p>
           <p className="mt-1 text-[13px]">Meals are added on the Cook tab.</p>
+          <div className="mt-4">
+            <Button variant="secondary" onClick={onCook}>
+              Add on Cook
+            </Button>
+          </div>
         </div>
       )}
       {items.length > 0 && (

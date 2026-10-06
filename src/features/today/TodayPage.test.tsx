@@ -173,6 +173,23 @@ describe('TodayPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Some values aren’t allowed.')
   })
 
+  test('a meal tapped before the day loaded, and empty, still leads to Cook', async () => {
+    let finishLoading = (_meals: never[]) => {}
+    vi.mocked(fetchDay).mockReturnValue(new Promise((resolve) => (finishLoading = resolve)))
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: /Dinner.*Loading/ }))
+    act(() => finishLoading([]))
+    const sheet = within(screen.getByRole('dialog', { name: 'Dinner' }))
+    await user.click(await sheet.findByRole('button', { name: 'Add on Cook' }))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      '/cook?person=u1&date=2026-10-01&meal=dinner&from=%2Ftoday',
+    )
+  })
+
   test('an empty meal opens Cook for it', async () => {
     const user = userEvent.setup()
     renderPage()

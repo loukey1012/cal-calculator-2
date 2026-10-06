@@ -10,27 +10,27 @@ Built for a two-person household: both members log their own meals, can see and 
 
 ## Features
 
-### Logging meals (Today tab)
+### Logging food (Cook tab)
 
-- One **Breakfast, Lunch, Dinner and Snacks** per person and day.
-- Add food from the shared **ingredient database** (with search) or as a **custom one-off item** that isn't saved to the database.
-- Amounts in **grams or the ingredient's own unit** (e.g. "Riegel"). Grams per unit converts between the two. Type the amount or use − / +, with a **live preview** of calories and macros.
-- Change an item's amount by tapping it, or remove it with **swipe to delete**.
-- Every logged item keeps a **snapshot of its nutrition values**, so editing an ingredient later never changes past meals.
-- **Day total** and per-meal totals. Unknown nutrients show as "–" instead of a misleading 0.
-- The whole Today page (person switch, goal card and all four meals) **fits an iPhone screen without scrolling**.
+- **One place for everything you eat**, alone or together: a snack, a quick breakfast or a dish cooked for two. The Today and History pages only show, change and delete.
+- **Who eats:** tap yourself and/or your partner. **When:** the day (today, or an earlier one) and the meal, which follows the time of day until you pick one (e.g. Dinner in the evening).
+- Add ingredients from the shared **ingredient database** (with search) or as a **custom one-off item** that isn't saved to the database. Amounts in **grams or the ingredient's own unit** (e.g. "Riegel"), with a **live preview** of calories and macros.
+- With two people, each ingredient is **Shared** (split by the dish's split), **only for one person** (e.g. the tomato on her burger) or has **own amounts** per person (noodles 120 g / 100 g). The split for shared ingredients: **Equal**, **Count** (3 toasts : 2 toasts), **%**, or **Weight** (weigh the cooked dish and each plate). What each portion gets is shown live; a split that can't work (e.g. 110 %) says why.
+- Optional **dish name** and **leftover portions** (each takes its share like a person would).
+- **Save meal** logs everything at once (each person's portion into their own meal) and goes back to where you came from.
+- The draft is **kept on the phone** while you put it together, so switching tabs or iOS closing the app loses nothing. **Discard** starts over.
+- **Leftovers** of the last 7 days are listed at the top of Cook: eat one in any meal (for you or your partner), or **throw it away** (it keeps its share, so the eaten portions never change). While food is left, a **"Chili left"** pill sits next to "Meals" on Today and opens Cook.
+- Every logged food keeps a **snapshot of its nutrition values**, so editing an ingredient later never changes past meals.
+- Works offline like every change (queued on the phone, sent in order once back online).
+
+### Today
+
+- One **Breakfast, Lunch, Dinner and Snacks** per person and day, with **day total** and per-meal totals. Unknown nutrients show as "–" instead of a misleading 0.
+- Tapping an **empty meal opens Cook** already set to that person, day and meal.
+- In a meal, a food logged alone shows as a **plain row**: tap to change its amount, swipe to delete. Anything else is **one block** (its name, or "Pasta, Pesto +2"; "Shared" when you both ate it) with your share, opening to its ingredients and **Edit dish** (who eats, amounts, split, name, leftovers). Sharing a meal afterwards is simply adding your partner there.
+- Either of you can change or delete a dish; all portions follow. Deleting a dish that has other portions **asks first**. If both of you changed it at the same time, the later save is refused instead of overwriting the other.
+- On the Today cards a dish counts as **one item**. The whole page (person switch, goal card and all four meals) **fits an iPhone screen without scrolling**.
 - "Today" moves on at midnight, and when the app comes back to the foreground on a later day.
-
-### Cooking together (meal sheet › Cook together)
-
-- Log a dish you cooked together **once**: everyone eating gets their portion in their own meal (each person can be in a different meal, or not eat along).
-- Each ingredient is **Shared** (split by the dish's split), **only for one person** (e.g. the tomato on her burger) or has **own amounts** per person (noodles 120 g / 100 g).
-- The split for shared ingredients: **Equal**, **Count** (3 toasts : 2 toasts), **%**, or **Weight** (weigh the cooked dish and each plate). What everyone gets is shown live before saving; a split that can't work (e.g. 110 %) says why.
-- In the meal the dish is **one block** with your share, opening to its ingredients and **Edit dish**. Either of you can change or delete it; both portions follow. If both of you changed it at the same time, the later save is refused instead of overwriting the other.
-- **Share this meal:** logged a meal alone and then shared it? "Share this meal" turns its food into a dish (everything shared equally to start with) and takes it out of the meal, all in one save.
-- On the Today cards a dish counts as **one item**.
-- **Leftovers:** cook a portion more ("Leftover portions" + / −); it takes its share like a person would. While it is uneaten, a small **"Chili left"** pill sits next to "Meals" on Today, and leftovers come first in **Add food**. Log it into any meal later, or **throw it away** (it keeps its share, so the eaten portions never change). Leftovers of the last 7 days are offered.
-- Works offline like any meal change (same queue, in order).
 
 ### Daily goals and progress
 
@@ -43,7 +43,7 @@ Built for a two-person household: both members log their own meals, can see and 
 
 - **Month calendar** (Monday first): every logged day is marked green (within that day's calorie goal), red (over) or neutral (logged, no goal yet).
 - Month summary: days logged, average calories and protein.
-- **Tap any past day** to show its rings, totals and meals **right beneath the calendar**, and **edit it like today**, e.g. add a forgotten dinner. Tap another day to switch, or the same day again to close it. The selected day is kept in the address (`/history/YYYY-MM-DD`), so reopening the app keeps it. Also for your partner's days.
+- **Tap any past day** to show its rings, totals and meals **right beneath the calendar**, and **edit it like today**. A forgotten dinner: tap the empty Dinner, which opens Cook for that day and comes back here after saving. Tap another day to switch, or the same day again to close it. The selected day is kept in the address (`/history/YYYY-MM-DD`), so reopening the app keeps it. Also for your partner's days.
 
 ### Household
 
@@ -63,7 +63,7 @@ Built for a two-person household: both members log their own meals, can see and 
 ### Works offline
 
 - The last loaded data (days, ingredients, goals, profile) is **stored on the phone for 7 days**, so the app opens without a connection.
-- **Meal changes made offline** still show immediately, are queued, and are sent in order when the connection returns, even after the app was closed. Every change is idempotent (items get their ID on the phone), so resending can never create duplicates. Network failures are retried until they succeed.
+- **Meal changes made offline** still show immediately, are queued, and are sent in order when the connection returns, even after the app was closed. Every change is idempotent (items get their ID on the phone), so resending can never create duplicates. Network failures are retried until they succeed. The moment the app goes to the background, the queue is written to the phone right away, so iOS closing it straight after a change loses nothing.
 - A pill above the tab bar shows the state: _Offline_, _Offline · 2 changes pending_, _Saving 2 changes…_
 - iOS doesn't run web apps in the background, so queued changes go out the next time the app is open with a connection.
 
@@ -106,7 +106,7 @@ Everything here is saved **to your account**, never to the device: you get the s
 | Invite code      | Rotate the household invite code                                                                   |
 | Live updates     | See your partner's edits to a meal without reloading                                               |
 
-**Recipes** will build on cooked dishes: the same ingredient lines (shared or own amounts) and splits, saved by name; cooking one starts a dish.
+**Recipes** and meal templates will build on the Cook tab: a recipe fills in a dish (the same ingredient lines and splits), saved by name.
 
 ---
 
@@ -138,8 +138,9 @@ src/
     household/    profile, household, invite codes, onboarding
     ingredients/  ingredient database: API, form parsing, listing, category chips, screens
     categories/   Settings › Categories: broad categories and categories (create, rename, move, delete)
-    meals/        day model, meal sheet, offline-capable day changes
-    dishes/       cook together: share maths (portions.ts), dish API, offline dish changes (same queue as meal changes)
+    cook/         Cook tab: draft (kept on the phone), who/when, leftovers, links from an empty meal
+    meals/        day model, meal sheet (show, change, delete), offline-capable day changes
+    dishes/       dishes: share maths (portions.ts), composer and editor, dish API, offline dish changes (same queue as meal changes)
     goals/        goal history, goal form, progress card (rings / ring + bars / bars / compact)
     nutrition/    pure nutrition math: units, totals, goals, formatting
     today/ history/ settings/   tab pages
@@ -216,7 +217,7 @@ pnpm icons          # regenerate the icon PNGs: the default set from public/icon
 
 To add an app icon choice: put its SVG in `public/icons/<name>/icon.svg`, add `<name>` to `APP_ICONS` (`src/features/appearance/appearance.ts`) and a label to `APP_ICON_OPTIONS`, then run `pnpm icons`.
 
-**End-to-end journeys** (log a meal, cooking together for two, sharing a meal afterwards, leftovers, goals and partner, partner nickname and symbol, Today fitting the screen, history, ingredients, category management, offline, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color) run the real app against the dev project. Build it against dev and pass the test credentials:
+**End-to-end journeys** (log a meal on Cook, a single food changed in place, cooking together for two, sharing a meal afterwards, leftovers, goals and partner, partner nickname and symbol, Today fitting the screen, history, ingredients, category management, offline, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color) run the real app against the dev project. Build it against dev and pass the test credentials:
 
 ```bash
 set -a; . ./.env.test.local; set +a

@@ -1,4 +1,5 @@
 import { activePage, expect, logIn, test } from './backend.ts'
+import { addIngredient, cookFor } from './cook.ts'
 
 test('a meal logged offline is kept and sent exactly once when back online', async ({
   page,
@@ -12,20 +13,15 @@ test('a meal logged offline is kept and sent exactly once when back online', asy
     .from('ingredients')
     .insert({ household_id: household, name: 'Skyr', kcal_100: 63 })
   await logIn(page, me)
-  const today = activePage(page)
-  const sheet = page.getByRole('dialog')
-  await today.getByRole('button', { name: /Lunch/ }).click()
-  await sheet.getByRole('button', { name: 'Add food' }).click()
-  await sheet.getByRole('button', { name: /Skyr/ }).click()
-  await sheet.getByLabel('Amount').fill('250')
+  await cookFor(activePage(page), page, /Lunch/)
+  await addIngredient(page, 'Skyr', '250')
 
   await context.setOffline(true)
-  await sheet.getByRole('button', { name: 'Add to Lunch' }).click()
-  await expect(sheet.getByRole('button', { name: /Skyr/ })).toContainText('158 kcal')
+  await activePage(page).getByRole('button', { name: 'Save meal' }).click()
+  await expect(activePage(page).getByRole('button', { name: /Lunch/ })).toContainText('158 kcal')
   await expect(
     page.getByRole('status').filter({ hasText: 'Offline · 1 change pending' }),
   ).toBeVisible()
-  await sheet.getByRole('button', { name: 'Close' }).click()
 
   // closing and reopening the app offline needs the service worker (Chromium in Playwright)
   if (browserName === 'chromium') {

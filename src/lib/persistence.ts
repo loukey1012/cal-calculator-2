@@ -1,5 +1,10 @@
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister'
-import { defaultShouldDehydrateQuery, type DehydrateOptions } from '@tanstack/react-query'
+import {
+  defaultShouldDehydrateQuery,
+  dehydrate,
+  type DehydrateOptions,
+  type QueryClient,
+} from '@tanstack/react-query'
 import type { PersistedClient } from '@tanstack/react-query-persist-client'
 
 /** localStorage key holding the cached data and the queued offline changes */
@@ -59,7 +64,25 @@ export const DEHYDRATE_OPTIONS: DehydrateOptions = {
     mutation.state.status === 'pending' && isQueuedChange(mutation.options.mutationKey),
 }
 
-/** Removes this account's cached data and queued changes from the phone. */
+/**
+ * Writes the cache right now, synchronously. The persister writes at most every SAVE_THROTTLE_MS,
+ * so when iOS is about to end the app the latest changes could otherwise still be waiting.
+ */
+export function saveCacheNow(queryClient: QueryClient): void {
+  const storage = availableStorage()
+  if (!storage) return
+  const client: PersistedClient = {
+    buster: CACHE_BUSTER,
+    timestamp: Date.now(),
+    clientState: dehydrate(queryClient, DEHYDRATE_OPTIONS),
+  }
+  try {
+    storage.setItem(PERSIST_KEY, serializeCache(client))
+  } catch {
+    // full storage: the regular (throttled) save keeps trying
+  }
+}
+
 /**
  * localStorage mirror of the account's look (theme, colors), written by useAppearance and read
  * by the inline script in index.html so the app starts in the right colors.

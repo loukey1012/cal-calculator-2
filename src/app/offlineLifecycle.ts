@@ -1,7 +1,6 @@
 import { useIsRestoring, useQueryClient } from '@tanstack/react-query'
-import { persistQueryClientSave } from '@tanstack/react-query-persist-client'
 import { useEffect } from 'react'
-import { CACHE_BUSTER, DEHYDRATE_OPTIONS, persister } from '../lib/persistence'
+import { saveCacheNow } from '../lib/persistence'
 
 /**
  * Sends meal changes queued offline in an earlier session. Runs once a signed-in app is ready,
@@ -15,17 +14,14 @@ export function useResumeOfflineChanges(): void {
   }, [queryClient, isRestoring])
 }
 
-/** iOS may kill a backgrounded PWA without warning: write the cache the moment it is hidden. */
+/**
+ * iOS may kill a backgrounded PWA without warning: write the cache the moment it is hidden,
+ * synchronously, since anything scheduled for later may never run.
+ */
 export function useSaveWhenHidden(): void {
   const queryClient = useQueryClient()
   useEffect(() => {
-    const save = () =>
-      void persistQueryClientSave({
-        queryClient,
-        persister,
-        buster: CACHE_BUSTER,
-        dehydrateOptions: DEHYDRATE_OPTIONS,
-      })
+    const save = () => saveCacheNow(queryClient)
     const onVisibilityChange = () => {
       if (document.visibilityState === 'hidden') save()
     }

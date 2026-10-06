@@ -58,13 +58,26 @@ const BAR = ingredient({
 
 function renderSheet(staleTime = 0) {
   const onClose = vi.fn()
+  const onCook = vi.fn()
   const { queryClient } = renderWithProviders(
     <CurrentUserContext value={{ profile: PROFILE, householdId: 'h1' }}>
-      <MealSheet open mealType="lunch" userId="u1" date="2026-10-01" onClose={onClose} />
+      <MealSheet
+        open
+        mealType="lunch"
+        userId="u1"
+        date="2026-10-01"
+        onClose={onClose}
+        onCook={onCook}
+      />
     </CurrentUserContext>,
     { staleTime },
   )
-  return { onClose, queryClient, sheet: within(screen.getByRole('dialog', { name: 'Lunch' })) }
+  return {
+    onClose,
+    onCook,
+    queryClient,
+    sheet: within(screen.getByRole('dialog', { name: 'Lunch' })),
+  }
 }
 
 type SheetQueries = ReturnType<typeof renderSheet>['sheet']
@@ -164,12 +177,15 @@ describe('MealSheet', () => {
     await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: ['month', 'u1'] }))
   })
 
-  test('offers no way to add food: that happens on Cook', async () => {
+  test('offers no way to add food: an empty meal leads to Cook', async () => {
     vi.mocked(fetchDay).mockResolvedValue([dayMeal('m1', 'lunch', [])])
-    const { sheet } = renderSheet()
+    const user = userEvent.setup()
+    const { sheet, onCook } = renderSheet()
 
     expect(await sheet.findByText('Nothing logged yet.')).toBeInTheDocument()
     expect(sheet.getByText('Meals are added on the Cook tab.')).toBeInTheDocument()
+    await user.click(sheet.getByRole('button', { name: 'Add on Cook' }))
+    expect(onCook).toHaveBeenCalledOnce()
     expect(
       sheet.queryByRole('button', { name: /Add food|Cook together|Share/ }),
     ).not.toBeInTheDocument()

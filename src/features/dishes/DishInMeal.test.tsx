@@ -101,7 +101,14 @@ const MY_BANANA = mealItem({
 function renderSheet() {
   renderWithProviders(
     <CurrentUserContext value={{ profile: ME, householdId: 'h1' }}>
-      <MealSheet open mealType="lunch" userId="u1" date={DATE} onClose={() => {}} />
+      <MealSheet
+        open
+        mealType="lunch"
+        userId="u1"
+        date={DATE}
+        onClose={() => {}}
+        onCook={() => {}}
+      />
     </CurrentUserContext>,
   )
   return within(screen.getByRole('dialog', { name: 'Lunch' }))
@@ -243,6 +250,18 @@ describe('a single food logged alone', () => {
 
     expect(vi.mocked(saveDish).mock.calls[0]?.[0].baseRevision).toBe('rev-b')
     expect(sentDish().lines[0]?.item).toMatchObject({ entered_amount: 60, basis_multiplier: 0.6 })
+  })
+
+  test('can be opened as a dish, e.g. to share it afterwards', async () => {
+    const user = userEvent.setup()
+    const sheet = renderSheet()
+
+    await user.click(await sheet.findByRole('button', { name: /Banana/ }))
+    await user.click(await sheet.findByRole('button', { name: 'Edit dish' }))
+    await user.selectOptions(await sheet.findByRole('combobox', { name: 'Schatz' }), 'lunch')
+    await user.click(sheet.getByRole('button', { name: 'Save dish' }))
+
+    expect(sentDish().portions.map((portion) => portion.eater?.userId)).toEqual(['u1', 'u2'])
   })
 
   test('is removed without asking', async () => {

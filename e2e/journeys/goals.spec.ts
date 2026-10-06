@@ -1,4 +1,5 @@
 import { activePage, expect, logIn, test } from './backend.ts'
+import { addIngredient, cookFor } from './cook.ts'
 
 test('set a goal, see the rings, and log a meal for the partner', async ({ page, backend }) => {
   const me = await backend.user('Lukas')
@@ -16,12 +17,9 @@ test('set a goal, see the rings, and log a meal for the partner', async ({ page,
   await sheet.getByLabel('Calories').fill('2000')
   await sheet.getByLabel('Protein').fill('120')
   await sheet.getByRole('button', { name: 'Save' }).click()
-  await today.getByRole('button', { name: /Lunch/ }).click()
-  await sheet.getByRole('button', { name: 'Add food' }).click()
-  await sheet.getByRole('button', { name: /Skyr/ }).click()
-  await sheet.getByLabel('Amount').fill('500')
-  await sheet.getByRole('button', { name: 'Add to Lunch' }).click()
-  await sheet.getByRole('button', { name: 'Close' }).click()
+  await cookFor(today, page, /Lunch/)
+  await addIngredient(page, 'Skyr', '500')
+  await activePage(page).getByRole('button', { name: 'Save meal' }).click()
 
   const goals = today.getByRole('list', { name: 'Goals' })
   await expect(goals).toContainText('315 / 2,000 kcal')
@@ -29,14 +27,20 @@ test('set a goal, see the rings, and log a meal for the partner', async ({ page,
 
   await today.getByRole('radio', { name: 'baby' }).click()
   await expect(today.getByText('baby hasn’t set a daily goal yet.')).toBeVisible()
-  await today.getByRole('button', { name: /Breakfast/ }).click()
-  await sheet.getByRole('button', { name: 'Add food' }).click()
-  await sheet.getByRole('button', { name: /Haferflocken/ }).click()
-  await sheet.getByLabel('Amount').fill('60')
-  await sheet.getByRole('button', { name: 'Add to Breakfast' }).click()
-  await sheet.getByRole('button', { name: 'Close' }).click()
+  // her empty breakfast opens Cook for her
+  await cookFor(today, page, /Breakfast/)
+  await expect(activePage(page).getByRole('button', { name: 'baby', pressed: true })).toBeVisible()
+  await addIngredient(page, 'Haferflocken', '60')
+  await activePage(page).getByRole('button', { name: 'Save meal' }).click()
   await expect(today.getByRole('button', { name: /Breakfast/ })).toContainText('224 kcal')
 
-  const { data } = await backend.admin.from('meals').select('meal_type').eq('user_id', partner.id)
-  expect(data).toEqual([{ meal_type: 'breakfast' }])
+  await expect
+    .poll(async () => {
+      const { data } = await backend.admin
+        .from('meals')
+        .select('meal_type')
+        .eq('user_id', partner.id)
+      return data
+    })
+    .toEqual([{ meal_type: 'breakfast' }])
 })

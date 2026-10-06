@@ -1,4 +1,5 @@
 import { activePage, expect, localDay, logIn, test } from './backend.ts'
+import { cookFor } from './cook.ts'
 
 test('select a past day in History and add a forgotten dinner beneath the calendar', async ({
   page,
@@ -44,16 +45,18 @@ test('select a past day in History and add a forgotten dinner beneath the calend
   await expect(history.getByRole('button', { pressed: true })).toBeVisible()
   const carousel = page.locator('[data-testid="tab-page"]').first().locator('xpath=../..')
   expect(await carousel.evaluate((element) => element.scrollLeft)).toBe(0)
-  await day.getByRole('button', { name: /Dinner/ }).click()
-  const sheet = page.getByRole('dialog')
-  await sheet.getByRole('button', { name: 'Add food' }).click()
-  await sheet.getByRole('button', { name: /Custom item/ }).click()
-  await sheet.getByLabel('Name', { exact: true }).fill('Forgotten pizza')
-  await sheet.getByRole('radio', { name: 'Per unit' }).click()
-  await sheet.getByLabel('Calories').fill('450')
-  await sheet.getByLabel('Amount').fill('1')
-  await sheet.getByRole('button', { name: 'Add to Dinner' }).click()
-  await sheet.getByRole('button', { name: 'Close' }).click()
+  // the empty dinner opens Cook for that day, and saving comes back here
+  await cookFor(day, page, /Dinner/)
+  const cook = activePage(page)
+  await expect(cook.getByLabel('Day')).toHaveValue(localDay(1))
+  await cook.getByRole('button', { name: 'Add ingredient' }).click()
+  await cook.getByRole('button', { name: /Custom item/ }).click()
+  await cook.getByLabel('Name', { exact: true }).fill('Forgotten pizza')
+  await cook.getByRole('radio', { name: 'Per unit' }).click()
+  await cook.getByLabel('Calories').fill('450')
+  await cook.getByLabel('Amount').fill('1')
+  await cook.getByRole('button', { name: 'Add to dish' }).click()
+  await cook.getByRole('button', { name: 'Save meal' }).click()
   await expect(day.getByTestId('day-total')).toContainText('2,250 kcal')
   // the calendar above updates right away
   await expect(history.getByRole('button', { name: /over goal/, pressed: true })).toBeVisible()

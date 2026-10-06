@@ -30,13 +30,15 @@ type MealSheetProps = {
   /** local YYYY-MM-DD */
   readonly date: string
   readonly onClose: () => void
+  /** an empty meal: open Cook for it */
+  readonly onCook: () => void
 }
 
 /** A meal of a day: what was eaten, to look at, change or remove. Food is added on Cook. */
-export function MealSheet({ open, mealType, userId, date, onClose }: MealSheetProps) {
+export function MealSheet({ open, mealType, userId, date, onClose, onCook }: MealSheetProps) {
   return (
     <Sheet open={open} onClose={onClose} title={mealLabel(mealType)}>
-      <MealSheetContent mealType={mealType} userId={userId} date={date} />
+      <MealSheetContent mealType={mealType} userId={userId} date={date} onCook={onCook} />
     </Sheet>
   )
 }
@@ -49,7 +51,12 @@ function BackButton({ onClick }: { readonly onClick: () => void }) {
   )
 }
 
-function MealSheetContent({ mealType, userId, date }: Omit<MealSheetProps, 'open' | 'onClose'>) {
+function MealSheetContent({
+  mealType,
+  userId,
+  date,
+  onCook,
+}: Omit<MealSheetProps, 'open' | 'onClose'>) {
   const [requestedView, setView] = useState<View>({ kind: 'items' })
   const day = useDay(userId, date)
   const update = useUpdateMealItem(userId, date)
@@ -88,6 +95,7 @@ function MealSheetContent({ mealType, userId, date }: Omit<MealSheetProps, 'open
           onEditFood={(item, dishId) => setView({ kind: 'food', itemId: item.id, dishId })}
           onEditDish={(dishId) => setView({ kind: 'dish', dishId })}
           onDeleteDish={removeDish}
+          onCook={onCook}
         />
       )
     case 'dish':
@@ -107,6 +115,7 @@ function MealSheetContent({ mealType, userId, date }: Omit<MealSheetProps, 'open
             dishId={view.dishId}
             label={label}
             onDone={showItems}
+            onEditDish={() => setView({ kind: 'dish', dishId: view.dishId })}
             onRemove={() => removeDish(view.dishId, editedItem.dish?.portionCount)}
           />
         </>
@@ -162,10 +171,12 @@ type FoodEditorProps = {
   readonly dishId: string
   readonly label: string
   readonly onDone: () => void
+  /** the whole dish: who eats, name, leftovers */
+  readonly onEditDish: () => void
   readonly onRemove: () => void
 }
 
-function FoodEditor({ item, dishId, label, onDone, onRemove }: FoodEditorProps) {
+function FoodEditor({ item, dishId, label, onDone, onEditDish, onRemove }: FoodEditorProps) {
   const dish = useDish(dishId)
   const saveDish = useSaveDish()
   const [error, setError] = useState<string | null>(null)
@@ -196,9 +207,14 @@ function FoodEditor({ item, dishId, label, onDone, onRemove }: FoodEditorProps) 
           }
         }}
         secondaryAction={
-          <Button variant="destructive" onClick={onRemove}>
-            Remove from {label}
-          </Button>
+          <div className="flex flex-col gap-3">
+            <Button variant="secondary" onClick={onEditDish}>
+              Edit dish
+            </Button>
+            <Button variant="destructive" onClick={onRemove}>
+              Remove from {label}
+            </Button>
+          </div>
         }
       />
       {error && <ErrorBanner message={error} />}

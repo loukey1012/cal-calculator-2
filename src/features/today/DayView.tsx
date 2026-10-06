@@ -85,6 +85,9 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
   const latestChangeError = latestDayError ?? latestDishError
   const navigate = useNavigate()
   const { pathname } = useLocation()
+  // food is added on Cook, set up for this person, day and meal; saving comes back here
+  const openCook = (mealType: MealType) =>
+    void navigate(cookLink({ userId: person.id, date, mealType }, pathname), { replace: true })
 
   const byMeal = itemsByMeal(day.data ?? [])
   const meals = MEAL_TYPES.map(({ type, label }) => ({
@@ -149,12 +152,7 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
                     totals.kcal,
                   )}
                   onOpen={() =>
-                    !day.isPending && count === 0
-                      ? void navigate(
-                          cookLink({ userId: person.id, date, mealType: type }, pathname),
-                          { replace: true },
-                        )
-                      : setOpenMeal({ type, date })
+                    !day.isPending && count === 0 ? openCook(type) : setOpenMeal({ type, date })
                   }
                 />
               ))}
@@ -168,6 +166,10 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
         userId={person.id}
         date={date}
         onClose={() => setOpenMeal(null)}
+        onCook={() => {
+          setOpenMeal(null)
+          openCook(openMealType ?? 'breakfast')
+        }}
       />
     </>
   )
