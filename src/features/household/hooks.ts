@@ -61,9 +61,7 @@ export function usePeople(me: Profile, householdId: string): readonly Profile[] 
   return [me, ...(members.data ?? []).filter((member) => member.id !== me.id)]
 }
 
-export function displayName(member: Profile): string {
-  return member.display_name || 'Unnamed'
-}
+export { displayName } from './partnerLook'
 
 type ProfileSnapshot = { readonly previous: Profile | undefined }
 
@@ -75,6 +73,9 @@ export function useUpdateProfile(
   const mutationKey = ['updateProfile', userId]
   return useMutation({
     mutationKey,
+    // one at a time: each change sends the whole appearance, so a slower older request
+    // arriving last would undo a newer choice (e.g. a color picked right after a symbol)
+    scope: { id: mutationKey.join(':') },
     mutationFn: (patch: ProfilePatch) => updateProfile(userId, patch),
     // shown right away (the whole app recolors on an appearance change), undone if saving fails
     onMutate: async (patch) => {
