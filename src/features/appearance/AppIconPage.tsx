@@ -1,4 +1,5 @@
-import { Toast, useToast } from '../../components/ios/Toast'
+import { Toast } from '../../components/ios/Toast'
+import { useToast } from '../../components/ios/useToast'
 import { appIconFiles } from './appIcon'
 import { APP_ICON_OPTIONS, APPEARANCE_PATH } from './appearanceLabels'
 import { OptionCards, SettingSection } from './AppearanceOptions'
