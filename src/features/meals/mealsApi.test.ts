@@ -39,7 +39,16 @@ describe('mealsApi', () => {
         meal_type: 'lunch',
         meal_items: [
           { ...plain, dish_portions: null },
-          { ...fromDish, dish_portions: { dish_id: 'd1', dishes: { name: 'Chili' } } },
+          {
+            ...fromDish,
+            dish_portions: {
+              dish_id: 'd1',
+              dishes: {
+                name: 'Chili',
+                dish_portions: [{ user_id: 'u1' }, { user_id: 'u2' }, { user_id: null }],
+              },
+            },
+          },
         ],
       },
     ]
@@ -49,12 +58,12 @@ describe('mealsApi', () => {
     await expect(fetchDay('u1', '2026-10-01')).resolves.toEqual([
       dayMeal('m1', 'lunch', [
         { ...plain, dish: null },
-        { ...fromDish, dish: { id: 'd1', name: 'Chili' } },
+        { ...fromDish, dish: { id: 'd1', name: 'Chili', portionCount: 3, eaterCount: 2 } },
       ]),
     ])
     expect(supabaseMock.from).toHaveBeenCalledWith('meals')
     expect(query.select).toHaveBeenCalledWith(
-      'id, meal_type, meal_items(*, dish_portions(dish_id, dishes(name)))',
+      'id, meal_type, meal_items(*, dish_portions(dish_id, dishes(name, dish_portions(user_id))))',
     )
     expect(query.eq).toHaveBeenCalledWith('user_id', 'u1')
     expect(query.eq).toHaveBeenCalledWith('date', '2026-10-01')

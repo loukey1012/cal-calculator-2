@@ -86,7 +86,12 @@ function optimisticItem(dish: Dish, portionId: string, { lineId, draft }: Portio
     meal_id: '',
     dish_portion_id: portionId,
     dish_line_id: lineId,
-    dish: { id: dish.id, name: dish.name },
+    dish: {
+      id: dish.id,
+      name: dish.name,
+      portionCount: dish.portions.length,
+      eaterCount: dish.portions.filter((portion) => portion.eater !== null).length,
+    },
     created_at: now,
     updated_at: now,
   }

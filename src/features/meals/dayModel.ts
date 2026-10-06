@@ -2,8 +2,18 @@ import type { Enums, Tables } from '../../lib/database.types'
 import { roundTo } from '../../lib/numbers'
 
 export type MealType = Enums<'meal_type'>
-/** The dish a cooked portion's item belongs to (name for display, id to open it). */
-export type DishRef = { readonly id: string; readonly name: string | null }
+/**
+ * The dish a cooked portion's item belongs to (name for display, id to open it). The counts may
+ * be missing in data cached by older versions.
+ */
+export type DishRef = {
+  readonly id: string
+  readonly name: string | null
+  /** every portion, leftovers included */
+  readonly portionCount?: number
+  /** portions someone has eaten */
+  readonly eaterCount?: number
+}
 
 /** `dish` is set for items of a cooked dish; it may be missing in data cached by older versions. */
 export type MealItem = Tables<'meal_items'> & { readonly dish?: DishRef | null }
@@ -28,10 +38,22 @@ export const MEAL_TYPES: ReadonlyArray<{ readonly type: MealType; readonly label
 const MULTIPLIER_DECIMALS = 4
 const AMOUNT_DECIMALS = 2
 
-/** What a meal lists: plain items, and each cooked dish's portion as one entry. */
+/**
+ * What a meal lists: plain items (logged before the Cook tab), single foods (a dish of one
+ * unnamed food logged alone, shown like a plain item) and each other dish's portion as one entry.
+ */
 export type MealEntry =
   | { readonly kind: 'item'; readonly item: MealItem }
+  | { readonly kind: 'food'; readonly item: MealItem; readonly dishId: string }
   | { readonly kind: 'dish'; readonly portionId: string; readonly items: readonly MealItem[] }
+
+function singleFood(items: readonly MealItem[]): MealEntry | null {
+  const [item] = items
+  const dish = item?.dish
+  if (items.length !== 1 || !item || !dish) return null
+  if (dish.name !== null || dish.portionCount !== 1) return null
+  return { kind: 'food', item, dishId: dish.id }
+}
 
 /** Plain items as they are; a dish's items as one entry, where its first item was. */
 export function mealEntries(items: readonly MealItem[]): MealEntry[] {
@@ -41,7 +63,7 @@ export function mealEntries(items: readonly MealItem[]): MealEntry[] {
     const first = items.find((candidate) => candidate.dish_portion_id === portionId)
     if (first !== item) return []
     const portion = items.filter((candidate) => candidate.dish_portion_id === portionId)
-    return [{ kind: 'dish', portionId, items: portion }]
+    return [singleFood(portion) ?? { kind: 'dish', portionId, items: portion }]
   })
 }
 

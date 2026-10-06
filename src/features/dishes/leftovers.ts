@@ -1,5 +1,6 @@
 import { mealTotals } from '../nutrition/totals'
 import type { NutritionTotals } from '../nutrition/types'
+import { dishTitle } from './dishTitle'
 import { isLeftover, portionItems, type Dish } from './portions'
 
 /** One leftover portion that can be eaten (logged into a meal) or thrown away. */
@@ -8,10 +9,6 @@ export type LeftoverOffer = {
   readonly portionId: string
   readonly title: string
   readonly totals: NutritionTotals
-}
-
-export function dishTitle(dish: Dish): string {
-  return dish.name ?? 'Cooked together'
 }
 
 function portionTotals(dish: Dish, portionId: string): NutritionTotals {

@@ -103,6 +103,21 @@ describe('applyDishChangeToDay', () => {
     ])
   })
 
+  test('the shown items know how many portions their dish has and how many are eaten', () => {
+    const withLeftover = testDish({
+      portions: [...testDish().portions, { id: 'p-left', eater: null, splitValue: null }],
+    })
+
+    const day = applyDishChangeToDay([], { ...SAVE, dish: withLeftover }, ME_DAY)
+
+    expect(day[0]?.meal_items[0]?.dish).toEqual({
+      id: 'dish-1',
+      name: 'Chili',
+      portionCount: 3,
+      eaterCount: 2,
+    })
+  })
+
   test('saving again replaces the earlier portion instead of adding a second one', () => {
     const once = applyDishChangeToDay([], SAVE, ME_DAY)
     const moreMince = {

@@ -12,16 +12,32 @@ export type AddMealItemInput = {
   readonly draft: MealItemDraft
 }
 
-type DishPortionJoin = { readonly dish_id: string; readonly dishes: { name: string | null } | null }
+type DishPortionJoin = {
+  readonly dish_id: string
+  readonly dishes: {
+    readonly name: string | null
+    readonly dish_portions: ReadonlyArray<{ readonly user_id: string | null }>
+  } | null
+}
 
 function dishOf(portion: DishPortionJoin | null): DishRef | null {
-  return portion ? { id: portion.dish_id, name: portion.dishes?.name ?? null } : null
+  if (!portion) return null
+  if (!portion.dishes) return { id: portion.dish_id, name: null }
+  const portions = portion.dishes.dish_portions
+  return {
+    id: portion.dish_id,
+    name: portion.dishes.name,
+    portionCount: portions.length,
+    eaterCount: portions.filter((other) => other.user_id !== null).length,
+  }
 }
 
 export async function fetchDay(userId: string, date: string): Promise<DayMeal[]> {
   const { data, error } = await supabase
     .from('meals')
-    .select('id, meal_type, meal_items(*, dish_portions(dish_id, dishes(name)))')
+    .select(
+      'id, meal_type, meal_items(*, dish_portions(dish_id, dishes(name, dish_portions(user_id))))',
+    )
     .eq('user_id', userId)
     .eq('date', date)
     .order('created_at', { referencedTable: 'meal_items' })
