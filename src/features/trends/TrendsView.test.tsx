@@ -66,7 +66,9 @@ describe('TrendsView', () => {
   })
 
   test('calories: a bar per logged day of the last 4 weeks, with figures', async () => {
+    const user = userEvent.setup()
     renderTrends()
+    await user.click(await screen.findByRole('radio', { name: '4 wks' }))
 
     const chart = await screen.findByRole('region', { name: 'Calories chart' })
     expect(within(chart).getAllByTestId('trend-bar')).toHaveLength(2)
@@ -79,11 +81,28 @@ describe('TrendsView', () => {
   })
 
   test('the table behind the chart lists every bar for VoiceOver', async () => {
+    const user = userEvent.setup()
     renderTrends()
+    await user.click(await screen.findByRole('radio', { name: '4 wks' }))
 
     const table = await screen.findByRole('table')
     expect(within(table).getAllByRole('row')).toHaveLength(2)
     expect(table).toHaveTextContent('2,200 kcal')
+  })
+
+  test('it opens on the current calendar week, Monday to Sunday', async () => {
+    vi.mocked(fetchNutritionDays).mockResolvedValue([
+      day('2026-10-02', 2400),
+      day('2026-10-06', 1900),
+    ])
+    renderTrends()
+
+    const chart = await screen.findByRole('region', { name: 'Calories chart' })
+    expect(screen.getByRole('radio', { name: 'Week' })).toBeChecked()
+    // this week and last week, in one request
+    expect(fetchNutritionDays).toHaveBeenCalledWith('u1', '2026-09-28', '2026-10-11')
+    expect(within(chart).getAllByTestId('trend-bar')).toHaveLength(1)
+    expect(screen.getByTestId('trend-stats')).toHaveTextContent('vs. previous−500 kcalweek')
   })
 
   test('a longer range asks for more days', async () => {
@@ -91,7 +110,7 @@ describe('TrendsView', () => {
     renderTrends()
     await screen.findByRole('region', { name: 'Calories chart' })
 
-    await user.click(screen.getByRole('radio', { name: '3 months' }))
+    await user.click(screen.getByRole('radio', { name: '3 mo' }))
 
     await waitFor(() =>
       expect(fetchNutritionDays).toHaveBeenLastCalledWith('u1', '2026-04-10', TODAY),
@@ -101,6 +120,7 @@ describe('TrendsView', () => {
   test('weight: the line, current weight, change and the distance to the goal', async () => {
     const user = userEvent.setup()
     renderTrends()
+    await user.click(await screen.findByRole('radio', { name: '4 wks' }))
 
     await user.click(await screen.findByRole('button', { name: 'Weight' }))
 

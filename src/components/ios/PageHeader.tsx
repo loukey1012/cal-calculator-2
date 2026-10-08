@@ -7,10 +7,12 @@ type PageHeaderProps = {
   readonly action?: ReactNode
   /** navigation bar control on the left, e.g. a back button */
   readonly leading?: ReactNode
+  /** beside the large title, e.g. Today's weight; costs no extra height */
+  readonly titleAccessory?: ReactNode
 }
 
 /** Large page title with optional bar buttons above it. */
-export function PageHeader({ title, subtitle, action, leading }: PageHeaderProps) {
+export function PageHeader({ title, subtitle, action, leading, titleAccessory }: PageHeaderProps) {
   const hasBar = Boolean(leading || action)
   return (
     // iOS draws a fade below the translucent status bar (and offers web apps no way to turn
@@ -25,9 +27,12 @@ export function PageHeader({ title, subtitle, action, leading }: PageHeaderProps
         </div>
       )}
       {subtitle && <p className="caption">{subtitle}</p>}
-      <h1 className="font-display text-[32px] leading-tight font-extrabold tracking-tight">
-        {title}
-      </h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="font-display text-[32px] leading-tight font-extrabold tracking-tight">
+          {title}
+        </h1>
+        {titleAccessory}
+      </div>
     </header>
   )
 }

@@ -6,6 +6,11 @@ import { CurrentUserContext } from '../../app/currentUser'
 import { renderWithProviders } from '../../test/render'
 import { dayMeal } from '../meals/testData'
 
+vi.mock('../weight/weightApi', () => ({
+  fetchWeights: vi.fn().mockResolvedValue([]),
+  saveWeight: vi.fn(),
+  deleteWeight: vi.fn(),
+}))
 vi.mock('../meals/mealsApi', () => ({
   fetchDay: vi.fn(),
   addMealItem: vi.fn(),

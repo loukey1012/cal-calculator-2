@@ -30,6 +30,7 @@ Built for a two-person household: both members log their own meals, can see and 
 ### Today
 
 - One **Breakfast, Lunch, Dinner and Snacks** per person and day, with **day total** and per-meal totals. Unknown nutrients show as "–" instead of a misleading 0.
+- **Weight** next to the "Today" title (it costs no height): your current weight; tap to enter today's. On your partner's day it shows their weight.
 - Tapping an **empty meal opens Cook** already set to that person, day and meal.
 - In a meal, a food logged alone shows as a **plain row**: tap to change its amount, swipe to delete. Anything else is **one block** (its name, or "Pasta, Pesto +2"; "Shared" when you both ate it) with your share, opening to its ingredients and **Edit dish** (who eats, amounts, split, name, leftovers). Sharing a meal afterwards is simply adding your partner there.
 - Either of you can change or delete a dish; all portions follow. Deleting a dish that has other portions **asks first**. If both of you changed it at the same time, the later save is refused instead of overwriting the other.
@@ -51,7 +52,7 @@ Built for a two-person household: both members log their own meals, can see and 
 - **Tap any past day** to show its rings, totals and meals **right beneath the calendar**, and **edit it like today**. A forgotten dinner: tap the empty Dinner, which opens Cook for that day and comes back here after saving. Tap another day to switch, or the same day again to close it. The selected day is kept in the address (`/history/YYYY-MM-DD`), so reopening the app keeps it. Also for your partner's days.
 - Under the day's meals, its **weight**: the latest entry up to that day ("72.4 kg, since Mon, Oct 5"). Tap it to set that day's weight (also for past days) or delete the day's entry. Your partner's weight is shown, but only you change yours.
 - **Calendar | Trends** at the top switches to the trends:
-  - **Range:** 4 weeks, 3 months, 6 months or 1 year. **Chips** for what has a goal: Calories always, each nutrient with a target (protein, carbs, fat, fiber), and **Weight** once there is a target weight or an entry.
+  - **Range:** **Week** (the current calendar week, Monday to Sunday, with weekday labels and compared with last week; the default), 4 weeks, 3 months, 6 months or 1 year. **Chips** for what has a goal: Calories always, each nutrient with a target (protein, carbs, fat, fiber), and **Weight** once there is a target weight or an entry.
   - **Calories and nutrients:** one bar per logged day (per week, as the average of its logged days, for 6 months and 1 year) in the ring color, the goal as a dashed line that follows the goal history, unlogged days left out. Tap a bar for its value; days with estimated calories are lighter and read "~". Below: Ø per logged day, days within the goal (calories) or reaching it (nutrients), and the change against the range before.
   - **Weight:** a line through the entries (the weight from before the range starts it, hollow), the **target weight** as a dashed line, and Current, Change over the range and **To goal** (to lose or gain, or Reached). **Add weight** for any day up to today, and the latest entries to change or delete.
   - The charts are drawn by the app itself (no chart library), with a hidden table of the values for VoiceOver.

@@ -165,3 +165,13 @@ export function KeypadIcon(props: SVGProps<SVGSVGElement>) {
     </Icon>
   )
 }
+
+export function ScaleIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon {...props}>
+      <rect x="3.5" y="3.5" width="17" height="17" rx="4.5" />
+      <path d="M8 9.5a5.5 5.5 0 0 1 8 0" />
+      <path d="M12 9.2l1.4-1.9" />
+    </Icon>
+  )
+}

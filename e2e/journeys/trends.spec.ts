@@ -40,6 +40,7 @@ test('weight entered for today and an earlier day; Trends show calories and weig
     .click()
   const history = activePage(page)
   await history.getByRole('radio', { name: 'Trends' }).click()
+  await history.getByRole('radio', { name: '4 wks' }).click()
 
   // only what has a goal: calories, protein, and weight (it has a target)
   const chips = history.getByRole('group', { name: 'Show' }).getByRole('button')

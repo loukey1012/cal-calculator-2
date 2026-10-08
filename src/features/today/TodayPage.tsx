@@ -4,6 +4,7 @@ import { PageHeader } from '../../components/ios/PageHeader'
 import { fromLocalDateString } from '../../lib/dates'
 import { usePeople } from '../household/hooks'
 import { PersonSwitch } from '../household/PersonSwitch'
+import { WeightButton } from '../weight/WeightButton'
 import { DayView } from './DayView'
 import { useToday } from './useToday'
 
@@ -21,7 +22,18 @@ export function TodayPage() {
 
   return (
     <>
-      <PageHeader title="Today" subtitle={dateLabel} />
+      <PageHeader
+        title="Today"
+        subtitle={dateLabel}
+        titleAccessory={
+          <WeightButton
+            key={person.id}
+            userId={person.id}
+            today={today}
+            isOwn={person.id === profile.id}
+          />
+        }
+      />
       <PersonSwitch people={people} selectedId={person.id} onChange={setSelectedId} />
       <DayView key={person.id} person={person} isOwnDay={person.id === profile.id} date={today} />
     </>

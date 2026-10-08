@@ -35,6 +35,19 @@ describe('ranges', () => {
     })
     expect(addDays('2026-03-28', 2)).toBe('2026-03-30')
   })
+
+  test('the week is the current calendar week, Monday to Sunday, compared with last week', () => {
+    // Thursday, October 8
+    expect(rangeBounds('week', '2026-10-08')).toEqual({
+      first: '2026-10-05',
+      last: '2026-10-11',
+      previousFirst: '2026-09-28',
+      previousLast: '2026-10-04',
+    })
+    // a Sunday still belongs to its week, a Monday starts a new one
+    expect(rangeBounds('week', '2026-10-11').first).toBe('2026-10-05')
+    expect(rangeBounds('week', '2026-10-12').first).toBe('2026-10-12')
+  })
 })
 
 describe('availableMetrics', () => {

@@ -3,6 +3,11 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { renderWithProviders } from './test/render'
 
+vi.mock('./features/weight/weightApi', () => ({
+  fetchWeights: vi.fn().mockResolvedValue([]),
+  saveWeight: vi.fn(),
+  deleteWeight: vi.fn(),
+}))
 vi.mock('./features/auth/authContext', () => ({ useAuth: vi.fn() }))
 vi.mock('./features/auth/authApi', () => ({ signIn: vi.fn(), signUp: vi.fn(), signOut: vi.fn() }))
 vi.mock('./features/dishes/dishesApi', () => ({

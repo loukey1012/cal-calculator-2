@@ -20,6 +20,11 @@ vi.mock('../meals/mealsApi', () => ({
   deleteMealItem: vi.fn(),
 }))
 vi.mock('../goals/goalsApi', () => ({ fetchGoals: vi.fn(), saveGoal: vi.fn() }))
+vi.mock('../weight/weightApi', () => ({
+  fetchWeights: vi.fn(),
+  saveWeight: vi.fn(),
+  deleteWeight: vi.fn(),
+}))
 vi.mock('../household/householdApi', () => ({ fetchMembers: vi.fn() }))
 vi.mock('../ingredients/ingredientsApi', () => ({
   fetchIngredients: vi.fn().mockResolvedValue([]),
@@ -29,6 +34,7 @@ vi.mock('../ingredients/ingredientsApi', () => ({
 import { fetchGoals } from '../goals/goalsApi'
 import { fetchMembers } from '../household/householdApi'
 import { fetchDay, updateMealItem } from '../meals/mealsApi'
+import { fetchWeights, saveWeight } from '../weight/weightApi'
 import { TodayPage } from './TodayPage'
 
 const PROFILE = {
@@ -94,6 +100,8 @@ beforeEach(() => {
   vi.mocked(fetchDay).mockResolvedValue([LUNCH])
   vi.mocked(fetchGoals).mockResolvedValue([GOAL])
   vi.mocked(fetchMembers).mockResolvedValue([PROFILE])
+  vi.mocked(fetchWeights).mockResolvedValue([{ date: '2026-09-28', weightKg: 72.4 }])
+  vi.mocked(saveWeight).mockResolvedValue()
 })
 
 afterEach(() => {
@@ -169,6 +177,28 @@ describe('TodayPage', () => {
     expect(within(sheet).getByRole('button', { name: /Pizza out/ })).toHaveTextContent(
       /Estimate · 1 ingredient.*~900 kcal/,
     )
+  })
+
+  test('the current weight sits next to the title; tapping it enters today’s', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    renderPage()
+
+    const weight = await screen.findByRole('button', { name: 'Weight 72.4 kg' })
+    await user.click(weight)
+    const sheet = within(screen.getByRole('dialog', { name: 'Weight' }))
+    expect(sheet.getByLabelText('Day')).toHaveValue('2026-10-01')
+    await user.clear(sheet.getByLabelText('Weight'))
+    await user.type(sheet.getByLabelText('Weight'), '72,1')
+    await user.click(sheet.getByRole('button', { name: 'Save' }))
+
+    expect(saveWeight).toHaveBeenCalledWith('u1', { date: '2026-10-01', weightKg: 72.1 })
+  })
+
+  test('without any weight yet the button offers to add one', async () => {
+    vi.mocked(fetchWeights).mockResolvedValue([])
+    renderPage()
+
+    expect(await screen.findByRole('button', { name: 'Add weight' })).toBeInTheDocument()
   })
 
   test('shows that the day is still loading instead of an empty day', () => {

@@ -56,6 +56,7 @@ export function formatSigned(metric: TrendMetric, value: number): string {
 }
 
 export const RANGE_NAMES: Readonly<Record<TrendRange, string>> = {
+  week: 'week',
   '4w': '4 weeks',
   '3m': '3 months',
   '6m': '6 months',

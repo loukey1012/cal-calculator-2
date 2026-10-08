@@ -7,15 +7,9 @@ import { toUserMessage } from '../../lib/errors'
 import { useLatestWeightChangeError, useWeights } from '../weight/hooks'
 import { formatKg } from '../weight/weight'
 import { WeightSheet } from '../weight/WeightSheet'
+import { AxisLabels } from './AxisLabels'
 import { StatTiles, type StatTile } from './StatTiles'
-import {
-  formatShortDay,
-  formatSigned,
-  formatSpan,
-  formatTick,
-  METRIC_COLORS,
-  RANGE_NAMES,
-} from './trendFormat'
+import { formatSigned, formatSpan, formatTick, METRIC_COLORS, RANGE_NAMES } from './trendFormat'
 import {
   weightPoints,
   weightSummary,
@@ -34,6 +28,8 @@ type WeightTrendProps = {
   readonly isOwn: boolean
   readonly range: TrendRange
   readonly bounds: RangeBounds
+  /** the week's range runs past today; weights are entered up to today */
+  readonly today: string
   readonly goalKg: number | null
 }
 
@@ -63,7 +59,7 @@ function tiles(summary: ReturnType<typeof weightSummary>, range: TrendRange): St
 }
 
 /** Weight over the range with the target, its figures, and the entries to change. */
-export function WeightTrend({ userId, isOwn, range, bounds, goalKg }: WeightTrendProps) {
+export function WeightTrend({ userId, isOwn, range, bounds, today, goalKg }: WeightTrendProps) {
   const weights = useWeights(userId)
   const changeError = useLatestWeightChangeError(userId)
   const [selected, setSelected] = useState<number | null>(null)
@@ -104,10 +100,7 @@ export function WeightTrend({ userId, isOwn, range, bounds, goalKg }: WeightTren
             onSelect={(index) => setSelected((current) => (current === index ? null : index))}
           />
         )}
-        <div className="mt-1 flex justify-between pl-9 text-[11px] font-semibold text-label-secondary">
-          <span>{formatShortDay(bounds.first)}</span>
-          <span>{formatShortDay(bounds.last)}</span>
-        </div>
+        <AxisLabels range={range} bounds={bounds} align="points" />
         <table className="sr-only">
           <caption>Weight</caption>
           <tbody>
@@ -126,13 +119,13 @@ export function WeightTrend({ userId, isOwn, range, bounds, goalKg }: WeightTren
           </tbody>
         </table>
       </section>
-      <StatTiles tiles={tiles(weightSummary(entries, bounds.first, bounds.last, goalKg), range)} />
+      <StatTiles tiles={tiles(weightSummary(entries, bounds.first, today, goalKg), range)} />
       {changeError && (
         <ErrorBanner message={`Couldn’t save your weight. ${toUserMessage(changeError)}`} />
       )}
       {isOwn && (
         <div className="mt-4">
-          <Button onClick={() => setEditing(bounds.last)}>Add weight</Button>
+          <Button onClick={() => setEditing(today)}>Add weight</Button>
         </div>
       )}
       {newestFirst.length > 0 && (
@@ -152,7 +145,7 @@ export function WeightTrend({ userId, isOwn, range, bounds, goalKg }: WeightTren
           userId={userId}
           entries={entries}
           date={editing}
-          today={bounds.last}
+          today={today}
           onClose={() => setEditing(null)}
         />
       )}

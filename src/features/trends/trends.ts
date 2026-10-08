@@ -5,9 +5,10 @@ import { weightOn, type WeightEntry } from '../weight/weight'
 
 /** What the Trends view charts: one metric over one range at a time. */
 
-export const TREND_RANGES = ['4w', '3m', '6m', '1y'] as const
+/** 'week' is the current calendar week (Monday to Sunday); the others end today. */
+export const TREND_RANGES = ['week', '4w', '3m', '6m', '1y'] as const
 export type TrendRange = (typeof TREND_RANGES)[number]
-const RANGE_DAYS: Readonly<Record<TrendRange, number>> = {
+const RANGE_DAYS: Readonly<Record<Exclude<TrendRange, 'week'>, number>> = {
   '4w': 28,
   '3m': 91,
   '6m': 182,
@@ -55,6 +56,16 @@ export type RangeBounds = {
 }
 
 export function rangeBounds(range: TrendRange, today: string): RangeBounds {
+  if (range === 'week') {
+    const monday = mondayOf(today)
+    return {
+      first: monday,
+      // the days still to come stay empty
+      last: addDays(monday, DAYS_PER_WEEK - 1),
+      previousFirst: addDays(monday, -DAYS_PER_WEEK),
+      previousLast: addDays(monday, -1),
+    }
+  }
   const length = RANGE_DAYS[range]
   const first = addDays(today, 1 - length)
   return {

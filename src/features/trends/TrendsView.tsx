@@ -7,7 +7,7 @@ import { FilterChip } from '../ingredients/FilterChip'
 import { goalForDate } from '../nutrition/goals'
 import { useWeights } from '../weight/hooks'
 import { NutritionTrend } from './NutritionTrend'
-import { METRIC_LABELS, RANGE_NAMES } from './trendFormat'
+import { METRIC_LABELS } from './trendFormat'
 import {
   availableMetrics,
   rangeBounds,
@@ -17,9 +17,18 @@ import {
 } from './trends'
 import { WeightTrend } from './WeightTrend'
 
+// short, so all five fit one line on an iPhone
+const SEGMENT_LABELS: Readonly<Record<TrendRange, string>> = {
+  week: 'Week',
+  '4w': '4 wks',
+  '3m': '3 mo',
+  '6m': '6 mo',
+  '1y': 'Year',
+}
+
 const RANGE_OPTIONS = TREND_RANGES.map((value) => ({
   value,
-  label: value === '1y' ? '1 year' : RANGE_NAMES[value],
+  label: SEGMENT_LABELS[value],
 }))
 
 type TrendsViewProps = {
@@ -32,7 +41,8 @@ type TrendsViewProps = {
 export function TrendsView({ userId, isOwn, today }: TrendsViewProps) {
   const goals = useGoals(userId)
   const weights = useWeights(userId)
-  const [range, setRange] = useState<TrendRange>('4w')
+  // the current calendar week first: what most days are about
+  const [range, setRange] = useState<TrendRange>('week')
   const [chosen, setChosen] = useState<TrendMetric>('kcal')
   if (goals.isError) return <ErrorBanner message={toUserMessage(goals.error)} />
 
@@ -70,6 +80,7 @@ export function TrendsView({ userId, isOwn, today }: TrendsViewProps) {
           isOwn={isOwn}
           range={range}
           bounds={bounds}
+          today={today}
           goalKg={currentGoal?.weightGoalKg ?? null}
         />
       ) : (

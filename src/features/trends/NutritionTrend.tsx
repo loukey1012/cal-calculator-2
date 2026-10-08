@@ -4,10 +4,10 @@ import { toUserMessage } from '../../lib/errors'
 import type { Goal } from '../nutrition/goals'
 import { BarTrendChart } from './BarTrendChart'
 import { useNutritionDays } from './hooks'
+import { AxisLabels } from './AxisLabels'
 import { StatTiles, type StatTile } from './StatTiles'
 import {
   formatMetric,
-  formatShortDay,
   formatSigned,
   formatSpan,
   formatTick,
@@ -105,10 +105,7 @@ export function NutritionTrend({ userId, metric, range, bounds, goals }: Nutriti
             onSelect={(index) => setSelected((current) => (current === index ? null : index))}
           />
         )}
-        <div className="mt-1 flex justify-between pl-9 text-[11px] font-semibold text-label-secondary">
-          <span>{formatShortDay(bounds.first)}</span>
-          <span>{formatShortDay(bounds.last)}</span>
-        </div>
+        <AxisLabels range={range} bounds={bounds} align="slots" />
         <table className="sr-only">
           <caption>
             {label} per {range === '6m' || range === '1y' ? 'week' : 'day'}
