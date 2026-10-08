@@ -47,7 +47,7 @@ export function NewIngredientForm({
   return (
     <>
       <h3 className="mb-2 text-[20px] font-semibold">New ingredient</h3>
-      {prefill && <PrefillNote text={prefill.note} />}
+      {prefill && <PrefillNote text={prefill.note} warnings={prefill.warnings} />}
       <IngredientForm
         formId={FORM_ID}
         initialValues={prefill?.values ?? typed}

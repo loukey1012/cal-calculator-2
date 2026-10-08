@@ -48,11 +48,14 @@ test('scan a package: a photo is read, filled in from Open Food Facts, saved; fo
     .poll(async () => {
       const { data } = await backend.admin
         .from('ingredients')
-        .select('name, barcode, kcal_100, unit_weight_g')
+        .select('name, barcode, kcal_100, kcal_unit, unit_weight_g')
         .eq('household_id', household)
       return data
     })
-    .toEqual([{ name: 'Nutella', barcode: NUTELLA, kcal_100: 539, unit_weight_g: 15 }])
+    .toEqual([
+      // per portion worked out from per 100 g: 539 × 0.15
+      { name: 'Nutella', barcode: NUTELLA, kcal_100: 539, kcal_unit: 81, unit_weight_g: 15 },
+    ])
 
   // typing the number finds the saved package
   await ingredients.getByRole('button', { name: 'Scan barcode' }).click()

@@ -1,23 +1,6 @@
 import { afterEach, describe, expect, test, vi } from 'vitest'
-import { EMPTY_INGREDIENT_FORM } from '../ingredients/ingredientForm'
-import { lookupProduct, productFormValues, type OffProduct } from './openFoodFacts'
-
-const NUTELLA: OffProduct = {
-  product_name: 'Nutella',
-  product_name_de: 'Nutella',
-  brands: 'Nutella, Ferrero',
-  serving_quantity: 15,
-  nutriments: {
-    'energy-kcal_100g': 539,
-    proteins_100g: 6.3,
-    carbohydrates_100g: 57.5,
-    sugars_100g: 56.3,
-    fat_100g: 30.9,
-    'saturated-fat_100g': 10.6,
-    fiber_100g: 0,
-    salt_100g: 0.107,
-  },
-}
+import { EMPTY_INGREDIENT_FORM, type IngredientFormValues } from '../ingredients/ingredientForm'
+import { lookupProduct, productFormValues, productPrefill, type OffProduct } from './openFoodFacts'
 
 function respond(status: number, body: unknown) {
   return vi.fn().mockResolvedValue(new Response(JSON.stringify(body), { status }))
@@ -25,37 +8,143 @@ function respond(status: number, body: unknown) {
 
 afterEach(() => vi.unstubAllGlobals())
 
+const COLA_BOTTLES: OffProduct = {
+  product_name: 'Cola Bottles',
+  product_name_de: 'Low Sugar Gummies Cola Bottles',
+  brands: 'ahead',
+  serving_quantity: 50,
+  serving_quantity_unit: 'g',
+  product_quantity: 50,
+  nutriments: {
+    'energy-kcal_100g': 142,
+    'energy-kcal_serving': 71,
+    proteins_100g: 5.6,
+    proteins_serving: 2.8,
+    carbohydrates_100g: 6.2,
+    carbohydrates_serving: 3.1,
+    sugars_100g: 1.3,
+    sugars_serving: 0.65,
+    fat_100g: 0.5,
+    fat_serving: 0.25,
+    'saturated-fat_100g': 0.1,
+    'saturated-fat_serving': 0.05,
+    fiber_100g: 47.3,
+    fiber_serving: 23.6,
+    salt_100g: 0.2,
+    salt_serving: 0.1,
+  },
+}
+
+const basis = (values: Partial<IngredientFormValues['per100g']>) => ({
+  ...EMPTY_INGREDIENT_FORM.per100g,
+  ...values,
+})
+
 describe('productFormValues', () => {
-  test('fills name, brand and the values per 100 g; a serving becomes the unit', () => {
-    expect(productFormValues(NUTELLA, '3017620422003')).toEqual({
-      ...EMPTY_INGREDIENT_FORM,
-      name: 'Nutella',
-      brand: 'Nutella',
-      barcode: '3017620422003',
-      per100gEnabled: true,
-      per100g: {
-        kcal: '539',
-        protein: '6.3',
-        carbs: '57.5',
-        sugar: '56.3',
-        fat: '30.9',
-        sat_fat: '10.6',
-        fiber: '0',
-        salt: '0.11',
+  test('fills name, brand, barcode, the values per 100 g and per portion as on the package', () => {
+    expect(productPrefill(COLA_BOTTLES, '4260562940909')).toEqual({
+      values: {
+        ...EMPTY_INGREDIENT_FORM,
+        name: 'Low Sugar Gummies Cola Bottles',
+        brand: 'ahead',
+        barcode: '4260562940909',
+        per100gEnabled: true,
+        per100g: {
+          kcal: '142',
+          protein: '5.6',
+          carbs: '6.2',
+          sugar: '1.3',
+          fat: '0.5',
+          sat_fat: '0.1',
+          fiber: '47.3',
+          salt: '0.2',
+        },
+        perUnitEnabled: true,
+        perUnit: {
+          kcal: '71',
+          protein: '2.8',
+          carbs: '3.1',
+          sugar: '0.65',
+          fat: '0.25',
+          sat_fat: '0.05',
+          fiber: '23.6',
+          salt: '0.1',
+        },
+        unitLabel: 'Portion',
+        unitWeightG: '50',
       },
-      unitLabel: 'Portion',
-      unitWeightG: '15',
+      warnings: [],
     })
   })
 
-  test('unknown values stay empty instead of a false 0; kJ give the calories if needed', () => {
+  test('per-portion values missing: worked out from per 100 g and the portion weight', () => {
     const values = productFormValues(
-      { product_name: 'Bread', nutriments: { 'energy-kj_100g': 1046 } },
+      { serving_quantity: 40, nutriments: { 'energy-kcal_100g': 200, proteins_100g: 10 } },
+      '96385074',
+    )
+
+    expect(values).toMatchObject({ perUnitEnabled: true, unitLabel: 'Portion', unitWeightG: '40' })
+    expect(values.perUnit).toEqual(basis({ kcal: '80', protein: '4' }))
+  })
+
+  test('per-100 g values missing: worked out from the portion and its weight', () => {
+    const values = productFormValues(
+      {
+        serving_quantity: 40,
+        nutriments: { 'energy-kcal_serving': 80, proteins_serving: 4, proteins_100g: 9.5 },
+      },
+      '96385074',
+    )
+
+    // what the package states wins over what is worked out
+    expect(values.per100g).toEqual(basis({ kcal: '200', protein: '9.5' }))
+    expect(values.perUnit).toEqual(basis({ kcal: '80', protein: '4' }))
+    expect(values.per100gEnabled).toBe(true)
+  })
+
+  test('per-portion values without a portion weight: per portion only, per 100 g stays empty', () => {
+    const values = productFormValues(
+      { nutriments: { 'energy-kcal_serving': 80, proteins_serving: 4 } },
+      '96385074',
+    )
+
+    expect(values).toMatchObject({
+      per100gEnabled: false,
+      perUnitEnabled: true,
+      unitLabel: 'Portion',
+      unitWeightG: '',
+    })
+    expect(values.per100g).toEqual(basis({}))
+    expect(values.perUnit).toEqual(basis({ kcal: '80', protein: '4' }))
+  })
+
+  test('no portion at all: per portion stays empty and off', () => {
+    const values = productFormValues(
+      { nutriments: { 'energy-kj_100g': 1046, proteins_100g: null } },
       '96385074',
     )
 
     expect(values.per100g).toMatchObject({ kcal: '250', protein: '', salt: '' })
-    expect(values).toMatchObject({ brand: '', unitLabel: '', unitWeightG: '' })
+    expect(values).toMatchObject({
+      perUnitEnabled: false,
+      perUnit: basis({}),
+      brand: '',
+      unitLabel: '',
+      unitWeightG: '',
+    })
+  })
+
+  test('a portion in another unit than grams is not used as a weight', () => {
+    const values = productFormValues(
+      {
+        serving_quantity: 2,
+        serving_quantity_unit: 'tbsp',
+        nutriments: { 'energy-kcal_100g': 200 },
+      },
+      '96385074',
+    )
+
+    expect(values).toMatchObject({ perUnitEnabled: false, unitWeightG: '' })
   })
 
   test('empty or null values from Open Food Facts are unknown, not 0', () => {
@@ -70,7 +159,7 @@ describe('productFormValues', () => {
     expect(values.per100g).toMatchObject({ kcal: '45', protein: '' })
   })
 
-  test('the German name is preferred; without any calories the section stays off', () => {
+  test('the German name is preferred; without any calories the sections stay off', () => {
     const values = productFormValues(
       { product_name: 'Oat drink', product_name_de: 'Haferdrink', nutriments: {} },
       '96385074',
@@ -90,14 +179,111 @@ describe('productFormValues', () => {
   })
 })
 
+describe('warnings about odd product data', () => {
+  const warningsOf = (product: OffProduct) => productPrefill(product, '96385074').warnings
+
+  test('a product that looks right has none', () => {
+    expect(warningsOf(COLA_BOTTLES)).toEqual([])
+  })
+
+  test('a portion bigger than the whole pack', () => {
+    expect(warningsOf({ ...COLA_BOTTLES, serving_quantity: 100 })).toContainEqual(
+      expect.stringMatching(/portion \(100 g\) is bigger than the pack \(50 g\)/),
+    )
+  })
+
+  test('the pack size given only as text counts too', () => {
+    const product = {
+      ...COLA_BOTTLES,
+      product_quantity: undefined,
+      quantity: '50 g',
+      serving_quantity: 100,
+    }
+
+    expect(warningsOf(product)).toContainEqual(
+      expect.stringMatching(/bigger than the pack \(50 g\)/),
+    )
+    expect(warningsOf({ ...product, quantity: '6 x 50 g' })).not.toContainEqual(
+      expect.stringMatching(/bigger than the pack/),
+    )
+  })
+
+  test('per-portion values that don’t fit the per-100 g values and the portion weight', () => {
+    const product = {
+      ...COLA_BOTTLES,
+      nutriments: { ...COLA_BOTTLES.nutriments, 'energy-kcal_serving': 100 },
+    }
+
+    expect(warningsOf(product)).toContainEqual(expect.stringMatching(/don’t match/))
+  })
+
+  test('calories that don’t fit protein, carbs, fat and fiber', () => {
+    const product = {
+      ...COLA_BOTTLES,
+      nutriments: {
+        ...COLA_BOTTLES.nutriments,
+        'energy-kcal_100g': 500,
+        'energy-kcal_serving': 250,
+      },
+    }
+
+    expect(warningsOf(product)).toContainEqual(expect.stringMatching(/Calories don’t fit/))
+  })
+
+  test('more than 100 g of nutrients in 100 g, and impossible calories', () => {
+    expect(
+      warningsOf({
+        nutriments: { 'energy-kcal_100g': 950, proteins_100g: 60, carbohydrates_100g: 70 },
+      }),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.stringMatching(/more than 100 g/),
+        expect.stringMatching(/more than 900 kcal/i),
+      ]),
+    )
+  })
+
+  test('sugar above carbs, saturated fat above fat', () => {
+    expect(
+      warningsOf({
+        nutriments: {
+          'energy-kcal_100g': 100,
+          carbohydrates_100g: 5,
+          sugars_100g: 8,
+          fat_100g: 1,
+          'saturated-fat_100g': 2,
+        },
+      }),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.stringMatching(/sugar than carbs/),
+        expect.stringMatching(/saturated fat than fat/),
+      ]),
+    )
+  })
+
+  test('no calories, or per-portion values without a portion weight', () => {
+    expect(warningsOf({ product_name: 'Tea', nutriments: {} })).toContainEqual(
+      expect.stringMatching(/No calories/),
+    )
+    expect(warningsOf({ nutriments: { 'energy-kcal_serving': 80 } })).toContainEqual(
+      expect.stringMatching(/no portion weight/),
+    )
+  })
+})
+
 describe('lookupProduct', () => {
   test('a found product comes back as form values', async () => {
-    const fetch = respond(200, { status: 1, product: NUTELLA })
+    const fetch = respond(200, { status: 1, product: COLA_BOTTLES })
     vi.stubGlobal('fetch', fetch)
 
     const result = await lookupProduct('3017620422003')
 
-    expect(result).toMatchObject({ kind: 'found', values: { name: 'Nutella' } })
+    expect(result).toMatchObject({
+      kind: 'found',
+      values: { name: 'Low Sugar Gummies Cola Bottles' },
+      warnings: [],
+    })
     expect(String(fetch.mock.calls[0]?.[0])).toMatch(
       /^https:\/\/world\.openfoodfacts\.org\/api\/v2\/product\/3017620422003\?fields=/,
     )

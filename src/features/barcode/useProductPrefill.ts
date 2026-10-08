@@ -4,7 +4,12 @@ import { lookupProduct, type ProductLookup } from './openFoodFacts'
 
 export type ProductPrefill =
   | { readonly status: 'loading' }
-  | { readonly status: 'ready'; readonly values: IngredientFormValues; readonly note: string }
+  | {
+      readonly status: 'ready'
+      readonly values: IngredientFormValues
+      readonly note: string
+      readonly warnings: readonly string[]
+    }
 
 const NOTES: Readonly<Record<ProductLookup['kind'], string>> = {
   found: 'Filled in from Open Food Facts. Check the values against the package before saving.',
@@ -38,5 +43,6 @@ export function useProductPrefill(
     result.kind === 'found'
       ? { ...result.values, name: result.values.name || fallback.name }
       : { ...fallback, barcode }
-  return { status: 'ready', values, note: NOTES[result.kind] }
+  const warnings = result.kind === 'found' ? result.warnings : []
+  return { status: 'ready', values, note: NOTES[result.kind], warnings }
 }

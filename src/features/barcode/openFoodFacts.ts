@@ -1,7 +1,13 @@
 import { z } from 'zod'
 import { roundTo } from '../../lib/numbers'
 import { EMPTY_INGREDIENT_FORM, type IngredientFormValues } from '../ingredients/ingredientForm'
-import type { NutrientKey } from '../nutrition/types'
+import {
+  NUTRITION_FIELDS,
+  nutritionWarnings,
+  resolveNutrition,
+  type NutritionBasis,
+  type NutritionField,
+} from './productNutrition'
 
 /**
  * Product data from Open Food Facts (free, open, no account), used to fill in a new ingredient.
@@ -9,7 +15,8 @@ import type { NutrientKey } from '../nutrition/types'
  */
 
 const API = 'https://world.openfoodfacts.org/api/v2/product'
-const FIELDS = 'product_name,product_name_de,brands,serving_quantity,nutriments'
+const FIELDS =
+  'product_name,product_name_de,brands,serving_quantity,serving_quantity_unit,product_quantity,product_quantity_unit,quantity,nutriments'
 const TIMEOUT_MS = 6000
 const KJ_PER_KCAL = 4.184
 const NUTRIENT_DECIMALS = 2
@@ -18,15 +25,19 @@ const MAX_NAME = 100
 const MAX_BRAND = 60
 const SERVING_LABEL = 'Portion'
 
-const OFF_NUTRIENTS: Readonly<Record<NutrientKey, string>> = {
-  protein: 'proteins_100g',
-  carbs: 'carbohydrates_100g',
-  sugar: 'sugars_100g',
-  fat: 'fat_100g',
-  sat_fat: 'saturated-fat_100g',
-  fiber: 'fiber_100g',
-  salt: 'salt_100g',
+// Open Food Facts names, without the _100g / _serving ending
+const OFF_NAMES: Readonly<Record<Exclude<NutritionField, 'kcal'>, string>> = {
+  protein: 'proteins',
+  carbs: 'carbohydrates',
+  sugar: 'sugars',
+  fat: 'fat',
+  sat_fat: 'saturated-fat',
+  fiber: 'fiber',
+  salt: 'salt',
 }
+const GRAM_UNITS = new Set(['g', 'gr', 'gram', 'grams'])
+// a printed pack size in grams, e.g. "50g", "50 gram", "1,5 g" (not "6 x 50 g")
+const PRINTED_GRAMS = /^\s*(\d+(?:[.,]\d+)?)\s*(g|gr|gram|grams)\s*$/i
 
 // numbers sometimes arrive as text; null and empty text mean unknown, not 0
 const amount = z
@@ -42,6 +53,11 @@ const productSchema = z.object({
   product_name_de: z.string().optional(),
   brands: z.string().optional(),
   serving_quantity: amount,
+  serving_quantity_unit: z.string().optional().catch(undefined),
+  product_quantity: amount,
+  product_quantity_unit: z.string().optional().catch(undefined),
+  /** the pack size as printed, e.g. "50 g" */
+  quantity: z.string().optional().catch(undefined),
   nutriments: z.record(z.string(), z.unknown()).optional(),
 })
 
@@ -50,7 +66,12 @@ export type OffProduct = z.input<typeof productSchema>
 const responseSchema = z.object({ status: z.number(), product: productSchema.optional() })
 
 export type ProductLookup =
-  | { readonly kind: 'found'; readonly values: IngredientFormValues }
+  | {
+      readonly kind: 'found'
+      readonly values: IngredientFormValues
+      /** things to check against the package; empty when the data looks right */
+      readonly warnings: readonly string[]
+    }
   | { readonly kind: 'notFound' }
   /** offline, too slow, or an answer that can't be used */
   | { readonly kind: 'unavailable' }
@@ -60,51 +81,112 @@ function nutrient(nutriments: Record<string, unknown>, key: string): number | nu
   return parsed === undefined ? null : parsed
 }
 
-function kcalPer100g(nutriments: Record<string, unknown>): number | null {
-  const kcal = nutrient(nutriments, 'energy-kcal_100g')
+type Suffix = '_100g' | '_serving'
+
+function kcalOf(nutriments: Record<string, unknown>, suffix: Suffix): number | null {
+  const kcal = nutrient(nutriments, `energy-kcal${suffix}`)
   if (kcal !== null) return kcal
-  const kj = nutrient(nutriments, 'energy-kj_100g')
+  const kj = nutrient(nutriments, `energy-kj${suffix}`)
   return kj === null ? null : kj / KJ_PER_KCAL
+}
+
+function basisOf(nutriments: Record<string, unknown>, suffix: Suffix): NutritionBasis {
+  return {
+    kcal: kcalOf(nutriments, suffix),
+    protein: nutrient(nutriments, `${OFF_NAMES.protein}${suffix}`),
+    carbs: nutrient(nutriments, `${OFF_NAMES.carbs}${suffix}`),
+    sugar: nutrient(nutriments, `${OFF_NAMES.sugar}${suffix}`),
+    fat: nutrient(nutriments, `${OFF_NAMES.fat}${suffix}`),
+    sat_fat: nutrient(nutriments, `${OFF_NAMES.sat_fat}${suffix}`),
+    fiber: nutrient(nutriments, `${OFF_NAMES.fiber}${suffix}`),
+    salt: nutrient(nutriments, `${OFF_NAMES.salt}${suffix}`),
+  }
+}
+
+/** A weight in grams; a quantity in another unit (e.g. "2 tbsp") isn't one. */
+function grams(quantity: number | undefined, unit: string | undefined): number | null {
+  if (quantity === undefined || quantity <= 0) return null
+  return unit === undefined || GRAM_UNITS.has(unit.trim().toLowerCase()) ? quantity : null
+}
+
+function packGrams(product: ParsedProduct): number | null {
+  const stated = grams(product.product_quantity, product.product_quantity_unit)
+  if (stated !== null) return stated
+  const printed = PRINTED_GRAMS.exec(product.quantity ?? '')
+  return printed?.[1] ? Number(printed[1].replace(',', '.')) : null
+}
+
+function reportedNutrition(product: ParsedProduct) {
+  const nutriments = product.nutriments ?? {}
+  return {
+    per100g: basisOf(nutriments, '_100g'),
+    perPortion: basisOf(nutriments, '_serving'),
+    portionG: grams(product.serving_quantity, product.serving_quantity_unit),
+    packG: packGrams(product),
+  }
 }
 
 const asText = (value: number | null) =>
   value === null ? '' : String(roundTo(value, NUTRIENT_DECIMALS))
 
+function formBasis(basis: NutritionBasis): IngredientFormValues['per100g'] {
+  const text = Object.fromEntries(
+    NUTRITION_FIELDS.map((field) => [
+      field,
+      field === 'kcal'
+        ? basis.kcal === null
+          ? ''
+          : String(Math.round(basis.kcal))
+        : asText(basis[field]),
+    ]),
+  )
+  return text as IngredientFormValues['per100g']
+}
+
 function firstBrand(brands: string | undefined): string {
   return (brands ?? '').split(',')[0]?.trim() ?? ''
 }
 
-function productName(product: z.output<typeof productSchema>): string {
+type ParsedProduct = z.output<typeof productSchema>
+
+function productName(product: ParsedProduct): string {
   const german = product.product_name_de?.trim()
   return german || product.product_name?.trim() || ''
 }
 
-/** The new-ingredient form filled in from a product; unknown values stay empty. */
-export function productFormValues(raw: OffProduct, barcode: string): IngredientFormValues {
+export type ProductPrefill = {
+  readonly values: IngredientFormValues
+  readonly warnings: readonly string[]
+}
+
+/**
+ * The new-ingredient form filled in from a product: per 100 g and per portion as stated, each
+ * worked out from the other where missing; unknown values stay empty.
+ */
+export function productPrefill(raw: OffProduct, barcode: string): ProductPrefill {
   const product = productSchema.parse(raw)
-  const nutriments = product.nutriments ?? {}
-  const kcal = kcalPer100g(nutriments)
-  const serving = product.serving_quantity
-  const hasServing = serving !== undefined && serving > 0
+  const reported = reportedNutrition(product)
+  const { per100g, perPortion } = resolveNutrition(reported)
+  const hasPortion = reported.portionG !== null || perPortion.kcal !== null
   return {
-    ...EMPTY_INGREDIENT_FORM,
-    name: productName(product).slice(0, MAX_NAME),
-    brand: firstBrand(product.brands).slice(0, MAX_BRAND),
-    barcode,
-    per100gEnabled: kcal !== null,
-    per100g: {
-      kcal: kcal === null ? '' : String(Math.round(kcal)),
-      protein: asText(nutrient(nutriments, OFF_NUTRIENTS.protein)),
-      carbs: asText(nutrient(nutriments, OFF_NUTRIENTS.carbs)),
-      sugar: asText(nutrient(nutriments, OFF_NUTRIENTS.sugar)),
-      fat: asText(nutrient(nutriments, OFF_NUTRIENTS.fat)),
-      sat_fat: asText(nutrient(nutriments, OFF_NUTRIENTS.sat_fat)),
-      fiber: asText(nutrient(nutriments, OFF_NUTRIENTS.fiber)),
-      salt: asText(nutrient(nutriments, OFF_NUTRIENTS.salt)),
+    values: {
+      ...EMPTY_INGREDIENT_FORM,
+      name: productName(product).slice(0, MAX_NAME),
+      brand: firstBrand(product.brands).slice(0, MAX_BRAND),
+      barcode,
+      per100gEnabled: per100g.kcal !== null,
+      per100g: formBasis(per100g),
+      perUnitEnabled: perPortion.kcal !== null,
+      perUnit: formBasis(perPortion),
+      unitLabel: hasPortion ? SERVING_LABEL : '',
+      unitWeightG: asText(reported.portionG),
     },
-    unitLabel: hasServing ? SERVING_LABEL : '',
-    unitWeightG: hasServing ? asText(serving) : '',
+    warnings: nutritionWarnings(reported),
   }
+}
+
+export function productFormValues(raw: OffProduct, barcode: string): IngredientFormValues {
+  return productPrefill(raw, barcode).values
 }
 
 /** Looks a barcode up; never throws, so a missing answer just means typing the values in. */
@@ -121,7 +203,7 @@ export async function lookupProduct(barcode: string): Promise<ProductLookup> {
       return { kind: 'notFound' }
     }
     if (!response.ok || !parsed.success || !parsed.data.product) return { kind: 'unavailable' }
-    return { kind: 'found', values: productFormValues(parsed.data.product, barcode) }
+    return { kind: 'found', ...productPrefill(parsed.data.product, barcode) }
   } catch {
     return { kind: 'unavailable' }
   } finally {

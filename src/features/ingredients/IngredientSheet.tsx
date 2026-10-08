@@ -76,7 +76,7 @@ export function IngredientSheet({
         </p>
       ) : (
         <>
-          {prefill && <PrefillNote text={prefill.note} />}
+          {prefill && <PrefillNote text={prefill.note} warnings={prefill.warnings} />}
           <IngredientForm
             key={ingredient?.id ?? `new:${barcode ?? ''}`}
             formId={FORM_ID}

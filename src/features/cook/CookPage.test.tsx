@@ -619,6 +619,7 @@ describe('the ingredient search', () => {
     scanned.barcode = '3017620422003'
     vi.mocked(lookupProduct).mockResolvedValue({
       kind: 'found',
+      warnings: [],
       values: {
         ...EMPTY_INGREDIENT_FORM,
         name: 'Nutella',

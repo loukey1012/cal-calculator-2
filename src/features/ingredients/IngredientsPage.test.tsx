@@ -84,6 +84,7 @@ describe('scanning on the Ingredients page', () => {
     scanned.barcode = '3017620422003'
     vi.mocked(lookupProduct).mockResolvedValue({
       kind: 'found',
+      warnings: [],
       values: { ...EMPTY_INGREDIENT_FORM, name: 'Nutella', barcode: '3017620422003' },
     })
     const user = userEvent.setup()
@@ -97,6 +98,25 @@ describe('scanning on the Ingredients page', () => {
     expect(await sheet.findByText(/Filled in from Open Food Facts/)).toBeInTheDocument()
     expect(sheet.getByLabelText('Name')).toHaveValue('Nutella')
     expect(lookupProduct).toHaveBeenCalledWith('3017620422003')
+  })
+
+  test('odd product data is pointed out above the form, to check by hand', async () => {
+    scanned.barcode = '4260562940916'
+    vi.mocked(lookupProduct).mockResolvedValue({
+      kind: 'found',
+      warnings: ['The portion (100 g) is bigger than the pack (50 g).'],
+      values: { ...EMPTY_INGREDIENT_FORM, name: 'Low Sugar Gummies', barcode: '4260562940916' },
+    })
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByText('Cream 7%')
+
+    await user.click(screen.getByRole('button', { name: 'Scan barcode' }))
+    await user.click(screen.getByRole('button', { name: 'Fake scan' }))
+
+    const sheet = within(screen.getByRole('dialog', { name: 'New Ingredient' }))
+    const warnings = await sheet.findByRole('list', { name: 'Check these values' })
+    expect(warnings).toHaveTextContent('The portion (100 g) is bigger than the pack (50 g).')
   })
 
   test('scanning waits for the ingredients, so a saved package is never created twice', async () => {
