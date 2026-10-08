@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useCurrentUser } from '../../app/currentUser'
+import { BackButton } from '../../components/ios/BackButton'
 import { Button } from '../../components/ios/Button'
 import { ErrorBanner } from '../../components/ios/ErrorBanner'
 import { toUserMessage } from '../../lib/errors'
@@ -7,6 +8,7 @@ import { usePeople } from '../household/hooks'
 import type { Profile } from '../household/householdApi'
 import { useLookOf } from '../household/usePersonLook'
 import { confirmDeleteDish } from './confirmDelete'
+import { useLocalComposerSteps, type ComposerSteps } from './composerSteps'
 import { DishComposer } from './DishComposer'
 import { useDeleteDish, useDish, useSaveDish } from './hooks'
 import { portionName } from './portionName'
@@ -18,6 +20,7 @@ type DishEditorProps = {
   readonly dishId: string
   /** the day the editor was opened from: someone added eats on it */
   readonly date: string
+  /** saved, deleted, or Back on the dish itself */
   readonly onDone: () => void
 }
 
@@ -25,8 +28,26 @@ function Message({ text }: { readonly text: string }) {
   return <p className="mt-6 text-center text-[15px] text-label-secondary">{text}</p>
 }
 
-/** A saved dish, loaded for editing from one of its meals. */
+/**
+ * A saved dish, loaded for editing from one of its meals. Its Back goes one step at a time:
+ * amount → search → the dish → out of the editor.
+ */
 export function DishEditor({ dishId, date, onDone }: DishEditorProps) {
+  const steps = useLocalComposerSteps()
+  return (
+    <>
+      <BackButton onClick={steps.step.kind === 'main' ? onDone : steps.back} />
+      <LoadedDish dishId={dishId} date={date} onDone={onDone} steps={steps} />
+    </>
+  )
+}
+
+function LoadedDish({
+  dishId,
+  date,
+  onDone,
+  steps,
+}: DishEditorProps & { readonly steps: ComposerSteps }) {
   const { profile, householdId } = useCurrentUser()
   const people = usePeople(profile, householdId)
   const existing = useDish(dishId)
@@ -45,7 +66,12 @@ export function DishEditor({ dishId, date, onDone }: DishEditorProps) {
       key={editing.revision}
       initial={editing}
       hasNewerVersion={latest.revision !== editing.revision}
-      onLoadNewerVersion={() => setOpened(latest)}
+      onLoadNewerVersion={() => {
+        setOpened(latest)
+        // the open step may belong to a line that is gone in the newer version
+        steps.finish()
+      }}
+      steps={steps}
       people={people}
       date={date}
       onDone={onDone}
@@ -61,6 +87,7 @@ type DishFormProps = {
   readonly people: readonly Profile[]
   readonly date: string
   readonly onDone: () => void
+  readonly steps: ComposerSteps
 }
 
 const NEWER_VERSION_ERROR =
@@ -87,6 +114,7 @@ function DishForm({
   people,
   date,
   onDone,
+  steps,
 }: DishFormProps) {
   const [draft, setDraft] = useState(initial)
   const [error, setError] = useState<string | null>(null)
@@ -128,6 +156,7 @@ function DishForm({
       onChange={change}
       nameOf={nameOf}
       error={error}
+      steps={steps}
       header={
         <>
           {hasNewerVersion && !isSaved && <NewerVersionNotice onLoad={onLoadNewerVersion} />}

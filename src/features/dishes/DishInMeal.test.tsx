@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { CurrentUserContext } from '../../app/currentUser'
 import { renderWithProviders } from '../../test/render'
+import { ingredient } from '../ingredients/testData'
 import { dayMeal, mealItem } from '../meals/testData'
 
 vi.mock('../meals/mealsApi', () => ({
@@ -24,6 +25,7 @@ vi.mock('./dishesApi', () => ({
 }))
 
 import { fetchMembers } from '../household/householdApi'
+import { fetchIngredients } from '../ingredients/ingredientsApi'
 import { fetchDay } from '../meals/mealsApi'
 import { MealSheet } from '../meals/MealSheet'
 import { DELETE_SHARED_QUESTION } from './confirmDelete'
@@ -250,6 +252,30 @@ describe('a shared dish in the meal', () => {
       { userId: 'u1', date: DATE, mealType: 'lunch' },
       { userId: 'u2', date: DATE, mealType: 'dinner' },
     ])
+  })
+
+  test('Back goes one step at a time: amount → search → dish', async () => {
+    // Arrange
+    vi.mocked(fetchIngredients).mockResolvedValue([
+      ingredient({ id: 'rice', name: 'Rice' }),
+      ingredient({ id: 'beans', name: 'Beans' }),
+    ])
+    const user = userEvent.setup()
+    const sheet = renderSheet()
+    await user.click(await sheet.findByRole('button', { name: /Chili/ }))
+    await user.click(sheet.getByRole('button', { name: 'Edit dish' }))
+    await user.click(await sheet.findByRole('button', { name: 'Add ingredient' }))
+    await user.type(sheet.getByLabelText('Search ingredients'), 'ric')
+    await user.click(await sheet.findByRole('button', { name: /Rice/ }))
+
+    // Act + Assert: back to the search, still filtered
+    await user.click(sheet.getByRole('button', { name: 'Back' }))
+    expect(sheet.getByLabelText('Search ingredients')).toHaveValue('ric')
+    expect(sheet.queryByRole('button', { name: /Beans/ })).not.toBeInTheDocument()
+
+    // Act + Assert: back to the dish
+    await user.click(sheet.getByRole('button', { name: 'Back' }))
+    expect(sheet.getByLabelText('Dish name (optional)')).toHaveValue('Chili')
   })
 
   test('an ingredient of the dish can be removed', async () => {

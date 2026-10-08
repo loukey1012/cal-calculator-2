@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useCurrentUser } from '../../app/currentUser'
 import { ErrorBanner } from '../../components/ios/ErrorBanner'
 import { GroupedSection } from '../../components/ios/GroupedSection'
@@ -10,20 +9,22 @@ import type { Ingredient } from '../ingredients/ingredientsApi'
 import { ALL_CATEGORIES, filterIngredients, nutritionSummary } from '../ingredients/listing'
 
 type FoodPickerProps = {
+  /** the search, kept by the caller (it survives going to the amount and back) */
+  readonly query: string
+  readonly onQueryChange: (query: string) => void
   readonly onPick: (ingredient: Ingredient) => void
   readonly onCustom: () => void
 }
 
-export function FoodPicker({ onPick, onCustom }: FoodPickerProps) {
+export function FoodPicker({ query, onQueryChange, onPick, onCustom }: FoodPickerProps) {
   const { householdId } = useCurrentUser()
   // a partner may have added ingredients since the list was loaded
   const ingredients = useIngredients(householdId, { alwaysRefresh: true })
-  const [query, setQuery] = useState('')
   const matches = filterIngredients(ingredients.data ?? [], { query, category: ALL_CATEGORIES })
 
   return (
     <>
-      <SearchField label="Search ingredients" value={query} onChange={setQuery} />
+      <SearchField label="Search ingredients" value={query} onChange={onQueryChange} />
       <GroupedSection>
         <ListRow
           title="Custom item"

@@ -116,7 +116,8 @@ function drag(from: Point, to: Point) {
   release(to)
 }
 
-const layers = () => screen.getAllByTestId('stack-layer')
+// the visible tab's page stack (Cook and Settings each have one)
+const layers = () => within(activePage()).getAllByTestId('stack-layer')
 
 function reduceMotion(reduce: boolean) {
   vi.spyOn(window, 'matchMedia').mockImplementation(
@@ -212,6 +213,49 @@ describe('TabShell swiping', () => {
     unmount()
 
     expect(embla.api.off).toHaveBeenCalledWith('select', expect.any(Function))
+  })
+
+  describe('on a Cook step', () => {
+    beforeEach(() => vi.spyOn(window, 'innerWidth', 'get').mockReturnValue(390))
+    afterEach(() => vi.restoreAllMocks())
+
+    test('swiping right on the amount goes back to the search, not to another tab', async () => {
+      renderShell('/cook/add/patty')
+
+      expect(watchDrag()(embla.api, { target: document.body } as unknown as Event)).toBe(false)
+      drag({ x: 30, y: 300 }, { x: 200, y: 320 })
+
+      await waitFor(() => expect(screen.getByTestId('path')).toHaveTextContent(/^\/cook\/add$/))
+      expect(within(activePage()).getByLabelText('Search ingredients')).toBeInTheDocument()
+    })
+
+    test('swiping right on the search goes back to the dish', async () => {
+      renderShell('/cook/add')
+
+      drag({ x: 30, y: 300 }, { x: 200, y: 320 })
+
+      await waitFor(() => expect(screen.getByTestId('path')).toHaveTextContent(/^\/cook$/))
+      expect(
+        within(activePage()).getByRole('button', { name: 'Add ingredient' }),
+      ).toBeInTheDocument()
+    })
+
+    test('Back slides the step away to the one before it', async () => {
+      const user = userEvent.setup()
+      renderShell('/cook/add')
+
+      await user.click(within(activePage()).getByRole('button', { name: 'Back' }))
+
+      expect(layers()).toHaveLength(2)
+      await waitFor(() => expect(layers()).toHaveLength(1))
+      expect(screen.getByTestId('path')).toHaveTextContent(/^\/cook$/)
+    })
+
+    test('on the dish itself, swiping switches tabs again', () => {
+      renderShell('/cook')
+
+      expect(watchDrag()(embla.api, { target: document.body } as unknown as Event)).toBe(true)
+    })
   })
 
   describe('on a settings sub-page', () => {

@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router'
+import { useNavigate } from 'react-router'
 import { useCurrentUser } from '../../app/currentUser'
+import { BackButton } from '../../components/ios/BackButton'
 import { Button } from '../../components/ios/Button'
 import { PageHeader } from '../../components/ios/PageHeader'
 import { DishComposer } from '../dishes/DishComposer'
@@ -10,25 +11,19 @@ import { saveError } from '../dishes/saveError'
 import { useMembers, usePeople } from '../household/hooks'
 import { useLookOf } from '../household/usePersonLook'
 import { useToday } from '../today/useToday'
-import {
-  hasContent,
-  keepEaters,
-  resolvedDish,
-  withDish,
-  withPrefill,
-  type CookDraft,
-} from './cookDraft'
-import { parseCookLink } from './cookLink'
+import { hasContent, keepEaters, resolvedDish, withDish, type CookDraft } from './cookDraft'
+import { COOK_HOME, useCookSession } from './cookSessionContext'
 import { CookWhoWhen } from './CookWhoWhen'
 import { LeftoversCard } from './LeftoversCard'
-import { useCookDraft } from './useCookDraft'
+import { useCookSteps } from './useCookSteps'
 import { useMealOfDay } from './useMealOfDay'
 
-// after saving, unless Cook was opened from somewhere else
-const HOME = '/today'
 const DISCARD_QUESTION = 'Discard this meal? Everything entered so far is removed.'
 
-/** The one place food is logged: alone or together, cooked or a single food. */
+/**
+ * The one place food is logged: alone or together, cooked or a single food. Each step of adding
+ * an ingredient (search, amount) is a page of its own inside the Cook tab.
+ */
 export function CookPage() {
   const { profile, householdId } = useCurrentUser()
   const members = useMembers(householdId)
@@ -37,23 +32,10 @@ export function CookPage() {
   const today = useToday()
   const mealOfDay = useMealOfDay()
   const navigate = useNavigate()
-  const [params] = useSearchParams()
   const saveDish = useSaveDish()
-  const { draft: storedDraft, setDraft, reset } = useCookDraft(profile.id)
-  const [returnTo, setReturnTo] = useState(HOME)
-  const [handledLink, setHandledLink] = useState('')
+  const { draft: storedDraft, setDraft, reset, returnTo, setReturnTo } = useCookSession()
+  const steps = useCookSteps()
   const [error, setError] = useState<string | null>(null)
-
-  // opened from an empty meal: take over its person, day and meal (once per link)
-  const search = params.toString()
-  if (search !== handledLink) {
-    setHandledLink(search)
-    const link = parseCookLink(params, today)
-    if (link) {
-      setDraft((current) => withPrefill(current, link.prefill, today))
-      setReturnTo(link.returnTo)
-    }
-  }
 
   // someone who left the household can't eat along any more
   const memberIds = members.data && [profile.id, ...members.data.map((member) => member.id)]
@@ -77,7 +59,7 @@ export function CookPage() {
     }
     reset()
     setError(null)
-    setReturnTo(HOME)
+    setReturnTo(COOK_HOME)
     void navigate(returnTo, { replace: true })
   }
 
@@ -87,10 +69,19 @@ export function CookPage() {
     setError(null)
   }
 
+  const onDish = steps.step.kind === 'main'
   return (
     <>
-      <PageHeader title="Cook" />
-      <LeftoversCard today={today} mealOfDay={mealOfDay} />
+      {onDish ? (
+        <>
+          <PageHeader title="Cook" />
+          <LeftoversCard today={today} mealOfDay={mealOfDay} />
+        </>
+      ) : (
+        <div className="flex min-h-11 items-center pt-3 pb-2">
+          <BackButton onClick={steps.back} />
+        </div>
+      )}
       <DishComposer
         // a fresh draft starts the form over
         key={draft.dish.id}
@@ -98,6 +89,7 @@ export function CookPage() {
         onChange={(dish) => change(withDish(draft, dish))}
         nameOf={nameOf}
         error={error}
+        steps={steps}
         header={
           <CookWhoWhen
             draft={draft}

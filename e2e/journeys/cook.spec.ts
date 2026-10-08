@@ -137,3 +137,62 @@ test('leftovers: cook a portion more, see it on Today, eat it later', async ({ p
     .click()
   await expect(activePage(page).getByRole('button', { name: /Lunch/ })).toContainText('900 kcal')
 })
+
+/** A finger drag to the right across the visible page, as touch events (the back swipe). */
+async function swipeBack(page: import('@playwright/test').Page) {
+  // a swipe only starts once the page has stopped sliding
+  await expect(activePage(page).getByTestId('stack-layer')).toHaveCount(1)
+  await activePage(page).evaluate(async (target) => {
+    const send = (type: string, x: number) => {
+      const event = new Event(type, { bubbles: true, cancelable: true })
+      const touches = type === 'touchend' ? [] : [{ clientX: x, clientY: 300 }]
+      Object.defineProperty(event, 'touches', { value: touches })
+      target.dispatchEvent(event)
+    }
+    send('touchstart', 20)
+    for (const x of [60, 120, 180, 240]) {
+      await new Promise((resolve) => setTimeout(resolve, 16))
+      send('touchmove', x)
+    }
+    send('touchend', 240)
+  })
+}
+
+test('adding an ingredient: Back and the back swipe go one step at a time', async ({
+  page,
+  backend,
+}) => {
+  const me = await backend.user('Lukas')
+  const household = await backend.household([me])
+  await backend.admin.from('ingredients').insert([
+    { household_id: household, name: 'Patty', kcal_100: 240 },
+    { household_id: household, name: 'Tomato', kcal_100: 18 },
+  ])
+  await logIn(page, me)
+  await openCook(page)
+  const cook = activePage(page)
+
+  // the wrong ingredient picked: Back leads to the search, still filtered
+  await cook.getByRole('button', { name: 'Add ingredient' }).click()
+  await cook.getByLabel('Search ingredients').fill('pat')
+  await cook.getByRole('button', { name: /Patty/ }).click()
+  await expect(page).toHaveURL(/\/cook\/add\/[^/]+$/)
+  await cook.getByRole('button', { name: 'Back' }).click()
+  await expect(page).toHaveURL(/\/cook\/add$/)
+  await expect(cook.getByLabel('Search ingredients')).toHaveValue('pat')
+
+  // a swipe on the amount goes back to the search too, not to another tab
+  await cook.getByRole('button', { name: /Patty/ }).click()
+  await expect(cook.getByLabel('Amount')).toBeVisible()
+  await swipeBack(page)
+  await expect(page).toHaveURL(/\/cook\/add$/)
+  await expect(cook.getByLabel('Search ingredients')).toBeVisible()
+
+  // and from the search back to the dish
+  await swipeBack(page)
+  await expect(page).toHaveURL(/\/cook$/)
+  await expect(cook.getByRole('button', { name: 'Add ingredient' })).toBeVisible()
+  await addIngredient(page, 'Tomato', '50')
+  await expect(page).toHaveURL(/\/cook$/)
+  await expect(cook.getByRole('button', { name: /Tomato/ })).toBeVisible()
+})

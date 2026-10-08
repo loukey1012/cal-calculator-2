@@ -1,5 +1,13 @@
 import useEmblaCarousel from 'embla-carousel-react'
-import { memo, useEffect, useRef, useState, type ComponentType, type ReactNode } from 'react'
+import {
+  Fragment,
+  memo,
+  useEffect,
+  useRef,
+  useState,
+  type ComponentType,
+  type ReactNode,
+} from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router'
 import {
   CookIcon,
@@ -10,6 +18,7 @@ import {
 } from '../components/ios/icons'
 import { TabBar } from '../components/ios/TabBar'
 import { CookPage } from '../features/cook/CookPage'
+import { CookSession } from '../features/cook/CookSession'
 import { HistoryPage } from '../features/history/HistoryPage'
 import { IngredientsPage } from '../features/ingredients/IngredientsPage'
 import { SettingsPage } from '../features/settings/SettingsPage'
@@ -24,7 +33,17 @@ import { useLiveUpdates } from '../features/live/useLiveUpdates'
 const TABS = [
   { id: 'today', label: 'Today', path: '/today', icon: <TodayIcon />, Page: TodayPage },
   // the one place food is logged
-  { id: 'cook', label: 'Cook', path: '/cook', icon: <CookIcon />, Page: CookPage },
+  {
+    id: 'cook',
+    label: 'Cook',
+    path: '/cook',
+    icon: <CookIcon />,
+    Page: CookPage,
+    // the steps of adding an ingredient (/cook/add, /cook/add/<id>) are pages pushed on top
+    hasSubPages: true,
+    // the draft all of those pages share
+    Session: CookSession,
+  },
   { id: 'history', label: 'History', path: '/history', icon: <HistoryIcon />, Page: HistoryPage },
   {
     id: 'ingredients',
@@ -96,8 +115,10 @@ export function TabShell() {
   const activeIndex = Math.max(routeIndex, 0)
   const activeIndexRef = useRef(activeIndex)
   const pageRefs = useRef<(HTMLDivElement | null)[]>([])
-  // the scroll container of the tab with sub-pages, where its page stack lives
-  const [stackContainer, setStackContainer] = useState<HTMLDivElement | null>(null)
+  // the scroll containers of the tabs with sub-pages, where their page stacks live
+  const [stackContainers, setStackContainers] = useState<Readonly<Record<string, HTMLDivElement>>>(
+    {},
+  )
   const backPath = backPathFor(pathname)
   const backPathRef = useRef(backPath)
 
@@ -181,36 +202,42 @@ export function TabShell() {
             const { id, Page } = tab
             const active = index === activeIndex
             const hasSubPages = 'hasSubPages' in tab
+            const Session = 'Session' in tab ? tab.Session : Fragment
+            const container = stackContainers[id] ?? null
             return (
               <div
                 key={id}
                 data-testid="tab-page"
                 ref={(element) => {
                   pageRefs.current[index] = element
-                  if (hasSubPages && element) setStackContainer(element)
+                  if (hasSubPages && element && stackContainers[id] !== element) {
+                    setStackContainers((current) => ({ ...current, [id]: element }))
+                  }
                 }}
                 inert={!active}
                 aria-hidden={active ? undefined : true}
                 className="no-scrollbar stable-paint-layer relative h-full min-w-0 flex-[0_0_100%] overflow-x-hidden overflow-y-auto overscroll-contain"
               >
-                {hasSubPages ? (
-                  <PageStack
-                    path={active ? pathname : tab.path}
-                    backPath={active ? backPath : null}
-                    animated={active}
-                    container={stackContainer}
-                    renderPage={() => (
-                      <PageFrame>
-                        <Page />
-                      </PageFrame>
-                    )}
-                    onBack={(path) => navigate(path, { replace: true })}
-                  />
-                ) : (
-                  <PageFrame>
-                    <TabPageContent Page={Page} />
-                  </PageFrame>
-                )}
+                <Session>
+                  {hasSubPages ? (
+                    <PageStack
+                      path={active ? pathname : tab.path}
+                      backPath={active ? backPath : null}
+                      animated={active}
+                      container={container}
+                      renderPage={() => (
+                        <PageFrame>
+                          <Page />
+                        </PageFrame>
+                      )}
+                      onBack={(path) => navigate(path, { replace: true })}
+                    />
+                  ) : (
+                    <PageFrame>
+                      <TabPageContent Page={Page} />
+                    </PageFrame>
+                  )}
+                </Session>
               </div>
             )
           })}

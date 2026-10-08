@@ -1,7 +1,7 @@
 import { fireEvent, screen, within } from '@testing-library/react'
 import userEvent, { type UserEvent } from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
-import { Route, Routes } from 'react-router'
+import { Route, Routes, useLocation } from 'react-router'
 import { CurrentUserContext } from '../../app/currentUser'
 import { toLocalDateString } from '../../lib/dates'
 import { renderWithProviders } from '../../test/render'
@@ -32,6 +32,7 @@ import { fetchLeftoverDishes, saveDish } from '../dishes/dishesApi'
 import type { Dish } from '../dishes/portions'
 import { gramsItem } from '../dishes/testData'
 import { CookPage } from './CookPage'
+import { CookSession } from './CookSession'
 
 function profile(id: string, name: string) {
   return {
@@ -76,14 +77,23 @@ function today(): string {
   return toLocalDateString(new Date())
 }
 
+function LocationProbe() {
+  return <output data-testid="path">{useLocation().pathname}</output>
+}
+
+const currentPath = () => screen.getByTestId('path').textContent
+
 function renderCook(route = '/cook') {
   return renderWithProviders(
     <CurrentUserContext value={{ profile: ME, householdId: 'h1' }}>
-      <Routes>
-        <Route path="/cook" element={<CookPage />} />
-        <Route path="/today" element={<p>Today page</p>} />
-        <Route path="/history" element={<p>History page</p>} />
-      </Routes>
+      <CookSession>
+        <Routes>
+          <Route path="/cook/*" element={<CookPage />} />
+          <Route path="/today" element={<p>Today page</p>} />
+          <Route path="/history" element={<p>History page</p>} />
+        </Routes>
+        <LocationProbe />
+      </CookSession>
     </CurrentUserContext>,
     { route },
   )
@@ -381,6 +391,81 @@ describe('the draft', () => {
 
     expect(screen.queryByRole('button', { name: /Patty/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Discard' })).not.toBeInTheDocument()
+  })
+})
+
+describe('steps', () => {
+  test('each step is its own page: the dish, the search, the amount', async () => {
+    const user = userEvent.setup()
+    renderCook()
+
+    await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
+    expect(currentPath()).toBe('/cook/add')
+    await user.click(await screen.findByRole('button', { name: /Patty/ }))
+    expect(currentPath()).toBe('/cook/add/patty')
+    await user.type(screen.getByLabelText('Amount'), '100')
+    await user.click(screen.getByRole('button', { name: 'Add to dish' }))
+
+    expect(currentPath()).toBe('/cook')
+    expect(screen.getByRole('button', { name: /Patty/ })).toBeInTheDocument()
+  })
+
+  test('Back on the amount goes back to the search, which still shows what was searched', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    renderCook()
+    await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
+    await user.type(screen.getByLabelText('Search ingredients'), 'pat')
+    await user.click(await screen.findByRole('button', { name: /Patty/ }))
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+
+    // Assert
+    expect(currentPath()).toBe('/cook/add')
+    expect(screen.getByLabelText('Search ingredients')).toHaveValue('pat')
+    expect(screen.queryByRole('button', { name: /Tomato/ })).not.toBeInTheDocument()
+  })
+
+  test('Back on the search goes back to the dish', async () => {
+    const user = userEvent.setup()
+    renderCook()
+    await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
+
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+
+    expect(currentPath()).toBe('/cook')
+    expect(screen.getByRole('button', { name: 'Add ingredient' })).toBeInTheDocument()
+  })
+
+  test('a new search starts empty', async () => {
+    const user = userEvent.setup()
+    renderCook()
+    await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
+    await user.type(screen.getByLabelText('Search ingredients'), 'pat')
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+
+    await user.click(screen.getByRole('button', { name: 'Add ingredient' }))
+
+    expect(screen.getByLabelText('Search ingredients')).toHaveValue('')
+  })
+
+  test('an ingredient line opens as its own page and Back returns to the dish', async () => {
+    const user = userEvent.setup()
+    renderCook()
+    await addIngredient(user, 'Patty', '100')
+
+    await user.click(screen.getByRole('button', { name: /Patty/ }))
+    expect(currentPath()).toMatch(/^\/cook\/line-/)
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+
+    expect(currentPath()).toBe('/cook')
+  })
+
+  test('an opened ingredient that is no longer there says so', async () => {
+    renderCook('/cook/add/gone')
+
+    expect(await screen.findByText('This ingredient is no longer available.')).toBeInTheDocument()
   })
 })
 

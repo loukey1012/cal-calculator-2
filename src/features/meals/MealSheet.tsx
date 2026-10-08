@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { BackButton } from '../../components/ios/BackButton'
 import { Button } from '../../components/ios/Button'
 import { ErrorBanner } from '../../components/ios/ErrorBanner'
 import { Sheet } from '../../components/ios/Sheet'
@@ -40,14 +41,6 @@ export function MealSheet({ open, mealType, userId, date, onClose, onCook }: Mea
     <Sheet open={open} onClose={onClose} title={mealLabel(mealType)}>
       <MealSheetContent mealType={mealType} userId={userId} date={date} onCook={onCook} />
     </Sheet>
-  )
-}
-
-function BackButton({ onClick }: { readonly onClick: () => void }) {
-  return (
-    <Button variant="plain" aria-label="Back" className="-ml-2" onClick={onClick}>
-      ‹ Back
-    </Button>
   )
 }
 
@@ -100,10 +93,8 @@ function MealSheetContent({
       )
     case 'dish':
       return (
-        <>
-          <BackButton onClick={showItems} />
-          <DishEditor dishId={view.dishId} date={date} onDone={showItems} />
-        </>
+        // its own Back: one step at a time, from the dish back to the meal
+        <DishEditor dishId={view.dishId} date={date} onDone={showItems} />
       )
     case 'food':
       if (!editedItem) return null
