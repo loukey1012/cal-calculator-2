@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'vitest'
+import { COLOR_PRESETS } from './colorPresets'
 import css from '../../index.css?raw'
 import { contrastRatio } from '../../lib/color'
 import {
-  ACCENT_COLORS,
   appearanceVariables,
   DEFAULT_APPEARANCE,
   goalColors,
@@ -136,7 +136,7 @@ describe('the pink scheme', () => {
     }
   })
 
-  test.each(ACCENT_COLORS.map((color) => [color.name, color.value]))(
+  test.each(COLOR_PRESETS.map((color) => [color.name, color.value]))(
     'accent text in %s stays readable on pink',
     (_name, accent) => {
       const ink = appearanceVariables('vivid', 'pink', accent)['--accent-ink'] ?? ''
@@ -199,6 +199,21 @@ describe('goalColors', () => {
 })
 
 describe('appearanceVariables', () => {
+  test('a white ring color stays visible on light cards and stays white on dark ones', () => {
+    const light = appearanceVariables('vivid', 'light', '#007aff', { kcal: '#ffffff' })
+    const dark = appearanceVariables('vivid', 'soft', '#007aff', { kcal: '#ffffff' })
+
+    expect(light['--goal-kcal']).not.toBe('#ffffff')
+    expect(dark['--goal-kcal']).toBe('#ffffff')
+  })
+
+  test('a white accent gets a thin edge, other accents none', () => {
+    expect(appearanceVariables('vivid', 'light', '#ffffff')['--accent-edge']).not.toBe(
+      'transparent',
+    )
+    expect(appearanceVariables('vivid', 'light', '#007aff')['--accent-edge']).toBe('transparent')
+  })
+
   test('keeps accent text readable even for a light accent on a light page', () => {
     const vars = appearanceVariables('vivid', 'light', '#c6f432')
 

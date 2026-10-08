@@ -30,7 +30,7 @@ export function FilterChip({
       aria-expanded={expanded}
       onClick={onClick}
       className={`${className} rounded-full font-bold ${
-        selected ? 'bg-accent text-on-accent' : 'bg-bg-elevated text-label shadow-card'
+        selected ? 'accent-edge bg-accent text-on-accent' : 'bg-bg-elevated text-label shadow-card'
       }`}
     >
       {children}

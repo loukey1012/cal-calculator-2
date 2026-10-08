@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { mixHex, onColor, readableInk } from '../../lib/color'
+import { isNearWhite, mixHex, onColor, readableInk, visibleOn } from '../../lib/color'
 import { partnerLooksSchema } from '../household/partnerLook'
 import type { RingKey } from '../nutrition/goals'
 
@@ -86,21 +86,6 @@ export function parseAppearance(value: unknown): Appearance {
   return appearanceSchema.parse(value)
 }
 
-export const ACCENT_COLORS = [
-  { name: 'Blue', value: '#007aff' },
-  { name: 'Indigo', value: '#5b5bd6' },
-  { name: 'Violet', value: '#8e4ec6' },
-  { name: 'Pink', value: '#d6409f' },
-  { name: 'Red', value: '#e5484d' },
-  { name: 'Orange', value: '#ef6c1a' },
-  { name: 'Amber', value: '#c88a04' },
-  { name: 'Green', value: '#30a46c' },
-  { name: 'Teal', value: '#12a594' },
-  { name: 'Cyan', value: '#0797b9' },
-  { name: 'Lime', value: '#c6f432' },
-  { name: 'Slate', value: '#64748b' },
-] as const
-
 export function resolveScheme(appearance: Appearance, prefersDark: boolean): Scheme {
   const dark = appearance.theme === 'dark' || (appearance.theme === 'system' && prefersDark)
   if (dark) return appearance.darkStyle
@@ -162,6 +147,8 @@ export function goalColors(
   return [custom.kcal ?? kcal, custom.protein ?? protein, custom.carbs ?? carbs, custom.fat ?? fat]
 }
 
+const ACCENT_EDGE = 'rgb(0 0 0 / 0.14)'
+
 /** CSS custom properties that depend on the user's choices (the rest come from the scheme). */
 export function appearanceVariables(
   goalPalette: GoalPalette,
@@ -170,9 +157,15 @@ export function appearanceVariables(
   customGoalColors: CustomGoalColors = {},
 ): Record<string, string> {
   const { bg, card } = SCHEME_SURFACES[scheme]
-  const [kcal, protein, carbs, fat] = goalColors(goalPalette, scheme, accent, customGoalColors)
+  // a custom ring color (e.g. White) must still show on the cards
+  const visibleCustom = Object.fromEntries(
+    Object.entries(customGoalColors).map(([goal, color]) => [goal, visibleOn(color, card)]),
+  )
+  const [kcal, protein, carbs, fat] = goalColors(goalPalette, scheme, accent, visibleCustom)
   return {
     '--accent': accent,
+    // a white accent fill gets a thin edge on white
+    '--accent-edge': isNearWhite(accent) ? ACCENT_EDGE : 'transparent',
     // accent used as text must stay readable on both the page and the cards
     '--accent-ink': readableInk(readableInk(accent, bg), card),
     '--on-accent': onColor(accent),

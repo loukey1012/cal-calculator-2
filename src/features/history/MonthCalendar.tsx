@@ -125,8 +125,8 @@ function DayButton({ date, today, selected, status, onSelect }: DayButtonProps) 
       onClick={() => onSelect(date)}
       className={`mx-auto flex h-10 w-10 items-center justify-center rounded-full text-[15px] font-semibold disabled:opacity-30 ${
         // the selected day is filled with the accent color
-        selected ? 'bg-accent font-extrabold text-on-accent' : STATUS_CLASSES[status]
-      } ${isToday ? 'ring-2 ring-accent' : ''}`}
+        selected ? 'accent-edge bg-accent font-extrabold text-on-accent' : STATUS_CLASSES[status]
+      } ${isToday ? 'ring-2 ring-accent-ink' : ''}`}
     >
       {Number(date.slice(8))}
     </button>

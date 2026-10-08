@@ -120,3 +120,40 @@ test('each ring can get its own color', async ({ page, backend }) => {
     })
     .toMatchObject({ customGoalColors: { protein: '#9466d6' } })
 })
+
+test('the accent can be White (with a thin edge on light cards) or any custom color', async ({
+  page,
+  backend,
+}) => {
+  const me = await backend.user('Lukas')
+  await backend.household([me])
+  await logIn(page, me)
+  await page.getByRole('button', { name: 'Settings' }).click()
+  await activePage(page)
+    .getByRole('button', { name: /Appearance/ })
+    .click()
+  const settings = activePage(page)
+  await settings.getByRole('button', { name: /App colors/ }).click()
+  const html = page.locator('html')
+  const variable = (name: string) =>
+    html.evaluate((root, key) => root.style.getPropertyValue(key), name)
+
+  await settings.getByRole('radio', { name: 'White', exact: true }).click()
+  await expect.poll(() => variable('--accent')).toBe('#ffffff')
+  await expect.poll(() => variable('--accent-edge')).not.toBe('transparent')
+
+  // the system color picker sets the input's value and closes
+  await settings.getByLabel('Custom color').fill('#123456')
+  await expect.poll(() => variable('--accent')).toBe('#123456')
+  await expect.poll(() => variable('--accent-edge')).toBe('transparent')
+  await expect
+    .poll(async () => {
+      const { data } = await backend.admin
+        .from('profiles')
+        .select('accent_color')
+        .eq('id', me.id)
+        .single()
+      return data?.accent_color
+    })
+    .toBe('#123456')
+})

@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/react'
+import { fireEvent, screen, within, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { CurrentUserContext } from '../../app/currentUser'
@@ -192,6 +192,19 @@ describe('Appearance pages', () => {
     expect(updateProfile).toHaveBeenCalledWith('u1', { accent_color: '#c6f432' })
   })
 
+  test('the accent color can be White or any custom color', async () => {
+    const user = userEvent.setup()
+    renderPage(COLORS)
+
+    await user.click(radio('Accent color', 'White'))
+    expect(updateProfile).toHaveBeenLastCalledWith('u1', { accent_color: '#ffffff' })
+    fireEvent.change(screen.getByLabelText('Custom color'), { target: { value: '#123456' } })
+
+    await waitFor(() =>
+      expect(updateProfile).toHaveBeenLastCalledWith('u1', { accent_color: '#123456' }),
+    )
+  })
+
   test('the progress preview uses the chosen progress style', () => {
     renderPage(PROGRESS, { progressStyle: 'bars' })
 
@@ -280,14 +293,15 @@ describe('Ring colors', () => {
 
     await user.click(ringColorRow('Calories'))
     const sheet = screen.getByRole('dialog', { name: 'Calories color' })
-    fireEvent.input(within(sheet).getByLabelText('Custom color'), {
+    fireEvent.change(within(sheet).getByLabelText('Custom color'), {
       target: { value: '#123456' },
     })
-    await user.click(within(sheet).getByRole('button', { name: 'Use custom color' }))
 
-    expect(updateProfile).toHaveBeenCalledWith('u1', {
-      appearance: { ...DEFAULT_APPEARANCE, customGoalColors: { kcal: '#123456' } },
-    })
+    await waitFor(() =>
+      expect(updateProfile).toHaveBeenCalledWith('u1', {
+        appearance: { ...DEFAULT_APPEARANCE, customGoalColors: { kcal: '#123456' } },
+      }),
+    )
   })
 
   test('a goal can go back to its palette color', async () => {

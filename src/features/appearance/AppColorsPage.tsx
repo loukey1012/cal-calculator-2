@@ -1,18 +1,13 @@
 import { SegmentedControl } from '../../components/ios/SegmentedControl'
-import {
-  ACCENT_COLORS,
-  SCHEME_SURFACES,
-  type DarkStyle,
-  type LightStyle,
-  type Scheme,
-} from './appearance'
+import { SCHEME_SURFACES, type DarkStyle, type LightStyle, type Scheme } from './appearance'
 import {
   APPEARANCE_PATH,
   DARK_STYLE_LABELS,
   LIGHT_STYLE_LABELS,
   THEME_OPTIONS,
 } from './appearanceLabels'
-import { OptionCards, SettingSection, SwatchPicker } from './AppearanceOptions'
+import { OptionCards, SettingSection } from './AppearanceOptions'
+import { ColorPicker } from './ColorPicker'
 import { AppearanceSubPage } from './AppearanceSubPage'
 import { useAppearanceSettings } from './useAppearanceSettings'
 
@@ -65,7 +60,7 @@ function StylePreview({
           1,340
         </span>
       </span>
-      <span className="h-1.5 w-3/5 rounded-full bg-accent" />
+      <span className="accent-edge h-1.5 w-3/5 rounded-full bg-accent" />
     </span>
   )
 }
@@ -126,9 +121,8 @@ export function AppColorsPage() {
       </SettingSection>
 
       <SettingSection title="Accent color" footer="Buttons, the active tab and your avatar.">
-        <SwatchPicker
+        <ColorPicker
           label="Accent color"
-          swatches={ACCENT_COLORS}
           value={profile.accent_color}
           onChange={(accent_color) => update.mutate({ accent_color })}
         />

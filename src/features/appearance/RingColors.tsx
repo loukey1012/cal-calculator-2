@@ -4,7 +4,9 @@ import { ListRow } from '../../components/ios/ListRow'
 import { Sheet } from '../../components/ios/Sheet'
 import type { RingKey } from '../nutrition/goals'
 import type { CustomGoalColors } from './appearance'
-import { SettingSection, SwatchPicker } from './AppearanceOptions'
+import { SettingSection } from './AppearanceOptions'
+import { ColorPicker } from './ColorPicker'
+import { COLOR_PRESETS } from './colorPresets'
 
 const GOALS: ReadonlyArray<{ key: RingKey; label: string }> = [
   { key: 'kcal', label: 'Calories' },
@@ -12,28 +14,6 @@ const GOALS: ReadonlyArray<{ key: RingKey; label: string }> = [
   { key: 'carbs', label: 'Carbs' },
   { key: 'fat', label: 'Fat' },
 ]
-
-/** Colors that read well as rings and bars on light, pink and dark cards alike. */
-const GOAL_SWATCHES = [
-  { name: 'Rose', value: '#ff375f' },
-  { name: 'Raspberry', value: '#e8457c' },
-  { name: 'Pink', value: '#d6409f' },
-  { name: 'Red', value: '#e5484d' },
-  { name: 'Orange', value: '#ef6c1a' },
-  { name: 'Peach', value: '#f0874a' },
-  { name: 'Amber', value: '#e8930c' },
-  { name: 'Yellow', value: '#f5c400' },
-  { name: 'Lime', value: '#8bc34a' },
-  { name: 'Green', value: '#1f9d6b' },
-  { name: 'Mint', value: '#2fa889' },
-  { name: 'Teal', value: '#12a594' },
-  { name: 'Cyan', value: '#0797b9' },
-  { name: 'Sky', value: '#2f9bd6' },
-  { name: 'Blue', value: '#007aff' },
-  { name: 'Indigo', value: '#5b5bd6' },
-  { name: 'Lavender', value: '#9466d6' },
-  { name: 'Violet', value: '#8e4ec6' },
-] as const
 
 type RingColorsProps = {
   /** what each ring shows now: the palette color, or the custom one */
@@ -81,10 +61,10 @@ export function RingColors({ colors, custom, onChange }: RingColorsProps) {
       </ul>
       {goal && (
         <RingColorSheet
-          // a fresh draft for every goal
+          // one sheet per goal
           key={goal.key}
           label={goal.label}
-          color={colors[GOALS.indexOf(goal)] ?? GOAL_SWATCHES[0].value}
+          color={colors[GOALS.indexOf(goal)] ?? COLOR_PRESETS[0].value}
           isCustom={custom[goal.key] !== undefined}
           onPick={(color) => pick(goal.key, color)}
           onClose={() => setEditing(null)}
@@ -104,25 +84,10 @@ type RingColorSheetProps = {
 }
 
 function RingColorSheet({ label, color, isCustom, onPick, onClose }: RingColorSheetProps) {
-  const [draft, setDraft] = useState(color)
-
   return (
     <Sheet open title={`${label} color`} onClose={onClose}>
       <div className="flex flex-col gap-5 pb-4">
-        <SwatchPicker label="Colors" swatches={GOAL_SWATCHES} value={color} onChange={onPick} />
-        <div className="flex items-center gap-3 rounded-3xl bg-bg-elevated p-4 shadow-card">
-          <input
-            id="ring-custom-color"
-            type="color"
-            aria-label="Custom color"
-            value={draft}
-            onChange={(event) => setDraft(event.target.value.toLowerCase())}
-            className="h-11 w-14 shrink-0 cursor-pointer rounded-xl bg-transparent"
-          />
-          <Button className="flex-1" onClick={() => onPick(draft)}>
-            Use custom color
-          </Button>
-        </div>
+        <ColorPicker label="Colors" value={color} onChange={onPick} />
         {isCustom && (
           <Button variant="plain" onClick={() => onPick(null)}>
             Use palette color

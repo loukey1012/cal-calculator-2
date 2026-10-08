@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'vitest'
+import { COLOR_PRESETS } from '../appearance/colorPresets'
 import { parseAppearance } from '../appearance/appearance'
 import type { Profile } from './householdApi'
 import {
   DEFAULT_PARTNER_LOOK,
   lookFor,
   MAX_NICKNAME_LENGTH,
-  PARTNER_COLORS,
   PARTNER_SYMBOLS,
   withPartnerLook,
   type PartnerLooks,
@@ -122,9 +122,7 @@ describe('choices', () => {
     expect(new Set(PARTNER_SYMBOLS.map(({ value }) => value)).size).toBe(PARTNER_SYMBOLS.length)
   })
 
-  test('the colors are distinct and include the default', () => {
-    const values = PARTNER_COLORS.map(({ value }) => value)
-    expect(new Set(values).size).toBe(values.length)
-    expect(values).toContain(DEFAULT_PARTNER_LOOK.color)
+  test('the default color is one of the preset colors', () => {
+    expect(COLOR_PRESETS.map(({ value }) => value)).toContain(DEFAULT_PARTNER_LOOK.color)
   })
 })

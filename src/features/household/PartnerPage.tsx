@@ -3,7 +3,8 @@ import { useCurrentUser } from '../../app/currentUser'
 import { Button } from '../../components/ios/Button'
 import { GroupedSection } from '../../components/ios/GroupedSection'
 import { TextField } from '../../components/ios/TextField'
-import { SettingSection, SwatchPicker } from '../appearance/AppearanceOptions'
+import { SettingSection } from '../appearance/AppearanceOptions'
+import { ColorPicker } from '../appearance/ColorPicker'
 import { AppearanceSubPage } from '../appearance/AppearanceSubPage'
 import { useAppearanceSettings } from '../appearance/useAppearanceSettings'
 import { useMembers } from './hooks'
@@ -13,7 +14,6 @@ import {
   displayName,
   lookFor,
   MAX_NICKNAME_LENGTH,
-  PARTNER_COLORS,
   withPartnerLook,
   type PartnerLook,
   type PartnerLooks,
@@ -91,9 +91,8 @@ function PartnerLookEditor({ partner, viewerId, looks, onSave: save }: PartnerLo
         />
       </SettingSection>
       <SettingSection title="Color">
-        <SwatchPicker
+        <ColorPicker
           label="Color"
-          swatches={PARTNER_COLORS}
           value={look.badge.color}
           onChange={(value) => save({ ...stored, color: value })}
         />

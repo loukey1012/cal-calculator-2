@@ -7,6 +7,10 @@ const TEXT_CONTRAST = 4.5
 /** WCAG AA for large or bold text */
 const LARGE_TEXT_CONTRAST = 3
 const MIX_STEP = 0.05
+/** enough for a shape (a ring, a fill) to stand out from the surface around it */
+const GRAPHIC_CONTRAST = 1.3
+/** lighter than this, a fill vanishes on white cards (white itself, not lime or yellow) */
+const NEAR_WHITE_LUMINANCE = 0.8
 
 type Rgb = readonly [number, number, number]
 
@@ -54,6 +58,21 @@ export function readableInk(color: string, background: string): string {
   for (let weight = 0; weight < 1; weight += MIX_STEP) {
     const candidate = mixHex(color, target, weight)
     if (contrastRatio(candidate, background) >= TEXT_CONTRAST) return candidate
+  }
+  return target
+}
+
+/** White, or close to it: on a white card it needs an edge to be seen. */
+export function isNearWhite(color: string): boolean {
+  return luminance(color) > NEAR_WHITE_LUMINANCE
+}
+
+/** `color`, darkened or lightened just enough to stand out as a shape on `surface`. */
+export function visibleOn(color: string, surface: string): string {
+  const target = luminance(surface) > 0.5 ? DARK_INK : LIGHT_INK
+  for (let weight = 0; weight < 1; weight += MIX_STEP) {
+    const candidate = mixHex(color, target, weight)
+    if (contrastRatio(candidate, surface) >= GRAPHIC_CONTRAST) return candidate
   }
   return target
 }

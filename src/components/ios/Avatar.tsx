@@ -1,4 +1,7 @@
-import { onColor } from '../../lib/color'
+import { isNearWhite, onColor } from '../../lib/color'
+
+// a white circle would vanish on a white card
+const EDGE = 'inset 0 0 0 1px rgb(0 0 0 / 0.14)'
 
 type AvatarProps = {
   readonly name: string
@@ -16,7 +19,11 @@ export function Avatar({ name, color, size = 'small' }: AvatarProps) {
     <span
       aria-hidden="true"
       className={`grid shrink-0 place-items-center rounded-full font-extrabold ${SIZE_CLASSES[size]}`}
-      style={{ backgroundColor: color, color: onColor(color) }}
+      style={{
+        backgroundColor: color,
+        color: onColor(color),
+        boxShadow: isNearWhite(color) ? EDGE : undefined,
+      }}
     >
       {initial}
     </span>

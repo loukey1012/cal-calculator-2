@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react'
+import { fireEvent, screen, within, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
@@ -148,8 +148,17 @@ describe('Partner page', () => {
     expect(savedLooks()).toEqual({ u2: { nickname: 'Schatz', symbol: '🐰' } })
     expect(screen.getByTestId('partner-preview')).toHaveTextContent('🐰')
 
-    await user.click(radio('Color', 'Lavender'))
+    await user.click(radio('Color', 'Periwinkle'))
     expect(savedLooks()).toEqual({ u2: { nickname: 'Schatz', symbol: '🐰', color: '#a78bfa' } })
+  })
+
+  test('the color can be any custom color too', async () => {
+    renderPage(PARTNER_PATH)
+    await screen.findByLabelText('Nickname')
+
+    fireEvent.change(screen.getByLabelText('Custom color'), { target: { value: '#123456' } })
+
+    await waitFor(() => expect(savedLooks()).toEqual({ u2: { color: '#123456' } }))
   })
 
   test('reset goes back to "baby" and the heart', async () => {

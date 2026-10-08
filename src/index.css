@@ -32,6 +32,8 @@
   --accent: #007aff;
   --accent-ink: #0060df;
   --on-accent: #ffffff;
+  /* a thin edge for accent fills that would vanish on white (a white accent) */
+  --accent-edge: transparent;
   --goal-kcal: #ff375f;
   --goal-protein: #1f9d6b;
   --goal-carbs: #e8930c;
@@ -214,6 +216,11 @@
    blank except for the chip row (its own layer) until the next swipe */
 @utility stable-paint-layer {
   transform: translateZ(0);
+}
+
+/* accent fills: an edge only when the accent is (near) white */
+@utility accent-edge {
+  box-shadow: inset 0 0 0 1px var(--accent-edge);
 }
 
 /* soft accent tint behind icons and the active tab */

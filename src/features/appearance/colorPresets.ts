@@ -1,0 +1,42 @@
+/**
+ * The colors offered wherever a color is chosen (accent, ring colors, the partner's and your own
+ * symbol), by hue, plus White; any other color can be picked with the color picker. Earlier the
+ * accent, ring and partner lists each had their own; this keeps every color of all three.
+ */
+export const COLOR_PRESETS = [
+  { name: 'Red', value: '#e5484d' },
+  { name: 'Cherry', value: '#e63950' },
+  { name: 'Coral', value: '#ff6f61' },
+  { name: 'Orange', value: '#ef6c1a' },
+  { name: 'Peach', value: '#f0874a' },
+  { name: 'Apricot', value: '#ff9f7a' },
+  { name: 'Amber', value: '#e8930c' },
+  { name: 'Gold', value: '#c88a04' },
+  { name: 'Butter', value: '#f5c84c' },
+  { name: 'Yellow', value: '#f5c400' },
+  { name: 'Lime', value: '#c6f432' },
+  { name: 'Leaf', value: '#8bc34a' },
+  { name: 'Sage', value: '#8fb996' },
+  { name: 'Green', value: '#30a46c' },
+  { name: 'Emerald', value: '#1f9d6b' },
+  { name: 'Mint', value: '#2fa889' },
+  { name: 'Seafoam', value: '#4cc9a0' },
+  { name: 'Teal', value: '#12a594' },
+  { name: 'Cyan', value: '#0797b9' },
+  { name: 'Sky', value: '#2f9bd6' },
+  { name: 'Baby blue', value: '#5ab4f0' },
+  { name: 'Blue', value: '#007aff' },
+  { name: 'Indigo', value: '#5b5bd6' },
+  { name: 'Lavender', value: '#9466d6' },
+  { name: 'Periwinkle', value: '#a78bfa' },
+  { name: 'Violet', value: '#8e4ec6' },
+  { name: 'Lilac', value: '#d18cf0' },
+  { name: 'Pink', value: '#d6409f' },
+  { name: 'Berry', value: '#c2417e' },
+  { name: 'Raspberry', value: '#e8457c' },
+  { name: 'Ruby', value: '#ff375f' },
+  { name: 'Rose', value: '#ff5c8a' },
+  { name: 'Blush', value: '#f78fb3' },
+  { name: 'Slate', value: '#64748b' },
+  { name: 'White', value: '#ffffff' },
+] as const

@@ -1,4 +1,5 @@
 import { Avatar } from '../../components/ios/Avatar'
+import { isNearWhite } from '../../lib/color'
 import type { PartnerSymbol, PersonLook } from './partnerLook'
 
 type Size = 'small' | 'large'
@@ -11,11 +12,20 @@ const HEART_CLASSES: Record<Size, string> = {
 }
 // about 20% of the color, so the circle stays soft on light and dark cards alike
 const TINT_ALPHA = '33'
+const HEART_EDGE = 'rgb(0 0 0 / 0.25)'
 
 /** A filled heart in the given color. */
 export function HeartGlyph({ color, className }: { color: string; className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill={color}>
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+      fill={color}
+      // a white heart would vanish on a white card
+      stroke={isNearWhite(color) ? HEART_EDGE : undefined}
+      strokeWidth={1}
+    >
       <path d="M12 21s-7.5-4.6-9.6-9.4C.9 8.2 3 4.5 6.7 4.5c2.1 0 3.6 1.1 4.3 2.3h2c.7-1.2 2.2-2.3 4.3-2.3 3.7 0 5.8 3.7 4.3 7.1C19.5 16.4 12 21 12 21Z" />
     </svg>
   )

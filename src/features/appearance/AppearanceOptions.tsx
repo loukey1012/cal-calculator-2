@@ -1,42 +1,7 @@
 import type { ReactNode } from 'react'
 
-const SELECTED_RING = 'ring-2 ring-accent ring-offset-2 ring-offset-bg'
-
-type Swatch = { readonly name: string; readonly value: string }
-
-type SwatchPickerProps = {
-  readonly label: string
-  readonly swatches: readonly Swatch[]
-  readonly value: string
-  readonly onChange: (value: string) => void
-}
-
-/** Round color buttons, e.g. the accent color. */
-export function SwatchPicker({ label, swatches, value, onChange }: SwatchPickerProps) {
-  return (
-    <div
-      role="radiogroup"
-      aria-label={label}
-      className="grid grid-cols-6 justify-items-center gap-3 rounded-3xl bg-bg-elevated p-4 shadow-card"
-    >
-      {swatches.map((swatch) => {
-        const selected = swatch.value === value.toLowerCase()
-        return (
-          <button
-            key={swatch.value}
-            type="button"
-            role="radio"
-            aria-checked={selected}
-            aria-label={swatch.name}
-            onClick={() => onChange(swatch.value)}
-            className={`h-11 w-11 rounded-full ${selected ? 'ring-2 ring-label ring-offset-2 ring-offset-bg-elevated' : ''}`}
-            style={{ backgroundColor: swatch.value }}
-          />
-        )
-      })}
-    </div>
-  )
-}
+// the readable accent: a white accent's ring would vanish on a light page
+const SELECTED_RING = 'ring-2 ring-accent-ink ring-offset-2 ring-offset-bg'
 
 type OptionCard<T extends string> = {
   readonly value: T

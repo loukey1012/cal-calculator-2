@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { contrastRatio, mixHex, onColor, readableInk } from './color'
+import { contrastRatio, isNearWhite, mixHex, onColor, readableInk, visibleOn } from './color'
 
 describe('contrastRatio', () => {
   test('black on white is the maximum 21:1, a color on itself 1:1', () => {
@@ -43,5 +43,29 @@ describe('readableInk', () => {
     const ink = readableInk('#2b2f36', '#0c0c0d')
 
     expect(contrastRatio(ink, '#0c0c0d')).toBeGreaterThanOrEqual(4.5)
+  })
+})
+
+describe('isNearWhite', () => {
+  test('white and colors close to it, not light colors like lime or yellow', () => {
+    expect(isNearWhite('#ffffff')).toBe(true)
+    expect(isNearWhite('#f4f4f4')).toBe(true)
+    expect(isNearWhite('#c6f432')).toBe(false)
+    expect(isNearWhite('#f5c400')).toBe(false)
+    expect(isNearWhite('#000000')).toBe(false)
+  })
+})
+
+describe('visibleOn', () => {
+  test('keeps a color that already stands out from the surface', () => {
+    expect(visibleOn('#007aff', '#ffffff')).toBe('#007aff')
+    expect(visibleOn('#ffffff', '#17191e')).toBe('#ffffff')
+  })
+
+  test('darkens white on a white card just enough to be seen', () => {
+    const visible = visibleOn('#ffffff', '#ffffff')
+
+    expect(visible).not.toBe('#ffffff')
+    expect(contrastRatio(visible, '#ffffff')).toBeGreaterThanOrEqual(1.3)
   })
 })

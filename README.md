@@ -53,7 +53,7 @@ Built for a two-person household: both members log their own meals, can see and 
 - Accounts with email and password. One person creates a **household**, the other joins with a **12-character invite code** (shareable through the iOS share sheet).
 - A **person switch** on Today shows a household member's day, rings and meals. Members can log and edit meals for each other.
 - Your **name** shown to the household is under Settings › Account.
-- **Your partner, your way** (Settings › Members › your partner): give them a **nickname** (default **“baby”**, up to 20 characters) and a **symbol** in place of the initial: a **heart** (default) or one of 17 cute emojis (💕 🌸 🐻 🧸 🐰 🐱 🦋 🍓 🌙 …), in one of 12 soft colors (default Rose). Only you see it, everywhere they appear (person switch, goal card, cooking together, members); their account name stays unchanged and is shown next to the nickname in Settings. Saved to your account in `profiles.appearance` (`partnerLooks`, by member id), so it follows you to every device. Leaving the nickname empty goes back to “baby”; **Reset** goes back to “baby” and the heart.
+- **Your partner, your way** (Settings › Members › your partner): give them a **nickname** (default **“baby”**, up to 20 characters) and a **symbol** in place of the initial: a **heart** (default) or one of 17 cute emojis (💕 🌸 🐻 🧸 🐰 🐱 🦋 🍓 🌙 …), in any color (the shared color list, default Rose, or a custom one). Only you see it, everywhere they appear (person switch, goal card, cooking together, members); their account name stays unchanged and is shown next to the nickname in Settings. Saved to your account in `profiles.appearance` (`partnerLooks`, by member id), so it follows you to every device. Leaving the nickname empty goes back to “baby”; **Reset** goes back to “baby” and the heart.
 
 ### Ingredient database (Ingredients tab)
 
@@ -98,11 +98,12 @@ Everything here is saved **to your account**, never to the device: you get the s
   - **Theme:** System, Light or Dark.
   - **Light style:** **Classic** (cool grey and white) or **Pink** (blush page, rose-tinted cards, text and tracks, pink-leaning goal colors). Used whenever the app is light, also with System during the day.
   - **Dark style:** **Soft** (deep grey, rounded) or **Graphite** (near-black, Space Grotesk numbers, uppercase labels; stored as `bento`). Used whenever the app is dark, also with System at night.
-  - **Accent color:** 12 colors (buttons, the active tab, your avatar). Text in the accent color is darkened or lightened automatically so it stays readable, e.g. Lime on a light background.
+  - **Accent color:** any color (buttons, the active tab, your avatar). Text in the accent color is darkened or lightened automatically so it stays readable, e.g. Lime or White on a light background; a White accent gets a thin edge on its buttons, chips and avatar.
 - **Progress** (with a live preview at the top)
   - **Progress style:** Rings, **Ring + bars** (default: a calorie ring, bars for the macros), Bars or Compact.
   - **Goal colors:** Vivid, Pastel, Accent shades or High contrast.
-  - **Ring colors:** give Calories, Protein, Carbs or Fat **its own color** (18 swatches, or any color with the color picker); the others keep the palette's. "Use palette color" undoes one, and choosing a palette resets them all. A custom color stays the same in every theme.
+  - **Ring colors:** give Calories, Protein, Carbs or Fat **its own color**; the others keep the palette's. "Use palette color" undoes one, and choosing a palette resets them all. A custom color stays the same in every theme, except that a White ring is darkened just enough to show on light cards.
+- **Choosing a color** works the same everywhere (accent, ring colors, your partner's color): **35 preset colors** in one list by hue (every color the separate lists offered before, plus **White**), and **Custom** (the rainbow circle) for any color with the system color picker, used once the picker closes.
 - **Category chips** (with a preview): **One line** (default, scrolls sideways), **All on screen** (slimmer chips wrapping into rows) or **Grouped** (broad categories such as Fresh; tapping one filters by it and opens its categories below) for the category filter on the Ingredients page. Wrapped chips are **arranged automatically to fill as few rows as possible** ("All" stays first; alphabetical within each row), measured on the device and re-arranged when the width or fonts change.
 - **App icon:** eight versions of the C-ring icon: **Graphite** (default), Classic, Pink, Sunset, Progress, Ember, Leaf and Violet. Used when you add the app to the home screen (also before signing in, on a phone you used before) and in the browser tab. Picking a new icon **copies the app's link** (a short message confirms it), ready to paste into Safari when adding the app again. To change an installed icon, see [Installing on the iPhone](#installing-on-the-iphone).
 
@@ -128,10 +129,10 @@ Planned 2026-10-07. Each group is built, tested and shipped before the next one 
 - [x] **New version ready**: if an update finishes downloading while the app is open, a toast offers to reload right away instead of at the next start
 - [x] **Version line** at the bottom of Settings (build date and short commit), to check which version is running
 
-**4. Colors: one color picker everywhere**
+**4. Colors: one color picker everywhere** (done)
 
-- [ ] The same preset colors everywhere a color is chosen (accent color, ring colors, member colors, your own symbol color): the current accent, ring and member colors merged into one list, duplicates removed, plus **White**
-- [ ] Every color choice also has **Custom**: any color from the color picker (accent text stays readable automatically)
+- [x] The same preset colors everywhere a color is chosen (accent color, ring colors, member colors, your own symbol color): the current accent, ring and member colors merged into one list, duplicates removed, plus **White**
+- [x] Every color choice also has **Custom**: any color from the color picker (accent text stays readable automatically)
 
 **5. Symbols for you and more emojis**
 
@@ -265,7 +266,7 @@ pnpm icons          # regenerate the icon PNGs: the default set from public/icon
 
 To add an app icon choice: put its SVG in `public/icons/<name>/icon.svg`, add `<name>` to `APP_ICONS` (`src/features/appearance/appearance.ts`) and a label to `APP_ICON_OPTIONS`, then run `pnpm icons`.
 
-**End-to-end journeys** (log a meal on Cook, Back and the back swipe going one step at a time on Cook, category chips and creating a missing ingredient from the Cook search, the new-version toast on the first start only, a single food changed in place, cooking together for two, sharing a meal afterwards, leftovers, goals and partner, partner nickname and symbol, Today fitting the screen, history, ingredients, category management, offline, a partner's change showing up live and after the app was in the background, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color) run the real app against the dev project. Build it against dev and pass the test credentials:
+**End-to-end journeys** (log a meal on Cook, Back and the back swipe going one step at a time on Cook, category chips and creating a missing ingredient from the Cook search, the new-version toast on the first start only, a White and a custom accent color, a single food changed in place, cooking together for two, sharing a meal afterwards, leftovers, goals and partner, partner nickname and symbol, Today fitting the screen, history, ingredients, category management, offline, a partner's change showing up live and after the app was in the background, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color) run the real app against the dev project. Build it against dev and pass the test credentials:
 
 ```bash
 set -a; . ./.env.test.local; set +a

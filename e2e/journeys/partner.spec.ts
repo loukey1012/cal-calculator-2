@@ -17,7 +17,7 @@ test('give the partner a nickname and an emoji, kept after a reload', async ({ p
   await nickname.fill('Schatz')
   await nickname.press('Enter')
   await settings.getByRole('radio', { name: 'Bunny' }).click()
-  await settings.getByRole('radio', { name: 'Lavender' }).click()
+  await settings.getByRole('radio', { name: 'Periwinkle' }).click()
   await expect(settings.getByTestId('partner-preview')).toHaveText(/🐰\s*Schatz/)
 
   await expect

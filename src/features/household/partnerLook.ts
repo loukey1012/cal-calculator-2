@@ -25,22 +25,6 @@ export const PARTNER_SYMBOLS = [
   { value: '☁️', name: 'Cloud' },
 ] as const
 
-/** Soft, cute colors that still read on light, pink and dark cards. */
-export const PARTNER_COLORS = [
-  { name: 'Rose', value: '#ff5c8a' },
-  { name: 'Blush', value: '#f78fb3' },
-  { name: 'Berry', value: '#c2417e' },
-  { name: 'Cherry', value: '#e63950' },
-  { name: 'Coral', value: '#ff6f61' },
-  { name: 'Peach', value: '#ff9f7a' },
-  { name: 'Butter', value: '#f5c84c' },
-  { name: 'Mint', value: '#4cc9a0' },
-  { name: 'Sage', value: '#8fb996' },
-  { name: 'Sky', value: '#5ab4f0' },
-  { name: 'Lavender', value: '#a78bfa' },
-  { name: 'Lilac', value: '#d18cf0' },
-] as const
-
 export type PartnerSymbol = (typeof PARTNER_SYMBOLS)[number]['value']
 
 type SymbolValues = [PartnerSymbol, ...PartnerSymbol[]]
