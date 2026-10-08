@@ -44,6 +44,16 @@ describe('GoalProgressView', () => {
     },
   )
 
+  test('fiber shows as its own goal with its own color', () => {
+    const fiber = { ...PROTEIN, key: 'fiber' as const, consumed: 18, target: 30, incomplete: false }
+    render(<GoalProgressView progress={[KCAL, fiber]} style="bars" />)
+
+    const [, item] = items()
+    expect(item).toHaveTextContent('Fiber')
+    expect(item).toHaveTextContent('18.0 / 30 g')
+    expect(item?.innerHTML).toContain('var(--goal-fiber)')
+  })
+
   test('shows when a goal is exceeded', () => {
     render(
       <GoalProgressView

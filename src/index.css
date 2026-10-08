@@ -38,6 +38,7 @@
   --goal-protein: #1f9d6b;
   --goal-carbs: #e8930c;
   --goal-fat: #2f9bd6;
+  --goal-fiber: #8e5bd6;
 
   --tabbar-height: 64px;
   /* gap between the tab bar and the real screen edge: like iOS floating bars it reaches into
@@ -77,6 +78,7 @@
   --goal-protein: #2fa889;
   --goal-carbs: #f0874a;
   --goal-fat: #9466d6;
+  --goal-fiber: #3d8fd6;
 }
 
 :root[data-scheme='soft'] {
@@ -98,6 +100,7 @@
   --goal-protein: #3cc48a;
   --goal-carbs: #f0a63a;
   --goal-fat: #5ec8f2;
+  --goal-fiber: #b38cff;
   color-scheme: dark;
 }
 
@@ -123,6 +126,7 @@
   --goal-protein: #5ee0ff;
   --goal-carbs: #ffb547;
   --goal-fat: #ff7aa8;
+  --goal-fiber: #b6f36b;
   color-scheme: dark;
 }
 

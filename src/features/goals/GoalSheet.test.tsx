@@ -8,7 +8,14 @@ vi.mock('./goalsApi', () => ({ fetchGoals: vi.fn(), saveGoal: vi.fn() }))
 import { GoalSheet } from './GoalSheet'
 import { saveGoal } from './goalsApi'
 
-const CURRENT = { validFrom: '2026-09-01', kcal: 2000, proteinG: 120, carbsG: null, fatG: null }
+const CURRENT = {
+  validFrom: '2026-09-01',
+  kcal: 2000,
+  proteinG: 120,
+  carbsG: null,
+  fatG: null,
+  fiberG: null,
+}
 
 function renderSheet(current = CURRENT as typeof CURRENT | null) {
   const onClose = vi.fn()
@@ -38,6 +45,7 @@ describe('GoalSheet', () => {
     await user.clear(screen.getByLabelText('Calories'))
     await user.type(screen.getByLabelText('Calories'), '1800')
     await user.type(screen.getByLabelText('Fat'), '60')
+    await user.type(screen.getByLabelText('Fiber'), '30')
     await user.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() => expect(onClose).toHaveBeenCalled())
@@ -46,6 +54,7 @@ describe('GoalSheet', () => {
       proteinG: 120,
       carbsG: null,
       fatG: 60,
+      fiberG: 30,
     })
   })
 

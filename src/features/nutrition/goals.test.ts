@@ -10,8 +10,16 @@ const SEPTEMBER: Goal = {
   proteinG: 120,
   carbsG: null,
   fatG: null,
+  fiberG: null,
 }
-const OCTOBER: Goal = { validFrom: '2026-10-01', kcal: 1800, proteinG: 140, carbsG: 200, fatG: 60 }
+const OCTOBER: Goal = {
+  validFrom: '2026-10-01',
+  kcal: 1800,
+  proteinG: 140,
+  carbsG: 200,
+  fatG: 60,
+  fiberG: null,
+}
 
 describe('goalFromRow', () => {
   test('maps a goal_history row', () => {
@@ -23,6 +31,7 @@ describe('goalFromRow', () => {
       protein_g: 120,
       carbs_g: null,
       fat_g: null,
+      fiber_g: null,
       created_at: '',
     }
 
@@ -97,6 +106,15 @@ describe('goalProgress', () => {
       reached: true,
     })
     expect(carbs).toMatchObject({ consumed: 50, target: 200, ratio: 0.25, incomplete: true })
+  })
+
+  test('fiber gets a ring once it has a target; unknown fiber makes it a lower bound', () => {
+    const fiber = goalProgress(LUNCH, { ...SEPTEMBER, fiberG: 30 }).find(
+      (ring) => ring.key === 'fiber',
+    )
+
+    expect(goalProgress(LUNCH, SEPTEMBER).some((ring) => ring.key === 'fiber')).toBe(false)
+    expect(fiber).toMatchObject({ consumed: 0, target: 30, incomplete: true })
   })
 
   test('a zero target counts as reached without dividing by zero', () => {

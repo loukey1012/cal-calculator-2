@@ -28,6 +28,7 @@ const SAMPLE_PROGRESS = [
   sample('protein', 92, 140),
   sample('carbs', 150, 230),
   sample('fat', 41, 70),
+  sample('fiber', 18, 30),
 ]
 
 /** Settings › Appearance › Progress: how the goal rings and bars look. */

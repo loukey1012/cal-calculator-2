@@ -61,7 +61,14 @@ const LUNCH = dayMeal('m1', 'lunch', [
   }),
 ])
 
-const GOAL = { validFrom: '2026-09-01', kcal: 2000, proteinG: 120, carbsG: null, fatG: null }
+const GOAL = {
+  validFrom: '2026-09-01',
+  kcal: 2000,
+  proteinG: 120,
+  carbsG: null,
+  fatG: null,
+  fiberG: null,
+}
 const PARTNER = { ...PROFILE, id: 'u2', display_name: 'baby' }
 
 function LocationProbe() {

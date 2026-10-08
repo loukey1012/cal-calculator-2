@@ -1,13 +1,8 @@
 import { z } from 'zod'
 import { roundTo } from '../../lib/numbers'
 import { EMPTY_INGREDIENT_FORM, type IngredientFormValues } from '../ingredients/ingredientForm'
-import {
-  NUTRITION_FIELDS,
-  nutritionWarnings,
-  resolveNutrition,
-  type NutritionBasis,
-  type NutritionField,
-} from './productNutrition'
+import { NUTRITION_FIELDS, type NutritionBasis, type NutritionField } from '../nutrition/bases'
+import { nutritionWarnings, resolveNutrition } from './productNutrition'
 
 /**
  * Product data from Open Food Facts (free, open, no account), used to fill in a new ingredient.
@@ -23,7 +18,6 @@ const NUTRIENT_DECIMALS = 2
 // the ingredient form's limits
 const MAX_NAME = 100
 const MAX_BRAND = 60
-const SERVING_LABEL = 'Portion'
 
 // Open Food Facts names, without the _100g / _serving ending
 const OFF_NAMES: Readonly<Record<Exclude<NutritionField, 'kcal'>, string>> = {
@@ -149,6 +143,18 @@ function firstBrand(brands: string | undefined): string {
 
 type ParsedProduct = z.output<typeof productSchema>
 
+const capitalized = (part: string) =>
+  part.charAt(0).toLocaleUpperCase() + part.slice(1).toLocaleLowerCase()
+
+/** e.g. "LOW SUGAR gummies coca-cola" → "Low Sugar Gummies Coca-Cola" */
+export function titleCase(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word.split('-').map(capitalized).join('-'))
+    .join(' ')
+}
+
 function productName(product: ParsedProduct): string {
   const german = product.product_name_de?.trim()
   return german || product.product_name?.trim() || ''
@@ -167,18 +173,16 @@ export function productPrefill(raw: OffProduct, barcode: string): ProductPrefill
   const product = productSchema.parse(raw)
   const reported = reportedNutrition(product)
   const { per100g, perPortion } = resolveNutrition(reported)
-  const hasPortion = reported.portionG !== null || perPortion.kcal !== null
   return {
     values: {
       ...EMPTY_INGREDIENT_FORM,
-      name: productName(product).slice(0, MAX_NAME),
+      name: titleCase(productName(product)).slice(0, MAX_NAME),
       brand: firstBrand(product.brands).slice(0, MAX_BRAND),
       barcode,
       per100gEnabled: per100g.kcal !== null,
       per100g: formBasis(per100g),
       perUnitEnabled: perPortion.kcal !== null,
       perUnit: formBasis(perPortion),
-      unitLabel: hasPortion ? SERVING_LABEL : '',
       unitWeightG: asText(reported.portionG),
     },
     warnings: nutritionWarnings(reported),

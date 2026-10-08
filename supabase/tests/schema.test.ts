@@ -167,6 +167,20 @@ describe('goals', () => {
     expect(carolSees).toEqual([])
   })
 
+  test('a fiber goal is optional and never negative', async () => {
+    const fiber = await alice.client
+      .from('goal_history')
+      .insert({ user_id: alice.id, valid_from: '2026-09-15', kcal: 2000, fiber_g: 30 })
+      .select('fiber_g')
+      .single()
+    const negative = await alice.client
+      .from('goal_history')
+      .insert({ user_id: alice.id, valid_from: '2026-09-16', kcal: 2000, fiber_g: -1 })
+
+    expect(fiber.data).toEqual({ fiber_g: 30 })
+    expect(negative.error?.code).toBe('23514')
+  })
+
   test('nobody can set goals for another user', async () => {
     const { error } = await bob.client
       .from('goal_history')

@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { fieldErrors, type FieldErrors } from '../../lib/forms'
-import { parseDecimal } from '../../lib/numbers'
+import { parseDecimal, roundTo } from '../../lib/numbers'
+import { completeBases, mapBasis, NUTRITION_FIELDS, type NutritionBasis } from '../nutrition/bases'
 import { normalizeBarcode } from '../barcode/barcode'
 import { toWholeKcal } from '../nutrition/format'
 import { mapNutrients, NUTRIENT_KEYS } from '../nutrition/types'
@@ -252,5 +253,70 @@ export function toFormValues(ingredient: Ingredient): IngredientFormValues {
     },
     unitLabel: asText(ingredient.unit_label),
     unitWeightG: asText(ingredient.unit_weight_g),
+  }
+}
+
+// ─── "Calculate missing values": per 100 g ↔ per unit with the grams per unit ───────────────
+
+const CALCULATED_DECIMALS = 2
+
+export type MissingValuesResult =
+  | { readonly kind: 'filled'; readonly values: IngredientFormValues; readonly count: number }
+  /** no empty field has a value on the other side */
+  | { readonly kind: 'nothing' }
+  | { readonly kind: 'needsWeight' }
+
+/** The numbers of a switched-on section; a switched-off one counts as empty. */
+function basisNumbers(enabled: boolean, basis: BasisFormValues): NutritionBasis {
+  return mapBasis((field) => (enabled ? parseDecimal(basis[field]) : null))
+}
+
+/** Fills only empty fields, so nothing typed is ever replaced. */
+function withCalculated(
+  basis: BasisFormValues,
+  calculated: NutritionBasis,
+): { readonly basis: BasisFormValues; readonly count: number } {
+  const filled = NUTRITION_FIELDS.filter(
+    (field) => basis[field].trim() === '' && calculated[field] !== null,
+  )
+  const next = { ...basis }
+  for (const field of filled) {
+    const value = calculated[field] ?? 0
+    next[field] =
+      field === 'kcal' ? String(Math.round(value)) : String(roundTo(value, CALCULATED_DECIMALS))
+  }
+  return { basis: next, count: filled.length }
+}
+
+/** Works out the empty values of each section from the other one and the grams per unit. */
+export function calculateMissingValues(values: IngredientFormValues): MissingValuesResult {
+  const weight = parseDecimal(values.unitWeightG)
+  if (weight === null || weight <= 0) return { kind: 'needsWeight' }
+  const complete = completeBases(
+    basisNumbers(values.per100gEnabled, values.per100g),
+    basisNumbers(values.perUnitEnabled, values.perUnit),
+    weight,
+  )
+  // a switched-off section's leftover text doesn't block filling it
+  const per100g = withCalculated(
+    values.per100gEnabled ? values.per100g : EMPTY_BASIS,
+    complete.per100g,
+  )
+  const perUnit = withCalculated(
+    values.perUnitEnabled ? values.perUnit : EMPTY_BASIS,
+    complete.perUnit,
+  )
+  const count = per100g.count + perUnit.count
+  if (count === 0) return { kind: 'nothing' }
+  return {
+    kind: 'filled',
+    count,
+    values: {
+      ...values,
+      per100gEnabled: values.per100gEnabled || per100g.count > 0,
+      per100g: per100g.count > 0 ? per100g.basis : values.per100g,
+      perUnitEnabled: values.perUnitEnabled || perUnit.count > 0,
+      perUnit: perUnit.count > 0 ? perUnit.basis : values.perUnit,
+    },
   }
 }

@@ -9,9 +9,10 @@ export type Goal = {
   readonly proteinG: number | null
   readonly carbsG: number | null
   readonly fatG: number | null
+  readonly fiberG: number | null
 }
 
-export type RingKey = 'kcal' | 'protein' | 'carbs' | 'fat'
+export type RingKey = 'kcal' | 'protein' | 'carbs' | 'fat' | 'fiber'
 
 export type GoalProgress = {
   readonly key: RingKey
@@ -35,6 +36,7 @@ export function goalFromRow(row: Tables<'goal_history'>): Goal {
     proteinG: row.protein_g,
     carbsG: row.carbs_g,
     fatG: row.fat_g,
+    fiberG: row.fiber_g,
   }
 }
 
@@ -67,7 +69,7 @@ function progress(
   }
 }
 
-/** Calories always; protein, carbs and fat only when a target is set. */
+/** Calories always; protein, carbs, fat and fiber only when a target is set. */
 export function goalProgress(totals: NutritionTotals, goal: Goal): readonly GoalProgress[] {
   const rings: ReadonlyArray<readonly [RingKey, number | null, number]> = [
     // rounded up like everywhere it is displayed
@@ -75,6 +77,7 @@ export function goalProgress(totals: NutritionTotals, goal: Goal): readonly Goal
     ['protein', goal.proteinG, totals.protein],
     ['carbs', goal.carbsG, totals.carbs],
     ['fat', goal.fatG, totals.fat],
+    ['fiber', goal.fiberG, totals.fiber],
   ]
   return rings.flatMap(([key, target, consumed]) =>
     target === null ? [] : [progress(key, consumed, target, totals)],

@@ -42,7 +42,14 @@ const PROFILE = {
   updated_at: '',
 }
 const PARTNER = { ...PROFILE, id: 'u2', display_name: 'baby' }
-const GOAL = { validFrom: '2026-09-01', kcal: 2000, proteinG: null, carbsG: null, fatG: null }
+const GOAL = {
+  validFrom: '2026-09-01',
+  kcal: 2000,
+  proteinG: null,
+  carbsG: null,
+  fatG: null,
+  fiberG: null,
+}
 
 function LocationProbe() {
   return <output data-testid="path">{useLocation().pathname}</output>

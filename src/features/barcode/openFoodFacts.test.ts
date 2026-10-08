@@ -70,7 +70,7 @@ describe('productFormValues', () => {
           fiber: '23.6',
           salt: '0.1',
         },
-        unitLabel: 'Portion',
+        unitLabel: '',
         unitWeightG: '50',
       },
       warnings: [],
@@ -83,7 +83,7 @@ describe('productFormValues', () => {
       '96385074',
     )
 
-    expect(values).toMatchObject({ perUnitEnabled: true, unitLabel: 'Portion', unitWeightG: '40' })
+    expect(values).toMatchObject({ perUnitEnabled: true, unitLabel: '', unitWeightG: '40' })
     expect(values.perUnit).toEqual(basis({ kcal: '80', protein: '4' }))
   })
 
@@ -111,7 +111,7 @@ describe('productFormValues', () => {
     expect(values).toMatchObject({
       per100gEnabled: false,
       perUnitEnabled: true,
-      unitLabel: 'Portion',
+      unitLabel: '',
       unitWeightG: '',
     })
     expect(values.per100g).toEqual(basis({}))
@@ -166,6 +166,22 @@ describe('productFormValues', () => {
     )
 
     expect(values).toMatchObject({ name: 'Haferdrink', per100gEnabled: false })
+  })
+
+  test('names get a capital first letter per word, the rest lowercase; brands stay as they are', () => {
+    const values = productFormValues(
+      { product_name_de: 'LOW SUGAR gummies coca-cola  7% fett', brands: 'AHEAD' },
+      '96385074',
+    )
+
+    expect(values).toMatchObject({ name: 'Low Sugar Gummies Coca-Cola 7% Fett', brand: 'AHEAD' })
+  })
+
+  test('the unit name is left for you to choose (e.g. bar, pack)', () => {
+    expect(productFormValues(COLA_BOTTLES, '4260562940909')).toMatchObject({
+      unitLabel: '',
+      unitWeightG: '50',
+    })
   })
 
   test('names and brands are cut to what the form allows', () => {

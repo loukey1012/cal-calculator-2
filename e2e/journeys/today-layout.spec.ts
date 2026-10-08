@@ -18,11 +18,13 @@ test('the Today page fits the iPhone screen without scrolling', async ({ page, b
       protein_g: 140,
       carbs_g: 230,
       fat_g: 70,
+      fiber_g: 30,
     })),
   )
   await logIn(page, me)
   const today = activePage(page)
   await expect(today.getByRole('list', { name: 'Goals' })).toBeVisible()
+  await expect(today.getByRole('list', { name: 'Goals' })).toContainText('Fiber')
   await expect(today.getByRole('button', { name: /Snack/ })).toContainText('Nothing logged')
 
   const { scrollHeight, clientHeight } = await today.evaluate((element) => ({

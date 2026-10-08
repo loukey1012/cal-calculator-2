@@ -11,6 +11,7 @@ const GOAL_STYLES: Record<RingKey, GoalStyle> = {
   protein: { label: 'Protein', color: 'var(--goal-protein)', unit: 'g' },
   carbs: { label: 'Carbs', color: 'var(--goal-carbs)', unit: 'g' },
   fat: { label: 'Fat', color: 'var(--goal-fat)', unit: 'g' },
+  fiber: { label: 'Fiber', color: 'var(--goal-fiber)', unit: 'g' },
 }
 
 const targetFormat = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 })

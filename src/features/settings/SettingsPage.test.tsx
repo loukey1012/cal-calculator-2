@@ -48,7 +48,7 @@ beforeEach(() => {
   vi.mocked(fetchHousehold).mockResolvedValue(HOUSEHOLD)
   vi.mocked(fetchMembers).mockResolvedValue([PARTNER, ME])
   vi.mocked(fetchGoals).mockResolvedValue([
-    { validFrom: '2026-09-01', kcal: 2000, proteinG: 120, carbsG: null, fatG: null },
+    { validFrom: '2026-09-01', kcal: 2000, proteinG: 120, carbsG: null, fatG: null, fiberG: null },
   ])
 })
 

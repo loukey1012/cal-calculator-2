@@ -15,6 +15,7 @@ const ROW = {
   protein_g: 120,
   carbs_g: null,
   fat_g: null,
+  fiber_g: null,
   created_at: '',
 }
 
@@ -26,7 +27,14 @@ describe('goalsApi', () => {
     supabaseMock.from.mockReturnValueOnce(query)
 
     await expect(fetchGoals('u1')).resolves.toEqual([
-      { validFrom: '2026-09-01', kcal: 2000, proteinG: 120, carbsG: null, fatG: null },
+      {
+        validFrom: '2026-09-01',
+        kcal: 2000,
+        proteinG: 120,
+        carbsG: null,
+        fatG: null,
+        fiberG: null,
+      },
     ])
     expect(supabaseMock.from).toHaveBeenCalledWith('goal_history')
     expect(query.eq).toHaveBeenCalledWith('user_id', 'u1')
@@ -37,7 +45,13 @@ describe('goalsApi', () => {
     const query = fakeQuery({ data: null, error: null })
     supabaseMock.from.mockReturnValueOnce(query)
 
-    await saveGoal('u1', '2026-10-02', { kcal: 1800, proteinG: 140, carbsG: null, fatG: 60 })
+    await saveGoal('u1', '2026-10-02', {
+      kcal: 1800,
+      proteinG: 140,
+      carbsG: null,
+      fatG: 60,
+      fiberG: null,
+    })
 
     expect(query.upsert).toHaveBeenCalledWith(
       {
@@ -47,6 +61,7 @@ describe('goalsApi', () => {
         protein_g: 140,
         carbs_g: null,
         fat_g: 60,
+        fiber_g: null,
       },
       { onConflict: 'user_id,valid_from' },
     )
@@ -56,7 +71,14 @@ describe('goalsApi', () => {
     ['fetchGoals', () => fetchGoals('u1')],
     [
       'saveGoal',
-      () => saveGoal('u1', '2026-10-02', { kcal: 1, proteinG: null, carbsG: null, fatG: null }),
+      () =>
+        saveGoal('u1', '2026-10-02', {
+          kcal: 1,
+          proteinG: null,
+          carbsG: null,
+          fatG: null,
+          fiberG: null,
+        }),
     ],
   ])('%s turns database errors into ApiError', async (_name, call) => {
     supabaseMock.from.mockReturnValueOnce(

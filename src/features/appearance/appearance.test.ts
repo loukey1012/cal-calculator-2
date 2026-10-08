@@ -149,9 +149,24 @@ describe('the pink scheme', () => {
 
 describe('custom goal colors', () => {
   test('keeps valid colors per goal, lowercased', () => {
-    const parsed = parseAppearance({ customGoalColors: { protein: '#2FA889', fat: '#9466d6' } })
+    const parsed = parseAppearance({
+      customGoalColors: { protein: '#2FA889', fat: '#9466d6', fiber: '#8E5BD6' },
+    })
 
-    expect(parsed.customGoalColors).toEqual({ protein: '#2fa889', fat: '#9466d6' })
+    expect(parsed.customGoalColors).toEqual({
+      protein: '#2fa889',
+      fat: '#9466d6',
+      fiber: '#8e5bd6',
+    })
+  })
+
+  test('every palette has five distinct goal colors, fiber included', () => {
+    for (const palette of ['vivid', 'pastel', 'accent', 'contrast'] as const) {
+      for (const scheme of ['light', 'pink', 'soft', 'bento'] as const) {
+        const colors = goalColors(palette, scheme, '#007aff')
+        expect(new Set(colors).size).toBe(5)
+      }
+    }
   })
 
   test('drops only the invalid entries', () => {
@@ -174,7 +189,7 @@ describe('custom goal colors', () => {
 
     const colors = goalColors('vivid', 'light', '#007aff', { carbs: '#123456' })
 
-    expect(colors).toEqual([palette[0], palette[1], '#123456', palette[3]])
+    expect(colors).toEqual([palette[0], palette[1], '#123456', palette[3], palette[4]])
   })
 
   test('the CSS variables use the custom colors', () => {
@@ -187,14 +202,14 @@ describe('custom goal colors', () => {
 
 describe('goalColors', () => {
   test('fixed palettes have one color per goal', () => {
-    expect(goalColors('vivid', 'light', '#007aff')).toHaveLength(4)
+    expect(goalColors('vivid', 'light', '#007aff')).toHaveLength(5)
   })
 
   test('the accent palette starts with the accent and fades it', () => {
     const colors = goalColors('accent', 'light', '#007aff')
 
     expect(colors[0]).toBe('#007aff')
-    expect(new Set(colors).size).toBe(4)
+    expect(new Set(colors).size).toBe(5)
   })
 })
 
@@ -228,7 +243,13 @@ describe('appearanceVariables', () => {
     const vars = appearanceVariables('vivid', 'soft', '#007aff')
 
     expect(Object.keys(vars)).toEqual(
-      expect.arrayContaining(['--goal-kcal', '--goal-protein', '--goal-carbs', '--goal-fat']),
+      expect.arrayContaining([
+        '--goal-kcal',
+        '--goal-protein',
+        '--goal-carbs',
+        '--goal-fat',
+        '--goal-fiber',
+      ]),
     )
   })
 })

@@ -5,19 +5,23 @@ describe('parseGoalForm', () => {
   test('only calories are required; macros are optional', () => {
     expect(parseGoalForm({ ...EMPTY_GOAL_FORM, kcal: '2000' })).toEqual({
       success: true,
-      data: { kcal: 2000, proteinG: null, carbsG: null, fatG: null },
+      data: { kcal: 2000, proteinG: null, carbsG: null, fatG: null, fiberG: null },
     })
   })
 
   test('accepts comma decimals for grams and rounds calories up', () => {
-    expect(parseGoalForm({ kcal: '1999,2', protein: '120,5', carbs: '200', fat: '' })).toEqual({
+    expect(
+      parseGoalForm({ kcal: '1999,2', protein: '120,5', carbs: '200', fat: '', fiber: '' }),
+    ).toEqual({
       success: true,
-      data: { kcal: 2000, proteinG: 120.5, carbsG: 200, fatG: null },
+      data: { kcal: 2000, proteinG: 120.5, carbsG: 200, fatG: null, fiberG: null },
     })
   })
 
   test('explains what is wrong', () => {
-    expect(parseGoalForm({ kcal: '', protein: 'lots', carbs: '100000', fat: '' })).toEqual({
+    expect(
+      parseGoalForm({ kcal: '', protein: 'lots', carbs: '100000', fat: '', fiber: '' }),
+    ).toEqual({
       success: false,
       errors: {
         kcal: 'Enter your calorie goal',
@@ -41,8 +45,9 @@ describe('toGoalFormValues', () => {
         proteinG: 120,
         carbsG: null,
         fatG: 60.5,
+        fiberG: 30,
       }),
-    ).toEqual({ kcal: '2000', protein: '120', carbs: '', fat: '60.5' })
+    ).toEqual({ kcal: '2000', protein: '120', carbs: '', fat: '60.5', fiber: '30' })
     expect(toGoalFormValues(null)).toEqual(EMPTY_GOAL_FORM)
   })
 })
@@ -50,8 +55,15 @@ describe('toGoalFormValues', () => {
 describe('describeGoal', () => {
   test('summarises the targets that are set', () => {
     expect(
-      describeGoal({ validFrom: 'x', kcal: 2000, proteinG: 120, carbsG: null, fatG: 60.5 }),
-    ).toBe('2,000 kcal · P 120 g · F 60.5 g')
+      describeGoal({
+        validFrom: 'x',
+        kcal: 2000,
+        proteinG: 120,
+        carbsG: null,
+        fatG: 60.5,
+        fiberG: 30,
+      }),
+    ).toBe('2,000 kcal · P 120 g · F 60.5 g · Fib 30 g')
     expect(describeGoal(null)).toBe('Not set')
   })
 })

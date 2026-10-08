@@ -1,7 +1,14 @@
 import { describe, expect, test } from 'vitest'
 import { addMonths, dayStatus, monthGrid, monthRange, monthStart, monthSummary } from './calendar'
 
-const GOAL = { validFrom: '2026-09-01', kcal: 2000, proteinG: 120, carbsG: null, fatG: null }
+const GOAL = {
+  validFrom: '2026-09-01',
+  kcal: 2000,
+  proteinG: 120,
+  carbsG: null,
+  fatG: null,
+  fiberG: null,
+}
 
 describe('months', () => {
   test('start, range and stepping across years', () => {

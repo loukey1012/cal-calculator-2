@@ -38,8 +38,8 @@ Built for a two-person household: both members log their own meals, can see and 
 
 ### Daily goals and progress
 
-- Per-person daily goal: **calories required**; protein, carbs and fat optional.
-- A **progress card** on each day: a large calorie ring with the kcal left (or over) in the middle, and a bar per macro (**Ring + bars**, the default). Shows consumed / target and how much is left or over. Calories always show; each macro only if it has a target. Also available as a small ring per macro, all **bars**, or **compact** bars (Settings › Appearance).
+- Per-person daily goal: **calories required**; protein, carbs, fat and **fiber** optional.
+- A **progress card** on each day: a large calorie ring with the kcal left (or over) in the middle, and a bar per macro (protein, carbs, fat, fiber; **Ring + bars**, the default). Shows consumed / target and how much is left or over. Calories always show; each macro only if it has a target. Also available as a small ring per macro, all **bars**, or **compact** bars (Settings › Appearance).
 - Goals have a history: a new goal applies **from today on**, and past days keep the goal they had.
 - A "≥" marks totals that are only a lower bound (some logged items had no value for that nutrient).
 - A "~" marks calories that are only approximate: once a meal holds a dish marked as an estimate, its meal card, the day total and the calorie ring (consumed and left) show "~".
@@ -62,7 +62,8 @@ Built for a two-person household: both members log their own meals, can see and 
 
 - Shared per household, **grouped by category**, with **accent-insensitive search** (`kase` finds `Käse`) and category filter chips: one sideways-scrolling line, all on screen, or **grouped** into broad categories that open their categories when tapped (Settings › Appearance).
 - Nutrition **per 100 g and/or per unit**: calories (whole numbers, rounded up), protein, carbs, sugar, fat, saturated fat, fiber, salt. Only calories are required.
-- Unit name and grams per unit, brand, category (created on the fly, optionally inside a **broad category** such as Fresh › Meat & Fish), note.
+- Unit name and grams per unit, with **Calculate missing values**: once the grams per unit are entered, it fills empty values per 100 g or per unit from the other, field by field, and never replaces what you typed.
+- Brand, category (created on the fly, optionally inside a **broad category** such as Fresh › Meat & Fish), note.
 - Categories are **deleted automatically** once their last ingredient leaves them.
 - **Barcodes:** each ingredient can carry its package's barcode (EAN-8, EAN-13, UPC-A, ITF-14; one ingredient per barcode in a household). Type it or scan it in the ingredient form.
 
@@ -70,7 +71,7 @@ Built for a two-person household: both members log their own meals, can see and 
 
 - A **barcode button** sits at the end of the search on **Cook › Add ingredient** and on the **Ingredients** tab.
 - **Already saved:** Cook goes straight to the amount; the Ingredients tab opens the ingredient.
-- **New package:** the New ingredient form opens **filled in from [Open Food Facts](https://world.openfoodfacts.org)**: name, brand, and the values **per 100 g and per portion** (unit "Portion" with its weight). Values the package states are used as they are; a missing side is worked out from the other with the portion weight (without a weight, per 100 g stays empty). A note asks to check them against the package, and a red **"Check these values"** box lists anything that looks off: a portion bigger than the pack, per-portion values that don't match per 100 g, calories that don't fit protein, carbs and fat, more than 100 g of nutrients per 100 g or over 900 kcal, more sugar than carbs or saturated fat than fat, no calories, or per-portion values without a portion weight. Nothing is saved before you tap Save. Unknown values stay empty instead of 0. Not found, offline or too slow (6 s): an empty form with the barcode (and on Cook the searched name) already in it.
+- **New package:** the New ingredient form opens **filled in from [Open Food Facts](https://world.openfoodfacts.org)**: name (each word capitalised, e.g. "Low Sugar Gummies"; the brand as it is), brand, and the values **per 100 g and per portion** (the portion's weight as grams per unit; the unit name is left for you, e.g. bar or pack). Values the package states are used as they are; a missing side is worked out from the other with the portion weight (without a weight, per 100 g stays empty). A note asks to check them against the package, and a red **"Check these values"** box lists anything that looks off: a portion bigger than the pack, per-portion values that don't match per 100 g, calories that don't fit protein, carbs and fat, more than 100 g of nutrients per 100 g or over 900 kcal, more sugar than carbs or saturated fat than fat, no calories, or per-portion values without a portion weight. Nothing is saved before you tap Save. Unknown values stay empty instead of 0. Not found, offline or too slow (6 s): an empty form with the barcode (and on Cook the searched name) already in it.
 - **Scanner page:** full-screen camera with a scan frame and a **torch** switch (where the phone offers one). It reads a few times a second and closes by itself. If the camera can't be used (permission off, no camera), it says so and offers the two fallbacks, which are always there: **Take photo** (the iOS camera, then the photo is read) and **Type number** (the check digit catches typos).
 - iPhone browsers have no built-in barcode reader, so the app ships ZXing (WebAssembly, ~1 MB, via `barcode-detector`). It is loaded only when you scan, served by the app itself (no CDN) and stored for offline use. The camera is turned off as soon as a code is read or the page closes, and restarted when the app comes back from the background.
 - **Settings › Categories** manages them: add, rename and delete broad categories (their categories move to Other); add, rename, move between broad categories and delete categories (their ingredients stay, without a category). Swipe right to go back to Settings.
@@ -114,7 +115,7 @@ Everything here is saved **to your account**, never to the device: you get the s
 - **Progress** (with a live preview at the top)
   - **Progress style:** Rings, **Ring + bars** (default: a calorie ring, bars for the macros), Bars or Compact.
   - **Goal colors:** Vivid, Pastel, Accent shades or High contrast.
-  - **Ring colors:** give Calories, Protein, Carbs or Fat **its own color**; the others keep the palette's. "Use palette color" undoes one, and choosing a palette resets them all. A custom color stays the same in every theme, except that a White ring is darkened just enough to show on light cards.
+  - **Ring colors:** give Calories, Protein, Carbs, Fat or Fiber **its own color**; the others keep the palette's. "Use palette color" undoes one, and choosing a palette resets them all. A custom color stays the same in every theme, except that a White ring is darkened just enough to show on light cards.
 - **Choosing a color** works the same everywhere (accent, ring colors, your partner's and your own symbol color): **35 preset colors** in one list by hue (every color the separate lists offered before, plus **White**), and **Custom** (the rainbow circle) for any color with the system color picker: moving through the picker only previews the color, **Use this color** saves it (saving every color passed on the way would close the picker on the iPhone).
 - **Category chips** (with a preview): **One line** (default, scrolls sideways), **All on screen** (slimmer chips wrapping into rows) or **Grouped** (broad categories such as Fresh; tapping one filters by it and opens its categories below) for the category filter on the Ingredients page. Wrapped chips are **arranged automatically to fill as few rows as possible** ("All" stays first; alphabetical within each row), measured on the device and re-arranged when the width or fonts change.
 - **App icon:** eight versions of the C-ring icon: **Graphite** (default), Classic, Pink, Sunset, Progress, Ember, Leaf and Violet. Used when you add the app to the home screen (also before signing in, on a phone you used before) and in the browser tab. Picking a new icon **copies the app's link** (a short message confirms it), ready to paste into Safari when adding the app again. To change an installed icon, see [Installing on the iPhone](#installing-on-the-iphone).
@@ -218,7 +219,7 @@ scripts/
 ### Data model (Supabase)
 
 - `households`, `profiles` (one per auth user, created by a trigger; holds the name, accent color and `appearance` JSON)
-- `goal_history` (goal valid from a date)
+- `goal_history` (goal valid from a date; calories, and optionally protein, carbs, fat and fiber)
 - `category_groups` (the household's broad categories), `categories` (optionally in a group; deleting a group leaves its categories ungrouped), `ingredients` (per-100 g and/or per-unit columns; at least one calorie value required; optional `barcode`, 8–14 digits, unique per household)
 - `meals` (unique per user, local date and meal type), `meal_items` (nutrition snapshot plus a basis multiplier)
 - `meal_items` of a cooked dish point to their `dish_portions` row and `dish_lines` row; plain items leave both empty

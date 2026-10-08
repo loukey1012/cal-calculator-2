@@ -98,6 +98,29 @@ describe('IngredientSheet', () => {
     )
   })
 
+  test('Calculate fills the empty per-100 g values from the unit, once its weight is known', async () => {
+    const user = userEvent.setup()
+    renderSheet()
+    await user.type(screen.getByLabelText('Name'), 'Protein bar')
+    await user.click(screen.getByRole('switch', { name: 'Per unit' }))
+    await user.type(screen.getByLabelText('Calories per unit'), '210')
+    await user.type(screen.getByLabelText('Protein per unit'), '20')
+    const calculate = screen.getByRole('button', { name: 'Calculate missing values' })
+    expect(calculate).toBeDisabled()
+
+    await user.type(screen.getByLabelText('Grams per unit'), '60')
+    await user.click(calculate)
+
+    expect(screen.getByRole('switch', { name: 'Per 100 g' })).toBeChecked()
+    expect(screen.getByLabelText('Calories per 100 g')).toHaveValue('350')
+    expect(screen.getByLabelText('Protein per 100 g')).toHaveValue('33.33')
+    expect(screen.getByText('Filled in 2 values.')).toBeInTheDocument()
+    await user.click(calculate)
+    expect(
+      screen.getByText('Nothing to calculate: every value is filled in or unknown.'),
+    ).toBeInTheDocument()
+  })
+
   test('shows what is missing instead of saving', async () => {
     const user = userEvent.setup()
     renderSheet()

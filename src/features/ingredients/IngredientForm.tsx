@@ -4,6 +4,7 @@ import { GroupedSection } from '../../components/ios/GroupedSection'
 import { TextField } from '../../components/ios/TextField'
 import type { FieldErrors } from '../../lib/forms'
 import { BarcodeField } from '../barcode/BarcodeField'
+import { CalculateRow } from './CalculateRow'
 import {
   NEW_CATEGORY,
   parseIngredientForm,
@@ -185,7 +186,10 @@ export function IngredientForm({
         onChange={(field, value) => setBasisValue('perUnit', field, value)}
       />
 
-      <GroupedSection header="Unit" footer="Lets you log this ingredient in grams or in units.">
+      <GroupedSection
+        header="Unit"
+        footer="Lets you log this ingredient in grams or in units. With the grams per unit, Calculate fills empty values per 100 g or per unit from the other."
+      >
         <InputRow
           label="Unit name"
           placeholder="e.g. bar"
@@ -202,6 +206,7 @@ export function IngredientForm({
           onChange={(event) => set('unitWeightG', event.target.value)}
           error={errors.unitWeightG}
         />
+        <CalculateRow values={values} onCalculated={setValues} />
       </GroupedSection>
 
       <GroupedSection header="Note" footer={errors.note}>

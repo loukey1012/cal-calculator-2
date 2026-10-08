@@ -17,6 +17,7 @@ const ROWS: ReadonlyArray<{ field: keyof GoalFormValues; label: string; suffix: 
   { field: 'protein', label: 'Protein', suffix: 'g' },
   { field: 'carbs', label: 'Carbs', suffix: 'g' },
   { field: 'fat', label: 'Fat', suffix: 'g' },
+  { field: 'fiber', label: 'Fiber', suffix: 'g' },
 ]
 
 type GoalSheetProps = {

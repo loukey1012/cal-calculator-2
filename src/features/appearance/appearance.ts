@@ -56,7 +56,13 @@ const goalColor = z
 
 // each goal's color is checked on its own; invalid ones fall back to the palette
 const customGoalColorsSchema = z
-  .object({ kcal: goalColor, protein: goalColor, carbs: goalColor, fat: goalColor })
+  .object({
+    kcal: goalColor,
+    protein: goalColor,
+    carbs: goalColor,
+    fat: goalColor,
+    fiber: goalColor,
+  })
   .catch({})
   .transform((colors): CustomGoalColors =>
     Object.fromEntries(Object.entries(colors).filter(([, color]) => color !== undefined)),
@@ -103,38 +109,44 @@ export const SCHEME_SURFACES: Record<Scheme, Surfaces> = {
   bento: { bg: '#0c0c0d', card: '#18181a', label: '#f5f5f4' },
 }
 
-type GoalColors = readonly [kcal: string, protein: string, carbs: string, fat: string]
+export type GoalColors = readonly [
+  kcal: string,
+  protein: string,
+  carbs: string,
+  fat: string,
+  fiber: string,
+]
 
 const FIXED_PALETTES: Record<Exclude<GoalPalette, 'accent'>, Record<Scheme, GoalColors>> = {
   vivid: {
-    light: ['#ff375f', '#1f9d6b', '#e8930c', '#2f9bd6'],
-    pink: ['#e8457c', '#2fa889', '#f0874a', '#9466d6'],
-    soft: ['#ff5f7e', '#3cc48a', '#f0a63a', '#5ec8f2'],
-    bento: ['#ff5f7e', '#5ee0ff', '#ffb547', '#ff7aa8'],
+    light: ['#ff375f', '#1f9d6b', '#e8930c', '#2f9bd6', '#8e5bd6'],
+    pink: ['#e8457c', '#2fa889', '#f0874a', '#9466d6', '#3d8fd6'],
+    soft: ['#ff5f7e', '#3cc48a', '#f0a63a', '#5ec8f2', '#b38cff'],
+    bento: ['#ff5f7e', '#5ee0ff', '#ffb547', '#ff7aa8', '#b6f36b'],
   },
   pastel: {
-    light: ['#e5738f', '#5fb48c', '#e0a94f', '#6f9de0'],
-    pink: ['#ee8db0', '#7cc7a9', '#f3b088', '#b49fe6'],
-    soft: ['#f08aa4', '#7cc9a5', '#f2c27a', '#93b8f0'],
-    bento: ['#f08aa4', '#7cc9a5', '#f2c27a', '#93b8f0'],
+    light: ['#e5738f', '#5fb48c', '#e0a94f', '#6f9de0', '#a98be0'],
+    pink: ['#ee8db0', '#7cc7a9', '#f3b088', '#b49fe6', '#88b8e8'],
+    soft: ['#f08aa4', '#7cc9a5', '#f2c27a', '#93b8f0', '#c3a6f2'],
+    bento: ['#f08aa4', '#7cc9a5', '#f2c27a', '#93b8f0', '#c3a6f2'],
   },
   contrast: {
-    light: ['#d1002f', '#007a3d', '#b35c00', '#0050b3'],
-    pink: ['#c8004f', '#007a4d', '#b34700', '#5a2db3'],
-    soft: ['#ff4d6d', '#2ee59d', '#ffb020', '#4db8ff'],
-    bento: ['#ff4d6d', '#2ee59d', '#ffb020', '#4db8ff'],
+    light: ['#d1002f', '#007a3d', '#b35c00', '#0050b3', '#6a1fb3'],
+    pink: ['#c8004f', '#007a4d', '#b34700', '#5a2db3', '#00639e'],
+    soft: ['#ff4d6d', '#2ee59d', '#ffb020', '#4db8ff', '#c084ff'],
+    bento: ['#ff4d6d', '#2ee59d', '#ffb020', '#4db8ff', '#c084ff'],
   },
 }
 
 // the accent fading towards the card color, ring by ring
-const ACCENT_SHADE_WEIGHTS = [0, 0.25, 0.45, 0.6] as const
+const ACCENT_SHADE_WEIGHTS = [0, 0.2, 0.36, 0.5, 0.62] as const
 
 function paletteColors(palette: GoalPalette, scheme: Scheme, accent: string): GoalColors {
   if (palette !== 'accent') return FIXED_PALETTES[palette][scheme]
-  const [kcal, protein, carbs, fat] = ACCENT_SHADE_WEIGHTS.map((weight) =>
+  const [kcal, protein, carbs, fat, fiber] = ACCENT_SHADE_WEIGHTS.map((weight) =>
     mixHex(accent, SCHEME_SURFACES[scheme].card, weight),
   )
-  return [kcal, protein, carbs, fat] as GoalColors
+  return [kcal, protein, carbs, fat, fiber] as GoalColors
 }
 
 /** The palette's colors, with any custom goal color in place of its palette color. */
@@ -144,8 +156,14 @@ export function goalColors(
   accent: string,
   custom: CustomGoalColors = {},
 ): GoalColors {
-  const [kcal, protein, carbs, fat] = paletteColors(palette, scheme, accent)
-  return [custom.kcal ?? kcal, custom.protein ?? protein, custom.carbs ?? carbs, custom.fat ?? fat]
+  const [kcal, protein, carbs, fat, fiber] = paletteColors(palette, scheme, accent)
+  return [
+    custom.kcal ?? kcal,
+    custom.protein ?? protein,
+    custom.carbs ?? carbs,
+    custom.fat ?? fat,
+    custom.fiber ?? fiber,
+  ]
 }
 
 const ACCENT_EDGE = 'rgb(0 0 0 / 0.14)'
@@ -162,7 +180,7 @@ export function appearanceVariables(
   const visibleCustom = Object.fromEntries(
     Object.entries(customGoalColors).map(([goal, color]) => [goal, visibleOn(color, card)]),
   )
-  const [kcal, protein, carbs, fat] = goalColors(goalPalette, scheme, accent, visibleCustom)
+  const [kcal, protein, carbs, fat, fiber] = goalColors(goalPalette, scheme, accent, visibleCustom)
   return {
     '--accent': accent,
     // a white accent fill gets a thin edge on white
@@ -174,5 +192,6 @@ export function appearanceVariables(
     '--goal-protein': protein,
     '--goal-carbs': carbs,
     '--goal-fat': fat,
+    '--goal-fiber': fiber,
   }
 }

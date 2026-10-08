@@ -1,14 +1,10 @@
-import { NUTRIENT_KEYS, type NutrientKey } from '../nutrition/types'
+import { completeBases, NUTRITION_FIELDS, type NutritionBasis } from '../nutrition/bases'
 
 /**
  * A product's nutrition per 100 g and per portion, as Open Food Facts states it, each filled in
  * from the other with the portion weight where missing, plus checks for values that look wrong.
  */
 
-export type NutritionField = 'kcal' | NutrientKey
-export type NutritionBasis = Readonly<Record<NutritionField, number | null>>
-
-export const NUTRITION_FIELDS: readonly NutritionField[] = ['kcal', ...NUTRIENT_KEYS]
 const GRAMS_BASIS = 100
 const MAX_KCAL_PER_100G = 900
 // kcal per gram (EU labels: carbs exclude fiber)
@@ -33,37 +29,13 @@ export type ResolvedNutrition = {
   readonly perPortion: NutritionBasis
 }
 
-function mapBasis(pick: (field: NutritionField) => number | null): NutritionBasis {
-  return Object.fromEntries(NUTRITION_FIELDS.map((field) => [field, pick(field)])) as Record<
-    NutritionField,
-    number | null
-  >
-}
-
-/** Stated values win; a missing one is worked out from the other basis when the weight is known. */
-function filledIn(stated: NutritionBasis, other: NutritionBasis, factor: number | null) {
-  return mapBasis((field) => {
-    const own = stated[field]
-    if (own !== null) return own
-    const source = other[field]
-    return source === null || factor === null ? null : source * factor
-  })
-}
-
 export function resolveNutrition(reported: ReportedNutrition): ResolvedNutrition {
-  const { portionG } = reported
-  return {
-    per100g: filledIn(
-      reported.per100g,
-      reported.perPortion,
-      portionG ? GRAMS_BASIS / portionG : null,
-    ),
-    perPortion: filledIn(
-      reported.perPortion,
-      reported.per100g,
-      portionG ? portionG / GRAMS_BASIS : null,
-    ),
-  }
+  const { per100g, perUnit } = completeBases(
+    reported.per100g,
+    reported.perPortion,
+    reported.portionG,
+  )
+  return { per100g, perPortion: perUnit }
 }
 
 const hasAny = (basis: NutritionBasis) => NUTRITION_FIELDS.some((field) => basis[field] !== null)

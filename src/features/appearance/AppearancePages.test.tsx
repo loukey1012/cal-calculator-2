@@ -210,7 +210,8 @@ describe('Appearance pages', () => {
     renderPage(PROGRESS, { progressStyle: 'bars' })
 
     const preview = screen.getByRole('region', { name: 'Preview' })
-    expect(within(preview).getAllByTestId('bar')).toHaveLength(4)
+    // calories and the four macros, fiber included
+    expect(within(preview).getAllByTestId('bar')).toHaveLength(5)
     expect(within(preview).queryByTestId('ring')).not.toBeInTheDocument()
   })
 
@@ -268,6 +269,7 @@ describe('Ring colors', () => {
     expect(ringColorRow('Protein')).toHaveTextContent('Palette')
     expect(ringColorRow('Carbs')).toHaveTextContent('Palette')
     expect(ringColorRow('Fat')).toHaveTextContent('Custom')
+    expect(ringColorRow('Fiber')).toHaveTextContent('Palette')
   })
 
   test('picking a color saves it for that goal only, keeping the other choices', async () => {

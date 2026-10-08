@@ -13,9 +13,16 @@ export type GoalFormValues = {
   readonly protein: string
   readonly carbs: string
   readonly fat: string
+  readonly fiber: string
 }
 
-export const EMPTY_GOAL_FORM: GoalFormValues = { kcal: '', protein: '', carbs: '', fat: '' }
+export const EMPTY_GOAL_FORM: GoalFormValues = {
+  kcal: '',
+  protein: '',
+  carbs: '',
+  fat: '',
+  fiber: '',
+}
 
 export type GoalInput = Omit<Goal, 'validFrom'>
 
@@ -55,15 +62,21 @@ const kcal = z.string().transform((raw, ctx) => {
   return toWholeKcal(value)
 })
 
-const goalFormSchema = z.object({ kcal, protein: grams(), carbs: grams(), fat: grams() })
+const goalFormSchema = z.object({
+  kcal,
+  protein: grams(),
+  carbs: grams(),
+  fat: grams(),
+  fiber: grams(),
+})
 
 export function parseGoalForm(values: GoalFormValues): GoalFormResult {
   const result = goalFormSchema.safeParse(values)
   if (!result.success) return { success: false, errors: fieldErrors(result.error) }
-  const { protein, carbs, fat } = result.data
+  const { protein, carbs, fat, fiber } = result.data
   return {
     success: true,
-    data: { kcal: result.data.kcal, proteinG: protein, carbsG: carbs, fatG: fat },
+    data: { kcal: result.data.kcal, proteinG: protein, carbsG: carbs, fatG: fat, fiberG: fiber },
   }
 }
 
@@ -76,6 +89,7 @@ export function toGoalFormValues(goal: Goal | null): GoalFormValues {
     protein: asText(goal.proteinG),
     carbs: asText(goal.carbsG),
     fat: asText(goal.fatG),
+    fiber: asText(goal.fiberG),
   }
 }
 
@@ -88,6 +102,7 @@ export function describeGoal(goal: Goal | null): string {
     ['P', goal.proteinG],
     ['C', goal.carbsG],
     ['F', goal.fatG],
+    ['Fib', goal.fiberG],
   ] as const
   return [
     `${formatKcal(goal.kcal)} kcal`,

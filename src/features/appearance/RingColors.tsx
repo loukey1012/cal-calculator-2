@@ -3,7 +3,7 @@ import { Button } from '../../components/ios/Button'
 import { ListRow } from '../../components/ios/ListRow'
 import { Sheet } from '../../components/ios/Sheet'
 import type { RingKey } from '../nutrition/goals'
-import type { CustomGoalColors } from './appearance'
+import type { CustomGoalColors, GoalColors } from './appearance'
 import { SettingSection } from './AppearanceOptions'
 import { ColorPicker } from './ColorPicker'
 import { COLOR_PRESETS } from './colorPresets'
@@ -13,11 +13,12 @@ const GOALS: ReadonlyArray<{ key: RingKey; label: string }> = [
   { key: 'protein', label: 'Protein' },
   { key: 'carbs', label: 'Carbs' },
   { key: 'fat', label: 'Fat' },
+  { key: 'fiber', label: 'Fiber' },
 ]
 
 type RingColorsProps = {
   /** what each ring shows now: the palette color, or the custom one */
-  readonly colors: readonly [kcal: string, protein: string, carbs: string, fat: string]
+  readonly colors: GoalColors
   readonly custom: CustomGoalColors
   readonly onChange: (custom: CustomGoalColors) => void
 }
