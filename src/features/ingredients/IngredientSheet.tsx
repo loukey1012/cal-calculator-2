@@ -2,6 +2,8 @@ import { Button } from '../../components/ios/Button'
 import { ErrorBanner } from '../../components/ios/ErrorBanner'
 import { Sheet } from '../../components/ios/Sheet'
 import { toUserMessage } from '../../lib/errors'
+import { PrefillNote } from '../barcode/PrefillNote'
+import { useProductPrefill } from '../barcode/useProductPrefill'
 import { useDeleteIngredient, useSaveIngredient } from './hooks'
 import { IngredientForm } from './IngredientForm'
 import { EMPTY_INGREDIENT_FORM, toFormValues } from './ingredientForm'
@@ -14,6 +16,8 @@ type IngredientSheetProps = {
   readonly householdId: string
   /** null adds a new ingredient */
   readonly ingredient: Ingredient | null
+  /** for a new ingredient: a scanned barcode, filled in from Open Food Facts where possible */
+  readonly barcode?: string | null
   readonly categories: readonly Category[]
   /** broad categories a new category can be put into */
   readonly groups: readonly CategoryGroup[]
@@ -24,11 +28,13 @@ export function IngredientSheet({
   open,
   householdId,
   ingredient,
+  barcode = null,
   categories,
   groups,
   onClose,
 }: IngredientSheetProps) {
   const save = useSaveIngredient(householdId)
+  const prefill = useProductPrefill(ingredient ? null : barcode, EMPTY_INGREDIENT_FORM)
   const remove = useDeleteIngredient(householdId)
   const error = save.error ?? remove.error
 
@@ -64,16 +70,27 @@ export function IngredientSheet({
         </Button>
       }
     >
-      <IngredientForm
-        key={ingredient?.id ?? 'new'}
-        formId={FORM_ID}
-        initialValues={ingredient ? toFormValues(ingredient) : EMPTY_INGREDIENT_FORM}
-        categories={categories}
-        groups={groups}
-        onSubmit={(form) =>
-          save.mutate({ id: ingredient?.id ?? null, form, categories }, { onSuccess: close })
-        }
-      />
+      {prefill?.status === 'loading' ? (
+        <p role="status" className="mt-6 text-center text-[15px] text-label-secondary">
+          Looking up the product…
+        </p>
+      ) : (
+        <>
+          {prefill && <PrefillNote text={prefill.note} />}
+          <IngredientForm
+            key={ingredient?.id ?? `new:${barcode ?? ''}`}
+            formId={FORM_ID}
+            initialValues={
+              ingredient ? toFormValues(ingredient) : (prefill?.values ?? EMPTY_INGREDIENT_FORM)
+            }
+            categories={categories}
+            groups={groups}
+            onSubmit={(form) =>
+              save.mutate({ id: ingredient?.id ?? null, form, categories }, { onSuccess: close })
+            }
+          />
+        </>
+      )}
       {error && <ErrorBanner message={toUserMessage(error)} />}
       {ingredient && (
         <div className="mt-6">

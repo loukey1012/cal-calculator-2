@@ -255,6 +255,34 @@ describe('ingredients', () => {
     expect(other.error).toBeNull()
   })
 
+  test('a barcode belongs to one ingredient per household, not globally', async () => {
+    const skyr = { barcode: '4014500513102', kcal_100: 63 }
+    const mine = await alice.client
+      .from('ingredients')
+      .insert({ ...skyr, name: 'Skyr', household_id: householdId })
+    const dupe = await bob.client
+      .from('ingredients')
+      .insert({ ...skyr, name: 'Skyr again', household_id: householdId })
+    const other = await carol.client
+      .from('ingredients')
+      .insert({ ...skyr, name: 'Skyr', household_id: carolHouseholdId })
+
+    expect(mine.error).toBeNull()
+    expect(dupe.error?.code).toBe('23505')
+    expect(other.error).toBeNull()
+  })
+
+  test.each(['123', '4014500513102x', '123456789012345', ' 40145005'])(
+    'a barcode must be 8 to 14 digits (%s is rejected)',
+    async (barcode) => {
+      const { error } = await alice.client
+        .from('ingredients')
+        .insert({ barcode, name: 'Odd code', kcal_100: 1, household_id: householdId })
+
+      expect(error?.code).toBe('23514')
+    },
+  )
+
   test('outsiders can neither read nor add to the household’s ingredients', async () => {
     const { data } = await carol.client
       .from('ingredients')

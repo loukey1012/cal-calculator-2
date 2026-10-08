@@ -26,6 +26,7 @@ const EMPTY_INGREDIENT: Ingredient = {
   fiber_unit: null,
   salt_unit: null,
   legacy_id: null,
+  barcode: null,
   created_by: null,
   created_at: '',
   updated_at: '',

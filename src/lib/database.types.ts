@@ -371,6 +371,7 @@ export type Database = {
       }
       ingredients: {
         Row: {
+          barcode: string | null
           brand: string | null
           carbs_100: number | null
           carbs_unit: number | null
@@ -401,6 +402,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          barcode?: string | null
           brand?: string | null
           carbs_100?: number | null
           carbs_unit?: number | null
@@ -431,6 +433,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          barcode?: string | null
           brand?: string | null
           carbs_100?: number | null
           carbs_unit?: number | null

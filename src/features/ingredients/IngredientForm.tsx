@@ -3,6 +3,7 @@ import { InputRow, SelectRow, ToggleRow } from '../../components/ios/FormRows'
 import { GroupedSection } from '../../components/ios/GroupedSection'
 import { TextField } from '../../components/ios/TextField'
 import type { FieldErrors } from '../../lib/forms'
+import { BarcodeField } from '../barcode/BarcodeField'
 import {
   NEW_CATEGORY,
   parseIngredientForm,
@@ -121,6 +122,11 @@ export function IngredientForm({
           value={values.brand}
           onChange={(event) => set('brand', event.target.value)}
           error={errors.brand}
+        />
+        <BarcodeField
+          value={values.barcode}
+          error={errors.barcode}
+          onChange={(barcode) => set('barcode', barcode)}
         />
         <SelectRow
           label="Category"

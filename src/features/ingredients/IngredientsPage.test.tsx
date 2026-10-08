@@ -15,6 +15,18 @@ vi.mock('./ingredientsApi', () => ({
   createCategory: vi.fn(),
 }))
 
+vi.mock('../barcode/openFoodFacts', () => ({ lookupProduct: vi.fn() }))
+const scanned = vi.hoisted(() => ({ barcode: '' }))
+vi.mock('../barcode/BarcodeScanner', () => ({
+  BarcodeScanner: ({ onResult }: { onResult: (barcode: string) => void }) => (
+    <button type="button" onClick={() => onResult(scanned.barcode)}>
+      Fake scan
+    </button>
+  ),
+}))
+
+import { lookupProduct } from '../barcode/openFoodFacts'
+import { EMPTY_INGREDIENT_FORM } from './ingredientForm'
 import { fetchCategories, fetchCategoryGroups, fetchIngredients } from './ingredientsApi'
 import { IngredientsPage } from './IngredientsPage'
 
@@ -47,6 +59,65 @@ beforeEach(() => {
   vi.mocked(fetchIngredients).mockResolvedValue(INGREDIENTS)
   vi.mocked(fetchCategories).mockResolvedValue(CATEGORIES)
   vi.mocked(fetchCategoryGroups).mockResolvedValue([])
+})
+
+describe('scanning on the Ingredients page', () => {
+  test('a saved package opens to be looked at or changed', async () => {
+    vi.mocked(fetchIngredients).mockResolvedValue([
+      ...INGREDIENTS,
+      ingredient({ id: 'nutella', name: 'Nutella', kcal_100: 539, barcode: '3017620422003' }),
+    ])
+    scanned.barcode = '3017620422003'
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByText('Nutella')
+
+    await user.click(screen.getByRole('button', { name: 'Scan barcode' }))
+    await user.click(screen.getByRole('button', { name: 'Fake scan' }))
+
+    const sheet = within(screen.getByRole('dialog', { name: 'Edit Ingredient' }))
+    expect(sheet.getByLabelText('Name')).toHaveValue('Nutella')
+    expect(sheet.getByLabelText('Barcode')).toHaveValue('3017620422003')
+  })
+
+  test('a new package opens a new ingredient filled in from Open Food Facts', async () => {
+    scanned.barcode = '3017620422003'
+    vi.mocked(lookupProduct).mockResolvedValue({
+      kind: 'found',
+      values: { ...EMPTY_INGREDIENT_FORM, name: 'Nutella', barcode: '3017620422003' },
+    })
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByText('Cream 7%')
+
+    await user.click(screen.getByRole('button', { name: 'Scan barcode' }))
+    await user.click(screen.getByRole('button', { name: 'Fake scan' }))
+
+    const sheet = within(screen.getByRole('dialog', { name: 'New Ingredient' }))
+    expect(await sheet.findByText(/Filled in from Open Food Facts/)).toBeInTheDocument()
+    expect(sheet.getByLabelText('Name')).toHaveValue('Nutella')
+    expect(lookupProduct).toHaveBeenCalledWith('3017620422003')
+  })
+
+  test('scanning waits for the ingredients, so a saved package is never created twice', async () => {
+    vi.mocked(fetchIngredients).mockReturnValue(new Promise(() => {}))
+    renderPage()
+
+    expect(screen.getByRole('button', { name: 'Scan barcode' })).toBeDisabled()
+  })
+
+  test('the + button still starts an empty ingredient after a scan', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByText('Cream 7%')
+
+    await user.click(screen.getByRole('button', { name: 'Add ingredient' }))
+
+    const sheet = within(screen.getByRole('dialog', { name: 'New Ingredient' }))
+    expect(sheet.getByLabelText('Name')).toHaveValue('')
+    expect(sheet.getByLabelText('Barcode')).toHaveValue('')
+    expect(lookupProduct).not.toHaveBeenCalled()
+  })
 })
 
 describe('IngredientsPage', () => {

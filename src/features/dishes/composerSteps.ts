@@ -6,8 +6,8 @@ export type ComposerStep =
   | { readonly kind: 'main' }
   | { readonly kind: 'pick' }
   | { readonly kind: 'custom' }
-  /** creating an ingredient that isn't in the database yet */
-  | { readonly kind: 'newIngredient' }
+  /** creating an ingredient that isn't in the database yet, maybe for a scanned barcode */
+  | { readonly kind: 'newIngredient'; readonly barcode?: string }
   | { readonly kind: 'newLine'; readonly ingredientId: string }
   | { readonly kind: 'editLine'; readonly lineId: string }
 
@@ -42,6 +42,8 @@ export function stepKey(step: ComposerStep): string {
       return `newLine:${step.ingredientId}`
     case 'editLine':
       return `editLine:${step.lineId}`
+    case 'newIngredient':
+      return step.barcode ? `newIngredient:${step.barcode}` : step.kind
     default:
       return step.kind
   }

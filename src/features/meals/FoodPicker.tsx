@@ -5,6 +5,8 @@ import { ListRow } from '../../components/ios/ListRow'
 import { SearchField } from '../../components/ios/SearchField'
 import { toUserMessage } from '../../lib/errors'
 import { useMyAppearance } from '../appearance/useMyAppearance'
+import { findByBarcode } from '../barcode/barcode'
+import { ScanBarcodeButton } from '../barcode/ScanBarcodeButton'
 import { CategoryFilterChips } from '../ingredients/CategoryFilterChips'
 import { useCategories, useCategoryGroups, useIngredients } from '../ingredients/hooks'
 import type { Ingredient } from '../ingredients/ingredientsApi'
@@ -15,8 +17,8 @@ type FoodPickerProps = {
   readonly filter: IngredientFilter
   readonly onFilterChange: (filter: IngredientFilter) => void
   readonly onPick: (ingredient: Ingredient) => void
-  /** create a missing ingredient, saved to the shared database */
-  readonly onNew: () => void
+  /** create a missing ingredient, saved to the shared database; maybe for a scanned barcode */
+  readonly onNew: (barcode?: string) => void
   readonly onCustom: () => void
 }
 
@@ -41,6 +43,18 @@ export function FoodPicker({ filter, onFilterChange, onPick, onNew, onCustom }: 
         label="Search ingredients"
         value={filter.query}
         onChange={(query) => onFilterChange({ ...filter, query })}
+        accessory={
+          <ScanBarcodeButton
+            // a known package must be recognised, not created twice
+            disabled={!ingredients.data}
+            onScanned={(barcode) => {
+              // a known package goes straight to its amount
+              const known = findByBarcode(ingredients.data ?? [], barcode)
+              if (known) onPick(known)
+              else onNew(barcode)
+            }}
+          />
+        }
       />
       {categoryList.length > 0 && (
         <CategoryFilterChips
@@ -58,7 +72,7 @@ export function FoodPicker({ filter, onFilterChange, onPick, onNew, onCustom }: 
           subtitle={
             name ? `Save “${name}” to your ingredients` : 'Save a new one to your ingredients'
           }
-          onClick={onNew}
+          onClick={() => onNew()}
         />
         <ListRow
           title="Custom item"

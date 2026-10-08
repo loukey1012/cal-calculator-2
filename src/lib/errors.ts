@@ -12,6 +12,7 @@ const KNOWN_MESSAGES: ReadonlyArray<readonly [RegExp, string]> = [
   [/already in a household/i, 'You are already in a household.'],
   [/invalid invite code/i, 'That invite code doesn’t match any household.'],
   [/violates check constraint/i, 'Some values aren’t allowed. Check the numbers and try again.'],
+  [/ingredients_household_barcode_key/i, 'This barcode already belongs to another ingredient.'],
   [/duplicate key/i, 'This already exists.'],
   [
     /dish was changed meanwhile/i,

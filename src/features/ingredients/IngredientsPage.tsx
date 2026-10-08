@@ -13,6 +13,8 @@ import { useMyAppearance } from '../appearance/useMyAppearance'
 import { CategoryFilterChips } from './CategoryFilterChips'
 import { useCategories, useCategoryGroups, useIngredients } from './hooks'
 import type { Ingredient } from './ingredientsApi'
+import { findByBarcode } from '../barcode/barcode'
+import { ScanBarcodeButton } from '../barcode/ScanBarcodeButton'
 import { IngredientSheet } from './IngredientSheet'
 import {
   ALL_CATEGORIES,
@@ -22,7 +24,8 @@ import {
   type CategoryFilter,
 } from './listing'
 
-type Editing = { readonly ingredient: Ingredient | null } | null
+/** null ingredient = a new one, maybe for a scanned barcode */
+type Editing = { readonly ingredient: Ingredient | null; readonly barcode?: string } | null
 
 export function IngredientsPage() {
   const { householdId } = useCurrentUser()
@@ -92,7 +95,22 @@ export function IngredientsPage() {
           </Button>
         }
       />
-      <SearchField label="Search ingredients" value={query} onChange={setQuery} />
+      <SearchField
+        label="Search ingredients"
+        value={query}
+        onChange={setQuery}
+        accessory={
+          <ScanBarcodeButton
+            disabled={!ingredients.data}
+            onScanned={(barcode) =>
+              setEditing({
+                ingredient: findByBarcode(ingredients.data ?? [], barcode),
+                barcode,
+              })
+            }
+          />
+        }
+      />
       {categoryList.length > 0 && (
         <CategoryFilterChips
           layout={categoryLayout}
@@ -109,6 +127,7 @@ export function IngredientsPage() {
         open={editing !== null && !categories.isPending && !groups.isPending}
         householdId={householdId}
         ingredient={editing?.ingredient ?? null}
+        barcode={editing?.barcode ?? null}
         categories={categoryList}
         groups={groups.data ?? []}
         onClose={() => setEditing(null)}

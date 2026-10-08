@@ -164,6 +164,26 @@ describe('parseIngredientForm', () => {
   })
 })
 
+describe('barcode', () => {
+  const withCalories = { per100gEnabled: true, per100g: per100g({ kcal: '539' }) }
+
+  test('a barcode is optional, stored without spaces, UPC-A as EAN-13', () => {
+    expect(parsed(form(withCalories)).ingredient.barcode).toBeNull()
+    expect(parsed(form({ ...withCalories, barcode: ' 3017620 422003 ' })).ingredient.barcode).toBe(
+      '3017620422003',
+    )
+    expect(parsed(form({ ...withCalories, barcode: '036000291452' })).ingredient.barcode).toBe(
+      '0036000291452',
+    )
+  })
+
+  test('a mistyped barcode is pointed out', () => {
+    expect(errorsOf(form({ ...withCalories, barcode: '3017620422004' })).barcode).toBe(
+      'Not a valid barcode',
+    )
+  })
+})
+
 describe('toFormValues', () => {
   test('turns a stored ingredient back into editable text', () => {
     const values = toFormValues(

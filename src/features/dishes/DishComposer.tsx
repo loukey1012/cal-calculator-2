@@ -152,7 +152,9 @@ function StepView({ step, steps, dish, portions, onAdd, onChange }: StepViewProp
           filter={steps.filter}
           onFilterChange={steps.onFilter}
           onPick={(ingredient) => steps.open({ kind: 'newLine', ingredientId: ingredient.id })}
-          onNew={() => steps.open({ kind: 'newIngredient' })}
+          onNew={(barcode) =>
+            steps.open({ kind: 'newIngredient', ...(barcode ? { barcode } : {}) })
+          }
           onCustom={() => steps.open({ kind: 'custom' })}
         />
       )
@@ -160,6 +162,7 @@ function StepView({ step, steps, dish, portions, onAdd, onChange }: StepViewProp
       return (
         <NewIngredientForm
           initialName={steps.filter.query}
+          barcode={step.barcode ?? null}
           // on to its amount; Back from there leads to the search, not to this form
           onSaved={(ingredient) => steps.replace({ kind: 'newLine', ingredientId: ingredient.id })}
         />

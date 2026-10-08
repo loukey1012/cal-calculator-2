@@ -33,6 +33,12 @@ export default defineConfig({
               priority: 3,
             },
             { name: 'supabase', test: /node_modules[\\/]@supabase[\\/]/, priority: 2 },
+            // the barcode scanner, loaded only when scanning
+            {
+              name: 'barcode',
+              test: /node_modules[\\/](barcode-detector|zxing-wasm)[\\/]/,
+              priority: 2,
+            },
             { name: 'vendor', test: /node_modules[\\/]/, priority: 1 },
           ],
         },
@@ -71,7 +77,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // wasm: the barcode scanner's engine, so scanning works offline too
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,wasm}'],
         navigateFallback: '/index.html',
       },
     }),

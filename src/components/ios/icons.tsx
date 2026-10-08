@@ -129,3 +129,39 @@ export function ChevronLeftIcon(props: SVGProps<SVGSVGElement>) {
     </Icon>
   )
 }
+
+export function BarcodeIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon {...props}>
+      <path d="M4 7V5.5A1.5 1.5 0 0 1 5.5 4H7M17 4h1.5A1.5 1.5 0 0 1 20 5.5V7M20 17v1.5a1.5 1.5 0 0 1-1.5 1.5H17M7 20H5.5A1.5 1.5 0 0 1 4 18.5V17" />
+      <path d="M8 8v8M11 8v8M14 8v8M16.5 8v8" />
+    </Icon>
+  )
+}
+
+export function FlashlightIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon {...props}>
+      <path d="M7 3h10v4l-2.5 4v9.5a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5V11L7 7V3z" />
+      <path d="M7 7h10M12 13v2" />
+    </Icon>
+  )
+}
+
+export function CameraIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon {...props}>
+      <path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2.2l1.5-2h5.6l1.5 2h2.2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5v-9z" />
+      <circle cx="12" cy="13" r="3.5" />
+    </Icon>
+  )
+}
+
+export function KeypadIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon {...props}>
+      <rect x="3.5" y="6" width="17" height="12" rx="2.5" />
+      <path d="M7.5 10h.01M10.5 10h.01M13.5 10h.01M16.5 10h.01M8 14h8" />
+    </Icon>
+  )
+}

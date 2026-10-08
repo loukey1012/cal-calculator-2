@@ -26,12 +26,14 @@
     "@tanstack/query-async-storage-persister": "^5.104.0",
     "@tanstack/react-query": "^5.104.0",
     "@tanstack/react-query-persist-client": "^5.104.0",
+    "barcode-detector": "3.2.2",
     "embla-carousel-react": "^8.6.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router": "^8.4.0",
     "workbox-window": "^7.4.1",
-    "zod": "^4.6.5"
+    "zod": "^4.6.5",
+    "zxing-wasm": "3.1.3"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",

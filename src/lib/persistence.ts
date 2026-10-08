@@ -57,7 +57,9 @@ export const persister = createAsyncStoragePersister({
 })
 
 export const DEHYDRATE_OPTIONS: DehydrateOptions = {
-  shouldDehydrateQuery: defaultShouldDehydrateQuery,
+  // `meta: { persist: false }` keeps a query out, e.g. a lookup that must be fresh when shown
+  shouldDehydrateQuery: (query) =>
+    defaultShouldDehydrateQuery(query) && query.meta?.persist !== false,
   // every unfinished meal or dish change, paused or still being sent; only these can be resumed
   // after a restart (they have registered defaults)
   shouldDehydrateMutation: (mutation) =>

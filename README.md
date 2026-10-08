@@ -64,6 +64,15 @@ Built for a two-person household: both members log their own meals, can see and 
 - Nutrition **per 100 g and/or per unit**: calories (whole numbers, rounded up), protein, carbs, sugar, fat, saturated fat, fiber, salt. Only calories are required.
 - Unit name and grams per unit, brand, category (created on the fly, optionally inside a **broad category** such as Fresh › Meat & Fish), note.
 - Categories are **deleted automatically** once their last ingredient leaves them.
+- **Barcodes:** each ingredient can carry its package's barcode (EAN-8, EAN-13, UPC-A, ITF-14; one ingredient per barcode in a household). Type it or scan it in the ingredient form.
+
+### Barcode scanner
+
+- A **barcode button** sits at the end of the search on **Cook › Add ingredient** and on the **Ingredients** tab.
+- **Already saved:** Cook goes straight to the amount; the Ingredients tab opens the ingredient.
+- **New package:** the New ingredient form opens **filled in from [Open Food Facts](https://world.openfoodfacts.org)** (name, brand, calories and macros per 100 g, a serving as the unit "Portion") with a note to check the values against the package. Nothing is saved before you tap Save. Unknown values stay empty instead of 0. Not found, offline or too slow (6 s): an empty form with the barcode (and on Cook the searched name) already in it.
+- **Scanner page:** full-screen camera with a scan frame and a **torch** switch (where the phone offers one). It reads a few times a second and closes by itself. If the camera can't be used (permission off, no camera), it says so and offers the two fallbacks, which are always there: **Take photo** (the iOS camera, then the photo is read) and **Type number** (the check digit catches typos).
+- iPhone browsers have no built-in barcode reader, so the app ships ZXing (WebAssembly, ~1 MB, via `barcode-detector`). It is loaded only when you scan, served by the app itself (no CDN) and stored for offline use. The camera is turned off as soon as a code is read or the page closes, and restarted when the app comes back from the background.
 - **Settings › Categories** manages them: add, rename and delete broad categories (their categories move to Other); add, rename, move between broad categories and delete categories (their ingredients stay, without a category). Swipe right to go back to Settings.
 
 ### Works offline
@@ -144,17 +153,16 @@ Planned 2026-10-07, all five groups shipped 2026-10-08, one group at a time.
 
 ## Coming next
 
-| Area             | Planned                                                                                            |
-| ---------------- | -------------------------------------------------------------------------------------------------- |
-| Recipes          | Save dishes and meals by name as recipes, and cook or log them again (with remembered own amounts) |
-| Barcode scanning | Find or create an ingredient by scanning its barcode                                               |
-| Quick picks      | Recent and favorite ingredients                                                                    |
-| Meal reuse       | Copy a meal to another day, or save it as a template                                               |
-| Trends           | Charts of calories and macros over weeks and months                                                |
-| Weight           | Track body weight over time                                                                        |
-| Export           | Download your logged data as CSV                                                                   |
-| Reminders        | Push reminders to log meals                                                                        |
-| Cheat days       | Mark a day as a cheat day                                                                          |
+| Area        | Planned                                                                                            |
+| ----------- | -------------------------------------------------------------------------------------------------- |
+| Recipes     | Save dishes and meals by name as recipes, and cook or log them again (with remembered own amounts) |
+| Quick picks | Recent and favorite ingredients                                                                    |
+| Meal reuse  | Copy a meal to another day, or save it as a template                                               |
+| Trends      | Charts of calories and macros over weeks and months                                                |
+| Weight      | Track body weight over time                                                                        |
+| Export      | Download your logged data as CSV                                                                   |
+| Reminders   | Push reminders to log meals                                                                        |
+| Cheat days  | Mark a day as a cheat day                                                                          |
 
 **Recipes** and meal templates will build on the Cook tab: a recipe fills in a dish (the same ingredient lines and splits), saved by name.
 
@@ -170,6 +178,7 @@ Planned 2026-10-07, all five groups shipped 2026-10-08, one group at a time.
 | Data               | TanStack Query 5 (+ persistence to `localStorage`), supabase-js                    |
 | Routing / gestures | React Router, Embla Carousel                                                       |
 | Validation         | Zod                                                                                |
+| Barcodes           | barcode-detector (ZXing WebAssembly), Open Food Facts API                          |
 | PWA                | vite-plugin-pwa (Workbox precache; updates wait and are offered, workbox-window)   |
 | Backend            | Supabase: Postgres, Auth, Row Level Security                                       |
 | Hosting            | Vercel (deploys on push to `main`)                                                 |
@@ -210,7 +219,7 @@ scripts/
 
 - `households`, `profiles` (one per auth user, created by a trigger; holds the name, accent color and `appearance` JSON)
 - `goal_history` (goal valid from a date)
-- `category_groups` (the household's broad categories), `categories` (optionally in a group; deleting a group leaves its categories ungrouped), `ingredients` (per-100 g and/or per-unit columns; at least one calorie value required)
+- `category_groups` (the household's broad categories), `categories` (optionally in a group; deleting a group leaves its categories ungrouped), `ingredients` (per-100 g and/or per-unit columns; at least one calorie value required; optional `barcode`, 8–14 digits, unique per household)
 - `meals` (unique per user, local date and meal type), `meal_items` (nutrition snapshot plus a basis multiplier)
 - `meal_items` of a cooked dish point to their `dish_portions` row and `dish_lines` row; plain items leave both empty
 - `dishes` (a cooking; split mode equal / count / percent / weight, cooked weight, `kcal_estimated` when its calories are only roughly known, a revision changed by every save), `dish_portions` (who ate it on which day and meal, or nobody yet = a leftover; split value; `discarded` for a thrown-away leftover, which keeps its share), `dish_lines` (ingredient snapshot like `meal_items`, either `shared` or `per_portion`), `dish_line_amounts` (own amount of a `per_portion` line per portion)
@@ -270,7 +279,7 @@ pnpm icons          # regenerate the icon PNGs: the default set from public/icon
 
 To add an app icon choice: put its SVG in `public/icons/<name>/icon.svg`, add `<name>` to `APP_ICONS` (`src/features/appearance/appearance.ts`) and a label to `APP_ICON_OPTIONS`, then run `pnpm icons`.
 
-**End-to-end journeys** (log a meal on Cook, Back and the back swipe going one step at a time on Cook, category chips and creating a missing ingredient from the Cook search, the new-version toast on the first start only, a White and a custom accent color, your own symbol, a single food changed in place, a meal eaten out logged as an estimate, cooking together for two, sharing a meal afterwards, leftovers, goals and partner, partner nickname and symbol, Today fitting the screen, history, ingredients, category management, offline, a partner's change showing up live and after the app was in the background, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color) run the real app against the dev project. Build it against dev and pass the test credentials:
+**End-to-end journeys** (log a meal on Cook, Back and the back swipe going one step at a time on Cook, category chips and creating a missing ingredient from the Cook search, the new-version toast on the first start only, a White and a custom accent color, your own symbol, a single food changed in place, a meal eaten out logged as an estimate, a package scanned from a photo and filled in from Open Food Facts, a live camera scan on Cook, cooking together for two, sharing a meal afterwards, leftovers, goals and partner, partner nickname and symbol, Today fitting the screen, history, ingredients, category management, offline, a partner's change showing up live and after the app was in the background, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color) run the real app against the dev project. Build it against dev and pass the test credentials:
 
 ```bash
 set -a; . ./.env.test.local; set +a

@@ -22,6 +22,16 @@ vi.mock('../ingredients/ingredientsApi', () => ({
   updateIngredient: vi.fn(),
 }))
 vi.mock('../household/householdApi', () => ({ fetchMembers: vi.fn() }))
+vi.mock('../barcode/openFoodFacts', () => ({ lookupProduct: vi.fn() }))
+// the camera can't run here: the scanner reports the barcode in `scanned` when tapped
+const scanned = vi.hoisted(() => ({ barcode: '' }))
+vi.mock('../barcode/BarcodeScanner', () => ({
+  BarcodeScanner: ({ onResult }: { onResult: (barcode: string) => void }) => (
+    <button type="button" onClick={() => onResult(scanned.barcode)}>
+      Fake scan
+    </button>
+  ),
+}))
 vi.mock('../dishes/dishesApi', () => ({
   fetchDish: vi.fn(),
   saveDish: vi.fn(),
@@ -37,6 +47,8 @@ import {
   fetchIngredients,
 } from '../ingredients/ingredientsApi'
 import { fetchDay } from '../meals/mealsApi'
+import { lookupProduct } from '../barcode/openFoodFacts'
+import { EMPTY_INGREDIENT_FORM } from '../ingredients/ingredientForm'
 import { fetchLeftoverDishes, saveDish } from '../dishes/dishesApi'
 import type { Dish } from '../dishes/portions'
 import { gramsItem } from '../dishes/testData'
@@ -580,6 +592,88 @@ describe('the ingredient search', () => {
     await user.click(screen.getByRole('button', { name: 'Back' }))
 
     expect(currentPath()).toBe('/cook/add')
+  })
+
+  test('scanning a package already saved goes straight to its amount', async () => {
+    vi.mocked(fetchIngredients).mockResolvedValue([
+      PATTY,
+      { ...TOMATO, barcode: '3017620422003' },
+      NOODLES,
+    ])
+    scanned.barcode = '3017620422003'
+    const user = userEvent.setup()
+    renderCook()
+    await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
+    await screen.findByRole('button', { name: /Patty/ })
+
+    await user.click(screen.getByRole('button', { name: 'Scan barcode' }))
+    await user.click(screen.getByRole('button', { name: 'Fake scan' }))
+
+    expect(await screen.findByLabelText('Amount')).toBeInTheDocument()
+    expect(currentPath()).toBe('/cook/add/tomato')
+    expect(lookupProduct).not.toHaveBeenCalled()
+  })
+
+  test('a new package is filled in from Open Food Facts, saved with its barcode, then its amount', async () => {
+    // Arrange
+    scanned.barcode = '3017620422003'
+    vi.mocked(lookupProduct).mockResolvedValue({
+      kind: 'found',
+      values: {
+        ...EMPTY_INGREDIENT_FORM,
+        name: 'Nutella',
+        brand: 'Ferrero',
+        barcode: '3017620422003',
+        per100gEnabled: true,
+        per100g: { ...EMPTY_INGREDIENT_FORM.per100g, kcal: '539', fat: '30.9' },
+      },
+    })
+    const nutella = ingredient({ id: 'nutella', name: 'Nutella', kcal_100: 539 })
+    vi.mocked(createIngredient).mockImplementation(async () => {
+      vi.mocked(fetchIngredients).mockResolvedValue([PATTY, TOMATO, NOODLES, nutella])
+      return nutella
+    })
+    const user = userEvent.setup()
+    renderCook()
+    await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Scan barcode' }))
+    await user.click(screen.getByRole('button', { name: 'Fake scan' }))
+
+    // Assert: checked by me first, then saved
+    expect(await screen.findByText(/Filled in from Open Food Facts/)).toBeInTheDocument()
+    expect(currentPath()).toBe('/cook/add/new-3017620422003')
+    expect(screen.getByLabelText('Name')).toHaveValue('Nutella')
+    expect(screen.getByLabelText('Barcode')).toHaveValue('3017620422003')
+    await user.click(screen.getByRole('button', { name: 'Save ingredient' }))
+    expect(createIngredient).toHaveBeenCalledWith(
+      'h1',
+      expect.objectContaining({
+        name: 'Nutella',
+        kcal_100: 539,
+        fat_100: 30.9,
+        barcode: '3017620422003',
+      }),
+    )
+    expect(await screen.findByLabelText('Amount')).toBeInTheDocument()
+    expect(currentPath()).toBe('/cook/add/nutella')
+  })
+
+  test('a package Open Food Facts doesn’t know keeps its barcode and the search as name', async () => {
+    scanned.barcode = '96385074'
+    vi.mocked(lookupProduct).mockResolvedValue({ kind: 'notFound' })
+    const user = userEvent.setup()
+    renderCook()
+    await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
+    await user.type(screen.getByLabelText('Search ingredients'), 'Rye bread')
+
+    await user.click(screen.getByRole('button', { name: 'Scan barcode' }))
+    await user.click(screen.getByRole('button', { name: 'Fake scan' }))
+
+    expect(await screen.findByText(/isn’t in Open Food Facts yet/)).toBeInTheDocument()
+    expect(screen.getByLabelText('Name')).toHaveValue('Rye bread')
+    expect(screen.getByLabelText('Barcode')).toHaveValue('96385074')
   })
 
   test('a new ingredient with missing values is not saved', async () => {

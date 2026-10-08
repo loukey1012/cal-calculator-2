@@ -16,6 +16,10 @@ describe('toUserMessage', () => {
     ],
     ['duplicate key value violates unique constraint', 'This already exists.'],
     [
+      'duplicate key value violates unique constraint "ingredients_household_barcode_key"',
+      'This barcode already belongs to another ingredient.',
+    ],
+    [
       'This dish was changed meanwhile',
       'This dish was changed on another phone meanwhile. Open it again and redo your change.',
     ],

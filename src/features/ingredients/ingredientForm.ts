@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { fieldErrors, type FieldErrors } from '../../lib/forms'
 import { parseDecimal } from '../../lib/numbers'
+import { normalizeBarcode } from '../barcode/barcode'
 import { toWholeKcal } from '../nutrition/format'
 import { mapNutrients, NUTRIENT_KEYS } from '../nutrition/types'
 import type { Ingredient, IngredientInput } from './ingredientsApi'
@@ -32,6 +33,8 @@ export type IngredientFormValues = {
   /** broad category of a new category; '' = none ("Other") */
   readonly newCategoryGroupId: string
   readonly note: string
+  /** the package's barcode, typed or scanned; '' = none */
+  readonly barcode: string
   readonly per100gEnabled: boolean
   readonly per100g: BasisFormValues
   readonly perUnitEnabled: boolean
@@ -49,6 +52,7 @@ export const EMPTY_INGREDIENT_FORM: IngredientFormValues = {
   newCategoryName: '',
   newCategoryGroupId: '',
   note: '',
+  barcode: '',
   per100gEnabled: false,
   per100g: EMPTY_BASIS,
   perUnitEnabled: false,
@@ -120,6 +124,15 @@ const ingredientFormSchema = z
     newCategoryName: z.string().trim().max(MAX_CATEGORY, `Use at most ${MAX_CATEGORY} characters`),
     newCategoryGroupId: z.string(),
     note: optionalText(MAX_NOTE),
+    barcode: z.string().transform((raw, ctx) => {
+      if (raw.trim() === '') return null
+      const barcode = normalizeBarcode(raw)
+      if (barcode === null) {
+        ctx.addIssue({ code: 'custom', message: 'Not a valid barcode' })
+        return z.NEVER
+      }
+      return barcode
+    }),
     per100gEnabled: z.boolean(),
     per100g: basisSchema(GRAMS_PER_BASIS),
     perUnitEnabled: z.boolean(),
@@ -204,6 +217,7 @@ export function parseIngredientForm(values: IngredientFormValues): IngredientFor
         name: form.name,
         brand: form.brand,
         note: form.note,
+        barcode: form.barcode,
         // a switched-off section is cleared, even if something was typed into it
         ...per100gColumns(form.per100gEnabled ? form.per100g : null),
         ...perUnitColumns(form.perUnitEnabled ? form.perUnit : null),
@@ -225,6 +239,7 @@ export function toFormValues(ingredient: Ingredient): IngredientFormValues {
     newCategoryName: '',
     newCategoryGroupId: '',
     note: asText(ingredient.note),
+    barcode: asText(ingredient.barcode),
     per100gEnabled: ingredient.kcal_100 !== null,
     per100g: {
       kcal: asText(ingredient.kcal_100),
