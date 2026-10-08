@@ -13,6 +13,11 @@ vi.mock('../dishes/dishesApi', () => ({
   deleteDish: vi.fn(),
 }))
 vi.mock('./historyApi', () => ({ fetchDailyTotals: vi.fn() }))
+vi.mock('../weight/weightApi', () => ({
+  fetchWeights: vi.fn().mockResolvedValue([{ date: '2026-09-28', weightKg: 72.4 }]),
+  saveWeight: vi.fn(),
+  deleteWeight: vi.fn(),
+}))
 vi.mock('../goals/goalsApi', () => ({ fetchGoals: vi.fn(), saveGoal: vi.fn() }))
 vi.mock('../household/householdApi', () => ({ fetchMembers: vi.fn() }))
 vi.mock('../meals/mealsApi', () => ({
@@ -49,6 +54,7 @@ const GOAL = {
   carbsG: null,
   fatG: null,
   fiberG: null,
+  weightGoalKg: null,
 }
 
 function LocationProbe() {
@@ -123,6 +129,8 @@ describe('HistoryPage', () => {
     const day = screen.getByRole('region', { name: /October 1/ })
     await waitFor(() => expect(fetchDay).toHaveBeenCalledWith('u1', '2026-10-01'))
     expect(within(day).getByTestId('day-total')).toBeInTheDocument()
+    // the weight that applied that day, below the meals
+    expect(await within(day).findByRole('button', { name: /Weight/ })).toHaveTextContent('72.4 kg')
 
     // the forgotten dinner is added on Cook, which comes back to this day
     await user.click(screen.getByRole('button', { name: /Dinner/ }))

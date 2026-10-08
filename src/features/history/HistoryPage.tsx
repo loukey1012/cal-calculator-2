@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router'
 import { useCurrentUser } from '../../app/currentUser'
 import { ErrorBanner } from '../../components/ios/ErrorBanner'
 import { PageHeader } from '../../components/ios/PageHeader'
+import { SegmentedControl } from '../../components/ios/SegmentedControl'
 import { fromLocalDateString, toLocalDateString } from '../../lib/dates'
 import { toUserMessage } from '../../lib/errors'
 import { useGoals } from '../goals/hooks'
@@ -11,6 +12,8 @@ import type { Profile } from '../household/householdApi'
 import { PersonSwitch } from '../household/PersonSwitch'
 import { formatGrams, formatKcalTotal } from '../nutrition/format'
 import { DayView } from '../today/DayView'
+import { TrendsView } from '../trends/TrendsView'
+import { DayWeight } from '../weight/DayWeight'
 import { useToday } from '../today/useToday'
 import { dayStatus, monthStart, monthSummary, type MonthSummary } from './calendar'
 import { useMonthTotals } from './hooks'
@@ -31,7 +34,17 @@ function summaryText({ loggedDays, averageKcal, averageProtein, estimated }: Mon
   return averageProtein > 0 ? `${kcal} · Ø ${formatGrams(averageProtein)} g protein` : kcal
 }
 
-/** Month calendar; the selected day (kept in the URL) opens beneath it, fully editable. */
+type HistoryView = 'calendar' | 'trends'
+
+const VIEW_OPTIONS = [
+  { value: 'calendar', label: 'Calendar' },
+  { value: 'trends', label: 'Trends' },
+] as const satisfies ReadonlyArray<{ value: HistoryView; label: string }>
+
+/**
+ * Month calendar (the selected day, kept in the URL, opens beneath it, fully editable) or the
+ * trends of calories, nutrients and weight.
+ */
 export function HistoryPage() {
   const { profile, householdId } = useCurrentUser()
   const today = useToday()
@@ -39,6 +52,7 @@ export function HistoryPage() {
   const navigate = useNavigate()
   const people = usePeople(profile, householdId)
   const [selectedId, setSelectedId] = useState(profile.id)
+  const [view, setView] = useState<HistoryView>('calendar')
   const person = people.find((member) => member.id === selectedId) ?? profile
 
   const requestedDay = DAY_ROUTE.exec(pathname)?.[1]
@@ -58,21 +72,40 @@ export function HistoryPage() {
     <>
       <PageHeader title="History" />
       <PersonSwitch people={people} selectedId={person.id} onChange={setSelectedId} />
-      <MonthOverview
-        key={person.id}
-        person={person}
-        month={month}
-        today={today}
-        selectedDay={selectedDay}
-        onChangeMonth={setMonth}
-        onSelectDay={toggleDay}
-      />
-      {selectedDay ? (
-        <SelectedDay day={selectedDay} person={person} isOwnDay={person.id === profile.id} />
+      <div className="mt-3">
+        <SegmentedControl label="View" options={VIEW_OPTIONS} value={view} onChange={setView} />
+      </div>
+      {view === 'trends' ? (
+        <TrendsView
+          key={person.id}
+          userId={person.id}
+          isOwn={person.id === profile.id}
+          today={today}
+        />
       ) : (
-        <p className="mt-6 text-center text-[15px] text-label-secondary">
-          Tap a day to see what was eaten.
-        </p>
+        <>
+          <MonthOverview
+            key={person.id}
+            person={person}
+            month={month}
+            today={today}
+            selectedDay={selectedDay}
+            onChangeMonth={setMonth}
+            onSelectDay={toggleDay}
+          />
+          {selectedDay ? (
+            <SelectedDay
+              day={selectedDay}
+              today={today}
+              person={person}
+              isOwnDay={person.id === profile.id}
+            />
+          ) : (
+            <p className="mt-6 text-center text-[15px] text-label-secondary">
+              Tap a day to see what was eaten.
+            </p>
+          )}
+        </>
       )}
     </>
   )
@@ -80,11 +113,12 @@ export function HistoryPage() {
 
 type SelectedDayProps = {
   readonly day: string
+  readonly today: string
   readonly person: Profile
   readonly isOwnDay: boolean
 }
 
-function SelectedDay({ day, person, isOwnDay }: SelectedDayProps) {
+function SelectedDay({ day, today, person, isOwnDay }: SelectedDayProps) {
   const title = new Intl.DateTimeFormat(undefined, DAY_TITLE).format(fromLocalDateString(day))
   return (
     <section aria-labelledby="history-day-title" className="mt-6">
@@ -92,6 +126,9 @@ function SelectedDay({ day, person, isOwnDay }: SelectedDayProps) {
         {title}
       </h2>
       <DayView key={person.id} person={person} isOwnDay={isOwnDay} date={day} />
+      <div className="mt-4">
+        <DayWeight userId={person.id} date={day} today={today} isOwnDay={isOwnDay} />
+      </div>
     </section>
   )
 }

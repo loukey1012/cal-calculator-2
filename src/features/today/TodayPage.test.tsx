@@ -68,6 +68,7 @@ const GOAL = {
   carbsG: null,
   fatG: null,
   fiberG: null,
+  weightGoalKg: null,
 }
 const PARTNER = { ...PROFILE, id: 'u2', display_name: 'baby' }
 

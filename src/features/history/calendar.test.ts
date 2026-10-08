@@ -8,6 +8,7 @@ const GOAL = {
   carbsG: null,
   fatG: null,
   fiberG: null,
+  weightGoalKg: null,
 }
 
 describe('months', () => {

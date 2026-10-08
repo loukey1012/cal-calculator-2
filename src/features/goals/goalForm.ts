@@ -3,6 +3,7 @@ import { fieldErrors, type FieldErrors } from '../../lib/forms'
 import { parseDecimal } from '../../lib/numbers'
 import type { Goal } from '../nutrition/goals'
 import { formatKcal, toWholeKcal } from '../nutrition/format'
+import { parseWeight } from '../weight/weight'
 
 // goal_history: kcal integer, grams numeric(6, 1)
 const MAX_KCAL = 99_999
@@ -14,6 +15,8 @@ export type GoalFormValues = {
   readonly carbs: string
   readonly fat: string
   readonly fiber: string
+  /** target weight in kg */
+  readonly weight: string
 }
 
 export const EMPTY_GOAL_FORM: GoalFormValues = {
@@ -22,6 +25,7 @@ export const EMPTY_GOAL_FORM: GoalFormValues = {
   carbs: '',
   fat: '',
   fiber: '',
+  weight: '',
 }
 
 export type GoalInput = Omit<Goal, 'validFrom'>
@@ -68,15 +72,31 @@ const goalFormSchema = z.object({
   carbs: grams(),
   fat: grams(),
   fiber: grams(),
+  weight: z.string().transform((raw, ctx) => {
+    if (raw.trim() === '') return null
+    const parsed = parseWeight(raw)
+    if (!parsed.ok) {
+      ctx.addIssue({ code: 'custom', message: parsed.message })
+      return z.NEVER
+    }
+    return parsed.weightKg
+  }),
 })
 
 export function parseGoalForm(values: GoalFormValues): GoalFormResult {
   const result = goalFormSchema.safeParse(values)
   if (!result.success) return { success: false, errors: fieldErrors(result.error) }
-  const { protein, carbs, fat, fiber } = result.data
+  const { protein, carbs, fat, fiber, weight } = result.data
   return {
     success: true,
-    data: { kcal: result.data.kcal, proteinG: protein, carbsG: carbs, fatG: fat, fiberG: fiber },
+    data: {
+      kcal: result.data.kcal,
+      proteinG: protein,
+      carbsG: carbs,
+      fatG: fat,
+      fiberG: fiber,
+      weightGoalKg: weight,
+    },
   }
 }
 
@@ -90,6 +110,7 @@ export function toGoalFormValues(goal: Goal | null): GoalFormValues {
     carbs: asText(goal.carbsG),
     fat: asText(goal.fatG),
     fiber: asText(goal.fiberG),
+    weight: asText(goal.weightGoalKg),
   }
 }
 
@@ -109,5 +130,6 @@ export function describeGoal(goal: Goal | null): string {
     ...macros.flatMap(([letter, grams]) =>
       grams === null ? [] : [`${letter} ${gramsFormat.format(grams)} g`],
     ),
+    ...(goal.weightGoalKg === null ? [] : [`Weight ${gramsFormat.format(goal.weightGoalKg)} kg`]),
   ].join(' · ')
 }

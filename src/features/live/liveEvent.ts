@@ -6,6 +6,7 @@ import { monthKeys } from '../history/hooks'
 import { householdKeys } from '../household/queryKeys'
 import { ingredientKeys } from '../ingredients/hooks'
 import { dayChangeKey } from '../meals/dayChanges'
+import { weightKeys } from '../weight/weightChanges'
 
 const id = z.guid()
 // null when no signed-in user made the change (e.g. an admin)
@@ -22,7 +23,7 @@ const hintSchema = z.discriminatedUnion('table', [
     table: z.enum(['ingredients', 'categories', 'category_groups', 'households']),
     actor,
   }),
-  z.object({ table: z.enum(['goal_history', 'profiles']), user_id: id, actor }),
+  z.object({ table: z.enum(['goal_history', 'profiles', 'weight_entries']), user_id: id, actor }),
 ])
 
 export type LiveHint = z.infer<typeof hintSchema>
@@ -53,6 +54,8 @@ export function keysForHint(hint: LiveHint, householdId: string): readonly Query
       ]
     case 'goal_history':
       return [goalKeys.goals(hint.user_id)]
+    case 'weight_entries':
+      return [weightKeys.weights(hint.user_id)]
     case 'profiles':
       return [householdKeys.profile(hint.user_id), householdKeys.members(householdId)]
     case 'households':

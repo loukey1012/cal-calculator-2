@@ -25,6 +25,7 @@ export async function saveGoal(userId: string, validFrom: string, goal: GoalInpu
       carbs_g: goal.carbsG,
       fat_g: goal.fatG,
       fiber_g: goal.fiberG,
+      weight_goal_kg: goal.weightGoalKg,
     },
     { onConflict: 'user_id,valid_from' },
   )

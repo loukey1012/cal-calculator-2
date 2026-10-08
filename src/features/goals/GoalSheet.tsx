@@ -98,6 +98,20 @@ function GoalForm({ initialValues, onSubmit }: GoalFormProps) {
           />
         ))}
       </GroupedSection>
+      <GroupedSection
+        header="Weight"
+        footer="The weight you want to reach, shown on the weight chart in History › Trends."
+      >
+        <InputRow
+          label="Target weight"
+          suffix="kg"
+          inputMode="decimal"
+          placeholder="–"
+          value={values.weight}
+          onChange={(event) => setValues((current) => ({ ...current, weight: event.target.value }))}
+          error={errors.weight}
+        />
+      </GroupedSection>
     </form>
   )
 }

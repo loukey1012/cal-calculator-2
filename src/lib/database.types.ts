@@ -318,6 +318,7 @@ export type Database = {
           protein_g: number | null
           user_id: string
           valid_from: string
+          weight_goal_kg: number | null
         }
         Insert: {
           carbs_g?: number | null
@@ -329,6 +330,7 @@ export type Database = {
           protein_g?: number | null
           user_id: string
           valid_from: string
+          weight_goal_kg?: number | null
         }
         Update: {
           carbs_g?: number | null
@@ -340,6 +342,7 @@ export type Database = {
           protein_g?: number | null
           user_id?: string
           valid_from?: string
+          weight_goal_kg?: number | null
         }
         Relationships: [
           {
@@ -667,6 +670,41 @@ export type Database = {
             columns: ["household_id"]
             isOneToOne: false
             referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      weight_entries: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          updated_at: string
+          user_id: string
+          weight_kg: number
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          weight_kg: number
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          weight_kg?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weight_entries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

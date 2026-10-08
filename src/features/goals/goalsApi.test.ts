@@ -16,6 +16,7 @@ const ROW = {
   carbs_g: null,
   fat_g: null,
   fiber_g: null,
+  weight_goal_kg: null,
   created_at: '',
 }
 
@@ -34,6 +35,7 @@ describe('goalsApi', () => {
         carbsG: null,
         fatG: null,
         fiberG: null,
+        weightGoalKg: null,
       },
     ])
     expect(supabaseMock.from).toHaveBeenCalledWith('goal_history')
@@ -51,6 +53,7 @@ describe('goalsApi', () => {
       carbsG: null,
       fatG: 60,
       fiberG: null,
+      weightGoalKg: null,
     })
 
     expect(query.upsert).toHaveBeenCalledWith(
@@ -62,6 +65,7 @@ describe('goalsApi', () => {
         carbs_g: null,
         fat_g: 60,
         fiber_g: null,
+        weight_goal_kg: null,
       },
       { onConflict: 'user_id,valid_from' },
     )
@@ -78,6 +82,7 @@ describe('goalsApi', () => {
           carbsG: null,
           fatG: null,
           fiberG: null,
+          weightGoalKg: null,
         }),
     ],
   ])('%s turns database errors into ApiError', async (_name, call) => {

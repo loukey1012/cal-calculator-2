@@ -107,6 +107,18 @@ describe('live updates', () => {
     expect(hint).toMatchObject({ table: 'ingredients', actor: alice.id })
   })
 
+  test('a new weight is announced to the household', async () => {
+    expect(await bobListens.status).toBe('SUBSCRIBED')
+
+    const { error } = await alice.client
+      .from('weight_entries')
+      .insert({ user_id: alice.id, date: DAY, weight_kg: 70 })
+
+    expect(error).toBeNull()
+    const hint = await waitFor(bobListens.hints, (h) => h.table === 'weight_entries')
+    expect(hint).toMatchObject({ table: 'weight_entries', user_id: alice.id, actor: alice.id })
+  })
+
   test("someone from another household can't listen in", async () => {
     // Act
     const carolListens = await listen(carol, householdId)

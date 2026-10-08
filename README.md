@@ -38,7 +38,7 @@ Built for a two-person household: both members log their own meals, can see and 
 
 ### Daily goals and progress
 
-- Per-person daily goal: **calories required**; protein, carbs, fat and **fiber** optional.
+- Per-person daily goal: **calories required**; protein, carbs, fat and **fiber** optional, plus an optional **target weight** (shown on the weight chart).
 - A **progress card** on each day: a large calorie ring with the kcal left (or over) in the middle, and a bar per macro (protein, carbs, fat, fiber; **Ring + bars**, the default). Shows consumed / target and how much is left or over. Calories always show; each macro only if it has a target. Also available as a small ring per macro, all **bars**, or **compact** bars (Settings › Appearance).
 - Goals have a history: a new goal applies **from today on**, and past days keep the goal they had.
 - A "≥" marks totals that are only a lower bound (some logged items had no value for that nutrient).
@@ -49,6 +49,12 @@ Built for a two-person household: both members log their own meals, can see and 
 - **Month calendar** (Monday first): every logged day is marked green (within that day's calorie goal), red (over) or neutral (logged, no goal yet).
 - Month summary: days logged, average calories and protein. The average shows "~" when a day in it had estimated calories.
 - **Tap any past day** to show its rings, totals and meals **right beneath the calendar**, and **edit it like today**. A forgotten dinner: tap the empty Dinner, which opens Cook for that day and comes back here after saving. Tap another day to switch, or the same day again to close it. The selected day is kept in the address (`/history/YYYY-MM-DD`), so reopening the app keeps it. Also for your partner's days.
+- Under the day's meals, its **weight**: the latest entry up to that day ("72.4 kg, since Mon, Oct 5"). Tap it to set that day's weight (also for past days) or delete the day's entry. Your partner's weight is shown, but only you change yours.
+- **Calendar | Trends** at the top switches to the trends:
+  - **Range:** 4 weeks, 3 months, 6 months or 1 year. **Chips** for what has a goal: Calories always, each nutrient with a target (protein, carbs, fat, fiber), and **Weight** once there is a target weight or an entry.
+  - **Calories and nutrients:** one bar per logged day (per week, as the average of its logged days, for 6 months and 1 year) in the ring color, the goal as a dashed line that follows the goal history, unlogged days left out. Tap a bar for its value; days with estimated calories are lighter and read "~". Below: Ø per logged day, days within the goal (calories) or reaching it (nutrients), and the change against the range before.
+  - **Weight:** a line through the entries (the weight from before the range starts it, hollow), the **target weight** as a dashed line, and Current, Change over the range and **To goal** (to lose or gain, or Reached). **Add weight** for any day up to today, and the latest entries to change or delete.
+  - The charts are drawn by the app itself (no chart library), with a hidden table of the values for VoiceOver.
 
 ### Household
 
@@ -80,7 +86,7 @@ Built for a two-person household: both members log their own meals, can see and 
 ### Works offline
 
 - The last loaded data (days, ingredients, goals, profile) is **stored on the phone for 7 days**, so the app opens without a connection.
-- **Meal changes made offline** still show immediately, are queued, and are sent in order when the connection returns, even after the app was closed. Every change is idempotent (items get their ID on the phone), so resending can never create duplicates. Network failures are retried until they succeed. The moment the app goes to the background, the queue is written to the phone right away, so iOS closing it straight after a change loses nothing.
+- **Meal and weight changes made offline** still show immediately, are queued, and are sent in order when the connection returns, even after the app was closed. Every change is idempotent (items get their ID on the phone), so resending can never create duplicates. Network failures are retried until they succeed. The moment the app goes to the background, the queue is written to the phone right away, so iOS closing it straight after a change loses nothing.
 - A pill above the tab bar shows the state: _Offline_, _Offline · 2 changes pending_, _Saving 2 changes…_
 - iOS doesn't run web apps in the background, so queued changes go out the next time the app is open with a connection.
 
@@ -160,8 +166,6 @@ Planned 2026-10-07, all five groups shipped 2026-10-08, one group at a time.
 | Recipes     | Save dishes and meals by name as recipes, and cook or log them again (with remembered own amounts)                            |
 | Quick picks | Recent and favorite ingredients                                                                                               |
 | Meal reuse  | Copy a meal to another day, or save it as a template                                                                          |
-| Trends      | Charts of calories and macros over weeks and months                                                                           |
-| Weight      | Track body weight over time                                                                                                   |
 | Export      | Download your logged data as CSV                                                                                              |
 | Reminders   | Push reminders to log meals                                                                                                   |
 | Cheat days  | Mark a day as a cheat day                                                                                                     |
@@ -221,7 +225,7 @@ scripts/
 ### Data model (Supabase)
 
 - `households`, `profiles` (one per auth user, created by a trigger; holds the name, accent color and `appearance` JSON)
-- `goal_history` (goal valid from a date; calories, and optionally protein, carbs, fat and fiber)
+- `goal_history` (goal valid from a date; calories, and optionally protein, carbs, fat, fiber and a target weight), `weight_entries` (one weight per person and day, counting until the next; the household reads them, only you write yours)
 - `category_groups` (the household's broad categories), `categories` (optionally in a group; deleting a group leaves its categories ungrouped), `ingredients` (per-100 g and/or per-unit columns; at least one calorie value required; optional `barcode`, 8–14 digits, unique per household)
 - `meals` (unique per user, local date and meal type), `meal_items` (nutrition snapshot plus a basis multiplier)
 - `meal_items` of a cooked dish point to their `dish_portions` row and `dish_lines` row; plain items leave both empty
@@ -282,7 +286,7 @@ pnpm icons          # regenerate the icon PNGs: the default set from public/icon
 
 To add an app icon choice: put its SVG in `public/icons/<name>/icon.svg`, add `<name>` to `APP_ICONS` (`src/features/appearance/appearance.ts`) and a label to `APP_ICON_OPTIONS`, then run `pnpm icons`.
 
-**End-to-end journeys** (log a meal on Cook, Back and the back swipe going one step at a time on Cook, category chips and creating a missing ingredient from the Cook search, the new-version toast on the first start only, a White and a custom accent color, your own symbol, a single food changed in place, a meal eaten out logged as an estimate, a saved brand picked from the suggestions, a package scanned from a photo and filled in from Open Food Facts, a live camera scan on Cook, cooking together for two, sharing a meal afterwards, leftovers, goals and partner, partner nickname and symbol, Today fitting the screen, history, ingredients, category management, offline, a partner's change showing up live and after the app was in the background, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color) run the real app against the dev project. Build it against dev and pass the test credentials:
+**End-to-end journeys** (log a meal on Cook, Back and the back swipe going one step at a time on Cook, category chips and creating a missing ingredient from the Cook search, the new-version toast on the first start only, a White and a custom accent color, your own symbol, a single food changed in place, a meal eaten out logged as an estimate, a saved brand picked from the suggestions, a package scanned from a photo and filled in from Open Food Facts, a live camera scan on Cook, weight for today and an earlier day with calorie and weight trends, cooking together for two, sharing a meal afterwards, leftovers, goals and partner, partner nickname and symbol, Today fitting the screen, history, ingredients, category management, offline, a partner's change showing up live and after the app was in the background, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color) run the real app against the dev project. Build it against dev and pass the test credentials:
 
 ```bash
 set -a; . ./.env.test.local; set +a

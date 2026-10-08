@@ -14,10 +14,11 @@ export const CACHE_BUSTER = '1'
 // short, so a change logged right before iOS suspends the app is still written (also see
 // useSaveWhenHidden). Never bump CACHE_BUSTER while changes could be queued: they would be lost.
 const SAVE_THROTTLE_MS = 250
-// mutation keys of queued changes start with one of these (meals/dayChanges.ts, dishes/dishChanges.ts)
-const QUEUED_CHANGE_KEY_ROOTS: readonly unknown[] = ['day', 'dish']
+// mutation keys of queued changes start with one of these (meals/dayChanges.ts,
+// dishes/dishChanges.ts, weight/weightChanges.ts)
+const QUEUED_CHANGE_KEY_ROOTS: readonly unknown[] = ['day', 'dish', 'weight']
 
-/** Meal and dish changes: queued offline, stored on the phone and sent in order. */
+/** Meal, dish and weight changes: queued offline, stored on the phone and sent in order. */
 export function isQueuedChange(mutationKey: readonly unknown[] | undefined): boolean {
   return QUEUED_CHANGE_KEY_ROOTS.includes(mutationKey?.[0])
 }

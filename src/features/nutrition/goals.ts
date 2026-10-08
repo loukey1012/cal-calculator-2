@@ -10,6 +10,8 @@ export type Goal = {
   readonly carbsG: number | null
   readonly fatG: number | null
   readonly fiberG: number | null
+  /** the weight to reach; drawn on the weight chart */
+  readonly weightGoalKg: number | null
 }
 
 export type RingKey = 'kcal' | 'protein' | 'carbs' | 'fat' | 'fiber'
@@ -37,6 +39,7 @@ export function goalFromRow(row: Tables<'goal_history'>): Goal {
     carbsG: row.carbs_g,
     fatG: row.fat_g,
     fiberG: row.fiber_g,
+    weightGoalKg: row.weight_goal_kg,
   }
 }
 

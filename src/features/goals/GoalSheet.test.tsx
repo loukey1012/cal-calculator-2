@@ -15,6 +15,7 @@ const CURRENT = {
   carbsG: null,
   fatG: null,
   fiberG: null,
+  weightGoalKg: null,
 }
 
 function renderSheet(current = CURRENT as typeof CURRENT | null) {
@@ -46,6 +47,7 @@ describe('GoalSheet', () => {
     await user.type(screen.getByLabelText('Calories'), '1800')
     await user.type(screen.getByLabelText('Fat'), '60')
     await user.type(screen.getByLabelText('Fiber'), '30')
+    await user.type(screen.getByLabelText('Target weight'), '68,5')
     await user.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() => expect(onClose).toHaveBeenCalled())
@@ -55,6 +57,7 @@ describe('GoalSheet', () => {
       carbsG: null,
       fatG: 60,
       fiberG: 30,
+      weightGoalKg: 68.5,
     })
   })
 

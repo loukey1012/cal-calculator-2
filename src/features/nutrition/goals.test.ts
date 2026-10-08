@@ -11,6 +11,7 @@ const SEPTEMBER: Goal = {
   carbsG: null,
   fatG: null,
   fiberG: null,
+  weightGoalKg: null,
 }
 const OCTOBER: Goal = {
   validFrom: '2026-10-01',
@@ -19,6 +20,7 @@ const OCTOBER: Goal = {
   carbsG: 200,
   fatG: 60,
   fiberG: null,
+  weightGoalKg: null,
 }
 
 describe('goalFromRow', () => {
@@ -32,6 +34,7 @@ describe('goalFromRow', () => {
       carbs_g: null,
       fat_g: null,
       fiber_g: null,
+      weight_goal_kg: null,
       created_at: '',
     }
 
@@ -109,7 +112,7 @@ describe('goalProgress', () => {
   })
 
   test('fiber gets a ring once it has a target; unknown fiber makes it a lower bound', () => {
-    const fiber = goalProgress(LUNCH, { ...SEPTEMBER, fiberG: 30 }).find(
+    const fiber = goalProgress(LUNCH, { ...SEPTEMBER, fiberG: 30, weightGoalKg: null }).find(
       (ring) => ring.key === 'fiber',
     )
 

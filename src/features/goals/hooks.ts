@@ -11,8 +11,19 @@ import { fetchGoals, saveGoal } from './goalsApi'
 
 export const goalKeys = { goals: (userId: string) => ['goals', userId] as const }
 
+/** Goals cached by an older app version lack the newer targets: those are simply not set. */
+export function withAllTargets(goal: Goal): Goal {
+  return { ...goal, fiberG: goal.fiberG ?? null, weightGoalKg: goal.weightGoalKg ?? null }
+}
+
+const withAllTargetsEach = (goals: Goal[]) => goals.map(withAllTargets)
+
 export function useGoals(userId: string): UseQueryResult<Goal[]> {
-  return useQuery({ queryKey: goalKeys.goals(userId), queryFn: () => fetchGoals(userId) })
+  return useQuery({
+    queryKey: goalKeys.goals(userId),
+    queryFn: () => fetchGoals(userId),
+    select: withAllTargetsEach,
+  })
 }
 
 export type SaveGoalInput = { readonly validFrom: string; readonly goal: GoalInput }

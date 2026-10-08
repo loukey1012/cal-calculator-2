@@ -48,6 +48,11 @@ vi.mock('../features/meals/mealsApi', () => ({
 vi.mock('../features/goals/goalsApi', () => ({
   fetchGoals: vi.fn().mockResolvedValue([]),
 }))
+vi.mock('../features/weight/weightApi', () => ({
+  fetchWeights: vi.fn().mockResolvedValue([]),
+  saveWeight: vi.fn(),
+  deleteWeight: vi.fn(),
+}))
 vi.mock('../features/history/historyApi', () => ({
   fetchDailyTotals: vi.fn().mockResolvedValue([]),
 }))
