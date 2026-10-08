@@ -154,6 +154,7 @@ Planned 2026-10-07, all five groups shipped 2026-10-08, one group at a time.
 | Weight           | Track body weight over time                                                                        |
 | Export           | Download your logged data as CSV                                                                   |
 | Reminders        | Push reminders to log meals                                                                        |
+| Cheat days       | Mark a day as a cheat day                                                                          |
 
 **Recipes** and meal templates will build on the Cook tab: a recipe fills in a dish (the same ingredient lines and splits), saved by name.
 
