@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { act, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { CurrentUserContext } from '../../app/currentUser'
@@ -329,6 +329,30 @@ describe('a single food logged alone', () => {
 
     const row = await sheet.findByRole('button', { name: /Banana.*120 g.*108 kcal/ })
     expect(row).not.toHaveTextContent('ingredient')
+  })
+
+  test('stays open when its saved change comes back with a new item id', async () => {
+    // Arrange: the editor is open on the banana
+    const user = userEvent.setup()
+    const { getByRole, queryClient } = renderSheetWithCache()
+    const sheet = within(getByRole('dialog', { name: 'Lunch' }))
+    await user.click(await sheet.findByRole('button', { name: /Banana/ }))
+    await sheet.findByLabelText('Amount')
+
+    // Act: saving a dish re-creates its items, so the day comes back with a new id for it
+    vi.mocked(fetchDay).mockResolvedValue([
+      dayMeal('m1', 'lunch', [
+        mealItem({ id: 'apple', name: 'Apple' }),
+        MY_CHILI,
+        { ...MY_BANANA, id: 'banana-item-2' },
+      ]),
+    ])
+    await act(() => queryClient.invalidateQueries())
+    expect(fetchDay).toHaveBeenCalledTimes(2)
+
+    // Assert
+    expect(sheet.getByLabelText('Amount')).toBeInTheDocument()
+    expect(sheet.getByRole('button', { name: 'Remove from Lunch' })).toBeInTheDocument()
   })
 
   test('its amount is changed directly, through its dish', async () => {
