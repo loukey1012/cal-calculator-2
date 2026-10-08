@@ -4,6 +4,7 @@ import { GroupedSection } from '../../components/ios/GroupedSection'
 import { TextField } from '../../components/ios/TextField'
 import type { FieldErrors } from '../../lib/forms'
 import { BarcodeField } from '../barcode/BarcodeField'
+import { BrandField } from './BrandField'
 import { CalculateRow } from './CalculateRow'
 import {
   NEW_CATEGORY,
@@ -13,7 +14,7 @@ import {
   type IngredientFormValues,
   type ParsedIngredientForm,
 } from './ingredientForm'
-import type { Category, CategoryGroup } from './ingredientsApi'
+import type { Category, CategoryGroup, Ingredient } from './ingredientsApi'
 
 type NutrientRow = {
   readonly field: BasisField
@@ -84,6 +85,8 @@ type IngredientFormProps = {
   readonly categories: readonly Category[]
   readonly groups: readonly CategoryGroup[]
   readonly onSubmit: (data: ParsedIngredientForm) => void
+  /** the household's ingredients, whose brands are suggested */
+  readonly savedIngredients?: readonly Ingredient[]
 }
 
 export function IngredientForm({
@@ -92,6 +95,7 @@ export function IngredientForm({
   categories,
   groups,
   onSubmit,
+  savedIngredients = [],
 }: IngredientFormProps) {
   const [values, setValues] = useState(initialValues)
   const [errors, setErrors] = useState<FieldErrors>({})
@@ -118,11 +122,11 @@ export function IngredientForm({
           onChange={(event) => set('name', event.target.value)}
           error={errors.name}
         />
-        <TextField
-          label="Brand"
+        <BrandField
           value={values.brand}
-          onChange={(event) => set('brand', event.target.value)}
+          onChange={(brand) => set('brand', brand)}
           error={errors.brand}
+          savedIngredients={savedIngredients}
         />
         <BarcodeField
           value={values.barcode}

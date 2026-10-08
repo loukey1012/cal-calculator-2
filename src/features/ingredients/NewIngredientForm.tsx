@@ -4,7 +4,7 @@ import { ErrorBanner } from '../../components/ios/ErrorBanner'
 import { toUserMessage } from '../../lib/errors'
 import { PrefillNote } from '../barcode/PrefillNote'
 import { useProductPrefill } from '../barcode/useProductPrefill'
-import { useCategories, useCategoryGroups, useSaveIngredient } from './hooks'
+import { useCategories, useCategoryGroups, useIngredients, useSaveIngredient } from './hooks'
 import { IngredientForm } from './IngredientForm'
 import { EMPTY_INGREDIENT_FORM } from './ingredientForm'
 import type { Ingredient } from './ingredientsApi'
@@ -29,6 +29,7 @@ export function NewIngredientForm({
   const categories = useCategories(householdId)
   const groups = useCategoryGroups(householdId)
   const save = useSaveIngredient(householdId)
+  const ingredients = useIngredients(householdId)
   const typed = { ...EMPTY_INGREDIENT_FORM, name: initialName.trim() }
   const prefill = useProductPrefill(barcode, typed)
 
@@ -53,6 +54,7 @@ export function NewIngredientForm({
         initialValues={prefill?.values ?? typed}
         categories={categoryList}
         groups={groups.data ?? []}
+        savedIngredients={ingredients.data ?? []}
         onSubmit={(form) =>
           save.mutate({ id: null, form, categories: categoryList }, { onSuccess: onSaved })
         }

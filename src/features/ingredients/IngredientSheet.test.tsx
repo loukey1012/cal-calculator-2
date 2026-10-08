@@ -5,6 +5,7 @@ import { renderWithProviders } from '../../test/render'
 import { category, categoryGroup, ingredient } from './testData'
 
 vi.mock('./ingredientsApi', () => ({
+  fetchIngredients: vi.fn().mockResolvedValue([]),
   createIngredient: vi.fn(),
   updateIngredient: vi.fn(),
   deleteIngredient: vi.fn(),

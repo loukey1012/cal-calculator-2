@@ -4,7 +4,7 @@ import { Sheet } from '../../components/ios/Sheet'
 import { toUserMessage } from '../../lib/errors'
 import { PrefillNote } from '../barcode/PrefillNote'
 import { useProductPrefill } from '../barcode/useProductPrefill'
-import { useDeleteIngredient, useSaveIngredient } from './hooks'
+import { useDeleteIngredient, useIngredients, useSaveIngredient } from './hooks'
 import { IngredientForm } from './IngredientForm'
 import { EMPTY_INGREDIENT_FORM, toFormValues } from './ingredientForm'
 import type { Category, CategoryGroup, Ingredient } from './ingredientsApi'
@@ -34,6 +34,7 @@ export function IngredientSheet({
   onClose,
 }: IngredientSheetProps) {
   const save = useSaveIngredient(householdId)
+  const ingredients = useIngredients(householdId)
   const prefill = useProductPrefill(ingredient ? null : barcode, EMPTY_INGREDIENT_FORM)
   const remove = useDeleteIngredient(householdId)
   const error = save.error ?? remove.error
@@ -85,6 +86,7 @@ export function IngredientSheet({
             }
             categories={categories}
             groups={groups}
+            savedIngredients={ingredients.data ?? []}
             onSubmit={(form) =>
               save.mutate({ id: ingredient?.id ?? null, form, categories }, { onSuccess: close })
             }

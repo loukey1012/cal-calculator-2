@@ -30,7 +30,7 @@ const OTHER_GROUP_NAME = 'Other'
 const DEFAULT_UNIT_LABEL = 'unit'
 
 /** Lowercase without accents, so "kase" finds "Käse". */
-function searchable(text: string): string {
+export function searchable(text: string): string {
   return text
     .normalize('NFD')
     .replace(/\p{Diacritic}/gu, '')

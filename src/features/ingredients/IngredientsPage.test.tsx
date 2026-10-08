@@ -61,6 +61,21 @@ beforeEach(() => {
   vi.mocked(fetchCategoryGroups).mockResolvedValue([])
 })
 
+describe('brand suggestions', () => {
+  test('a new ingredient suggests the brands already saved', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByText('Cream 7%')
+
+    await user.click(screen.getByRole('button', { name: 'Add ingredient' }))
+    const sheet = within(screen.getByRole('dialog', { name: 'New Ingredient' }))
+    await user.type(sheet.getByRole('combobox', { name: 'Brand' }), 'mil')
+    await user.click(sheet.getByRole('option', { name: 'Milbona' }))
+
+    expect(sheet.getByRole('combobox', { name: 'Brand' })).toHaveValue('Milbona')
+  })
+})
+
 describe('scanning on the Ingredients page', () => {
   test('a saved package opens to be looked at or changed', async () => {
     vi.mocked(fetchIngredients).mockResolvedValue([

@@ -63,7 +63,8 @@ Built for a two-person household: both members log their own meals, can see and 
 - Shared per household, **grouped by category**, with **accent-insensitive search** (`kase` finds `Käse`) and category filter chips: one sideways-scrolling line, all on screen, or **grouped** into broad categories that open their categories when tapped (Settings › Appearance).
 - Nutrition **per 100 g and/or per unit**: calories (whole numbers, rounded up), protein, carbs, sugar, fat, saturated fat, fiber, salt. Only calories are required.
 - Unit name and grams per unit, with **Calculate missing values**: once the grams per unit are entered, it fills empty values per 100 g or per unit from the other, field by field, and never replaces what you typed.
-- Brand, category (created on the fly, optionally inside a **broad category** such as Fresh › Meat & Fish), note.
+- **Brand** with suggestions: typing shows the brands already saved (those starting with the text first, then those containing it; case and accents don't matter, each brand once in its usual spelling). Tap one to take it exactly as saved; a new brand can still be typed.
+- Category (created on the fly, optionally inside a **broad category** such as Fresh › Meat & Fish), note.
 - Categories are **deleted automatically** once their last ingredient leaves them.
 - **Barcodes:** each ingredient can carry its package's barcode (EAN-8, EAN-13, UPC-A, ITF-14; one ingredient per barcode in a household). Type it or scan it in the ingredient form.
 
@@ -280,7 +281,7 @@ pnpm icons          # regenerate the icon PNGs: the default set from public/icon
 
 To add an app icon choice: put its SVG in `public/icons/<name>/icon.svg`, add `<name>` to `APP_ICONS` (`src/features/appearance/appearance.ts`) and a label to `APP_ICON_OPTIONS`, then run `pnpm icons`.
 
-**End-to-end journeys** (log a meal on Cook, Back and the back swipe going one step at a time on Cook, category chips and creating a missing ingredient from the Cook search, the new-version toast on the first start only, a White and a custom accent color, your own symbol, a single food changed in place, a meal eaten out logged as an estimate, a package scanned from a photo and filled in from Open Food Facts, a live camera scan on Cook, cooking together for two, sharing a meal afterwards, leftovers, goals and partner, partner nickname and symbol, Today fitting the screen, history, ingredients, category management, offline, a partner's change showing up live and after the app was in the background, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color) run the real app against the dev project. Build it against dev and pass the test credentials:
+**End-to-end journeys** (log a meal on Cook, Back and the back swipe going one step at a time on Cook, category chips and creating a missing ingredient from the Cook search, the new-version toast on the first start only, a White and a custom accent color, your own symbol, a single food changed in place, a meal eaten out logged as an estimate, a saved brand picked from the suggestions, a package scanned from a photo and filled in from Open Food Facts, a live camera scan on Cook, cooking together for two, sharing a meal afterwards, leftovers, goals and partner, partner nickname and symbol, Today fitting the screen, history, ingredients, category management, offline, a partner's change showing up live and after the app was in the background, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color) run the real app against the dev project. Build it against dev and pass the test credentials:
 
 ```bash
 set -a; . ./.env.test.local; set +a

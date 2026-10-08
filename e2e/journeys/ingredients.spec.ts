@@ -58,3 +58,38 @@ test('add an ingredient in a new category of a broad category; find, edit and de
     .eq('household_id', household)
   expect(count).toBe(0)
 })
+
+test('a new ingredient takes a saved brand from the suggestions', async ({ page, backend }) => {
+  const me = await backend.user('Ingrid')
+  const household = await backend.household([me])
+  await backend.admin
+    .from('ingredients')
+    .insert({ household_id: household, name: 'Milch', brand: 'Clever', kcal_100: 64 })
+  await logIn(page, me)
+  await page
+    .getByRole('navigation', { name: 'Tabs' })
+    .getByRole('button', { name: 'Ingredients' })
+    .click()
+  const sheet = page.getByRole('dialog')
+
+  await activePage(page).getByRole('button', { name: 'Add ingredient' }).click()
+  await sheet.getByLabel('Name', { exact: true }).fill('Joghurt')
+  await sheet.getByRole('combobox', { name: 'Brand' }).pressSequentially('cl')
+  await sheet.getByRole('option', { name: 'Clever' }).click()
+  await expect(sheet.getByRole('combobox', { name: 'Brand' })).toHaveValue('Clever')
+  await sheet.getByRole('switch', { name: 'Per 100 g' }).click()
+  await sheet.getByLabel('Calories per 100 g').fill('59')
+  await sheet.getByRole('button', { name: 'Save' }).click()
+  await expect(sheet).toBeHidden()
+
+  await expect
+    .poll(async () => {
+      const { data } = await backend.admin
+        .from('ingredients')
+        .select('name, brand')
+        .eq('household_id', household)
+        .eq('name', 'Joghurt')
+      return data
+    })
+    .toEqual([{ name: 'Joghurt', brand: 'Clever' }])
+})
