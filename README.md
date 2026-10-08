@@ -303,7 +303,7 @@ MIGRATION_SUPABASE_URL=... MIGRATION_SUPABASE_SERVICE_ROLE_KEY=... \
 
 - **Vercel** builds every push to `main` (`vercel.json`: SPA rewrites, long-lived caching for hashed assets, no caching for the service worker and `index.html`).
 - Vercel environment variables: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (production project).
-- **GitHub Actions** (`.github/workflows/ci.yml`) on every push and pull request: lint, typecheck, format, unit tests with coverage, WebKit E2E. On pushes to `main` it also runs, against the dev project with the `SUPABASE_TEST_*` repository secrets, the database integration tests and the end-to-end journeys (WebKit with an iPhone profile; the offline restart additionally in Chromium, since Playwright's WebKit has no service workers).
+- **GitHub Actions** (`.github/workflows/ci.yml`) on every push and pull request: lint, typecheck, format, unit tests with coverage. On pushes to `main` it also runs, against the dev project with the `SUPABASE_TEST_*` repository secrets, the database integration tests and the WebKit smoke tests plus end-to-end journeys (WebKit with an iPhone profile, 4 at a time; the offline restart additionally in Chromium, since Playwright's WebKit has no service workers); pull requests run the smoke tests alone. The jobs run side by side (about 2½–3 minutes); browser installs get a time limit and one retry, and each job a time limit, so a hanging install fails fast.
 
 ## Installing on the iPhone
 

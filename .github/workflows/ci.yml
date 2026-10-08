@@ -13,9 +13,14 @@ env:
   VITE_SUPABASE_URL: https://placeholder.supabase.co
   VITE_SUPABASE_ANON_KEY: placeholder-anon-key
 
+# Browser installs pull system packages from apt, which can hang: a time limit per attempt,
+# one retry, and a limit per job, so a stuck run fails fast instead of blocking for half an hour.
+# The three jobs run side by side.
+
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -28,7 +33,23 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm format:check
       - run: pnpm coverage
-      - run: pnpm exec playwright install --with-deps webkit
+
+  # Pull requests: the smoke tests only (the journeys need the dev project's keys)
+  smoke:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install WebKit
+        timeout-minutes: 11
+        run: for attempt in 1 2; do timeout 300 pnpm exec playwright install --with-deps webkit && break; done
       - run: pnpm e2e
 
   # Schema + RLS integration tests against the DEV Supabase project (never prod)
@@ -36,6 +57,7 @@ jobs:
   db-tests:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     concurrency:
       group: db-tests-dev-project
       cancel-in-progress: false
@@ -61,11 +83,12 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm test:db
 
-  # Real user journeys (WebKit/iPhone, offline restart in Chromium) against the DEV project
+  # The smoke tests and the real user journeys (WebKit/iPhone, offline restart in Chromium)
+  # against the DEV project; side by side with the checks, sharing one browser install
   e2e-journeys:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [check]
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     concurrency:
       group: e2e-journeys-dev-project
       cancel-in-progress: false
@@ -84,5 +107,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps webkit chromium
-      - run: pnpm exec playwright test --project=journeys-webkit --project=journeys-chromium
+      - name: Install WebKit and Chromium
+        timeout-minutes: 11
+        run: for attempt in 1 2; do timeout 300 pnpm exec playwright install --with-deps webkit chromium && break; done
+      - run: pnpm exec playwright test --project=smoke --project=journeys-webkit --project=journeys-chromium

@@ -10,6 +10,8 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
+  // the journeys mostly wait on the network (each creates its own users): 4 at a time in CI
+  workers: process.env.CI ? 4 : undefined,
   reporter: 'list',
   timeout: 90_000,
   use: {
