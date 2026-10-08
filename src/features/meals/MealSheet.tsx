@@ -44,6 +44,17 @@ export function MealSheet({ open, mealType, userId, date, onClose, onCook }: Mea
   )
 }
 
+/**
+ * The item an open editor shows. Saving a dish re-creates its items with new ids, so a single
+ * food is also found by its dish: its editor stays open when its own save comes back.
+ */
+function editedItemOf(view: View, items: readonly MealItem[]): MealItem | undefined {
+  if (view.kind !== 'edit' && view.kind !== 'food') return undefined
+  const byId = items.find((candidate) => candidate.id === view.itemId)
+  if (byId || view.kind !== 'food') return byId
+  return items.find((candidate) => candidate.dish?.id === view.dishId)
+}
+
 function MealSheetContent({
   mealType,
   userId,
@@ -58,10 +69,7 @@ function MealSheetContent({
   const latestChangeError = useLatestDayChangeError(userId, date)
   const latestDishError = useLatestDishChangeError()
   const items = itemsByMeal(day.data ?? [])[mealType]
-  const editedItem =
-    requestedView.kind === 'edit' || requestedView.kind === 'food'
-      ? items.find((candidate) => candidate.id === requestedView.itemId)
-      : undefined
+  const editedItem = editedItemOf(requestedView, items)
   // an item deleted meanwhile (e.g. by a partner) sends the editor back to the list
   const view: View =
     (requestedView.kind === 'edit' || requestedView.kind === 'food') && !editedItem

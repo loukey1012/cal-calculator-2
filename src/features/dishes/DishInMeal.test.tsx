@@ -349,6 +349,8 @@ describe('a single food logged alone', () => {
     ])
     await act(() => queryClient.invalidateQueries())
     expect(fetchDay).toHaveBeenCalledTimes(2)
+    // let the new day render
+    await act(() => new Promise((resolve) => setTimeout(resolve, 0)))
 
     // Assert
     expect(sheet.getByLabelText('Amount')).toBeInTheDocument()
