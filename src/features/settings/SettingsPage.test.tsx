@@ -68,6 +68,13 @@ describe('SettingsPage', () => {
     expect(screen.getByText('4Y5R-FXKY-MJ4P')).toBeInTheDocument()
   })
 
+  test('shows the running version at the bottom', () => {
+    renderPage()
+
+    // the test build's version (vitest.config.ts)
+    expect(screen.getByText(/^Version .+ · test123$/)).toBeInTheDocument()
+  })
+
   test('changes the name and refreshes the profile', async () => {
     vi.mocked(updateProfile).mockResolvedValue()
     const user = userEvent.setup()

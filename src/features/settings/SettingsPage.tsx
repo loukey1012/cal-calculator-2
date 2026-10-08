@@ -5,6 +5,7 @@ import { useCurrentUser } from '../../app/currentUser'
 import { Button } from '../../components/ios/Button'
 import { ErrorBanner } from '../../components/ios/ErrorBanner'
 import { GroupedSection } from '../../components/ios/GroupedSection'
+import { APP_VERSION, formatVersion } from '../../app/appVersion'
 import { ListRow } from '../../components/ios/ListRow'
 import { PageHeader } from '../../components/ios/PageHeader'
 import { toUserMessage } from '../../lib/errors'
@@ -152,6 +153,9 @@ function SettingsOverview() {
           Log out
         </Button>
       </div>
+      <p className="mt-6 text-center text-[13px] text-label-secondary">
+        Version {formatVersion(APP_VERSION)}
+      </p>
     </>
   )
 }

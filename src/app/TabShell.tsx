@@ -27,6 +27,9 @@ import { useCurrentUser } from './currentUser'
 import { useResumeOfflineChanges, useSaveWhenHidden } from './offlineLifecycle'
 import { PageStack } from './PageStack'
 import { SyncStatus } from './SyncStatus'
+import { wasUpdatedThisStart } from './appVersion'
+import { updateReady } from './updateReady'
+import { UpdateToasts } from './UpdateToasts'
 import { useAppearance } from '../features/appearance/useAppearance'
 import { useLiveUpdates } from '../features/live/useLiveUpdates'
 
@@ -244,6 +247,7 @@ export function TabShell() {
         </div>
       </div>
       <SyncStatus />
+      <UpdateToasts updatedThisStart={wasUpdatedThisStart()} update={updateReady} />
       <TabBar
         items={TABS}
         activeIndex={activeIndex}

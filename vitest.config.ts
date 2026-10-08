@@ -3,6 +3,10 @@ import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   plugins: [react()],
+  // a fixed version for the tests (the real one is set by vite.config.ts at build time)
+  define: {
+    __APP_VERSION__: JSON.stringify({ id: 'test123abc', builtAt: '2026-10-08T06:40:00.000Z' }),
+  },
   test: {
     environment: 'jsdom',
     // the raw stylesheet, so tests can check its color tokens against the code

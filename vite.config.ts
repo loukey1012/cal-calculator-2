@@ -2,10 +2,25 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import { execSync } from 'node:child_process'
 
 const APP_NAME = 'CALculator'
 
+/** The commit being built: Vercel names it; locally ask git. */
+function buildCommit(): string {
+  if (process.env.VERCEL_GIT_COMMIT_SHA) return process.env.VERCEL_GIT_COMMIT_SHA
+  try {
+    return execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim()
+  } catch {
+    return 'unknown'
+  }
+}
+
 export default defineConfig({
+  // the running version (src/app/appVersion.ts): a new commit is a new version
+  define: {
+    __APP_VERSION__: JSON.stringify({ id: buildCommit(), builtAt: new Date().toISOString() }),
+  },
   build: {
     rolldownOptions: {
       output: {
@@ -28,7 +43,10 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // a new version waits and is offered ("New version ready") instead of taking over mid-use;
+      // registered in src/app/registerServiceWorker.ts
+      registerType: 'prompt',
+      injectRegister: false,
       includeAssets: ['favicon.ico', 'icon.svg', 'apple-touch-icon-180x180.png'],
       manifest: {
         name: APP_NAME,

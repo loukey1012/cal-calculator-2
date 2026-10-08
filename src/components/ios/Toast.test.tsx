@@ -1,4 +1,5 @@
 import { act, render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import { Toast, TOAST_DURATION_MS } from './Toast'
 
@@ -24,5 +25,24 @@ describe('Toast', () => {
   test('shows nothing without a message', () => {
     render(<Toast message={null} onDone={() => {}} />)
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  })
+
+  test('can offer an action, and stay longer', async () => {
+    const onPress = vi.fn()
+    const onDone = vi.fn()
+    const user = userEvent.setup()
+    render(
+      <Toast
+        message="New version ready"
+        action={{ label: 'Update', onPress }}
+        durationMs={8000}
+        onDone={onDone}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Update' }))
+
+    expect(onPress).toHaveBeenCalledOnce()
+    expect(screen.getByRole('status')).toHaveTextContent('New version ready')
   })
 })

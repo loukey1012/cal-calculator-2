@@ -77,6 +77,12 @@ Built for a two-person household: both members log their own meals, can see and 
 - While your own changes are still being saved, a partner's change waits until yours are through, so your change never briefly flickers back.
 - iOS cuts the connection when the app goes to the background; when it comes back, it reconnects and catches up on everything that changed meanwhile.
 
+### App updates
+
+- A new version (every deploy) downloads in the background and **waits** instead of taking over while you use the app. If it arrives while the app is open, a toast **"New version ready · Update"** offers to switch right away; ignored, it comes back whenever the app returns from the background, and the new version starts with the next app start anyway. The app looks for updates on every return from the background, since iOS otherwise only checks at start.
+- The **first start on a new version** shows **"Updated to the latest version"**; the next start doesn't. Remembered per phone (a first install or a new phone shows nothing).
+- The bottom of **Settings** shows the running version: build day and short commit, e.g. _Version 8 Oct 2026 · 9a26e06_.
+
 ### Look and feel
 
 - Rounded cards on a soft background, the Manrope font, meals as a 2×2 grid of cards, avatars (your initial on your accent color, your partner's symbol on a soft tint of its color) in the person switch and member list. Bottom sheets (drag down to close), segmented controls, switches and swipe actions.
@@ -116,12 +122,18 @@ Planned 2026-10-07. Each group is built, tested and shipped before the next one 
 - [x] **New ingredient** in the ingredient search: if it doesn't exist yet, create it right there (the name you searched for already filled in). It is saved to the shared ingredients and goes straight to choosing the amount
 - [x] **Category chips** in the ingredient search, using the layout chosen under Appearance › Category chips (one line, all on screen or grouped)
 
-**3. Colors: one color picker everywhere**
+**3. Updates: knowing you're on a new version** (done)
+
+- [x] The **first start on a new version** (any new deploy) shows a short toast: "Updated to the latest version". The next start doesn't. Remembered per phone, so each phone shows it once; a first install or a new phone shows nothing
+- [x] **New version ready**: if an update finishes downloading while the app is open, a toast offers to reload right away instead of at the next start
+- [x] **Version line** at the bottom of Settings (build date and short commit), to check which version is running
+
+**4. Colors: one color picker everywhere**
 
 - [ ] The same preset colors everywhere a color is chosen (accent color, ring colors, member colors, your own symbol color): the current accent, ring and member colors merged into one list, duplicates removed, plus **White**
 - [ ] Every color choice also has **Custom**: any color from the color picker (accent text stays readable automatically)
 
-**4. Symbols for you and more emojis**
+**5. Symbols for you and more emojis**
 
 - [ ] Choose a **symbol for yourself** (heart or emoji, in a color) instead of the letter in your accent color. Only you see it; your partner keeps seeing what they picked for you. Your name stays your account name
 - [ ] **More emojis**: all the classic hearts, including the **pink heart 🩷** (❤️ 🩷 🧡 💛 💚 🩵 💙 💜 🖤 🤍 🤎 ❤️‍🔥 💞 💘 …) and some cool ones (e.g. 🔥 ⚡ 🦊 🐺 🦁 🐉 👑 💎 🚀 🎧 🍕 🏋️ 😎 👻)
@@ -153,7 +165,7 @@ Planned 2026-10-07. Each group is built, tested and shipped before the next one 
 | Data               | TanStack Query 5 (+ persistence to `localStorage`), supabase-js                    |
 | Routing / gestures | React Router, Embla Carousel                                                       |
 | Validation         | Zod                                                                                |
-| PWA                | vite-plugin-pwa (Workbox precache, auto-update)                                    |
+| PWA                | vite-plugin-pwa (Workbox precache; updates wait and are offered, workbox-window)   |
 | Backend            | Supabase: Postgres, Auth, Row Level Security                                       |
 | Hosting            | Vercel (deploys on push to `main`)                                                 |
 | Tests              | Vitest + Testing Library, Supabase integration tests, Playwright (WebKit / iPhone) |
@@ -163,7 +175,7 @@ Planned 2026-10-07. Each group is built, tested and shipped before the next one 
 
 ```
 src/
-  app/            tab shell, swipe navigation, page stack (Settings sub-pages and Cook steps: push/pop and back swipe), current user, offline lifecycle, sync status
+  app/            tab shell, swipe navigation, page stack (Settings sub-pages and Cook steps: push/pop and back swipe), current user, offline lifecycle, sync status, app version and update toasts
   components/ios/ UI building blocks (Sheet, ListRow, TabBar, SegmentedControl, Avatar, …)
   features/
     appearance/   per-account theme, light/dark style, accent, goal and ring colors, progress style, category chips, app icon; Appearance pages
@@ -253,7 +265,7 @@ pnpm icons          # regenerate the icon PNGs: the default set from public/icon
 
 To add an app icon choice: put its SVG in `public/icons/<name>/icon.svg`, add `<name>` to `APP_ICONS` (`src/features/appearance/appearance.ts`) and a label to `APP_ICON_OPTIONS`, then run `pnpm icons`.
 
-**End-to-end journeys** (log a meal on Cook, Back and the back swipe going one step at a time on Cook, category chips and creating a missing ingredient from the Cook search, a single food changed in place, cooking together for two, sharing a meal afterwards, leftovers, goals and partner, partner nickname and symbol, Today fitting the screen, history, ingredients, category management, offline, a partner's change showing up live and after the app was in the background, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color) run the real app against the dev project. Build it against dev and pass the test credentials:
+**End-to-end journeys** (log a meal on Cook, Back and the back swipe going one step at a time on Cook, category chips and creating a missing ingredient from the Cook search, the new-version toast on the first start only, a single food changed in place, cooking together for two, sharing a meal afterwards, leftovers, goals and partner, partner nickname and symbol, Today fitting the screen, history, ingredients, category management, offline, a partner's change showing up live and after the app was in the background, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color) run the real app against the dev project. Build it against dev and pass the test credentials:
 
 ```bash
 set -a; . ./.env.test.local; set +a
