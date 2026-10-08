@@ -33,6 +33,7 @@ describe('fetchDish', () => {
       name: 'Noodles',
       split_mode: 'count',
       cooked_weight_g: null,
+      kcal_estimated: true,
       revision: 'rev-7',
       created_by: 'me',
       created_at: '',
@@ -95,6 +96,7 @@ describe('fetchDish', () => {
         { id: 'p-her', eater: HER_LUNCH, splitValue: 2 },
         { id: 'p-rest', eater: null, splitValue: 1, discarded: true },
       ],
+      kcalEstimated: true,
       lines: [
         { id: 'l1', allocation: 'shared', item: gramsItem('Line l1', 200, 100), amounts: {} },
         {
@@ -173,6 +175,7 @@ describe('saveDish', () => {
         name: 'Chili',
         split_mode: 'equal',
         cooked_weight_g: null,
+        kcal_estimated: false,
         revision: 'rev-1',
         portions: [
           {

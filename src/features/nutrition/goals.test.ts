@@ -75,7 +75,15 @@ describe('goalProgress', () => {
       remaining: 1087,
       reached: false,
       incomplete: false,
+      estimated: false,
     })
+  })
+
+  test('estimated calories make the calorie ring an estimate, not the macros', () => {
+    const [kcal, protein] = goalProgress({ ...LUNCH, estimated: true }, SEPTEMBER)
+
+    expect(kcal).toMatchObject({ key: 'kcal', consumed: 913, estimated: true })
+    expect(protein).toMatchObject({ key: 'protein', estimated: false })
   })
 
   test('nutrient rings report progress, overshoot and missing data', () => {

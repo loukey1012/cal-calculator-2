@@ -124,3 +124,43 @@ test('a single food logged alone shows like an item, changes in place and is rem
     })
     .toBe(0)
 })
+
+test('a meal eaten out is logged as an estimate and the day shows ~', async ({ page, backend }) => {
+  const me = await backend.user('Mia')
+  const household = await backend.household([me])
+  await logIn(page, me)
+
+  await cookFor(activePage(page), page, /Dinner/)
+  const cook = activePage(page)
+  await cook.getByRole('button', { name: 'Add ingredient' }).click()
+  await cook.getByRole('button', { name: /Custom item/ }).click()
+  await cook.getByLabel('Name', { exact: true }).fill('Pizza')
+  await cook.getByRole('radio', { name: 'Per unit' }).click()
+  await cook.getByLabel('Calories').fill('900')
+  await cook.getByLabel('Amount').fill('1')
+  await cook.getByRole('button', { name: 'Add to dish' }).click()
+  await cook.getByRole('switch', { name: 'Calories are an estimate' }).click()
+  await expect(cook.getByTestId('dish-totals')).toContainText('~900 kcal')
+  await cook.getByRole('button', { name: 'Save meal' }).click()
+
+  const today = activePage(page)
+  await expect(today.getByRole('button', { name: /Dinner/ })).toContainText('~900 kcal · 1 item')
+  await expect(today.getByTestId('day-total')).toContainText('~900 kcal')
+  await expect
+    .poll(async () => {
+      const { data } = await backend.admin
+        .from('dishes')
+        .select('kcal_estimated')
+        .eq('household_id', household)
+      return data
+    })
+    .toEqual([{ kcal_estimated: true }])
+
+  await page.reload()
+  const reloaded = activePage(page)
+  await expect(reloaded.getByTestId('day-total')).toContainText('~900 kcal')
+  await reloaded.getByRole('button', { name: /Dinner/ }).click()
+  await expect(
+    page.getByRole('dialog').getByRole('button', { name: /Pizza.*Estimate · 1 unit.*~900 kcal/ }),
+  ).toBeVisible()
+})

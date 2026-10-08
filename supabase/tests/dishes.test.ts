@@ -57,6 +57,8 @@ type DishPayload = {
   readonly split_mode: 'equal' | 'count' | 'percent' | 'weight'
   readonly cooked_weight_g: number | null
   readonly revision: string
+  /** left out by app versions from before estimates */
+  readonly kcal_estimated?: boolean
   readonly portions: readonly PortionPayload[]
   readonly lines: readonly LinePayload[]
 }
@@ -672,6 +674,119 @@ describe('the app and the server split a dish the same way', () => {
     expect(error).toBeNull()
     expect(await dishItemsOf(alice, cooked.id, 'dinner')).toEqual(expected(mine))
     expect(await dishItemsOf(bob, cooked.id, 'dinner')).toEqual(expected(hers))
+  })
+})
+
+describe('calories marked as an estimate', () => {
+  const ESTIMATE_DAY = '2026-10-04'
+
+  function eatenOn(payload: DishPayload, mealType: PortionPayload['meal_type']): DishPayload {
+    return {
+      ...payload,
+      portions: payload.portions.map((portion) => ({
+        ...portion,
+        date: ESTIMATE_DAY,
+        meal_type: mealType,
+      })),
+    }
+  }
+
+  async function dayEstimated(user: TestUser) {
+    const { data, error } = await user.client
+      .from('daily_totals')
+      .select('kcal_estimated')
+      .eq('user_id', user.id)
+      .eq('date', ESTIMATE_DAY)
+      .single()
+    if (error) throw new Error(error.message)
+    return data.kcal_estimated
+  }
+
+  async function mealEstimated(user: TestUser, mealType: string) {
+    const { data, error } = await user.client
+      .from('meal_totals')
+      .select('kcal_estimated')
+      .eq('user_id', user.id)
+      .eq('date', ESTIMATE_DAY)
+      .eq('meal_type', mealType)
+      .single()
+    if (error) throw new Error(error.message)
+    return data.kcal_estimated
+  }
+
+  test('an estimated dish marks its meal and the day for everyone who ate it', async () => {
+    // Arrange
+    const pizza = eatenOn(
+      withFreshPortionIds(
+        dish({
+          name: 'Pizza out',
+          kcal_estimated: true,
+          portions: [eats('a', alice), eats('b', bob)],
+          lines: [sharedGrams('Pizza', 800, 250)],
+        }),
+      ),
+      'dinner',
+    )
+    const apple = eatenOn(
+      withFreshPortionIds(
+        dish({ portions: [eats('a', alice)], lines: [sharedGrams('Apple', 150, 52)] }),
+      ),
+      'breakfast',
+    )
+
+    // Act
+    expect((await saveDish(alice.client, pizza)).error).toBeNull()
+    expect((await saveDish(alice.client, apple)).error).toBeNull()
+
+    // Assert
+    const stored = await alice.client
+      .from('dishes')
+      .select('kcal_estimated')
+      .eq('id', pizza.id)
+      .single()
+    expect(stored.data?.kcal_estimated).toBe(true)
+    expect(await mealEstimated(alice, 'dinner')).toBe(true)
+    expect(await mealEstimated(bob, 'dinner')).toBe(true)
+    expect(await mealEstimated(alice, 'breakfast')).toBe(false)
+    expect(await dayEstimated(alice)).toBe(true)
+  })
+
+  test('taking the mark off makes the day exact again', async () => {
+    // Arrange: Bob only eats this one dish that day
+    const cake = eatenOn(
+      withFreshPortionIds(
+        dish({
+          name: 'Cake at work',
+          kcal_estimated: true,
+          portions: [eats('b', bob)],
+          lines: [sharedGrams('Cake', 120, 400)],
+        }),
+      ),
+      'snack',
+    )
+    await saveDish(bob.client, cake)
+    const exact = { ...cake, revision: uuid(), kcal_estimated: false }
+
+    // Act
+    const { error } = await saveDish(bob.client, exact, cake.revision)
+
+    // Assert
+    expect(error).toBeNull()
+    expect(await mealEstimated(bob, 'snack')).toBe(false)
+  })
+
+  test('a save without the mark (older app version) is not an estimate', async () => {
+    const toast = eatenOn(
+      withFreshPortionIds(
+        dish({ portions: [eats('a', carol)], lines: [sharedGrams('Toast', 60, 260)] }),
+      ),
+      'lunch',
+    )
+
+    expect((await saveDish(carol.client, toast)).error).toBeNull()
+
+    expect(await mealEstimated(carol, 'lunch')).toBe(false)
+    expect(await dayEstimated(carol)).toBe(false)
   })
 })
 

@@ -9,7 +9,7 @@ import { useGoals } from '../goals/hooks'
 import { usePeople } from '../household/hooks'
 import type { Profile } from '../household/householdApi'
 import { PersonSwitch } from '../household/PersonSwitch'
-import { formatGrams, formatKcal } from '../nutrition/format'
+import { formatGrams, formatKcalTotal } from '../nutrition/format'
 import { DayView } from '../today/DayView'
 import { useToday } from '../today/useToday'
 import { dayStatus, monthStart, monthSummary, type MonthSummary } from './calendar'
@@ -23,10 +23,10 @@ function isRealDay(day: string): boolean {
   return toLocalDateString(fromLocalDateString(day)) === day
 }
 
-function summaryText({ loggedDays, averageKcal, averageProtein }: MonthSummary): string {
+function summaryText({ loggedDays, averageKcal, averageProtein, estimated }: MonthSummary): string {
   if (loggedDays === 0) return 'Nothing logged this month.'
   const days = loggedDays === 1 ? '1 day logged' : `${loggedDays} days logged`
-  const kcal = `${days} · Ø ${formatKcal(averageKcal)} kcal`
+  const kcal = `${days} · Ø ${formatKcalTotal({ kcal: averageKcal, estimated })} kcal`
   // no protein data at all would read as a misleading "0.0 g"
   return averageProtein > 0 ? `${kcal} · Ø ${formatGrams(averageProtein)} g protein` : kcal
 }

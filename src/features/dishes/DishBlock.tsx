@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { Button } from '../../components/ios/Button'
 import { ListRow } from '../../components/ios/ListRow'
 import { DinnerIcon } from '../../components/ios/icons'
-import { describeAmount, type MealItem } from '../meals/dayModel'
-import { formatKcal } from '../nutrition/format'
+import { describeAmount, ESTIMATE_LABEL, type DishRef, type MealItem } from '../meals/dayModel'
+import { formatKcalTotal } from '../nutrition/format'
 import { itemTotals, mealTotals } from '../nutrition/totals'
 import { autoTitle } from './dishTitle'
 
@@ -17,10 +17,14 @@ function ingredientCount(count: number): string {
   return count === 1 ? '1 ingredient' : `${count} ingredients`
 }
 
-/** e.g. "Shared · 3 ingredients" */
-function blockSubtitle(eaterCount: number | undefined, count: number): string {
-  const ingredients = ingredientCount(count)
-  return eaterCount !== undefined && eaterCount > 1 ? `Shared · ${ingredients}` : ingredients
+/** e.g. "Estimate · Shared · 3 ingredients" */
+function blockSubtitle(dish: DishRef | null, count: number): string {
+  const eaterCount = dish?.eaterCount
+  return [
+    ...(dish?.kcalEstimated ? [ESTIMATE_LABEL] : []),
+    ...(eaterCount !== undefined && eaterCount > 1 ? ['Shared'] : []),
+    ingredientCount(count),
+  ].join(' · ')
 }
 
 /** A dish in a meal: one row with this person's share, opening to its ingredients. */
@@ -45,11 +49,11 @@ export function DishBlock({ items, onEdit }: DishBlockProps) {
             {dish?.name ?? autoTitle(items.map((item) => item.name))}
           </span>
           <span className="block truncate text-[13px] font-medium text-label-secondary">
-            {blockSubtitle(dish?.eaterCount, items.length)}
+            {blockSubtitle(dish, items.length)}
           </span>
         </span>
         <span className="shrink-0 text-[15px] font-semibold text-label-secondary">
-          {formatKcal(totals.kcal)} kcal
+          {formatKcalTotal(totals)} kcal
         </span>
       </button>
       {open && (
@@ -59,7 +63,7 @@ export function DishBlock({ items, onEdit }: DishBlockProps) {
               key={item.id}
               title={item.name}
               subtitle={describeAmount(item)}
-              detail={`${formatKcal(itemTotals(item).kcal)} kcal`}
+              detail={`${formatKcalTotal(itemTotals(item))} kcal`}
             />
           ))}
           {dish && (

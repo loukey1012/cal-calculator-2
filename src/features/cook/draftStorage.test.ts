@@ -8,7 +8,12 @@ function started(): CookDraft {
   return {
     ...draft,
     mealType: 'dinner',
-    dish: { ...draft.dish, name: 'Rice bowl', lines: [sharedLine('l1', 'Rice', 200, 130)] },
+    dish: {
+      ...draft.dish,
+      name: 'Rice bowl',
+      kcalEstimated: true,
+      lines: [sharedLine('l1', 'Rice', 200, 130)],
+    },
   }
 }
 
@@ -50,6 +55,17 @@ describe('cook draft storage', () => {
   ])('a stored draft with %s is ignored', (_reason, stored) => {
     localStorage.setItem('cook-draft:v1:me', stored)
     expect(loadCookDraft('me')).toBeNull()
+  })
+
+  test('a draft stored before estimates existed still loads, as not an estimate', () => {
+    const { kcalEstimated: _, ...dish } = started().dish
+    localStorage.setItem(
+      'cook-draft:v1:me',
+      JSON.stringify({ version: 1, draft: { ...started(), dish } }),
+    )
+
+    expect(loadCookDraft('me')?.dish.kcalEstimated).toBeUndefined()
+    expect(loadCookDraft('me')?.dish.name).toBe('Rice bowl')
   })
 
   test('unavailable storage never breaks cooking', () => {

@@ -20,6 +20,7 @@ Built for a two-person household: both members log their own meals, can see and 
 - Adding an ingredient goes **step by step like the Settings pages**: the search and the amount each slide in as a page of their own. **‹ Back** or a **swipe to the right** goes back one step (amount → search, still showing what you searched for → dish), never to another tab. Back in the dish editor on Today and History goes one step at a time too.
 - With two people, each ingredient is **Shared** (split by the dish's split), **only for one person** (e.g. the tomato on her burger) or has **own amounts** per person (noodles 120 g / 100 g). The split for shared ingredients: **Equal**, **Count** (3 toasts : 2 toasts), **%**, or **Weight** (weigh the cooked dish and each plate). What each portion gets is shown live; a split that can't work (e.g. 110 %) says why.
 - Optional **dish name** and **leftover portions** (each takes its share like a person would).
+- **Calories are an estimate:** a switch for food whose calories you only roughly know (eaten out, cooked by someone else; e.g. a custom item "Pizza, 900 kcal"). It applies to the whole dish and can be changed later with Edit dish. The calories still count in full, but show as **"~900 kcal"** with an "Estimate" label.
 - **Save meal** logs everything at once (each person's portion into their own meal) and goes back to where you came from.
 - The draft is **kept on the phone** while you put it together, so switching tabs or iOS closing the app loses nothing. **Discard** starts over.
 - **Leftovers** of the last 7 days are listed at the top of Cook: eat one in any meal (for you or your partner), or **throw it away** (it keeps its share, so the eaten portions never change). While food is left, a **"Chili left"** pill sits next to "Meals" on Today and opens Cook.
@@ -41,11 +42,12 @@ Built for a two-person household: both members log their own meals, can see and 
 - A **progress card** on each day: a large calorie ring with the kcal left (or over) in the middle, and a bar per macro (**Ring + bars**, the default). Shows consumed / target and how much is left or over. Calories always show; each macro only if it has a target. Also available as a small ring per macro, all **bars**, or **compact** bars (Settings › Appearance).
 - Goals have a history: a new goal applies **from today on**, and past days keep the goal they had.
 - A "≥" marks totals that are only a lower bound (some logged items had no value for that nutrient).
+- A "~" marks calories that are only approximate: once a meal holds a dish marked as an estimate, its meal card, the day total and the calorie ring (consumed and left) show "~".
 
 ### History
 
 - **Month calendar** (Monday first): every logged day is marked green (within that day's calorie goal), red (over) or neutral (logged, no goal yet).
-- Month summary: days logged, average calories and protein.
+- Month summary: days logged, average calories and protein. The average shows "~" when a day in it had estimated calories.
 - **Tap any past day** to show its rings, totals and meals **right beneath the calendar**, and **edit it like today**. A forgotten dinner: tap the empty Dinner, which opens Cook for that day and comes back here after saving. Tap another day to switch, or the same day again to close it. The selected day is kept in the address (`/history/YYYY-MM-DD`), so reopening the app keeps it. Also for your partner's days.
 
 ### Household
@@ -210,8 +212,8 @@ scripts/
 - `category_groups` (the household's broad categories), `categories` (optionally in a group; deleting a group leaves its categories ungrouped), `ingredients` (per-100 g and/or per-unit columns; at least one calorie value required)
 - `meals` (unique per user, local date and meal type), `meal_items` (nutrition snapshot plus a basis multiplier)
 - `meal_items` of a cooked dish point to their `dish_portions` row and `dish_lines` row; plain items leave both empty
-- `dishes` (a cooking; split mode equal / count / percent / weight, cooked weight, a revision changed by every save), `dish_portions` (who ate it on which day and meal, or nobody yet = a leftover; split value; `discarded` for a thrown-away leftover, which keeps its share), `dish_lines` (ingredient snapshot like `meal_items`, either `shared` or `per_portion`), `dish_line_amounts` (own amount of a `per_portion` line per portion)
-- Views `meal_totals` and `daily_totals`. RPCs `create_household`, `join_household`, `ensure_meal`, `save_dish` and `delete_dish`.
+- `dishes` (a cooking; split mode equal / count / percent / weight, cooked weight, `kcal_estimated` when its calories are only roughly known, a revision changed by every save), `dish_portions` (who ate it on which day and meal, or nobody yet = a leftover; split value; `discarded` for a thrown-away leftover, which keeps its share), `dish_lines` (ingredient snapshot like `meal_items`, either `shared` or `per_portion`), `dish_line_amounts` (own amount of a `per_portion` line per portion)
+- Views `meal_totals` and `daily_totals` (with `kcal_estimated`: some food came from a dish marked as an estimate). RPCs `create_household`, `join_household`, `ensure_meal`, `save_dish` and `delete_dish`.
 - **Live updates:** triggers on the household's tables send a small hint over Supabase Realtime Broadcast to the private channel `household:<id>` (what changed: a person's day, a dish, the ingredient database, …). Hints carry no data: the app marks the matching queries out of date, and what's on screen re-fetches through the normal RLS-checked queries. A failed hint never fails a save.
 - `save_dish` stores a whole dish at once and re-logs every eaten portion as meal items in its eater's meal (shared lines × the portion's share, own amounts as entered), so the totals views count dishes like any other food. Resending the same save does nothing; a save based on an outdated revision is rejected ("changed meanwhile"). It can also take over plain items of a meal ("share this meal").
 
@@ -267,7 +269,7 @@ pnpm icons          # regenerate the icon PNGs: the default set from public/icon
 
 To add an app icon choice: put its SVG in `public/icons/<name>/icon.svg`, add `<name>` to `APP_ICONS` (`src/features/appearance/appearance.ts`) and a label to `APP_ICON_OPTIONS`, then run `pnpm icons`.
 
-**End-to-end journeys** (log a meal on Cook, Back and the back swipe going one step at a time on Cook, category chips and creating a missing ingredient from the Cook search, the new-version toast on the first start only, a White and a custom accent color, your own symbol, a single food changed in place, cooking together for two, sharing a meal afterwards, leftovers, goals and partner, partner nickname and symbol, Today fitting the screen, history, ingredients, category management, offline, a partner's change showing up live and after the app was in the background, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color) run the real app against the dev project. Build it against dev and pass the test credentials:
+**End-to-end journeys** (log a meal on Cook, Back and the back swipe going one step at a time on Cook, category chips and creating a missing ingredient from the Cook search, the new-version toast on the first start only, a White and a custom accent color, your own symbol, a single food changed in place, a meal eaten out logged as an estimate, cooking together for two, sharing a meal afterwards, leftovers, goals and partner, partner nickname and symbol, Today fitting the screen, history, ingredients, category management, offline, a partner's change showing up live and after the app was in the background, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color) run the real app against the dev project. Build it against dev and pass the test credentials:
 
 ```bash
 set -a; . ./.env.test.local; set +a

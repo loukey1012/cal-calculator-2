@@ -50,6 +50,8 @@ export type Dish = {
   readonly splitMode: SplitMode
   /** the whole cooked pot, for the weight split */
   readonly cookedWeightG: number | null
+  /** calories only roughly known (eaten out, cooked by someone else); missing in older drafts */
+  readonly kcalEstimated?: boolean
   /** changes with every save; a save names the revision it was based on */
   readonly revision: string
   readonly portions: readonly DishPortion[]

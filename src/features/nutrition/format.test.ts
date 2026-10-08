@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { formatGrams, formatKcal, macroSummary, toWholeKcal } from './format'
+import { formatGrams, formatKcal, formatKcalTotal, macroSummary, toWholeKcal } from './format'
 import { EMPTY_TOTALS } from './totals'
 
 describe('toWholeKcal', () => {
@@ -19,6 +19,13 @@ describe('formatKcal', () => {
   test('shows rounded-up whole calories with grouping in the given locale', () => {
     expect(formatKcal(1999.1, 'en')).toBe('2,000')
     expect(formatKcal(1999.1, 'de')).toBe('2.000')
+  })
+})
+
+describe('formatKcalTotal', () => {
+  test('marks estimated calories with a tilde', () => {
+    expect(formatKcalTotal({ kcal: 649.2, estimated: true }, 'en')).toBe('~650')
+    expect(formatKcalTotal({ kcal: 1999.1, estimated: false }, 'en')).toBe('2,000')
   })
 })
 

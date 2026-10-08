@@ -63,8 +63,8 @@ beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date(2026, 9, 15, 12, 0))
   vi.mocked(fetchDailyTotals).mockResolvedValue([
-    { date: '2026-10-01', kcal: 1850, protein: 100, mealCount: 3 },
-    { date: '2026-10-02', kcal: 2350, protein: 60, mealCount: 2 },
+    { date: '2026-10-01', kcal: 1850, protein: 100, mealCount: 3, kcalEstimated: false },
+    { date: '2026-10-02', kcal: 2350, protein: 60, mealCount: 2, kcalEstimated: false },
   ])
   vi.mocked(fetchGoals).mockResolvedValue([GOAL])
   vi.mocked(fetchMembers).mockResolvedValue([PROFILE])
@@ -125,13 +125,23 @@ describe('HistoryPage', () => {
 
   test('the protein average is left out when nothing logged had protein data', async () => {
     vi.mocked(fetchDailyTotals).mockResolvedValue([
-      { date: '2026-10-01', kcal: 1850, protein: 0, mealCount: 1 },
+      { date: '2026-10-01', kcal: 1850, protein: 0, mealCount: 1, kcalEstimated: false },
     ])
     renderPage()
 
     const summary = await screen.findByTestId('month-summary')
     await waitFor(() => expect(summary).toHaveTextContent('1 day logged · Ø 1,850 kcal'))
     expect(summary).not.toHaveTextContent('protein')
+  })
+
+  test('the average is marked as approximate when a day had estimated calories', async () => {
+    vi.mocked(fetchDailyTotals).mockResolvedValue([
+      { date: '2026-10-01', kcal: 1850, protein: 0, mealCount: 1, kcalEstimated: true },
+    ])
+    renderPage()
+
+    const summary = await screen.findByTestId('month-summary')
+    await waitFor(() => expect(summary).toHaveTextContent('1 day logged · Ø ~1,850 kcal'))
   })
 
   test('tapping another day switches the details; tapping the open day closes them', async () => {

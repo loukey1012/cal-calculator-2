@@ -260,6 +260,7 @@ export type Database = {
           created_by: string | null
           household_id: string
           id: string
+          kcal_estimated: boolean
           name: string | null
           revision: string
           split_mode: Database["public"]["Enums"]["dish_split_mode"]
@@ -271,6 +272,7 @@ export type Database = {
           created_by?: string | null
           household_id: string
           id: string
+          kcal_estimated?: boolean
           name?: string | null
           revision: string
           split_mode?: Database["public"]["Enums"]["dish_split_mode"]
@@ -282,6 +284,7 @@ export type Database = {
           created_by?: string | null
           household_id?: string
           id?: string
+          kcal_estimated?: boolean
           name?: string | null
           revision?: string
           split_mode?: Database["public"]["Enums"]["dish_split_mode"]
@@ -674,6 +677,7 @@ export type Database = {
           fiber: number | null
           fiber_missing: boolean | null
           kcal: number | null
+          kcal_estimated: boolean | null
           meal_count: number | null
           protein: number | null
           protein_missing: boolean | null
@@ -706,6 +710,7 @@ export type Database = {
           fiber_missing: boolean | null
           item_count: number | null
           kcal: number | null
+          kcal_estimated: boolean | null
           meal_id: string | null
           meal_type: Database["public"]["Enums"]["meal_type"] | null
           protein: number | null

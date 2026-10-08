@@ -115,7 +115,18 @@ describe('applyDishChangeToDay', () => {
       name: 'Chili',
       portionCount: 3,
       eaterCount: 2,
+      kcalEstimated: false,
     })
+  })
+
+  test('the shown items of a dish marked as an estimate are an estimate right away', () => {
+    const day = applyDishChangeToDay(
+      [],
+      { ...SAVE, dish: testDish({ kcalEstimated: true }) },
+      ME_DAY,
+    )
+
+    expect(day[0]?.meal_items[0]?.dish).toMatchObject({ kcalEstimated: true })
   })
 
   test('saving again replaces the earlier portion instead of adding a second one', () => {

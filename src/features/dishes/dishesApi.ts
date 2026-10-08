@@ -66,6 +66,7 @@ function dishFromRow(row: DishRow): Dish {
     name: row.name,
     splitMode: row.split_mode,
     cookedWeightG: row.cooked_weight_g,
+    kcalEstimated: row.kcal_estimated,
     revision: row.revision,
     portions: row.dish_portions.toSorted(byPosition).map(portionFromRow),
     lines: row.dish_lines.toSorted(byPosition).map(lineFromRow),
@@ -79,6 +80,7 @@ function dishPayload(dish: Dish) {
     name: dish.name,
     split_mode: dish.splitMode,
     cooked_weight_g: dish.cookedWeightG,
+    kcal_estimated: dish.kcalEstimated ?? false,
     revision: dish.revision,
     portions: dish.portions.map((portion) => ({
       id: portion.id,

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useCurrentUser } from '../../app/currentUser'
 import { Button } from '../../components/ios/Button'
 import { ErrorBanner } from '../../components/ios/ErrorBanner'
+import { ToggleRow } from '../../components/ios/FormRows'
 import { GroupedSection } from '../../components/ios/GroupedSection'
 import { ListRow } from '../../components/ios/ListRow'
 import { TextField } from '../../components/ios/TextField'
@@ -19,6 +20,7 @@ import {
   lineWho,
   newId,
   rescaledLine,
+  withKcalEstimated,
   withLine,
   withName,
   withoutLine,
@@ -99,6 +101,12 @@ export function DishComposer({
               label="Dish name (optional)"
               defaultValue={dish.name ?? ''}
               onChange={(event) => onChange(withName(dish, event.target.value))}
+            />
+            {/* e.g. eaten out: the calories count in full but show as approximate */}
+            <ToggleRow
+              label="Calories are an estimate"
+              checked={dish.kcalEstimated ?? false}
+              onChange={(estimated) => onChange(withKcalEstimated(dish, estimated))}
             />
             <LeftoverStepper dish={dish} onChange={onChange} />
           </GroupedSection>

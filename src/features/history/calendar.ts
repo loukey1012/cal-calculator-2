@@ -10,6 +10,8 @@ export type DayTotal = {
   readonly kcal: number
   readonly protein: number
   readonly mealCount: number
+  /** some food that day came from a dish whose calories are an estimate */
+  readonly kcalEstimated: boolean
 }
 
 export type DayStatus = 'none' | 'logged' | 'onTarget' | 'over'
@@ -18,6 +20,8 @@ export type MonthSummary = {
   readonly loggedDays: number
   readonly averageKcal: number
   readonly averageProtein: number
+  /** a logged day had estimated calories, so the average is approximate too */
+  readonly estimated: boolean
 }
 
 /** First day (YYYY-MM-01) of the month containing `date`. */
@@ -62,12 +66,15 @@ export function dayStatus(total: DayTotal | undefined, goals: readonly Goal[]): 
 
 export function monthSummary(totals: readonly DayTotal[]): MonthSummary {
   const logged = totals.filter((day) => day.mealCount > 0)
-  if (logged.length === 0) return { loggedDays: 0, averageKcal: 0, averageProtein: 0 }
+  if (logged.length === 0) {
+    return { loggedDays: 0, averageKcal: 0, averageProtein: 0, estimated: false }
+  }
   const sum = (pick: (day: DayTotal) => number) =>
     logged.reduce((total, day) => total + pick(day), 0)
   return {
     loggedDays: logged.length,
     averageKcal: sum((day) => day.kcal) / logged.length,
     averageProtein: sum((day) => day.protein) / logged.length,
+    estimated: logged.some((day) => day.kcalEstimated),
   }
 }

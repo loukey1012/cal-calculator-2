@@ -18,6 +18,7 @@ function sample(key: GoalProgress['key'], consumed: number, target: number): Goa
     remaining: target - consumed,
     reached: ratio >= 1,
     incomplete: false,
+    estimated: false,
   }
 }
 

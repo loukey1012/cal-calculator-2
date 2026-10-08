@@ -91,6 +91,7 @@ function optimisticItem(dish: Dish, portionId: string, { lineId, draft }: Portio
       name: dish.name,
       portionCount: dish.portions.length,
       eaterCount: dish.portions.filter((portion) => portion.eater !== null).length,
+      kcalEstimated: dish.kcalEstimated ?? false,
     },
     created_at: now,
     updated_at: now,

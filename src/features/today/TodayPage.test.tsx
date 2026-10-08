@@ -130,6 +130,39 @@ describe('TodayPage', () => {
     expect(lunch).toHaveTextContent('350 kcal')
   })
 
+  test('a dish marked as an estimate makes its meal, the day and the goal approximate', async () => {
+    // Arrange
+    const pizza = mealItem({
+      id: 'pizza',
+      name: 'Pizza',
+      dish_portion_id: 'p1',
+      dish_line_id: 'l1',
+      kcal: 900,
+      dish: { id: 'd1', name: 'Pizza out', portionCount: 1, eaterCount: 1, kcalEstimated: true },
+    })
+    vi.mocked(fetchDay).mockResolvedValue([LUNCH, dayMeal('m2', 'dinner', [pizza])])
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+
+    // Act
+    renderPage()
+
+    // Assert
+    const dinner = screen.getByRole('button', { name: /Dinner/ })
+    await waitFor(() => expect(dinner).toHaveTextContent('~900 kcal'))
+    expect(screen.getByRole('button', { name: /Lunch/ })).toHaveTextContent(/^Lunch538 kcal/)
+    expect(screen.getByTestId('day-total')).toHaveTextContent('~1,438 kcal')
+    const goals = await screen.findByRole('list', { name: 'Goals' })
+    expect(goals).toHaveTextContent('~1,438 / 2,000 kcal')
+    expect(goals).toHaveTextContent('~562')
+
+    await user.click(dinner)
+    const sheet = screen.getByRole('dialog', { name: 'Dinner' })
+    expect(within(sheet).getByTestId('meal-total')).toHaveTextContent('~900 kcal')
+    expect(within(sheet).getByRole('button', { name: /Pizza out/ })).toHaveTextContent(
+      /Estimate · 1 ingredient.*~900 kcal/,
+    )
+  })
+
   test('shows that the day is still loading instead of an empty day', () => {
     vi.mocked(fetchDay).mockReturnValue(new Promise(() => {}))
     renderPage()

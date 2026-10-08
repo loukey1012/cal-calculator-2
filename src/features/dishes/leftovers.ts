@@ -14,7 +14,8 @@ export type LeftoverOffer = {
 function portionTotals(dish: Dish, portionId: string): NutritionTotals {
   try {
     const items = portionItems(dish).find((entry) => entry.portionId === portionId)?.items ?? []
-    return mealTotals(items.map(({ draft }) => draft))
+    const totals = mealTotals(items.map(({ draft }) => draft))
+    return { ...totals, estimated: dish.kcalEstimated ?? false }
   } catch {
     // a dish saved by an older version might not split; show it without numbers
     return mealTotals([])

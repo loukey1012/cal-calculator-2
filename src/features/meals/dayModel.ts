@@ -13,6 +13,8 @@ export type DishRef = {
   readonly portionCount?: number
   /** portions someone has eaten */
   readonly eaterCount?: number
+  /** the dish's calories are only roughly known */
+  readonly kcalEstimated?: boolean
 }
 
 /** `dish` is set for items of a cooked dish; it may be missing in data cached by older versions. */
@@ -33,6 +35,9 @@ export const MEAL_TYPES: ReadonlyArray<{ readonly type: MealType; readonly label
   { type: 'dinner', label: 'Dinner' },
   { type: 'snack', label: 'Snacks' },
 ]
+
+/** shown on food of a dish whose calories are only roughly known */
+export const ESTIMATE_LABEL = 'Estimate'
 
 // match meal_items numeric(10, 4) and numeric(9, 2)
 const MULTIPLIER_DECIMALS = 4

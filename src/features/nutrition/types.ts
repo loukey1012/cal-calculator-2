@@ -29,9 +29,13 @@ export type IngredientNutrition = {
   readonly unitWeightG: number | null
 }
 
-/** Summed amounts; `missing` lists nutrients some item had no value for (total is a lower bound). */
+/**
+ * Summed amounts; `missing` lists nutrients some item had no value for (total is a lower bound);
+ * `estimated`: some food came from a dish whose calories are only roughly known.
+ */
 export type NutritionTotals = { readonly kcal: number } & NutrientRecord<number> & {
     readonly missing: readonly NutrientKey[]
+    readonly estimated: boolean
   }
 
 export function mapNutrients<T>(pick: (key: NutrientKey) => T): NutrientRecord<T> {

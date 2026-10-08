@@ -39,18 +39,28 @@ describe('months', () => {
 
 describe('dayStatus', () => {
   test('within the calorie goal, over it, logged without a goal, or nothing logged', () => {
-    expect(dayStatus({ date: '2026-10-01', kcal: 1999.2, protein: 0, mealCount: 2 }, [GOAL])).toBe(
-      'onTarget',
-    )
-    expect(dayStatus({ date: '2026-10-01', kcal: 2000.4, protein: 0, mealCount: 2 }, [GOAL])).toBe(
-      'over',
-    )
-    expect(dayStatus({ date: '2026-08-01', kcal: 500, protein: 0, mealCount: 1 }, [GOAL])).toBe(
-      'logged',
-    )
-    expect(dayStatus({ date: '2026-10-01', kcal: 0, protein: 0, mealCount: 0 }, [GOAL])).toBe(
-      'none',
-    )
+    expect(
+      dayStatus(
+        { date: '2026-10-01', kcal: 1999.2, protein: 0, mealCount: 2, kcalEstimated: false },
+        [GOAL],
+      ),
+    ).toBe('onTarget')
+    expect(
+      dayStatus(
+        { date: '2026-10-01', kcal: 2000.4, protein: 0, mealCount: 2, kcalEstimated: false },
+        [GOAL],
+      ),
+    ).toBe('over')
+    expect(
+      dayStatus({ date: '2026-08-01', kcal: 500, protein: 0, mealCount: 1, kcalEstimated: false }, [
+        GOAL,
+      ]),
+    ).toBe('logged')
+    expect(
+      dayStatus({ date: '2026-10-01', kcal: 0, protein: 0, mealCount: 0, kcalEstimated: false }, [
+        GOAL,
+      ]),
+    ).toBe('none')
     expect(dayStatus(undefined, [GOAL])).toBe('none')
   })
 })
@@ -59,11 +69,25 @@ describe('monthSummary', () => {
   test('averages over the days that have something logged', () => {
     expect(
       monthSummary([
-        { date: '2026-10-01', kcal: 2000, protein: 100, mealCount: 3 },
-        { date: '2026-10-02', kcal: 1000, protein: 50, mealCount: 1 },
-        { date: '2026-10-03', kcal: 0, protein: 0, mealCount: 0 },
+        { date: '2026-10-01', kcal: 2000, protein: 100, mealCount: 3, kcalEstimated: false },
+        { date: '2026-10-02', kcal: 1000, protein: 50, mealCount: 1, kcalEstimated: false },
+        { date: '2026-10-03', kcal: 0, protein: 0, mealCount: 0, kcalEstimated: false },
       ]),
-    ).toEqual({ loggedDays: 2, averageKcal: 1500, averageProtein: 75 })
-    expect(monthSummary([])).toEqual({ loggedDays: 0, averageKcal: 0, averageProtein: 0 })
+    ).toEqual({ loggedDays: 2, averageKcal: 1500, averageProtein: 75, estimated: false })
+    expect(monthSummary([])).toEqual({
+      loggedDays: 0,
+      averageKcal: 0,
+      averageProtein: 0,
+      estimated: false,
+    })
+  })
+
+  test('one logged day with estimated calories makes the average an estimate', () => {
+    const summary = monthSummary([
+      { date: '2026-10-01', kcal: 2000, protein: 100, mealCount: 3, kcalEstimated: true },
+      { date: '2026-10-02', kcal: 1000, protein: 50, mealCount: 1, kcalEstimated: false },
+    ])
+
+    expect(summary).toMatchObject({ averageKcal: 1500, estimated: true })
   })
 })

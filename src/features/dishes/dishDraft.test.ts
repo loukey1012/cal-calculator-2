@@ -7,6 +7,7 @@ import {
   throwAwayLeftover,
   takeLeftover,
   withCookedWeight,
+  withKcalEstimated,
   withLeftoverAdded,
   withLeftoverRemoved,
   withLine,
@@ -48,6 +49,18 @@ describe('name', () => {
   test('a blank name is no name', () => {
     expect(withName(testDish(), '  ').name).toBeNull()
     expect(withName(testDish(), ' Burger ').name).toBe('Burger')
+  })
+})
+
+describe('calories as an estimate', () => {
+  test('a new dish is exact; it can be marked as an estimate and back', () => {
+    const dish = newDish([ME_LUNCH])
+    const estimated = withKcalEstimated(dish, true)
+
+    expect(dish.kcalEstimated).toBe(false)
+    expect(estimated.kcalEstimated).toBe(true)
+    expect(withKcalEstimated(estimated, false).kcalEstimated).toBe(false)
+    expect(dish.kcalEstimated).toBe(false)
   })
 })
 

@@ -174,6 +174,34 @@ describe('a shared dish in the meal', () => {
     expect(sentDish().lines[0]?.item).toMatchObject({ entered_amount: 600, basis_multiplier: 6 })
   })
 
+  test('it can be marked as an estimate afterwards', async () => {
+    const user = userEvent.setup()
+    const sheet = renderSheet()
+
+    await user.click(await sheet.findByRole('button', { name: /Chili/ }))
+    await user.click(sheet.getByRole('button', { name: 'Edit dish' }))
+    const estimate = await sheet.findByRole('switch', { name: 'Calories are an estimate' })
+    expect(estimate).not.toBeChecked()
+    await user.click(estimate)
+    await user.click(sheet.getByRole('button', { name: 'Save dish' }))
+
+    expect(sentDish().kcalEstimated).toBe(true)
+  })
+
+  test('a dish marked as an estimate shows so, with ~ before its calories', async () => {
+    vi.mocked(fetchDay).mockResolvedValue([
+      dayMeal('m1', 'lunch', [{ ...MY_CHILI, dish: { ...MY_CHILI.dish!, kcalEstimated: true } }]),
+    ])
+    const sheet = renderSheet()
+
+    expect(
+      await sheet.findByRole('button', {
+        name: /Chili.*Estimate · Shared · 1 ingredient.*~500 kcal/,
+      }),
+    ).toBeInTheDocument()
+    expect(sheet.getByTestId('meal-total')).toHaveTextContent('~500 kcal')
+  })
+
   test("a partner's newer version while editing: my draft stays, a notice offers it", async () => {
     // Arrange: I'm editing the chili
     const user = userEvent.setup()

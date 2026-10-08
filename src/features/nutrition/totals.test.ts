@@ -22,6 +22,29 @@ describe('itemTotals', () => {
   })
 })
 
+describe('calories marked as an estimate', () => {
+  const ESTIMATED_PIZZA = {
+    basis_multiplier: 1,
+    ...values(900),
+    dish: { id: 'd1', name: 'Pizza', kcalEstimated: true },
+  }
+
+  test('food of a dish marked as an estimate makes its totals an estimate', () => {
+    expect(itemTotals(ESTIMATED_PIZZA).estimated).toBe(true)
+    expect(itemTotals(CREAM_150G).estimated).toBe(false)
+  })
+
+  test('one estimate makes the meal and the day an estimate, but still counts in full', () => {
+    const dinner = mealTotals([CREAM_150G, ESTIMATED_PIZZA])
+    const day = sumTotals([mealTotals([CUSTOM_SNACK_2]), dinner])
+
+    expect(dinner).toMatchObject({ kcal: 1038, estimated: true })
+    expect(day).toMatchObject({ kcal: 1438, estimated: true })
+    expect(mealTotals([CUSTOM_SNACK_2]).estimated).toBe(false)
+    expect(EMPTY_TOTALS.estimated).toBe(false)
+  })
+})
+
 describe('mealTotals / sumTotals', () => {
   test('sums items and unions the missing flags (same as the meal_totals view)', () => {
     const totals = mealTotals([CREAM_150G, CUSTOM_SNACK_2])

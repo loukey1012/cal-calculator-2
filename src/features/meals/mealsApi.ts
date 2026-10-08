@@ -16,6 +16,7 @@ type DishPortionJoin = {
   readonly dish_id: string
   readonly dishes: {
     readonly name: string | null
+    readonly kcal_estimated: boolean
     readonly dish_portions: ReadonlyArray<{ readonly user_id: string | null }>
   } | null
 }
@@ -29,6 +30,7 @@ function dishOf(portion: DishPortionJoin | null): DishRef | null {
     name: portion.dishes.name,
     portionCount: portions.length,
     eaterCount: portions.filter((other) => other.user_id !== null).length,
+    kcalEstimated: portion.dishes.kcal_estimated,
   }
 }
 
@@ -36,7 +38,7 @@ export async function fetchDay(userId: string, date: string): Promise<DayMeal[]>
   const { data, error } = await supabase
     .from('meals')
     .select(
-      'id, meal_type, meal_items(*, dish_portions(dish_id, dishes(name, dish_portions(user_id))))',
+      'id, meal_type, meal_items(*, dish_portions(dish_id, dishes(name, kcal_estimated, dish_portions(user_id))))',
     )
     .eq('user_id', userId)
     .eq('date', date)

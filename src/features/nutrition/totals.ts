@@ -1,12 +1,15 @@
 import { mapNutrients, NUTRIENT_KEYS, type NutritionTotals, type NutritionValues } from './types'
 
-/** The nutrition columns of a meal_items row. */
-export type MealItemNutrition = { readonly basis_multiplier: number } & NutritionValues
+/** The nutrition columns of a meal_items row, and whether its dish is marked as an estimate. */
+export type MealItemNutrition = { readonly basis_multiplier: number } & NutritionValues & {
+    readonly dish?: { readonly kcalEstimated?: boolean } | null
+  }
 
 export const EMPTY_TOTALS: NutritionTotals = {
   kcal: 0,
   ...mapNutrients(() => 0),
   missing: [],
+  estimated: false,
 }
 
 /** Unknown nutrients count as 0 and are listed in `missing`, like the meal_totals view. */
@@ -16,6 +19,7 @@ export function itemTotals(item: MealItemNutrition): NutritionTotals {
     kcal: item.kcal * multiplier,
     ...mapNutrients((key) => (item[key] ?? 0) * multiplier),
     missing: NUTRIENT_KEYS.filter((key) => item[key] === null),
+    estimated: item.dish?.kcalEstimated === true,
   }
 }
 
@@ -27,6 +31,7 @@ export function sumTotals(totals: readonly NutritionTotals[]): NutritionTotals {
       missing: NUTRIENT_KEYS.filter(
         (key) => sum.missing.includes(key) || next.missing.includes(key),
       ),
+      estimated: sum.estimated || next.estimated,
     }),
     EMPTY_TOTALS,
   )

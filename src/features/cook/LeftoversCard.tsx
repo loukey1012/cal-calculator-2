@@ -11,7 +11,7 @@ import { leftoverOffers, type LeftoverOffer } from '../dishes/leftovers'
 import { usePeople } from '../household/hooks'
 import { PersonSwitch } from '../household/PersonSwitch'
 import { MEAL_TYPES, type MealType } from '../meals/dayModel'
-import { formatKcal } from '../nutrition/format'
+import { formatKcalTotal } from '../nutrition/format'
 
 const MEAL_OPTIONS = MEAL_TYPES.map(({ type, label }) => ({ value: type, label }))
 
@@ -38,7 +38,7 @@ export function LeftoversCard({ today, mealOfDay }: LeftoversCardProps) {
             key={offer.portionId}
             title={offer.title}
             subtitle="1 portion"
-            detail={`${formatKcal(offer.totals.kcal)} kcal`}
+            detail={`${formatKcalTotal(offer.totals)} kcal`}
             onClick={() => setSelectedId(offer.portionId)}
           />
         ))}
@@ -76,7 +76,7 @@ function LeftoverActions({ offer, today, mealOfDay, onDone }: LeftoverActionsPro
   return (
     <>
       <p className="text-[15px] text-label-secondary">
-        1 portion · {formatKcal(offer.totals.kcal)} kcal
+        1 portion · {formatKcalTotal(offer.totals)} kcal
       </p>
       <PersonSwitch people={people} selectedId={personId} onChange={setPersonId} />
       <div className="mt-4">

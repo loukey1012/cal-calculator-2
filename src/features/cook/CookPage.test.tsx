@@ -237,6 +237,42 @@ describe('cooking alone', () => {
   })
 })
 
+describe('calories as an estimate', () => {
+  test('a meal eaten out is saved marked as an estimate, its totals shown with ~', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    renderCook()
+
+    // Act
+    await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
+    await user.click(await screen.findByRole('button', { name: /Custom item/ }))
+    await user.type(screen.getByLabelText('Name'), 'Pizza')
+    await user.type(screen.getByLabelText('Calories'), '90')
+    await user.type(screen.getByLabelText('Amount'), '1000')
+    await user.click(screen.getByRole('button', { name: 'Add to dish' }))
+    const estimate = screen.getByRole('switch', { name: 'Calories are an estimate' })
+    expect(estimate).not.toBeChecked()
+    await user.click(estimate)
+
+    // Assert
+    expect(estimate).toBeChecked()
+    expect(screen.getByTestId('dish-totals')).toHaveTextContent('~900 kcal')
+    await user.click(screen.getByRole('button', { name: 'Save meal' }))
+    expect(sentDish().kcalEstimated).toBe(true)
+  })
+
+  test('a dish is exact unless marked', async () => {
+    const user = userEvent.setup()
+    renderCook()
+
+    await addIngredient(user, 'Patty', '100')
+    await user.click(screen.getByRole('button', { name: 'Save meal' }))
+
+    expect(sentDish().kcalEstimated).toBe(false)
+    expect(screen.queryByText(/~/)).not.toBeInTheDocument()
+  })
+})
+
 describe('cooking together', () => {
   test('a burger: shared patty, tomato only for her, saved for both', async () => {
     // Arrange
@@ -631,6 +667,18 @@ describe('opened from an empty meal', () => {
 })
 
 describe('leftovers', () => {
+  test('a leftover of a dish marked as an estimate shows ~ before its calories', async () => {
+    vi.mocked(fetchLeftoverDishes).mockResolvedValue([{ ...CHILI, kcalEstimated: true }])
+    const user = userEvent.setup()
+    renderCook()
+
+    await user.click(await screen.findByRole('button', { name: /Chili.*~500 kcal/ }))
+
+    expect(
+      within(screen.getByRole('dialog', { name: 'Chili' })).getByText(/~500 kcal/),
+    ).toBeVisible()
+  })
+
   test('a leftover can be eaten in a meal', async () => {
     // Arrange
     vi.mocked(fetchLeftoverDishes).mockResolvedValue([CHILI])

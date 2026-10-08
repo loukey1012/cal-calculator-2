@@ -25,9 +25,15 @@ function status({ remaining }: GoalProgress, unit: Unit): string {
   return remaining > 0 ? `${text} left` : `${text} over`
 }
 
-/** e.g. "≥ 55.0 / 50", the "≥" marking a lower bound */
+/** "≥" marks a lower bound, "~" estimated calories */
+function approximation(goal: GoalProgress): string {
+  if (goal.incomplete) return '≥ '
+  return goal.estimated ? '~' : ''
+}
+
+/** e.g. "≥ 55.0 / 50" or "~1,438 / 2,000" */
 function consumedOfTargetNumbers(goal: GoalProgress, unit: Unit): string {
-  const consumed = `${goal.incomplete ? '≥ ' : ''}${amount(goal.consumed, unit)}`
+  const consumed = `${approximation(goal)}${amount(goal.consumed, unit)}`
   return `${consumed} / ${targetFormat.format(goal.target)}`
 }
 
@@ -116,7 +122,7 @@ const MACRO_RING_STROKE = 7
 function KcalHero({ goal, style }: { goal: GoalProgress; style: ProgressStyle }) {
   const { label, color, unit } = GOAL_STYLES.kcal
   const over = goal.remaining < 0
-  const remaining = amount(Math.abs(goal.remaining), unit)
+  const remaining = `${goal.estimated ? '~' : ''}${amount(Math.abs(goal.remaining), unit)}`
   const remainingLabel = `kcal ${over ? 'over' : 'left'}`
 
   if (kcalAsRing(style)) {

@@ -37,6 +37,7 @@ export function newDish(eaters: readonly Eater[]): Dish {
     name: null,
     splitMode: 'equal',
     cookedWeightG: null,
+    kcalEstimated: false,
     // set when saved
     revision: '',
     portions: eaters.map((eater) => ({ id: newId(), eater, splitValue: null })),
@@ -46,6 +47,10 @@ export function newDish(eaters: readonly Eater[]): Dish {
 
 export function withName(dish: Dish, name: string): Dish {
   return { ...dish, name: name.trim() || null }
+}
+
+export function withKcalEstimated(dish: Dish, kcalEstimated: boolean): Dish {
+  return { ...dish, kcalEstimated }
 }
 
 function defaultSplitValue(mode: SplitMode, portionCount: number): number | null {

@@ -37,6 +37,7 @@ const dishSchema = z.object({
   name: z.string().nullable(),
   splitMode: z.enum(['equal', 'count', 'percent', 'weight']),
   cookedWeightG: z.number().nullable(),
+  kcalEstimated: z.boolean().optional(),
   revision: z.string(),
   portions: z
     .array(

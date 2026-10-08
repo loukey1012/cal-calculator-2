@@ -12,7 +12,8 @@ import { useLookOf } from '../household/usePersonLook'
 import { itemsByMeal, mealEntries, MEAL_TYPES, type MealType } from '../meals/dayModel'
 import { useDay, useLatestDayChangeError } from '../meals/hooks'
 import { MealSheet } from '../meals/MealSheet'
-import { formatKcal, macroSummary } from '../nutrition/format'
+import { formatKcalTotal, macroSummary } from '../nutrition/format'
+import type { NutritionTotals } from '../nutrition/types'
 import { mealTotals, sumTotals } from '../nutrition/totals'
 import { GoalCard } from './GoalCard'
 
@@ -27,10 +28,15 @@ function itemCount(count: number): string {
   return count === 1 ? '1 item' : `${count} items`
 }
 
-function mealSubtitle(loading: boolean, offline: boolean, count: number, kcal: number): string {
+function mealSubtitle(
+  loading: boolean,
+  offline: boolean,
+  count: number,
+  totals: NutritionTotals,
+): string {
   if (loading) return offline ? 'Offline – not loaded yet' : 'Loading…'
   if (count === 0) return 'Nothing logged'
-  return `${formatKcal(kcal)} kcal · ${itemCount(count)}`
+  return `${formatKcalTotal(totals)} kcal · ${itemCount(count)}`
 }
 
 type MealCardProps = {
@@ -132,7 +138,7 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
                   <LeftoversPill />
                 </span>
                 {!day.isPending && (
-                  <span className="text-[15px] font-bold">{formatKcal(dayTotals.kcal)} kcal</span>
+                  <span className="text-[15px] font-bold">{formatKcalTotal(dayTotals)} kcal</span>
                 )}
               </div>
               <p className="text-[13px] font-semibold text-label-secondary">
@@ -149,7 +155,7 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
                     day.isPending,
                     day.fetchStatus === 'paused',
                     count,
-                    totals.kcal,
+                    totals,
                   )}
                   onOpen={() =>
                     !day.isPending && count === 0 ? openCook(type) : setOpenMeal({ type, date })

@@ -11,6 +11,7 @@ const KCAL: GoalProgress = {
   remaining: 1087,
   reached: false,
   incomplete: false,
+  estimated: false,
 }
 const PROTEIN: GoalProgress = {
   key: 'protein',
@@ -20,6 +21,7 @@ const PROTEIN: GoalProgress = {
   remaining: -5,
   reached: true,
   incomplete: true,
+  estimated: false,
 }
 
 function items() {

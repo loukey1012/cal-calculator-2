@@ -1,6 +1,6 @@
 import type { Tables } from '../../lib/database.types'
 import { toWholeKcal } from './format'
-import type { NutrientKey, NutritionTotals } from './types'
+import type { NutritionTotals } from './types'
 
 export type Goal = {
   /** First day (YYYY-MM-DD) this goal applies to. */
@@ -24,6 +24,8 @@ export type GoalProgress = {
   readonly reached: boolean
   /** some logged item had no value for this nutrient, so `consumed` is a lower bound */
   readonly incomplete: boolean
+  /** calories only: some food's calories are an estimate, so `consumed` is approximate */
+  readonly estimated: boolean
 }
 
 export function goalFromRow(row: Tables<'goal_history'>): Goal {
@@ -51,7 +53,7 @@ function progress(
   key: RingKey,
   consumed: number,
   target: number,
-  missing: readonly NutrientKey[],
+  { missing, estimated }: Pick<NutritionTotals, 'missing' | 'estimated'>,
 ): GoalProgress {
   return {
     key,
@@ -61,6 +63,7 @@ function progress(
     remaining: target - consumed,
     reached: consumed >= target,
     incomplete: key !== 'kcal' && missing.includes(key),
+    estimated: key === 'kcal' && estimated,
   }
 }
 
@@ -74,6 +77,6 @@ export function goalProgress(totals: NutritionTotals, goal: Goal): readonly Goal
     ['fat', goal.fatG, totals.fat],
   ]
   return rings.flatMap(([key, target, consumed]) =>
-    target === null ? [] : [progress(key, consumed, target, totals.missing)],
+    target === null ? [] : [progress(key, consumed, target, totals)],
   )
 }

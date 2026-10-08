@@ -15,6 +15,14 @@ export function formatKcal(value: number, locale?: string): string {
   return new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(toWholeKcal(value))
 }
 
+/** e.g. "~650" when some of the calories are an estimate, otherwise "650" */
+export function formatKcalTotal(
+  totals: Pick<NutritionTotals, 'kcal' | 'estimated'>,
+  locale?: string,
+): string {
+  return `${totals.estimated ? '~' : ''}${formatKcal(totals.kcal, locale)}`
+}
+
 export function formatGrams(value: number, locale?: string): string {
   const rounded = roundTo(value, NUTRIENT_DECIMALS)
   return new Intl.NumberFormat(locale, {
