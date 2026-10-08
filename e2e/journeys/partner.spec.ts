@@ -44,3 +44,42 @@ test('give the partner a nickname and an emoji, kept after a reload', async ({ p
     .single()
   expect(data?.display_name).toBe('Lisa')
 })
+
+test('pick a symbol for yourself, only on your account, kept after a reload', async ({
+  page,
+  backend,
+}) => {
+  const me = await backend.user('Lukas')
+  const partner = await backend.user('Lisa')
+  await backend.household([me, partner])
+  await logIn(page, me)
+
+  await page
+    .getByRole('navigation', { name: 'Tabs' })
+    .getByRole('button', { name: 'Settings' })
+    .click()
+  const settings = activePage(page)
+  await settings.getByRole('button', { name: /^Symbol/ }).click()
+  await settings.getByRole('radio', { name: 'Pink heart' }).click()
+  await expect(settings.getByTestId('own-look-preview')).toHaveText(/🩷\s*Lukas/)
+
+  await expect
+    .poll(async () => {
+      const { data } = await backend.admin
+        .from('profiles')
+        .select('id, appearance')
+        .in('id', [me.id, partner.id])
+      return Object.fromEntries(
+        (data ?? []).map((row) => [
+          row.id,
+          (row.appearance as { ownLook?: unknown }).ownLook ?? null,
+        ]),
+      )
+    })
+    .toEqual({ [me.id]: { symbol: '🩷' }, [partner.id]: null })
+
+  // the reload keeps the page; back to Settings with its own back button
+  await page.reload()
+  await activePage(page).getByRole('button', { name: 'Settings' }).click()
+  await expect(activePage(page).getByRole('button', { name: /Lukas \(you\)/ })).toContainText('🩷')
+})

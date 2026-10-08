@@ -18,6 +18,7 @@ import { describeGoal } from '../goals/goalForm'
 import { GoalSheet } from '../goals/GoalSheet'
 import { useGoals } from '../goals/hooks'
 import { useHousehold, useMembers } from '../household/hooks'
+import { OWN_LOOK_PATH, OwnLookPage } from '../household/OwnLookPage'
 import { PARTNER_PATH, PartnerPage } from '../household/PartnerPage'
 import { displayName, type PersonLook } from '../household/partnerLook'
 import { PersonBadge } from '../household/PersonBadge'
@@ -47,6 +48,7 @@ export function SettingsPage() {
     return <AppearancePage />
   if (pathname === CATEGORIES_PATH) return <CategoriesPage />
   if (pathname === PARTNER_PATH) return <PartnerPage />
+  if (pathname === OWN_LOOK_PATH) return <OwnLookPage />
   return <SettingsOverview />
 }
 
@@ -137,7 +139,7 @@ function SettingsOverview() {
                 title={memberLabel(look, isYou)}
                 // your partner's account name, next to the nickname you gave them
                 detail={isYou ? undefined : displayName(member)}
-                onClick={isYou ? undefined : () => navigate(PARTNER_PATH, { replace: true })}
+                onClick={() => navigate(isYou ? OWN_LOOK_PATH : PARTNER_PATH, { replace: true })}
               />
             )
           })}

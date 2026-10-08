@@ -6,7 +6,7 @@ import {
   DEFAULT_PARTNER_LOOK,
   lookFor,
   MAX_NICKNAME_LENGTH,
-  PARTNER_SYMBOLS,
+  SYMBOLS,
   withPartnerLook,
   type PartnerLooks,
 } from './partnerLook'
@@ -116,13 +116,83 @@ describe('withPartnerLook', () => {
 })
 
 describe('choices', () => {
-  test('the heart comes first, then cute emojis', () => {
-    expect(PARTNER_SYMBOLS[0]).toEqual({ value: 'heart', name: 'Heart' })
-    expect(PARTNER_SYMBOLS.length).toBeGreaterThanOrEqual(12)
-    expect(new Set(PARTNER_SYMBOLS.map(({ value }) => value)).size).toBe(PARTNER_SYMBOLS.length)
+  test('the drawn heart (the default) comes first', () => {
+    expect(SYMBOLS[0]).toEqual({ value: 'heart', name: 'Heart', group: 'hearts' })
+    expect(SYMBOLS[0].value).toBe(DEFAULT_PARTNER_LOOK.symbol)
   })
 
   test('the default color is one of the preset colors', () => {
     expect(COLOR_PRESETS.map(({ value }) => value)).toContain(DEFAULT_PARTNER_LOOK.color)
+  })
+})
+
+describe('the symbols', () => {
+  test('include all the classic hearts, the pink one too', () => {
+    const values = SYMBOLS.map(({ value }) => value)
+
+    for (const heart of ['❤️', '🩷', '🧡', '💛', '💚', '🩵', '💙', '💜', '🖤', '🤍', '🤎']) {
+      expect(values).toContain(heart)
+    }
+    expect(SYMBOLS.find(({ value }) => value === '🩷')?.name).toBe('Pink heart')
+  })
+
+  test('come in three groups: hearts first, then cute ones, then cool ones', () => {
+    const groups = [...new Set(SYMBOLS.map(({ group }) => group))]
+
+    expect(groups).toEqual(['hearts', 'cute', 'cool'])
+    expect(SYMBOLS.filter(({ group }) => group === 'cool').map(({ value }) => value)).toEqual(
+      expect.arrayContaining(['🔥', '😎', '👑', '🦊', '🐉', '🚀']),
+    )
+  })
+
+  test('are distinct by value and by name (names are what a screen reader says)', () => {
+    expect(new Set(SYMBOLS.map(({ value }) => value)).size).toBe(SYMBOLS.length)
+    expect(new Set(SYMBOLS.map(({ name }) => name)).size).toBe(SYMBOLS.length)
+  })
+})
+
+describe('your own look', () => {
+  test('without a choice: your initial in your accent color', () => {
+    expect(lookFor(ME, ME.id, undefined, undefined)).toEqual({
+      name: 'Lukas',
+      badge: { kind: 'initial', color: '#007aff' },
+    })
+  })
+
+  test('a symbol in the color you picked; your name stays your account name', () => {
+    expect(lookFor(ME, ME.id, undefined, { symbol: '🩷', color: '#ff5c8a' })).toEqual({
+      name: 'Lukas',
+      badge: { kind: 'symbol', symbol: '🩷', color: '#ff5c8a' },
+    })
+  })
+
+  test('a symbol without a color is shown in your accent color', () => {
+    expect(lookFor(ME, ME.id, undefined, { symbol: '🔥' }).badge).toEqual({
+      kind: 'symbol',
+      symbol: '🔥',
+      color: '#007aff',
+    })
+  })
+
+  test('a color alone colors your initial', () => {
+    expect(lookFor(ME, ME.id, undefined, { color: '#30a46c' }).badge).toEqual({
+      kind: 'initial',
+      color: '#30a46c',
+    })
+  })
+
+  test('does not change how your partner is shown', () => {
+    expect(lookFor(HER, ME.id, undefined, { symbol: '🔥' }).badge).toMatchObject({
+      symbol: 'heart',
+    })
+  })
+
+  test('is read from the appearance; an unknown symbol or color falls back on its own', () => {
+    expect(parseAppearance({ ownLook: { symbol: '🩷', color: '#FF5C8A' } }).ownLook).toEqual({
+      symbol: '🩷',
+      color: '#ff5c8a',
+    })
+    expect(parseAppearance({ ownLook: { symbol: '🚗', color: 'pink' } }).ownLook).toEqual({})
+    expect(parseAppearance({}).ownLook).toBeUndefined()
   })
 })

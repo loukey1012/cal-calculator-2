@@ -3,38 +3,96 @@ import type { Profile } from './householdApi'
 
 export const MAX_NICKNAME_LENGTH = 20
 
-/** The heart is drawn in the chosen color; the emojis sit on a circle tinted with it. */
-export const PARTNER_SYMBOLS = [
-  { value: 'heart', name: 'Heart' },
-  { value: '💕', name: 'Two hearts' },
-  { value: '💖', name: 'Sparkling heart' },
-  { value: '💗', name: 'Growing heart' },
-  { value: '🌸', name: 'Cherry blossom' },
-  { value: '🌷', name: 'Tulip' },
-  { value: '🐻', name: 'Bear' },
-  { value: '🧸', name: 'Teddy bear' },
-  { value: '🐰', name: 'Bunny' },
-  { value: '🐱', name: 'Cat' },
-  { value: '🐣', name: 'Chick' },
-  { value: '🦋', name: 'Butterfly' },
-  { value: '🍓', name: 'Strawberry' },
-  { value: '🍑', name: 'Peach' },
-  { value: '⭐', name: 'Star' },
-  { value: '🌙', name: 'Moon' },
-  { value: '🌈', name: 'Rainbow' },
-  { value: '☁️', name: 'Cloud' },
+/**
+ * The symbols for a person, in three groups. The heart is drawn in the chosen color; the emojis
+ * sit on a circle tinted with it.
+ */
+export const SYMBOLS = [
+  { value: 'heart', name: 'Heart', group: 'hearts' },
+  { value: '❤️', name: 'Red heart', group: 'hearts' },
+  { value: '🩷', name: 'Pink heart', group: 'hearts' },
+  { value: '🧡', name: 'Orange heart', group: 'hearts' },
+  { value: '💛', name: 'Yellow heart', group: 'hearts' },
+  { value: '💚', name: 'Green heart', group: 'hearts' },
+  { value: '🩵', name: 'Light blue heart', group: 'hearts' },
+  { value: '💙', name: 'Blue heart', group: 'hearts' },
+  { value: '💜', name: 'Purple heart', group: 'hearts' },
+  { value: '🖤', name: 'Black heart', group: 'hearts' },
+  { value: '🩶', name: 'Grey heart', group: 'hearts' },
+  { value: '🤍', name: 'White heart', group: 'hearts' },
+  { value: '🤎', name: 'Brown heart', group: 'hearts' },
+  { value: '❤️‍🔥', name: 'Heart on fire', group: 'hearts' },
+  { value: '💕', name: 'Two hearts', group: 'hearts' },
+  { value: '💞', name: 'Revolving hearts', group: 'hearts' },
+  { value: '💖', name: 'Sparkling heart', group: 'hearts' },
+  { value: '💗', name: 'Growing heart', group: 'hearts' },
+  { value: '💓', name: 'Beating heart', group: 'hearts' },
+  { value: '💘', name: 'Heart with arrow', group: 'hearts' },
+  { value: '💝', name: 'Heart with ribbon', group: 'hearts' },
+  { value: '💟', name: 'Heart decoration', group: 'hearts' },
+  { value: '😍', name: 'Heart eyes', group: 'hearts' },
+  { value: '🥰', name: 'Smiling with hearts', group: 'hearts' },
+  { value: '🌸', name: 'Cherry blossom', group: 'cute' },
+  { value: '🌷', name: 'Tulip', group: 'cute' },
+  { value: '🌻', name: 'Sunflower', group: 'cute' },
+  { value: '🐻', name: 'Bear', group: 'cute' },
+  { value: '🧸', name: 'Teddy bear', group: 'cute' },
+  { value: '🐼', name: 'Panda', group: 'cute' },
+  { value: '🐰', name: 'Bunny', group: 'cute' },
+  { value: '🐱', name: 'Cat', group: 'cute' },
+  { value: '🐶', name: 'Dog', group: 'cute' },
+  { value: '🐣', name: 'Chick', group: 'cute' },
+  { value: '🦄', name: 'Unicorn', group: 'cute' },
+  { value: '🦋', name: 'Butterfly', group: 'cute' },
+  { value: '🍓', name: 'Strawberry', group: 'cute' },
+  { value: '🍑', name: 'Peach', group: 'cute' },
+  { value: '⭐', name: 'Star', group: 'cute' },
+  { value: '🌙', name: 'Moon', group: 'cute' },
+  { value: '🌈', name: 'Rainbow', group: 'cute' },
+  { value: '☁️', name: 'Cloud', group: 'cute' },
+  { value: '🔥', name: 'Fire', group: 'cool' },
+  { value: '⚡', name: 'Lightning', group: 'cool' },
+  { value: '😎', name: 'Sunglasses', group: 'cool' },
+  { value: '👑', name: 'Crown', group: 'cool' },
+  { value: '💎', name: 'Gem', group: 'cool' },
+  { value: '🚀', name: 'Rocket', group: 'cool' },
+  { value: '🦊', name: 'Fox', group: 'cool' },
+  { value: '🐺', name: 'Wolf', group: 'cool' },
+  { value: '🦁', name: 'Lion', group: 'cool' },
+  { value: '🐯', name: 'Tiger', group: 'cool' },
+  { value: '🐉', name: 'Dragon', group: 'cool' },
+  { value: '🦈', name: 'Shark', group: 'cool' },
+  { value: '👻', name: 'Ghost', group: 'cool' },
+  { value: '🤖', name: 'Robot', group: 'cool' },
+  { value: '👽', name: 'Alien', group: 'cool' },
+  { value: '🎧', name: 'Headphones', group: 'cool' },
+  { value: '🎮', name: 'Game controller', group: 'cool' },
+  { value: '🏀', name: 'Basketball', group: 'cool' },
+  { value: '⚽', name: 'Football', group: 'cool' },
+  { value: '🏋️', name: 'Weight lifting', group: 'cool' },
+  { value: '🍕', name: 'Pizza', group: 'cool' },
+  { value: '🌊', name: 'Wave', group: 'cool' },
+  { value: '🍀', name: 'Clover', group: 'cool' },
+  { value: '☀️', name: 'Sun', group: 'cool' },
 ] as const
 
-export type PartnerSymbol = (typeof PARTNER_SYMBOLS)[number]['value']
+export type SymbolGroup = (typeof SYMBOLS)[number]['group']
+export const SYMBOL_GROUP_LABELS: Record<SymbolGroup, string> = {
+  hearts: 'Hearts',
+  cute: 'Cute',
+  cool: 'Cool',
+}
 
-type SymbolValues = [PartnerSymbol, ...PartnerSymbol[]]
-const SYMBOL_VALUES = PARTNER_SYMBOLS.map(({ value }) => value) as SymbolValues
+export type PersonSymbol = (typeof SYMBOLS)[number]['value']
+
+type SymbolValues = [PersonSymbol, ...PersonSymbol[]]
+const SYMBOL_VALUES = SYMBOLS.map(({ value }) => value) as SymbolValues
 
 export const DEFAULT_PARTNER_LOOK = {
   nickname: 'baby',
   symbol: 'heart',
   color: '#ff5c8a',
-} as const satisfies { nickname: string; symbol: PartnerSymbol; color: string }
+} as const satisfies { nickname: string; symbol: PersonSymbol; color: string }
 
 const nickname = z
   .string()
@@ -43,27 +101,28 @@ const nickname = z
   .optional()
   .catch(undefined)
 
+const symbol = z.enum(SYMBOL_VALUES).optional().catch(undefined)
+const color = z
+  .string()
+  .regex(/^#[0-9a-f]{6}$/i)
+  .transform((value) => value.toLowerCase())
+  .optional()
+  .catch(undefined)
+
+function withoutUnset<T extends object>(look: T): T {
+  return Object.fromEntries(Object.entries(look).filter(([, value]) => value !== undefined)) as T
+}
+
 // each field falls back on its own, like the other appearance choices
 const partnerLookSchema = z
-  .object({
-    nickname,
-    symbol: z.enum(SYMBOL_VALUES).optional().catch(undefined),
-    color: z
-      .string()
-      .regex(/^#[0-9a-f]{6}$/i)
-      .transform((color) => color.toLowerCase())
-      .optional()
-      .catch(undefined),
-  })
+  .object({ nickname, symbol, color })
   .catch({})
-  .transform((look): PartnerLook =>
-    Object.fromEntries(Object.entries(look).filter(([, value]) => value !== undefined)),
-  )
+  .transform((look): PartnerLook => withoutUnset(look))
 
 /** What you picked for each household member, by their id (all optional). */
 export type PartnerLook = {
   readonly nickname?: string
-  readonly symbol?: PartnerSymbol
+  readonly symbol?: PersonSymbol
   readonly color?: string
 }
 export type PartnerLooks = Readonly<Record<string, PartnerLook>>
@@ -75,9 +134,18 @@ export const partnerLooksSchema = z
   .catch(undefined)
   .optional()
 
+/** The symbol and color you picked for yourself (only you see them); none: your initial. */
+export type OwnLook = { readonly symbol?: PersonSymbol; readonly color?: string }
+
+export const ownLookSchema = z
+  .object({ symbol, color })
+  .catch({})
+  .transform((look): OwnLook => withoutUnset(look))
+  .optional()
+
 export type PersonBadge =
   | { readonly kind: 'initial'; readonly color: string }
-  | { readonly kind: 'symbol'; readonly symbol: PartnerSymbol; readonly color: string }
+  | { readonly kind: 'symbol'; readonly symbol: PersonSymbol; readonly color: string }
 
 /** How a household member is shown to the viewer: their name and the badge next to it. */
 export type PersonLook = { readonly name: string; readonly badge: PersonBadge }
@@ -91,9 +159,14 @@ export function lookFor(
   person: Profile,
   viewerId: string,
   looks: PartnerLooks | undefined,
+  ownLook?: OwnLook,
 ): PersonLook {
   if (person.id === viewerId) {
-    return { name: displayName(person), badge: { kind: 'initial', color: person.accent_color } }
+    const ownColor = ownLook?.color ?? person.accent_color
+    const badge: PersonBadge = ownLook?.symbol
+      ? { kind: 'symbol', symbol: ownLook.symbol, color: ownColor }
+      : { kind: 'initial', color: ownColor }
+    return { name: displayName(person), badge }
   }
   const look = { ...DEFAULT_PARTNER_LOOK, ...looks?.[person.id] }
   return { name: look.nickname, badge: { kind: 'symbol', symbol: look.symbol, color: look.color } }

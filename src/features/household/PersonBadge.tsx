@@ -1,6 +1,6 @@
 import { Avatar } from '../../components/ios/Avatar'
 import { isNearWhite } from '../../lib/color'
-import type { PartnerSymbol, PersonLook } from './partnerLook'
+import type { PersonSymbol, PersonLook } from './partnerLook'
 
 type Size = 'small' | 'large'
 
@@ -32,7 +32,7 @@ export function HeartGlyph({ color, className }: { color: string; className?: st
 }
 
 type SymbolBadgeProps = {
-  readonly symbol: PartnerSymbol
+  readonly symbol: PersonSymbol
   readonly color: string
   readonly size?: Size
 }

@@ -17,9 +17,8 @@ import {
   withPartnerLook,
   type PartnerLook,
   type PartnerLooks,
-  type PersonLook,
 } from './partnerLook'
-import { PersonBadge } from './PersonBadge'
+import { LookPreview } from './LookPreview'
 import { SymbolPicker } from './SymbolPicker'
 
 export const PARTNER_PATH = '/settings/partner'
@@ -77,7 +76,7 @@ function PartnerLookEditor({ partner, viewerId, looks, onSave: save }: PartnerLo
 
   return (
     <>
-      <Preview look={look} />
+      <LookPreview look={look} testId="partner-preview" />
       {/* remounted when the saved nickname changes, e.g. after a reset */}
       <NicknameField key={look.name} saved={look.name} onSave={saveNickname} />
       <p className="px-4 pt-2 text-[13px] text-label-secondary">
@@ -87,7 +86,8 @@ function PartnerLookEditor({ partner, viewerId, looks, onSave: save }: PartnerLo
         <SymbolPicker
           value={symbol}
           color={look.badge.color}
-          onChange={(value) => save({ ...stored, symbol: value })}
+          // no initial is offered here, so there is always a symbol
+          onChange={(value) => value && save({ ...stored, symbol: value })}
         />
       </SettingSection>
       <SettingSection title="Color">
@@ -107,21 +107,6 @@ function PartnerLookEditor({ partner, viewerId, looks, onSave: save }: PartnerLo
         </Button>
       </div>
     </>
-  )
-}
-
-/** Your partner as the person switch shows them. */
-function Preview({ look }: { readonly look: PersonLook }) {
-  return (
-    <div className="mt-4 flex justify-center">
-      <span
-        data-testid="partner-preview"
-        className="flex h-14 items-center gap-3 rounded-full bg-bg-elevated pr-6 pl-2 text-[19px] font-bold shadow-card"
-      >
-        <PersonBadge look={look} size="large" />
-        {look.name}
-      </span>
-    </div>
   )
 }
 
