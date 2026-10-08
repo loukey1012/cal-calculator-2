@@ -199,6 +199,7 @@ describe('Appearance pages', () => {
     await user.click(radio('Accent color', 'White'))
     expect(updateProfile).toHaveBeenLastCalledWith('u1', { accent_color: '#ffffff' })
     fireEvent.change(screen.getByLabelText('Custom color'), { target: { value: '#123456' } })
+    await user.click(screen.getByRole('button', { name: 'Use this color' }))
 
     await waitFor(() =>
       expect(updateProfile).toHaveBeenLastCalledWith('u1', { accent_color: '#123456' }),
@@ -296,6 +297,7 @@ describe('Ring colors', () => {
     fireEvent.change(within(sheet).getByLabelText('Custom color'), {
       target: { value: '#123456' },
     })
+    await user.click(within(sheet).getByRole('button', { name: 'Use this color' }))
 
     await waitFor(() =>
       expect(updateProfile).toHaveBeenCalledWith('u1', {

@@ -157,6 +157,7 @@ describe('Partner page', () => {
     await screen.findByLabelText('Nickname')
 
     fireEvent.change(screen.getByLabelText('Custom color'), { target: { value: '#123456' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Use this color' }))
 
     await waitFor(() => expect(savedLooks()).toEqual({ u2: { color: '#123456' } }))
   })

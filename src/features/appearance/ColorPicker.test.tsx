@@ -27,24 +27,35 @@ describe('ColorPicker', () => {
     expect(group.getByTestId('custom-color')).toHaveAttribute('data-selected', 'false')
   })
 
-  test('any color can be picked: it is used once the color picker closes', () => {
-    const { onChange, group } = renderPicker('#007aff')
-    const custom = group.getByLabelText('Custom color')
+  test('moving through the system color picker only previews; "Use this color" saves it', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const { onChange } = renderPicker('#007aff')
+    const custom = screen.getByLabelText('Custom color')
+    expect(screen.queryByRole('button', { name: 'Use this color' })).not.toBeInTheDocument()
 
+    // Act: iOS reports colors while the finger moves, and on closing
+    fireEvent.input(custom, { target: { value: '#111111' } })
     fireEvent.change(custom, { target: { value: '#ABCDEF' } })
 
+    // Assert
+    expect(onChange).not.toHaveBeenCalled()
+    expect(screen.getByLabelText('Custom color')).toBe(custom)
+    await user.click(screen.getByRole('button', { name: 'Use this color' }))
     expect(onChange).toHaveBeenCalledWith('#abcdef')
   })
 
-  test('picking a custom color twice uses both picks', () => {
+  test('picking a preset drops an unused custom color', async () => {
+    const user = userEvent.setup()
     const onChange = vi.fn()
     const { rerender } = render(<ColorPicker label="Color" value="#007aff" onChange={onChange} />)
     fireEvent.change(screen.getByLabelText('Custom color'), { target: { value: '#111111' } })
-    rerender(<ColorPicker label="Color" value="#111111" onChange={onChange} />)
 
-    fireEvent.change(screen.getByLabelText('Custom color'), { target: { value: '#222222' } })
+    await user.click(screen.getByRole('radio', { name: 'White' }))
+    rerender(<ColorPicker label="Color" value="#ffffff" onChange={onChange} />)
 
-    expect(onChange).toHaveBeenLastCalledWith('#222222')
+    expect(screen.queryByRole('button', { name: 'Use this color' })).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Custom color')).toHaveValue('#ffffff')
   })
 
   test('a color that is no preset shows as the custom choice', () => {

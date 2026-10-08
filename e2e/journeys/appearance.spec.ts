@@ -144,6 +144,7 @@ test('the accent can be White (with a thin edge on light cards) or any custom co
 
   // the system color picker sets the input's value and closes
   await settings.getByLabel('Custom color').fill('#123456')
+  await settings.getByRole('button', { name: 'Use this color' }).click()
   await expect.poll(() => variable('--accent')).toBe('#123456')
   await expect.poll(() => variable('--accent-edge')).toBe('transparent')
   await expect
