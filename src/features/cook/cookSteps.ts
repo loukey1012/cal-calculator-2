@@ -3,6 +3,7 @@ import type { ComposerStep } from '../dishes/composerSteps'
 export const COOK_PATH = '/cook'
 const ADD_SEGMENT = 'add'
 const CUSTOM_SEGMENT = 'custom'
+const NEW_INGREDIENT_SEGMENT = 'new'
 const LINE_PREFIX = 'line-'
 
 /**
@@ -17,6 +18,8 @@ export function cookStepPath(step: ComposerStep): string {
       return `${COOK_PATH}/${ADD_SEGMENT}`
     case 'custom':
       return `${COOK_PATH}/${ADD_SEGMENT}/${CUSTOM_SEGMENT}`
+    case 'newIngredient':
+      return `${COOK_PATH}/${ADD_SEGMENT}/${NEW_INGREDIENT_SEGMENT}`
     case 'newLine':
       return `${COOK_PATH}/${ADD_SEGMENT}/${encodeURIComponent(step.ingredientId)}`
     case 'editLine':
@@ -39,6 +42,7 @@ function stepOfSegments(segments: readonly string[]): ComposerStep | null {
   if (first === ADD_SEGMENT) {
     if (second === undefined) return { kind: 'pick' }
     if (second === CUSTOM_SEGMENT) return { kind: 'custom' }
+    if (second === NEW_INGREDIENT_SEGMENT) return { kind: 'newIngredient' }
     const ingredientId = decoded(second)
     return ingredientId ? { kind: 'newLine', ingredientId } : null
   }
@@ -58,5 +62,12 @@ export function cookStepOf(path: string): ComposerStep {
 
 /** Where Back leads from a step. */
 export function parentStep(step: ComposerStep): ComposerStep {
-  return step.kind === 'newLine' || step.kind === 'custom' ? { kind: 'pick' } : { kind: 'main' }
+  switch (step.kind) {
+    case 'custom':
+    case 'newIngredient':
+    case 'newLine':
+      return { kind: 'pick' }
+    default:
+      return { kind: 'main' }
+  }
 }

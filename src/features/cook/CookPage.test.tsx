@@ -5,7 +5,7 @@ import { Route, Routes, useLocation } from 'react-router'
 import { CurrentUserContext } from '../../app/currentUser'
 import { toLocalDateString } from '../../lib/dates'
 import { renderWithProviders } from '../../test/render'
-import { ingredient } from '../ingredients/testData'
+import { category, categoryGroup, ingredient } from '../ingredients/testData'
 
 vi.mock('../meals/mealsApi', () => ({
   fetchDay: vi.fn(),
@@ -15,7 +15,11 @@ vi.mock('../meals/mealsApi', () => ({
 }))
 vi.mock('../ingredients/ingredientsApi', () => ({
   fetchIngredients: vi.fn(),
-  fetchCategories: vi.fn().mockResolvedValue([]),
+  fetchCategories: vi.fn(),
+  fetchCategoryGroups: vi.fn(),
+  createIngredient: vi.fn(),
+  createCategory: vi.fn(),
+  updateIngredient: vi.fn(),
 }))
 vi.mock('../household/householdApi', () => ({ fetchMembers: vi.fn() }))
 vi.mock('../dishes/dishesApi', () => ({
@@ -26,7 +30,12 @@ vi.mock('../dishes/dishesApi', () => ({
 }))
 
 import { fetchMembers } from '../household/householdApi'
-import { fetchIngredients } from '../ingredients/ingredientsApi'
+import {
+  createIngredient,
+  fetchCategories,
+  fetchCategoryGroups,
+  fetchIngredients,
+} from '../ingredients/ingredientsApi'
 import { fetchDay } from '../meals/mealsApi'
 import { fetchLeftoverDishes, saveDish } from '../dishes/dishesApi'
 import type { Dish } from '../dishes/portions'
@@ -52,8 +61,14 @@ const ME = {
 }
 const HER = profile('u2', 'Lisa')
 
-const PATTY = ingredient({ id: 'patty', name: 'Patty', kcal_100: 240, protein_100: 20 })
-const TOMATO = ingredient({ id: 'tomato', name: 'Tomato', kcal_100: 18 })
+const PATTY = ingredient({
+  id: 'patty',
+  name: 'Patty',
+  kcal_100: 240,
+  protein_100: 20,
+  category_id: 'c-meat',
+})
+const TOMATO = ingredient({ id: 'tomato', name: 'Tomato', kcal_100: 18, category_id: 'c-veg' })
 const NOODLES = ingredient({ id: 'noodles', name: 'Noodles', kcal_100: 360 })
 
 const CHILI: Dish = {
@@ -83,9 +98,10 @@ function LocationProbe() {
 
 const currentPath = () => screen.getByTestId('path').textContent
 
-function renderCook(route = '/cook') {
+function renderCook(route = '/cook', appearance: Record<string, unknown> = {}) {
+  const profile = { ...ME, appearance: { ...ME.appearance, ...appearance } }
   return renderWithProviders(
-    <CurrentUserContext value={{ profile: ME, householdId: 'h1' }}>
+    <CurrentUserContext value={{ profile, householdId: 'h1' }}>
       <CookSession>
         <Routes>
           <Route path="/cook/*" element={<CookPage />} />
@@ -121,6 +137,11 @@ beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(fetchDay).mockResolvedValue([])
   vi.mocked(fetchIngredients).mockResolvedValue([PATTY, TOMATO, NOODLES])
+  vi.mocked(fetchCategories).mockResolvedValue([
+    category('c-meat', 'Meat', 'g-fresh'),
+    category('c-veg', 'Veggies', 'g-fresh'),
+  ])
+  vi.mocked(fetchCategoryGroups).mockResolvedValue([categoryGroup('g-fresh', 'Fresh')])
   vi.mocked(fetchMembers).mockResolvedValue([ME, HER])
   vi.mocked(saveDish).mockResolvedValue()
   vi.mocked(fetchLeftoverDishes).mockResolvedValue([])
@@ -466,6 +487,122 @@ describe('steps', () => {
     renderCook('/cook/add/gone')
 
     expect(await screen.findByText('This ingredient is no longer available.')).toBeInTheDocument()
+  })
+})
+
+/** The server creates Feta, and lists it from then on. */
+function createsFeta() {
+  const feta = ingredient({ id: 'feta', name: 'Feta', kcal_100: 264 })
+  vi.mocked(createIngredient).mockImplementation(async () => {
+    vi.mocked(fetchIngredients).mockResolvedValue([PATTY, TOMATO, NOODLES, feta])
+    return feta
+  })
+}
+
+describe('the ingredient search', () => {
+  test('a missing ingredient is created right there and goes straight to its amount', async () => {
+    // Arrange
+    createsFeta()
+    const user = userEvent.setup()
+    renderCook()
+    await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
+    await user.type(screen.getByLabelText('Search ingredients'), ' Feta ')
+    expect(await screen.findByText('No matches.')).toBeInTheDocument()
+
+    // Act: the name searched for is already filled in
+    await user.click(screen.getByRole('button', { name: /New ingredient/ }))
+    expect(currentPath()).toBe('/cook/add/new')
+    expect(screen.getByLabelText('Name')).toHaveValue('Feta')
+    await user.click(screen.getByRole('switch', { name: 'Per 100 g' }))
+    await user.type(screen.getByLabelText('Calories per 100 g'), '264')
+    await user.click(screen.getByRole('button', { name: 'Save ingredient' }))
+
+    // Assert: saved to the shared ingredients, then on to the amount
+    expect(createIngredient).toHaveBeenCalledWith(
+      'h1',
+      expect.objectContaining({ name: 'Feta', kcal_100: 264 }),
+    )
+    expect(await screen.findByLabelText('Amount')).toBeInTheDocument()
+    expect(currentPath()).toBe('/cook/add/feta')
+    await user.type(screen.getByLabelText('Amount'), '50')
+    await user.click(screen.getByRole('button', { name: 'Add to dish' }))
+    expect(screen.getByRole('button', { name: /Feta/ })).toBeInTheDocument()
+  })
+
+  test('Back from the new ingredient’s amount leads to the search, not to the form', async () => {
+    createsFeta()
+    const user = userEvent.setup()
+    renderCook()
+    await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
+    await user.click(screen.getByRole('button', { name: /New ingredient/ }))
+    await user.type(screen.getByLabelText('Name'), 'Feta')
+    await user.click(screen.getByRole('switch', { name: 'Per 100 g' }))
+    await user.type(screen.getByLabelText('Calories per 100 g'), '264')
+    await user.click(screen.getByRole('button', { name: 'Save ingredient' }))
+    await screen.findByLabelText('Amount')
+
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+
+    expect(currentPath()).toBe('/cook/add')
+  })
+
+  test('a new ingredient with missing values is not saved', async () => {
+    const user = userEvent.setup()
+    renderCook()
+    await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
+    await user.click(screen.getByRole('button', { name: /New ingredient/ }))
+
+    await user.click(screen.getByRole('button', { name: 'Save ingredient' }))
+
+    expect(screen.getByText('Enter a name')).toBeInTheDocument()
+    expect(createIngredient).not.toHaveBeenCalled()
+    expect(currentPath()).toBe('/cook/add/new')
+  })
+
+  test('category chips filter the search, and stay chosen after looking at an amount', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    renderCook()
+    await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
+    const chips = within(await screen.findByRole('group', { name: 'Categories' }))
+
+    // Act
+    await user.click(chips.getByRole('button', { name: 'Veggies' }))
+
+    // Assert
+    expect(screen.getByRole('button', { name: /Tomato/ })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Patty/ })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /Tomato/ }))
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+    expect(
+      within(screen.getByRole('group', { name: 'Categories' })).getByRole('button', {
+        name: 'Veggies',
+      }),
+    ).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  test('the chips follow the chosen layout, e.g. grouped', async () => {
+    const user = userEvent.setup()
+    renderCook('/cook', { categoryLayout: 'grouped' })
+    await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
+
+    await user.click(await screen.findByRole('button', { name: 'Fresh' }))
+
+    expect(screen.getByRole('button', { name: /Patty/ })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Noodles/ })).not.toBeInTheDocument()
+  })
+
+  test('a new search starts with all categories again', async () => {
+    const user = userEvent.setup()
+    renderCook()
+    await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
+    const chips = within(await screen.findByRole('group', { name: 'Categories' }))
+    await user.click(chips.getByRole('button', { name: 'Veggies' }))
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+
+    await user.click(screen.getByRole('button', { name: 'Add ingredient' }))
+
+    expect(await screen.findByRole('button', { name: /Noodles/ })).toBeInTheDocument()
   })
 })
 

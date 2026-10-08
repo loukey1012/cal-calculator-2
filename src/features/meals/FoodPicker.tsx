@@ -4,28 +4,62 @@ import { GroupedSection } from '../../components/ios/GroupedSection'
 import { ListRow } from '../../components/ios/ListRow'
 import { SearchField } from '../../components/ios/SearchField'
 import { toUserMessage } from '../../lib/errors'
-import { useIngredients } from '../ingredients/hooks'
+import { useMyAppearance } from '../appearance/useMyAppearance'
+import { CategoryFilterChips } from '../ingredients/CategoryFilterChips'
+import { useCategories, useCategoryGroups, useIngredients } from '../ingredients/hooks'
 import type { Ingredient } from '../ingredients/ingredientsApi'
-import { ALL_CATEGORIES, filterIngredients, nutritionSummary } from '../ingredients/listing'
+import { filterIngredients, nutritionSummary, type IngredientFilter } from '../ingredients/listing'
 
 type FoodPickerProps = {
-  /** the search, kept by the caller (it survives going to the amount and back) */
-  readonly query: string
-  readonly onQueryChange: (query: string) => void
+  /** the search and category, kept by the caller (they survive going to the amount and back) */
+  readonly filter: IngredientFilter
+  readonly onFilterChange: (filter: IngredientFilter) => void
   readonly onPick: (ingredient: Ingredient) => void
+  /** create a missing ingredient, saved to the shared database */
+  readonly onNew: () => void
   readonly onCustom: () => void
 }
 
-export function FoodPicker({ query, onQueryChange, onPick, onCustom }: FoodPickerProps) {
+function Note({ text }: { readonly text: string }) {
+  return <p className="mt-6 px-4 text-center text-[15px] text-label-secondary">{text}</p>
+}
+
+export function FoodPicker({ filter, onFilterChange, onPick, onNew, onCustom }: FoodPickerProps) {
   const { householdId } = useCurrentUser()
   // a partner may have added ingredients since the list was loaded
   const ingredients = useIngredients(householdId, { alwaysRefresh: true })
-  const matches = filterIngredients(ingredients.data ?? [], { query, category: ALL_CATEGORIES })
+  const categories = useCategories(householdId)
+  const groups = useCategoryGroups(householdId)
+  const { categoryLayout } = useMyAppearance()
+  const categoryList = categories.data ?? []
+  const matches = filterIngredients(ingredients.data ?? [], filter, categoryList)
+  const name = filter.query.trim()
 
   return (
     <>
-      <SearchField label="Search ingredients" value={query} onChange={onQueryChange} />
+      <SearchField
+        label="Search ingredients"
+        value={filter.query}
+        onChange={(query) => onFilterChange({ ...filter, query })}
+      />
+      {categoryList.length > 0 && (
+        <CategoryFilterChips
+          layout={categoryLayout}
+          categories={categoryList}
+          groups={groups.data ?? []}
+          ingredients={ingredients.data ?? []}
+          filter={filter.category}
+          onChange={(category) => onFilterChange({ ...filter, category })}
+        />
+      )}
       <GroupedSection>
+        <ListRow
+          title="New ingredient"
+          subtitle={
+            name ? `Save “${name}” to your ingredients` : 'Save a new one to your ingredients'
+          }
+          onClick={onNew}
+        />
         <ListRow
           title="Custom item"
           subtitle="Quick one-off, not saved to your ingredients"
@@ -33,15 +67,15 @@ export function FoodPicker({ query, onQueryChange, onPick, onCustom }: FoodPicke
         />
       </GroupedSection>
       {ingredients.isError && <ErrorBanner message={toUserMessage(ingredients.error)} />}
-      {ingredients.isPending && (
-        <p className="mt-6 text-center text-[15px] text-label-secondary">Loading…</p>
-      )}
+      {ingredients.isPending && <Note text="Loading…" />}
       {ingredients.isSuccess && matches.length === 0 && (
-        <p className="mt-6 px-4 text-center text-[15px] text-label-secondary">
-          {ingredients.data.length === 0
-            ? 'No ingredients yet. Use a custom item, or add ingredients in the Ingredients tab.'
-            : 'No matches.'}
-        </p>
+        <Note
+          text={
+            ingredients.data.length === 0
+              ? 'No ingredients yet. Add a new one, or use a custom item.'
+              : 'No matches.'
+          }
+        />
       )}
       {matches.length > 0 && (
         <GroupedSection header="Ingredients">

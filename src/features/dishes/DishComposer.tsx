@@ -7,6 +7,7 @@ import { ListRow } from '../../components/ios/ListRow'
 import { TextField } from '../../components/ios/TextField'
 import { toUserMessage } from '../../lib/errors'
 import { useIngredients } from '../ingredients/hooks'
+import { NewIngredientForm } from '../ingredients/NewIngredientForm'
 import { CustomItemForm } from '../meals/CustomItemForm'
 import { FoodPicker } from '../meals/FoodPicker'
 import { availableUnits } from '../nutrition/amounts'
@@ -140,10 +141,19 @@ function StepView({ step, steps, dish, portions, onAdd, onChange }: StepViewProp
     case 'pick':
       return (
         <FoodPicker
-          query={steps.search}
-          onQueryChange={steps.onSearch}
+          filter={steps.filter}
+          onFilterChange={steps.onFilter}
           onPick={(ingredient) => steps.open({ kind: 'newLine', ingredientId: ingredient.id })}
+          onNew={() => steps.open({ kind: 'newIngredient' })}
           onCustom={() => steps.open({ kind: 'custom' })}
+        />
+      )
+    case 'newIngredient':
+      return (
+        <NewIngredientForm
+          initialName={steps.filter.query}
+          // on to its amount; Back from there leads to the search, not to this form
+          onSaved={(ingredient) => steps.replace({ kind: 'newLine', ingredientId: ingredient.id })}
         />
       )
     case 'custom':

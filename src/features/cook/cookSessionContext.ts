@@ -1,4 +1,5 @@
 import { createContext, useContext, type Dispatch, type SetStateAction } from 'react'
+import type { IngredientFilter } from '../ingredients/listing'
 import type { CookDraft } from './cookDraft'
 
 // after saving, unless Cook was opened from somewhere else
@@ -16,9 +17,9 @@ export type CookSessionValue = {
   /** where saving leads: Today, or where an empty meal opened Cook from */
   readonly returnTo: string
   readonly setReturnTo: (path: string) => void
-  /** the ingredient search, kept while going to the amount and back */
-  readonly search: string
-  readonly setSearch: (query: string) => void
+  /** the ingredient search and category, kept while going to the amount and back */
+  readonly filter: IngredientFilter
+  readonly setFilter: (filter: IngredientFilter) => void
 }
 
 export const CookSessionContext = createContext<CookSessionValue | null>(null)

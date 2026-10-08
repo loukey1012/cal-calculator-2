@@ -15,6 +15,8 @@ Built for a two-person household: both members log their own meals, can see and 
 - **One place for everything you eat**, alone or together: a snack, a quick breakfast or a dish cooked for two. The Today and History pages only show, change and delete.
 - **Who eats:** tap yourself and/or your partner. **When:** the day (today, or an earlier one) and the meal, which follows the time of day until you pick one (e.g. Dinner in the evening).
 - Add ingredients from the shared **ingredient database** (with search) or as a **custom one-off item** that isn't saved to the database. Amounts in **grams or the ingredient's own unit** (e.g. "Riegel"), with a **live preview** of calories and macros.
+- The ingredient search has the **category chips** of the Ingredients page, in the layout chosen under Appearance › Category chips. The search and the chosen chip stay while you look at an amount and go back; a new search starts over.
+- Not in the database yet? **New ingredient** in the search creates it right there (the name you searched for already filled in, same form as on the Ingredients page). It is saved to the shared ingredients and goes straight to its amount; Back from there leads to the search. Also in the dish editor on Today and History.
 - Adding an ingredient goes **step by step like the Settings pages**: the search and the amount each slide in as a page of their own. **‹ Back** or a **swipe to the right** goes back one step (amount → search, still showing what you searched for → dish), never to another tab. Back in the dish editor on Today and History goes one step at a time too.
 - With two people, each ingredient is **Shared** (split by the dish's split), **only for one person** (e.g. the tomato on her burger) or has **own amounts** per person (noodles 120 g / 100 g). The split for shared ingredients: **Equal**, **Count** (3 toasts : 2 toasts), **%**, or **Weight** (weigh the cooked dish and each plate). What each portion gets is shown live; a split that can't work (e.g. 110 %) says why.
 - Optional **dish name** and **leftover portions** (each takes its share like a person would).
@@ -109,10 +111,10 @@ Planned 2026-10-07. Each group is built, tested and shipped before the next one 
 - [x] Adding an ingredient (search → amount) is a real stack of steps: a swipe to the right goes back **one step** (amount → search → dish), like the Settings pages, instead of jumping to the Today tab
 - [x] The **‹ Back** button also goes back one step instead of all the way to the dish, on the Cook tab and in the dish editor on Today and History
 
-**2. Cook: ingredient search**
+**2. Cook: ingredient search** (done)
 
-- [ ] **New ingredient** in the ingredient search: if it doesn't exist yet, create it right there (the name you searched for already filled in). It is saved to the shared ingredients and goes straight to choosing the amount
-- [ ] **Category chips** in the ingredient search, using the layout chosen under Appearance › Category chips (one line, all on screen or grouped)
+- [x] **New ingredient** in the ingredient search: if it doesn't exist yet, create it right there (the name you searched for already filled in). It is saved to the shared ingredients and goes straight to choosing the amount
+- [x] **Category chips** in the ingredient search, using the layout chosen under Appearance › Category chips (one line, all on screen or grouped)
 
 **3. Colors: one color picker everywhere**
 
@@ -251,7 +253,7 @@ pnpm icons          # regenerate the icon PNGs: the default set from public/icon
 
 To add an app icon choice: put its SVG in `public/icons/<name>/icon.svg`, add `<name>` to `APP_ICONS` (`src/features/appearance/appearance.ts`) and a label to `APP_ICON_OPTIONS`, then run `pnpm icons`.
 
-**End-to-end journeys** (log a meal on Cook, Back and the back swipe going one step at a time on Cook, a single food changed in place, cooking together for two, sharing a meal afterwards, leftovers, goals and partner, partner nickname and symbol, Today fitting the screen, history, ingredients, category management, offline, a partner's change showing up live and after the app was in the background, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color) run the real app against the dev project. Build it against dev and pass the test credentials:
+**End-to-end journeys** (log a meal on Cook, Back and the back swipe going one step at a time on Cook, category chips and creating a missing ingredient from the Cook search, a single food changed in place, cooking together for two, sharing a meal afterwards, leftovers, goals and partner, partner nickname and symbol, Today fitting the screen, history, ingredients, category management, offline, a partner's change showing up live and after the app was in the background, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color) run the real app against the dev project. Build it against dev and pass the test credentials:
 
 ```bash
 set -a; . ./.env.test.local; set +a

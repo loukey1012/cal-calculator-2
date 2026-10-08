@@ -6,6 +6,7 @@ describe('Cook steps as pages', () => {
     [{ kind: 'main' } as const, '/cook'],
     [{ kind: 'pick' } as const, '/cook/add'],
     [{ kind: 'custom' } as const, '/cook/add/custom'],
+    [{ kind: 'newIngredient' } as const, '/cook/add/new'],
     [{ kind: 'newLine', ingredientId: 'patty' } as const, '/cook/add/patty'],
     [{ kind: 'editLine', lineId: 'l-1' } as const, '/cook/line-l-1'],
   ])('%o has its own address %s, and back', (step, path) => {

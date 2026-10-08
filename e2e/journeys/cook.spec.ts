@@ -196,3 +196,55 @@ test('adding an ingredient: Back and the back swipe go one step at a time', asyn
   await expect(page).toHaveURL(/\/cook$/)
   await expect(cook.getByRole('button', { name: /Tomato/ })).toBeVisible()
 })
+
+test('the Cook search: category chips, and a missing ingredient created right there', async ({
+  page,
+  backend,
+}) => {
+  const me = await backend.user('Lukas')
+  const household = await backend.household([me])
+  const { data: categories } = await backend.admin
+    .from('categories')
+    .insert([
+      { household_id: household, name: 'Meat' },
+      { household_id: household, name: 'Veggies' },
+    ])
+    .select('id, name')
+  const categoryId = (name: string) => categories?.find((row) => row.name === name)?.id
+  await backend.admin.from('ingredients').insert([
+    { household_id: household, name: 'Patty', kcal_100: 240, category_id: categoryId('Meat') },
+    { household_id: household, name: 'Tomato', kcal_100: 18, category_id: categoryId('Veggies') },
+  ])
+  await logIn(page, me)
+  await openCook(page)
+  const cook = activePage(page)
+  await cook.getByRole('button', { name: 'Add ingredient' }).click()
+
+  // the chips filter the search
+  await cook
+    .getByRole('group', { name: 'Categories' })
+    .getByRole('button', { name: 'Veggies' })
+    .click()
+  await expect(cook.getByRole('button', { name: /Tomato/ })).toBeVisible()
+  await expect(cook.getByRole('button', { name: /Patty/ })).toHaveCount(0)
+
+  // not there yet: create it with the name searched for, then straight to its amount
+  await cook.getByRole('group', { name: 'Categories' }).getByRole('button', { name: 'All' }).click()
+  await cook.getByLabel('Search ingredients').fill('Feta')
+  await expect(cook.getByText('No matches.')).toBeVisible()
+  await cook.getByRole('button', { name: /New ingredient/ }).click()
+  await expect(cook.getByLabel('Name', { exact: true })).toHaveValue('Feta')
+  await cook.getByRole('switch', { name: 'Per 100 g' }).click()
+  await cook.getByLabel('Calories per 100 g').fill('264')
+  await cook.getByRole('button', { name: 'Save ingredient' }).click()
+  await cook.getByLabel('Amount').fill('50')
+  await cook.getByRole('button', { name: 'Add to dish' }).click()
+
+  await expect(cook.getByRole('button', { name: /Feta.*132 kcal/ })).toBeVisible()
+  const { data: saved } = await backend.admin
+    .from('ingredients')
+    .select('name, kcal_100')
+    .eq('household_id', household)
+    .eq('name', 'Feta')
+  expect(saved).toEqual([{ name: 'Feta', kcal_100: 264 }])
+})

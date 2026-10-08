@@ -108,12 +108,18 @@ export function useSaveIngredient(
   householdId: string,
 ): UseMutationResult<Ingredient, Error, SaveIngredientInput> {
   const invalidate = useInvalidateIngredients(householdId)
+  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async ({ id, form, categories }: SaveIngredientInput) => {
       const categoryId = await resolveCategoryId(householdId, form.category, categories)
       const input = { ...form.ingredient, category_id: categoryId }
       return id ? updateIngredient(id, input) : createIngredient(householdId, input)
     },
+    // in the list at once, e.g. for the amount step right after creating it on Cook
+    onSuccess: (saved) =>
+      queryClient.setQueryData<Ingredient[]>(ingredientKeys.ingredients(householdId), (list) =>
+        list ? [...list.filter((ingredient) => ingredient.id !== saved.id), saved] : list,
+      ),
     // also after a failure: a category may have been created before the ingredient failed
     onSettled: invalidate,
   })
