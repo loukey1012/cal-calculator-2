@@ -155,16 +155,17 @@ Planned 2026-10-07, all five groups shipped 2026-10-08, one group at a time.
 
 ## Coming next
 
-| Area        | Planned                                                                                            |
-| ----------- | -------------------------------------------------------------------------------------------------- |
-| Recipes     | Save dishes and meals by name as recipes, and cook or log them again (with remembered own amounts) |
-| Quick picks | Recent and favorite ingredients                                                                    |
-| Meal reuse  | Copy a meal to another day, or save it as a template                                               |
-| Trends      | Charts of calories and macros over weeks and months                                                |
-| Weight      | Track body weight over time                                                                        |
-| Export      | Download your logged data as CSV                                                                   |
-| Reminders   | Push reminders to log meals                                                                        |
-| Cheat days  | Mark a day as a cheat day                                                                          |
+| Area        | Planned                                                                                                                       |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Recipes     | Save dishes and meals by name as recipes, and cook or log them again (with remembered own amounts)                            |
+| Quick picks | Recent and favorite ingredients                                                                                               |
+| Meal reuse  | Copy a meal to another day, or save it as a template                                                                          |
+| Trends      | Charts of calories and macros over weeks and months                                                                           |
+| Weight      | Track body weight over time                                                                                                   |
+| Export      | Download your logged data as CSV                                                                                              |
+| Reminders   | Push reminders to log meals                                                                                                   |
+| Cheat days  | Mark a day as a cheat day                                                                                                     |
+| Eating out  | Log a meal whose calories are unknown (e.g. a kebab): an estimate from a photo or description (AI or similar), to be explored |
 
 **Recipes** and meal templates will build on the Cook tab: a recipe fills in a dish (the same ingredient lines and splits), saved by name.
 
