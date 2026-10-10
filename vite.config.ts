@@ -6,6 +6,16 @@ import { execSync } from 'node:child_process'
 
 const APP_NAME = 'CALculator'
 
+// Open Food Facts' product search, reached through the app's own address (vercel.json does the
+// same in production): its servers don't allow searches straight from the browser
+const OFF_SEARCH_PROXY = {
+  '/off/search': {
+    target: 'https://search.openfoodfacts.org',
+    changeOrigin: true,
+    rewrite: (path: string) => path.replace(/^\/off\/search/, '/search'),
+  },
+}
+
 /** The commit being built: Vercel names it; locally ask git. */
 function buildCommit(): string {
   if (process.env.VERCEL_GIT_COMMIT_SHA) return process.env.VERCEL_GIT_COMMIT_SHA
@@ -17,6 +27,8 @@ function buildCommit(): string {
 }
 
 export default defineConfig({
+  server: { proxy: OFF_SEARCH_PROXY },
+  preview: { proxy: OFF_SEARCH_PROXY },
   // the running version (src/app/appVersion.ts): a new commit is a new version
   define: {
     __APP_VERSION__: JSON.stringify({ id: buildCommit(), builtAt: new Date().toISOString() }),
@@ -80,6 +92,8 @@ export default defineConfig({
         // wasm: the barcode scanner's engine, so scanning works offline too
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,wasm}'],
         navigateFallback: '/index.html',
+        // the search proxy is never the app page
+        navigateFallbackDenylist: [/^\/off\//],
       },
     }),
   ],

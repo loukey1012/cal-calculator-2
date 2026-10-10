@@ -327,8 +327,8 @@ describe('lookupProduct', () => {
 describe('searchProducts', () => {
   test('products found by name come back ready to fill the form, without unusable ones', async () => {
     const fetch = respond(200, {
-      products: [
-        { ...COLA_BOTTLES, code: '4260562940909' },
+      hits: [
+        { ...COLA_BOTTLES, brands: ['ahead', 'Ahead GmbH'], code: '4260562940909' },
         { code: '111', product_name: 'No values', nutriments: {} },
         { code: '222', nutriments: { 'energy-kcal_100g': 50 } },
         'garbage',
@@ -340,11 +340,18 @@ describe('searchProducts', () => {
 
     expect(result).toMatchObject({
       kind: 'found',
-      hits: [{ barcode: '4260562940909', values: { name: 'Low Sugar Gummies Cola Bottles' } }],
+      hits: [
+        {
+          barcode: '4260562940909',
+          values: { name: 'Low Sugar Gummies Cola Bottles', brand: 'ahead' },
+        },
+      ],
     })
-    const url = new URL(String(fetch.mock.calls[0]?.[0]))
-    expect(url.origin + url.pathname).toBe('https://world.openfoodfacts.org/cgi/search.pl')
-    expect(url.searchParams.get('search_terms')).toBe('cola bottles')
+    // through the app's own address, which forwards to search.openfoodfacts.org
+    const url = new URL(String(fetch.mock.calls[0]?.[0]), 'https://app.example')
+    expect(url.pathname).toBe('/off/search')
+    expect(url.searchParams.get('q')).toBe('cola bottles')
+    expect(url.searchParams.get('langs')).toBe('de,en')
   })
 
   test('too many searches are told apart from being offline', async () => {

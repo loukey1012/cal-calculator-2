@@ -125,3 +125,52 @@ test('on Cook, an unknown package goes to the saved ingredient it is; an estimat
     .single()
   expect(skyr).toEqual({ barcode: BARCODE })
 })
+
+test('food without a label gets the values of a similar product found by name', async ({
+  page,
+  backend,
+}) => {
+  const me = await backend.user('Dora')
+  const household = await backend.household([me])
+  // the app searches through its own address; answered here instead of by Open Food Facts
+  await page.route('**/off/search?*', (route) =>
+    route.fulfill({
+      json: {
+        hits: [
+          {
+            code: '7313700161494',
+            product_name: 'Laugenbrezel',
+            brands: ['Anna’s Best'],
+            nutriments: { 'energy-kcal_100g': 376 },
+          },
+        ],
+      },
+    }),
+  )
+  await logIn(page, me)
+  await page
+    .getByRole('navigation', { name: 'Tabs' })
+    .getByRole('button', { name: 'Ingredients' })
+    .click()
+  await activePage(page).getByRole('button', { name: 'Add ingredient' }).click()
+  const sheet = page.getByRole('dialog', { name: 'New Ingredient' })
+
+  await sheet.getByLabel('Name', { exact: true }).fill('Brezel vom Bäcker')
+  await sheet.getByRole('button', { name: 'Search Open Food Facts' }).click()
+  await sheet.getByRole('searchbox', { name: 'Search Open Food Facts' }).fill('Laugenbrezel')
+  await sheet.getByRole('button', { name: 'Search', exact: true }).click()
+  await sheet.getByRole('button', { name: /Laugenbrezel/ }).click()
+  await expect(sheet.getByLabel('Calories per 100 g', { exact: true })).toHaveValue('376')
+  await sheet.getByRole('button', { name: 'Save' }).click()
+  await expect(sheet).toBeHidden()
+
+  await expect
+    .poll(async () => {
+      const { data } = await backend.admin
+        .from('ingredients')
+        .select('name, brand, barcode, kcal_100')
+        .eq('household_id', household)
+      return data
+    })
+    .toEqual([{ name: 'Brezel vom Bäcker', brand: 'Anna’s Best', barcode: null, kcal_100: 376 }])
+})

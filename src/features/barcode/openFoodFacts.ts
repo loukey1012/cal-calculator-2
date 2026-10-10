@@ -10,13 +10,15 @@ import { nutritionWarnings, resolveNutrition } from './productNutrition'
  */
 
 const API = 'https://world.openfoodfacts.org/api/v2/product'
-const SEARCH_API = 'https://world.openfoodfacts.org/cgi/search.pl'
+// the app's own address for search.openfoodfacts.org (see vercel.json and vite.config.ts)
+const SEARCH_API = '/off/search'
+const SEARCH_LANGUAGES = 'de,en'
 const FIELDS =
   'product_name,product_name_de,brands,serving_quantity,serving_quantity_unit,serving_size,product_quantity,product_quantity_unit,quantity,image_front_small_url,nutriments'
 const TIMEOUT_MS = 6000
 const SEARCH_TIMEOUT_MS = 10000
 const SEARCH_PAGE_SIZE = 20
-// Open Food Facts allows about 10 searches a minute and answers 429 or 503 beyond that
+// answers when Open Food Facts gets too many searches
 const BUSY_STATUSES = new Set([429, 503])
 const IMAGE_HOST = 'https://images.openfoodfacts.org/'
 const KJ_PER_KCAL = 4.184
@@ -51,7 +53,12 @@ const amount = z
 const productSchema = z.object({
   product_name: z.string().optional(),
   product_name_de: z.string().optional(),
-  brands: z.string().optional(),
+  // a text from the product API, a list from the search
+  brands: z
+    .union([z.string(), z.array(z.string())])
+    .optional()
+    .transform((brands) => (Array.isArray(brands) ? brands.join(',') : brands))
+    .catch(undefined),
   serving_quantity: amount,
   serving_quantity_unit: z.string().optional().catch(undefined),
   product_quantity: amount,
@@ -244,7 +251,7 @@ export async function lookupProduct(barcode: string): Promise<ProductLookup> {
 }
 
 const hitSchema = productSchema.extend({ code: z.string() })
-const searchSchema = z.object({ products: z.array(z.unknown()) })
+const searchSchema = z.object({ hits: z.array(z.unknown()) })
 
 export type ProductHit = ProductPrefill & {
   readonly barcode: string
@@ -266,15 +273,12 @@ function toHit(raw: unknown): ProductHit | null {
   return usable ? { ...prefill, barcode: parsed.data.code } : null
 }
 
-/** Products whose name matches, most scanned first; never throws. */
+/** Products whose name matches, best match first; never throws. */
 export async function searchProducts(query: string): Promise<ProductSearch> {
   const params = new URLSearchParams({
-    search_terms: query.trim(),
-    search_simple: '1',
-    action: 'process',
-    json: '1',
+    q: query.trim(),
+    langs: SEARCH_LANGUAGES,
     page_size: String(SEARCH_PAGE_SIZE),
-    sort_by: 'unique_scans_n',
     fields: `code,${FIELDS}`,
   })
   const controller = new AbortController()
@@ -284,7 +288,7 @@ export async function searchProducts(query: string): Promise<ProductSearch> {
     if (BUSY_STATUSES.has(response.status)) return { kind: 'busy' }
     const parsed = searchSchema.safeParse(await response.json().catch(() => null))
     if (!response.ok || !parsed.success) return { kind: 'unavailable' }
-    const hits = parsed.data.products.flatMap((raw) => toHit(raw) ?? [])
+    const hits = parsed.data.hits.flatMap((raw) => toHit(raw) ?? [])
     return { kind: 'found', hits }
   } catch {
     return { kind: 'unavailable' }
