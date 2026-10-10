@@ -146,6 +146,36 @@ export function withLine(dish: Dish, line: DishLine): Dish {
   }
 }
 
+const isEstimatedLine = (line: DishLine, estimatedIds: ReadonlySet<string>) =>
+  line.item.ingredient_id !== null && estimatedIds.has(line.item.ingredient_id)
+
+/**
+ * Adds or replaces a line. A new line of an ingredient marked as an estimate marks the dish as
+ * one too; it can still be switched off for the dish.
+ */
+export function withAddedLine(
+  dish: Dish,
+  line: DishLine,
+  estimatedIngredientIds: ReadonlySet<string>,
+): Dish {
+  const isNew = !dish.lines.some((existing) => existing.id === line.id)
+  const next = withLine(dish, line)
+  return isNew && isEstimatedLine(line, estimatedIngredientIds)
+    ? withKcalEstimated(next, true)
+    : next
+}
+
+/** The names of the dish's ingredients marked as an estimate, each once. */
+export function estimatedLineNames(
+  dish: Dish,
+  estimatedIngredientIds: ReadonlySet<string>,
+): readonly string[] {
+  const names = dish.lines
+    .filter((line) => isEstimatedLine(line, estimatedIngredientIds))
+    .map((line) => line.item.name)
+  return [...new Set(names)]
+}
+
 export function withoutLine(dish: Dish, lineId: string): Dish {
   return { ...dish, lines: dish.lines.filter((line) => line.id !== lineId) }
 }

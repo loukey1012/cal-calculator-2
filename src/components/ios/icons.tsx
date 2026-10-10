@@ -175,3 +175,18 @@ export function ScaleIcon(props: SVGProps<SVGSVGElement>) {
     </Icon>
   )
 }
+
+/** iOS text-field clear button: a filled circle with a cross. */
+export function ClearIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" {...props}>
+      <circle cx="12" cy="12" r="9" fill="currentColor" />
+      <path
+        d="M9 9l6 6M15 9l-6 6"
+        stroke="var(--color-bg-elevated, #fff)"
+        strokeWidth={2}
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}

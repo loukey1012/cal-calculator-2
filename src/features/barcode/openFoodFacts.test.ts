@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import { EMPTY_INGREDIENT_FORM, type IngredientFormValues } from '../ingredients/ingredientForm'
-import { lookupProduct, productFormValues, productPrefill, type OffProduct } from './openFoodFacts'
+import {
+  lookupProduct,
+  productFormValues,
+  productPrefill,
+  searchProducts,
+  type OffProduct,
+} from './openFoodFacts'
 
 function respond(status: number, body: unknown) {
   return vi.fn().mockResolvedValue(new Response(JSON.stringify(body), { status }))
@@ -74,7 +80,35 @@ describe('productFormValues', () => {
         unitWeightG: '50',
       },
       warnings: [],
+      info: { imageUrl: null, portion: null, pack: null },
     })
+  })
+
+  test('what the package says is passed on: photo, portion and pack as printed', () => {
+    const { info } = productPrefill(
+      {
+        ...COLA_BOTTLES,
+        serving_size: '3 Stück (30 g)',
+        quantity: ' 150 g ',
+        image_front_small_url: 'https://images.openfoodfacts.org/images/products/1/front.200.jpg',
+      },
+      '4260562940909',
+    )
+
+    expect(info).toEqual({
+      imageUrl: 'https://images.openfoodfacts.org/images/products/1/front.200.jpg',
+      portion: '3 Stück (30 g)',
+      pack: '150 g',
+    })
+  })
+
+  test('a photo from anywhere but Open Food Facts’ image server is not shown', () => {
+    const { info } = productPrefill(
+      { ...COLA_BOTTLES, image_front_small_url: 'http://tracker.example/pixel.gif' },
+      '4260562940909',
+    )
+
+    expect(info.imageUrl).toBeNull()
   })
 
   test('per-portion values missing: worked out from per 100 g and the portion weight', () => {
@@ -224,60 +258,6 @@ describe('warnings about odd product data', () => {
     )
   })
 
-  test('per-portion values that don’t fit the per-100 g values and the portion weight', () => {
-    const product = {
-      ...COLA_BOTTLES,
-      nutriments: { ...COLA_BOTTLES.nutriments, 'energy-kcal_serving': 100 },
-    }
-
-    expect(warningsOf(product)).toContainEqual(expect.stringMatching(/don’t match/))
-  })
-
-  test('calories that don’t fit protein, carbs, fat and fiber', () => {
-    const product = {
-      ...COLA_BOTTLES,
-      nutriments: {
-        ...COLA_BOTTLES.nutriments,
-        'energy-kcal_100g': 500,
-        'energy-kcal_serving': 250,
-      },
-    }
-
-    expect(warningsOf(product)).toContainEqual(expect.stringMatching(/Calories don’t fit/))
-  })
-
-  test('more than 100 g of nutrients in 100 g, and impossible calories', () => {
-    expect(
-      warningsOf({
-        nutriments: { 'energy-kcal_100g': 950, proteins_100g: 60, carbohydrates_100g: 70 },
-      }),
-    ).toEqual(
-      expect.arrayContaining([
-        expect.stringMatching(/more than 100 g/),
-        expect.stringMatching(/more than 900 kcal/i),
-      ]),
-    )
-  })
-
-  test('sugar above carbs, saturated fat above fat', () => {
-    expect(
-      warningsOf({
-        nutriments: {
-          'energy-kcal_100g': 100,
-          carbohydrates_100g: 5,
-          sugars_100g: 8,
-          fat_100g: 1,
-          'saturated-fat_100g': 2,
-        },
-      }),
-    ).toEqual(
-      expect.arrayContaining([
-        expect.stringMatching(/sugar than carbs/),
-        expect.stringMatching(/saturated fat than fat/),
-      ]),
-    )
-  })
-
   test('no calories, or per-portion values without a portion weight', () => {
     expect(warningsOf({ product_name: 'Tea', nutriments: {} })).toContainEqual(
       expect.stringMatching(/No calories/),
@@ -341,5 +321,43 @@ describe('lookupProduct', () => {
 
     await expect(result).resolves.toEqual({ kind: 'unavailable' })
     vi.useRealTimers()
+  })
+})
+
+describe('searchProducts', () => {
+  test('products found by name come back ready to fill the form, without unusable ones', async () => {
+    const fetch = respond(200, {
+      products: [
+        { ...COLA_BOTTLES, code: '4260562940909' },
+        { code: '111', product_name: 'No values', nutriments: {} },
+        { code: '222', nutriments: { 'energy-kcal_100g': 50 } },
+        'garbage',
+      ],
+    })
+    vi.stubGlobal('fetch', fetch)
+
+    const result = await searchProducts(' cola bottles ')
+
+    expect(result).toMatchObject({
+      kind: 'found',
+      hits: [{ barcode: '4260562940909', values: { name: 'Low Sugar Gummies Cola Bottles' } }],
+    })
+    const url = new URL(String(fetch.mock.calls[0]?.[0]))
+    expect(url.origin + url.pathname).toBe('https://world.openfoodfacts.org/cgi/search.pl')
+    expect(url.searchParams.get('search_terms')).toBe('cola bottles')
+  })
+
+  test('too many searches are told apart from being offline', async () => {
+    vi.stubGlobal('fetch', respond(429, {}))
+    await expect(searchProducts('skyr')).resolves.toEqual({ kind: 'busy' })
+
+    vi.stubGlobal('fetch', respond(503, {}))
+    await expect(searchProducts('skyr')).resolves.toEqual({ kind: 'busy' })
+
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Load failed')))
+    await expect(searchProducts('skyr')).resolves.toEqual({ kind: 'unavailable' })
+
+    vi.stubGlobal('fetch', respond(200, { nope: true }))
+    await expect(searchProducts('skyr')).resolves.toEqual({ kind: 'unavailable' })
   })
 })

@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { Button } from '../../components/ios/Button'
 import { ErrorBanner } from '../../components/ios/ErrorBanner'
 import { Sheet } from '../../components/ios/Sheet'
 import { toUserMessage } from '../../lib/errors'
+import { BarcodeLink } from '../barcode/BarcodeLink'
 import { PrefillNote } from '../barcode/PrefillNote'
 import { useProductPrefill } from '../barcode/useProductPrefill'
 import { useDeleteIngredient, useIngredients, useSaveIngredient } from './hooks'
@@ -22,6 +24,8 @@ type IngredientSheetProps = {
   /** broad categories a new category can be put into */
   readonly groups: readonly CategoryGroup[]
   readonly onClose: () => void
+  /** the scanned barcode was added to this existing ingredient: show it instead */
+  readonly onOpenIngredient: (ingredient: Ingredient) => void
 }
 
 export function IngredientSheet({
@@ -32,11 +36,14 @@ export function IngredientSheet({
   categories,
   groups,
   onClose,
+  onOpenIngredient,
 }: IngredientSheetProps) {
   const save = useSaveIngredient(householdId)
   const ingredients = useIngredients(householdId)
   const prefill = useProductPrefill(ingredient ? null : barcode, EMPTY_INGREDIENT_FORM)
   const remove = useDeleteIngredient(householdId)
+  // bumped to put the form back to the values from Open Food Facts
+  const [resets, setResets] = useState(0)
   const error = save.error ?? remove.error
 
   function close() {
@@ -77,10 +84,27 @@ export function IngredientSheet({
         </p>
       ) : (
         <>
-          {prefill && <PrefillNote text={prefill.note} warnings={prefill.warnings} />}
+          {prefill?.status === 'ready' && barcode && (
+            <BarcodeLink
+              barcode={barcode}
+              productName={prefill.info ? prefill.values.name : ''}
+              productBrand={prefill.values.brand}
+              onLinked={onOpenIngredient}
+            />
+          )}
+          {prefill && (
+            <PrefillNote
+              text={prefill.note}
+              warnings={prefill.warnings}
+              info={prefill.info}
+              onReset={() => setResets((count) => count + 1)}
+            />
+          )}
           <IngredientForm
-            key={ingredient?.id ?? `new:${barcode ?? ''}`}
+            key={ingredient?.id ?? `new:${barcode ?? ''}:${resets}`}
             formId={FORM_ID}
+            editing={ingredient !== null}
+            packagePortion={prefill?.status === 'ready' ? (prefill.info?.portion ?? null) : null}
             initialValues={
               ingredient ? toFormValues(ingredient) : (prefill?.values ?? EMPTY_INGREDIENT_FORM)
             }

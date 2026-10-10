@@ -99,6 +99,7 @@ describe('scanning on the Ingredients page', () => {
     scanned.barcode = '3017620422003'
     vi.mocked(lookupProduct).mockResolvedValue({
       kind: 'found',
+      info: { imageUrl: null, portion: null, pack: null },
       warnings: [],
       values: { ...EMPTY_INGREDIENT_FORM, name: 'Nutella', barcode: '3017620422003' },
     })
@@ -119,6 +120,7 @@ describe('scanning on the Ingredients page', () => {
     scanned.barcode = '4260562940916'
     vi.mocked(lookupProduct).mockResolvedValue({
       kind: 'found',
+      info: { imageUrl: null, portion: null, pack: null },
       warnings: ['The portion (100 g) is bigger than the pack (50 g).'],
       values: { ...EMPTY_INGREDIENT_FORM, name: 'Low Sugar Gummies', barcode: '4260562940916' },
     })
@@ -130,7 +132,7 @@ describe('scanning on the Ingredients page', () => {
     await user.click(screen.getByRole('button', { name: 'Fake scan' }))
 
     const sheet = within(screen.getByRole('dialog', { name: 'New Ingredient' }))
-    const warnings = await sheet.findByRole('list', { name: 'Check these values' })
+    const warnings = await sheet.findByRole('list', { name: 'Check the product data' })
     expect(warnings).toHaveTextContent('The portion (100 g) is bigger than the pack (50 g).')
   })
 

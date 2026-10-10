@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'vitest'
 import {
-  calculateMissingValues,
   EMPTY_INGREDIENT_FORM,
   NEW_CATEGORY,
   parseIngredientForm,
@@ -221,70 +220,6 @@ describe('toFormValues', () => {
       kcal_100: 155,
       protein_100: 13,
       unit_weight_g: 58,
-    })
-  })
-})
-
-describe('calculateMissingValues', () => {
-  test('per unit is worked out from per 100 g and the grams per unit', () => {
-    const result = calculateMissingValues(
-      form({
-        per100gEnabled: true,
-        per100g: per100g({ kcal: '142', protein: '5,6', fiber: '47.3' }),
-        unitWeightG: '50',
-      }),
-    )
-
-    expect(result).toEqual({
-      kind: 'filled',
-      count: 3,
-      values: expect.objectContaining({
-        perUnitEnabled: true,
-        perUnit: perUnit({ kcal: '71', protein: '2.8', fiber: '23.65' }),
-      }),
-    })
-  })
-
-  test('per 100 g is worked out from per unit, field by field; typed values are never replaced', () => {
-    const result = calculateMissingValues(
-      form({
-        per100gEnabled: true,
-        per100g: per100g({ kcal: '150' }),
-        perUnitEnabled: true,
-        perUnit: perUnit({ kcal: '80', protein: '4', salt: '0.1' }),
-        unitWeightG: '40',
-      }),
-    )
-
-    expect(result).toMatchObject({
-      kind: 'filled',
-      count: 2,
-      values: {
-        per100g: per100g({ kcal: '150', protein: '10', salt: '0.25' }),
-        perUnit: perUnit({ kcal: '80', protein: '4', salt: '0.1' }),
-      },
-    })
-  })
-
-  test('a switched-off section is not used as a source', () => {
-    const result = calculateMissingValues(
-      form({
-        per100gEnabled: false,
-        per100g: per100g({ kcal: '142' }),
-        unitWeightG: '50',
-      }),
-    )
-
-    expect(result).toEqual({ kind: 'nothing' })
-  })
-
-  test('needs a weight first', () => {
-    const values = form({ per100gEnabled: true, per100g: per100g({ kcal: '142' }) })
-
-    expect(calculateMissingValues(values)).toEqual({ kind: 'needsWeight' })
-    expect(calculateMissingValues({ ...values, unitWeightG: '0' })).toEqual({ kind: 'needsWeight' })
-    expect(calculateMissingValues({ ...values, unitWeightG: 'abc' })).toEqual({
-      kind: 'needsWeight',
     })
   })
 })

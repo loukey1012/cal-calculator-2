@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import type { IngredientFormValues } from '../ingredients/ingredientForm'
-import { lookupProduct, type ProductLookup } from './openFoodFacts'
+import { lookupProduct, type ProductInfo, type ProductLookup } from './openFoodFacts'
 
 export type ProductPrefill =
   | { readonly status: 'loading' }
@@ -9,6 +9,8 @@ export type ProductPrefill =
       readonly values: IngredientFormValues
       readonly note: string
       readonly warnings: readonly string[]
+      /** what the package says; null when the product wasn't found */
+      readonly info: ProductInfo | null
     }
 
 const NOTES: Readonly<Record<ProductLookup['kind'], string>> = {
@@ -43,6 +45,12 @@ export function useProductPrefill(
     result.kind === 'found'
       ? { ...result.values, name: result.values.name || fallback.name }
       : { ...fallback, barcode }
-  const warnings = result.kind === 'found' ? result.warnings : []
-  return { status: 'ready', values, note: NOTES[result.kind], warnings }
+  const found = result.kind === 'found'
+  return {
+    status: 'ready',
+    values,
+    note: NOTES[result.kind],
+    warnings: found ? result.warnings : [],
+    info: found ? result.info : null,
+  }
 }

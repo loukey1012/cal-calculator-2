@@ -38,6 +38,7 @@ function renderSheet(editing: Ingredient | null = null) {
       categories={CATEGORIES}
       groups={GROUPS}
       onClose={onClose}
+      onOpenIngredient={vi.fn()}
     />,
   )
   return { ...result, onClose }
@@ -107,7 +108,8 @@ describe('IngredientSheet', () => {
     await user.type(screen.getByLabelText('Calories per unit'), '210')
     await user.type(screen.getByLabelText('Protein per unit'), '20')
     const calculate = screen.getByRole('button', { name: 'Calculate missing values' })
-    expect(calculate).toBeDisabled()
+    await user.click(calculate)
+    expect(screen.getByText('Enter the grams per unit first.')).toBeInTheDocument()
 
     await user.type(screen.getByLabelText('Grams per unit'), '60')
     await user.click(calculate)

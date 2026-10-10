@@ -45,3 +45,17 @@ export function completeBases(
     perUnit: filledIn(perUnit, per100g, weight === null ? null : weight / GRAMS_BASIS),
   }
 }
+
+// kcal per gram (EU labels: carbs exclude fiber)
+const KCAL_PER_G = { protein: 4, carbs: 4, fat: 9, fiber: 2 } as const
+
+/** Calories from protein, carbs and fat (plus fiber when known); null without all three. */
+export function macroKcal({ protein, carbs, fat, fiber }: NutritionBasis): number | null {
+  if (protein === null || carbs === null || fat === null) return null
+  return (
+    protein * KCAL_PER_G.protein +
+    carbs * KCAL_PER_G.carbs +
+    fat * KCAL_PER_G.fat +
+    (fiber ?? 0) * KCAL_PER_G.fiber
+  )
+}

@@ -10,9 +10,15 @@ import { nutritionWarnings, resolveNutrition } from './productNutrition'
  */
 
 const API = 'https://world.openfoodfacts.org/api/v2/product'
+const SEARCH_API = 'https://world.openfoodfacts.org/cgi/search.pl'
 const FIELDS =
-  'product_name,product_name_de,brands,serving_quantity,serving_quantity_unit,product_quantity,product_quantity_unit,quantity,nutriments'
+  'product_name,product_name_de,brands,serving_quantity,serving_quantity_unit,serving_size,product_quantity,product_quantity_unit,quantity,image_front_small_url,nutriments'
 const TIMEOUT_MS = 6000
+const SEARCH_TIMEOUT_MS = 10000
+const SEARCH_PAGE_SIZE = 20
+// Open Food Facts allows about 10 searches a minute and answers 429 or 503 beyond that
+const BUSY_STATUSES = new Set([429, 503])
+const IMAGE_HOST = 'https://images.openfoodfacts.org/'
 const KJ_PER_KCAL = 4.184
 const NUTRIENT_DECIMALS = 2
 // the ingredient form's limits
@@ -52,6 +58,9 @@ const productSchema = z.object({
   product_quantity_unit: z.string().optional().catch(undefined),
   /** the pack size as printed, e.g. "50 g" */
   quantity: z.string().optional().catch(undefined),
+  /** the portion as printed, e.g. "3 Kekse (30 g)" */
+  serving_size: z.string().optional().catch(undefined),
+  image_front_small_url: z.string().optional().catch(undefined),
   nutriments: z.record(z.string(), z.unknown()).optional(),
 })
 
@@ -59,13 +68,18 @@ export type OffProduct = z.input<typeof productSchema>
 
 const responseSchema = z.object({ status: z.number(), product: productSchema.optional() })
 
+/** What the package says, shown next to the filled-in form to tell it's the right product. */
+export type ProductInfo = {
+  /** a small photo of the front, from Open Food Facts' image server */
+  readonly imageUrl: string | null
+  /** the portion as printed, e.g. "3 Kekse (30 g)" */
+  readonly portion: string | null
+  /** the pack size as printed, e.g. "150 g" */
+  readonly pack: string | null
+}
+
 export type ProductLookup =
-  | {
-      readonly kind: 'found'
-      readonly values: IngredientFormValues
-      /** things to check against the package; empty when the data looks right */
-      readonly warnings: readonly string[]
-    }
+  | ({ readonly kind: 'found' } & ProductPrefill)
   | { readonly kind: 'notFound' }
   /** offline, too slow, or an answer that can't be used */
   | { readonly kind: 'unavailable' }
@@ -162,7 +176,20 @@ function productName(product: ParsedProduct): string {
 
 export type ProductPrefill = {
   readonly values: IngredientFormValues
+  /** gaps in the product data; empty when there are none */
   readonly warnings: readonly string[]
+  readonly info: ProductInfo
+}
+
+const printed = (text: string | undefined) => text?.trim() || null
+
+function productInfo(product: ParsedProduct): ProductInfo {
+  const image = product.image_front_small_url?.trim() ?? ''
+  return {
+    imageUrl: image.startsWith(IMAGE_HOST) ? image : null,
+    portion: printed(product.serving_size),
+    pack: printed(product.quantity),
+  }
 }
 
 /**
@@ -186,6 +213,7 @@ export function productPrefill(raw: OffProduct, barcode: string): ProductPrefill
       unitWeightG: asText(reported.portionG),
     },
     warnings: nutritionWarnings(reported),
+    info: productInfo(product),
   }
 }
 
@@ -208,6 +236,56 @@ export async function lookupProduct(barcode: string): Promise<ProductLookup> {
     }
     if (!response.ok || !parsed.success || !parsed.data.product) return { kind: 'unavailable' }
     return { kind: 'found', ...productPrefill(parsed.data.product, barcode) }
+  } catch {
+    return { kind: 'unavailable' }
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+const hitSchema = productSchema.extend({ code: z.string() })
+const searchSchema = z.object({ products: z.array(z.unknown()) })
+
+export type ProductHit = ProductPrefill & {
+  readonly barcode: string
+}
+
+export type ProductSearch =
+  | { readonly kind: 'found'; readonly hits: readonly ProductHit[] }
+  /** too many searches in a short time */
+  | { readonly kind: 'busy' }
+  | { readonly kind: 'unavailable' }
+
+function toHit(raw: unknown): ProductHit | null {
+  const parsed = hitSchema.safeParse(raw)
+  if (!parsed.success) return null
+  const prefill = productPrefill(parsed.data, parsed.data.code)
+  const { values } = prefill
+  // without a name or any calories there is nothing to take over
+  const usable = values.name !== '' && (values.per100gEnabled || values.perUnitEnabled)
+  return usable ? { ...prefill, barcode: parsed.data.code } : null
+}
+
+/** Products whose name matches, most scanned first; never throws. */
+export async function searchProducts(query: string): Promise<ProductSearch> {
+  const params = new URLSearchParams({
+    search_terms: query.trim(),
+    search_simple: '1',
+    action: 'process',
+    json: '1',
+    page_size: String(SEARCH_PAGE_SIZE),
+    sort_by: 'unique_scans_n',
+    fields: `code,${FIELDS}`,
+  })
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), SEARCH_TIMEOUT_MS)
+  try {
+    const response = await fetch(`${SEARCH_API}?${params}`, { signal: controller.signal })
+    if (BUSY_STATUSES.has(response.status)) return { kind: 'busy' }
+    const parsed = searchSchema.safeParse(await response.json().catch(() => null))
+    if (!response.ok || !parsed.success) return { kind: 'unavailable' }
+    const hits = parsed.data.products.flatMap((raw) => toHit(raw) ?? [])
+    return { kind: 'found', hits }
   } catch {
     return { kind: 'unavailable' }
   } finally {

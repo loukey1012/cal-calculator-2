@@ -131,6 +131,7 @@ export function IngredientsPage() {
         categories={categoryList}
         groups={groups.data ?? []}
         onClose={() => setEditing(null)}
+        onOpenIngredient={(ingredient) => setEditing({ ingredient })}
       />
     </>
   )

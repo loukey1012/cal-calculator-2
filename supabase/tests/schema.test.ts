@@ -286,6 +286,27 @@ describe('ingredients', () => {
     expect(other.error).toBeNull()
   })
 
+  test('an ingredient is not an estimate unless marked as one', async () => {
+    const plain = await alice.client
+      .from('ingredients')
+      .insert({ name: 'Bread', kcal_100: 250, household_id: householdId })
+      .select('kcal_estimated')
+      .single()
+    const guessed = await alice.client
+      .from('ingredients')
+      .insert({
+        name: 'Luigi pizza',
+        kcal_unit: 900,
+        kcal_estimated: true,
+        household_id: householdId,
+      })
+      .select('kcal_estimated')
+      .single()
+
+    expect(plain.data?.kcal_estimated).toBe(false)
+    expect(guessed.data?.kcal_estimated).toBe(true)
+  })
+
   test.each(['123', '4014500513102x', '123456789012345', ' 40145005'])(
     'a barcode must be 8 to 14 digits (%s is rejected)',
     async (barcode) => {

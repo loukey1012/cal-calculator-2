@@ -273,6 +273,33 @@ describe('calories as an estimate', () => {
     expect(sentDish().kcalEstimated).toBe(true)
   })
 
+  test('an ingredient marked as an estimate marks the dish; it can still be switched off', async () => {
+    const pizza = ingredient({
+      id: 'pizza',
+      name: 'Pizza from Luigi',
+      kcal_unit: 900,
+      unit_label: 'pizza',
+      kcal_estimated: true,
+    })
+    vi.mocked(fetchIngredients).mockResolvedValue([PATTY, pizza])
+    const user = userEvent.setup()
+    renderCook()
+
+    await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
+    await user.click(await screen.findByRole('button', { name: /Pizza from Luigi/ }))
+    await user.click(screen.getByRole('button', { name: '1/2' }))
+    expect(screen.getByLabelText('Amount')).toHaveValue('1/2')
+    await user.click(screen.getByRole('button', { name: 'Add to dish' }))
+
+    const estimate = screen.getByRole('switch', { name: 'Calories are an estimate' })
+    expect(estimate).toBeChecked()
+    expect(screen.getByText('Pizza from Luigi is marked as an estimate.')).toBeInTheDocument()
+    expect(screen.getByTestId('dish-totals')).toHaveTextContent('~450 kcal')
+    await user.click(estimate)
+    await user.click(screen.getByRole('button', { name: 'Save meal' }))
+    expect(sentDish().kcalEstimated).toBe(false)
+  })
+
   test('a dish is exact unless marked', async () => {
     const user = userEvent.setup()
     renderCook()
@@ -619,6 +646,7 @@ describe('the ingredient search', () => {
     scanned.barcode = '3017620422003'
     vi.mocked(lookupProduct).mockResolvedValue({
       kind: 'found',
+      info: { imageUrl: null, portion: null, pack: null },
       warnings: [],
       values: {
         ...EMPTY_INGREDIENT_FORM,

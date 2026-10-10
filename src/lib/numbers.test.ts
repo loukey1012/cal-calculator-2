@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { parseDecimal, roundTo } from './numbers'
+import { parseAmount, parseDecimal, roundTo } from './numbers'
 
 describe('roundTo', () => {
   test('rounds to the given number of decimals', () => {
@@ -27,5 +27,25 @@ describe('parseDecimal', () => {
 
   test.each(['', ' ', 'abc', '1,2,3', '1.2.3', '-4', '12g', '1e3'])('rejects %j', (input) => {
     expect(parseDecimal(input)).toBeNull()
+  })
+})
+
+describe('parseAmount', () => {
+  test.each([
+    ['1,5', 1.5],
+    ['1/2', 0.5],
+    [' 1 / 4 ', 0.25],
+    ['1 1/2', 1.5],
+    ['2 3/4', 2.75],
+  ])('parses %j', (input, expected) => {
+    expect(parseAmount(input)).toBe(expected)
+  })
+
+  test('a third stays exact', () => {
+    expect(parseAmount('1/3')).toBeCloseTo(1 / 3, 10)
+  })
+
+  test.each(['', '1/0', '1//2', '/2', '1/', '-1/2', '1/2/3'])('rejects %j', (input) => {
+    expect(parseAmount(input)).toBeNull()
   })
 })

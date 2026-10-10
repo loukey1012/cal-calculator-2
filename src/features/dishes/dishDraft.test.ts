@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import {
   describeLine,
+  estimatedLineNames,
   lineWho,
   newDish,
   rescaledLine,
@@ -10,6 +11,7 @@ import {
   withKcalEstimated,
   withLeftoverAdded,
   withLeftoverRemoved,
+  withAddedLine,
   withLine,
   withName,
   withoutLine,
@@ -61,6 +63,39 @@ describe('calories as an estimate', () => {
     expect(estimated.kcalEstimated).toBe(true)
     expect(withKcalEstimated(estimated, false).kcalEstimated).toBe(false)
     expect(dish.kcalEstimated).toBe(false)
+  })
+})
+
+describe('ingredients marked as an estimate', () => {
+  const PIZZA: DishLine = {
+    ...sharedLine('l-pizza', 'Pizza from Luigi', 450, 260),
+    item: { ...gramsItem('Pizza from Luigi', 450, 260), ingredient_id: 'pizza' },
+  }
+  const ESTIMATED = new Set(['pizza'])
+
+  test('adding one marks the dish as an estimate', () => {
+    const dish = withAddedLine(testDish({ kcalEstimated: false }), PIZZA, ESTIMATED)
+
+    expect(dish.kcalEstimated).toBe(true)
+    expect(dish.lines.at(-1)).toBe(PIZZA)
+    expect(estimatedLineNames(dish, ESTIMATED)).toEqual(['Pizza from Luigi'])
+  })
+
+  test('switched off for the dish, it stays off when the line is changed later', () => {
+    const added = withAddedLine(testDish(), PIZZA, ESTIMATED)
+    const switchedOff = withKcalEstimated(added, false)
+
+    expect(
+      withAddedLine(switchedOff, { ...PIZZA, item: { ...PIZZA.item, kcal: 900 } }, ESTIMATED)
+        .kcalEstimated,
+    ).toBe(false)
+  })
+
+  test('other ingredients and custom items don’t change the mark', () => {
+    const dish = withAddedLine(testDish({ kcalEstimated: false }), NOODLES, ESTIMATED)
+
+    expect(dish.kcalEstimated).toBe(false)
+    expect(estimatedLineNames(dish, ESTIMATED)).toEqual([])
   })
 })
 

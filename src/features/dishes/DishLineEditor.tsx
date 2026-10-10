@@ -5,7 +5,10 @@ import { SegmentedControl } from '../../components/ios/SegmentedControl'
 import { formatKcal, macroSummary } from '../nutrition/format'
 import { itemTotals } from '../nutrition/totals'
 import type { AmountUnit } from '../nutrition/types'
+import { parseAmount } from '../../lib/numbers'
 import { DecimalRow } from './DecimalRow'
+import { FractionChips } from './FractionChips'
+import { withFraction } from './fractions'
 import type { LineAmounts, LineWho } from './dishDraft'
 import type { DishLine } from './portions'
 
@@ -79,6 +82,11 @@ export function DishLineEditor({
   const [who, setWho] = useState<WhoValue>(whoValue(initialWho))
   const [unit, setUnit] = useState<AmountUnit>(units[0] ?? 'g')
   const [amount, setAmount] = useState<number | null>(initialAmount)
+  // a fraction chip sets the amount row's text; the row starts over with it
+  const [amountText, setAmountText] = useState<{ readonly text: string; readonly key: number }>({
+    text: initialAmount === null ? '' : String(initialAmount),
+    key: 0,
+  })
   const [amounts, setAmounts] = useState<Readonly<Record<string, number | null>>>(initialAmounts)
   const [error, setError] = useState<string | null>(null)
   const unitName = unit === 'g' ? 'g' : (unitLabel ?? 'units')
@@ -138,15 +146,31 @@ export function DishLineEditor({
             />
           ))
         ) : (
-          <DecimalRow
-            label="Amount"
-            suffix={unitName}
-            value={amount}
-            onChange={(value) => {
-              setAmount(value)
-              setError(null)
-            }}
-          />
+          <>
+            <DecimalRow
+              key={amountText.key}
+              label="Amount"
+              suffix={unitName}
+              value={amount}
+              initialText={amountText.text}
+              parse={parseAmount}
+              onChange={(value) => {
+                setAmount(value)
+                setError(null)
+              }}
+              onTextChange={(text) => setAmountText((current) => ({ ...current, text }))}
+            />
+            {unit !== 'g' && (
+              <FractionChips
+                onPick={(fraction) => {
+                  const text = withFraction(amountText.text, fraction)
+                  setAmountText((current) => ({ text, key: current.key + 1 }))
+                  setAmount(parseAmount(text))
+                  setError(null)
+                }}
+              />
+            )}
+          </>
         )}
       </GroupedSection>
       {error && <p className="mt-1 px-4 text-[13px] text-destructive">{error}</p>}

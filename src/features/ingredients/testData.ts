@@ -27,6 +27,7 @@ const EMPTY_INGREDIENT: Ingredient = {
   salt_unit: null,
   legacy_id: null,
   barcode: null,
+  kcal_estimated: false,
   created_by: null,
   created_at: '',
   updated_at: '',

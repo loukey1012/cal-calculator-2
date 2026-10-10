@@ -103,6 +103,15 @@ describe('groupByCategory', () => {
 })
 
 describe('nutritionSummary', () => {
+  test('guessed values get a ~', () => {
+    expect(
+      nutritionSummary(
+        ingredient({ kcal_100: 250, kcal_unit: 900, unit_label: 'pizza', kcal_estimated: true }),
+        'en',
+      ),
+    ).toBe('~250 kcal / 100 g · ~900 kcal / pizza')
+  })
+
   test('shows calories for each basis that exists', () => {
     expect(nutritionSummary(CREAM, 'en')).toBe('92 kcal / 100 g')
     expect(nutritionSummary(BAR, 'en')).toBe('210 kcal / bar')

@@ -391,6 +391,7 @@ export type Database = {
           household_id: string
           id: string
           kcal_100: number | null
+          kcal_estimated: boolean
           kcal_unit: number | null
           legacy_id: string | null
           name: string
@@ -422,6 +423,7 @@ export type Database = {
           household_id: string
           id?: string
           kcal_100?: number | null
+          kcal_estimated?: boolean
           kcal_unit?: number | null
           legacy_id?: string | null
           name: string
@@ -453,6 +455,7 @@ export type Database = {
           household_id?: string
           id?: string
           kcal_100?: number | null
+          kcal_estimated?: boolean
           kcal_unit?: number | null
           legacy_id?: string | null
           name?: string

@@ -1,83 +1,28 @@
-import { useState, type FormEvent } from 'react'
-import { InputRow, SelectRow, ToggleRow } from '../../components/ios/FormRows'
+import { useState, type FormEvent, type ReactNode } from 'react'
+import { InputRow, ToggleRow } from '../../components/ios/FormRows'
 import { GroupedSection } from '../../components/ios/GroupedSection'
-import { TextField } from '../../components/ios/TextField'
 import type { FieldErrors } from '../../lib/forms'
-import { BarcodeField } from '../barcode/BarcodeField'
-import { BrandField } from './BrandField'
+import { normalizeBarcode } from '../barcode/barcode'
+import { BarcodeFillRow } from '../barcode/BarcodeFillRow'
+import { BasisSection } from './BasisSection'
 import { CalculateRow } from './CalculateRow'
+import { IdentitySection } from './IdentitySection'
 import {
-  NEW_CATEGORY,
   parseIngredientForm,
-  type BasisField,
-  type BasisFormValues,
+  type BasisKey,
   type IngredientFormValues,
   type ParsedIngredientForm,
 } from './ingredientForm'
 import type { Category, CategoryGroup, Ingredient } from './ingredientsApi'
+import { SplitPortionRow } from './SplitPortionRow'
+import { UndoBar } from './UndoBar'
+import { useIngredientFormState, type IngredientFormState } from './useIngredientFormState'
+import { flaggedFields, valueWarnings } from './valueChecks'
+import { ValueSources } from './ValueSources'
+import { ValueWarnings } from './ValueWarnings'
 
-type NutrientRow = {
-  readonly field: BasisField
-  readonly label: string
-  readonly suffix: string
-  readonly indent?: boolean
-}
-
-const NUTRIENT_ROWS: readonly NutrientRow[] = [
-  { field: 'kcal', label: 'Calories', suffix: 'kcal' },
-  { field: 'protein', label: 'Protein', suffix: 'g' },
-  { field: 'carbs', label: 'Carbs', suffix: 'g' },
-  { field: 'sugar', label: 'Sugar', suffix: 'g', indent: true },
-  { field: 'fat', label: 'Fat', suffix: 'g' },
-  { field: 'sat_fat', label: 'Saturated fat', suffix: 'g', indent: true },
-  { field: 'fiber', label: 'Fiber', suffix: 'g' },
-  { field: 'salt', label: 'Salt', suffix: 'g' },
-]
-
-type BasisKey = 'per100g' | 'perUnit'
-
-type BasisSectionProps = {
-  readonly title: string
-  readonly basis: BasisKey
-  readonly enabled: boolean
-  readonly values: BasisFormValues
-  readonly errors: FieldErrors
-  readonly toggleError?: string
-  readonly onToggle: (enabled: boolean) => void
-  readonly onChange: (field: BasisField, value: string) => void
-}
-
-function BasisSection({
-  title,
-  basis,
-  enabled,
-  values,
-  errors,
-  toggleError,
-  onToggle,
-  onChange,
-}: BasisSectionProps) {
-  return (
-    <GroupedSection>
-      <ToggleRow label={title} checked={enabled} onChange={onToggle} error={toggleError} />
-      {enabled &&
-        NUTRIENT_ROWS.map(({ field, label, suffix, indent }) => (
-          <InputRow
-            key={field}
-            label={label}
-            accessibleLabel={`${label} ${title.toLowerCase()}`}
-            suffix={suffix}
-            indent={indent}
-            inputMode="decimal"
-            placeholder={field === 'kcal' ? 'required' : '–'}
-            value={values[field]}
-            onChange={(event) => onChange(field, event.target.value)}
-            error={errors[`${basis}.${field}`]}
-          />
-        ))}
-    </GroupedSection>
-  )
-}
+const BASES: readonly BasisKey[] = ['per100g', 'perUnit']
+const ENABLED_KEY = { per100g: 'per100gEnabled', perUnit: 'perUnitEnabled' } as const
 
 type IngredientFormProps = {
   readonly formId: string
@@ -85,8 +30,12 @@ type IngredientFormProps = {
   readonly categories: readonly Category[]
   readonly groups: readonly CategoryGroup[]
   readonly onSubmit: (data: ParsedIngredientForm) => void
-  /** the household's ingredients, whose brands are suggested */
+  /** the household's ingredients, whose brands are suggested and whose values can be copied */
   readonly savedIngredients?: readonly Ingredient[]
+  /** the portion as printed on the package of a scanned product, e.g. "3 Kekse (30 g)" */
+  readonly packagePortion?: string | null
+  /** a saved ingredient is edited (its barcode can be looked up again) */
+  readonly editing?: boolean
 }
 
 export function IngredientForm({
@@ -96,15 +45,23 @@ export function IngredientForm({
   groups,
   onSubmit,
   savedIngredients = [],
+  packagePortion = null,
+  editing = false,
 }: IngredientFormProps) {
-  const [values, setValues] = useState(initialValues)
+  const form = useIngredientFormState(initialValues, packagePortion)
+  const { values } = form
   const [errors, setErrors] = useState<FieldErrors>({})
+  const warnings = valueWarnings(values)
+  const flagged = flaggedFields(warnings)
+  const barcode = normalizeBarcode(values.barcode)
+  // a new scanned product's form is already filled in from its barcode
+  const offerBarcodeFill =
+    barcode !== null && (editing || barcode !== normalizeBarcode(initialValues.barcode))
 
-  const set = <K extends keyof IngredientFormValues>(key: K, value: IngredientFormValues[K]) =>
-    setValues((current) => ({ ...current, [key]: value }))
-
-  const setBasisValue = (basis: BasisKey, field: BasisField, value: string) =>
-    setValues((current) => ({ ...current, [basis]: { ...current[basis], [field]: value } }))
+  const undoAt = (where: string) =>
+    form.undoOffer?.where === where ? (
+      <UndoBar message={form.undoOffer.message} onUndo={form.undo} />
+    ) : undefined
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -115,90 +72,88 @@ export function IngredientForm({
 
   return (
     <form id={formId} noValidate onSubmit={handleSubmit}>
-      <GroupedSection>
-        <TextField
-          label="Name"
-          value={values.name}
-          onChange={(event) => set('name', event.target.value)}
-          error={errors.name}
-        />
-        <BrandField
-          value={values.brand}
-          onChange={(brand) => set('brand', brand)}
-          error={errors.brand}
-          savedIngredients={savedIngredients}
-        />
-        <BarcodeField
-          value={values.barcode}
-          error={errors.barcode}
-          onChange={(barcode) => set('barcode', barcode)}
-        />
-        <SelectRow
-          label="Category"
-          value={values.categoryId}
-          onChange={(event) => set('categoryId', event.target.value)}
+      <IdentitySection
+        values={values}
+        errors={errors}
+        categories={categories}
+        groups={groups}
+        savedIngredients={savedIngredients}
+        onChange={form.set}
+        barcodeAction={
+          barcode !== null &&
+          offerBarcodeFill &&
+          (undoAt('barcode') ?? (
+            <BarcodeFillRow key={barcode} barcode={barcode} onFound={form.fillFromProduct} />
+          ))
+        }
+      />
+      <ValueSources
+        name={values.name}
+        savedIngredients={savedIngredients}
+        onFill={form.fill}
+        undo={undoAt('fill')}
+      />
+      <ValueWarnings warnings={warnings} />
+      {BASES.map((basis) => (
+        <BasisSection
+          key={basis}
+          title={basis === 'per100g' ? 'Per 100 g' : 'Per unit'}
+          basis={basis}
+          enabled={values[ENABLED_KEY[basis]]}
+          values={values[basis]}
+          errors={errors}
+          flagged={flagged}
+          toggleError={basis === 'per100g' ? errors.per100gEnabled : undefined}
+          onToggle={(enabled) => form.set(ENABLED_KEY[basis], enabled)}
+          onChange={(field, value) => form.setBasisValue(basis, field, value)}
+          onClearField={(field) => form.clearField(basis, field)}
+          onClearAll={() => form.clearAll(basis)}
+          undo={undoAt(basis)}
         >
-          <option value="">None</option>
-          {categories.map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-          <option value={NEW_CATEGORY}>New category…</option>
-        </SelectRow>
-        {values.categoryId === NEW_CATEGORY && (
-          <>
-            <TextField
-              label="New category name"
-              value={values.newCategoryName}
-              onChange={(event) => set('newCategoryName', event.target.value)}
-              error={errors.newCategoryName}
-            />
-            <SelectRow
-              label="Broad category"
-              value={values.newCategoryGroupId}
-              onChange={(event) => set('newCategoryGroupId', event.target.value)}
-            >
-              <option value="">None (Other)</option>
-              {groups.map((group) => (
-                <option key={group.id} value={group.id}>
-                  {group.name}
-                </option>
-              ))}
-            </SelectRow>
-          </>
-        )}
-      </GroupedSection>
+          {basis === 'perUnit' && <SplitRow form={form} undo={undoAt('split')} />}
+        </BasisSection>
+      ))}
+      <DetailSections form={form} errors={errors} flagged={flagged} />
+    </form>
+  )
+}
 
-      <BasisSection
-        title="Per 100 g"
-        basis="per100g"
-        enabled={values.per100gEnabled}
-        values={values.per100g}
-        errors={errors}
-        toggleError={errors.per100gEnabled}
-        onToggle={(enabled) => set('per100gEnabled', enabled)}
-        onChange={(field, value) => setBasisValue('per100g', field, value)}
-      />
-      <BasisSection
-        title="Per unit"
-        basis="perUnit"
-        enabled={values.perUnitEnabled}
-        values={values.perUnit}
-        errors={errors}
-        onToggle={(enabled) => set('perUnitEnabled', enabled)}
-        onChange={(field, value) => setBasisValue('perUnit', field, value)}
-      />
+type SplitRowProps = { readonly form: IngredientFormState; readonly undo: ReactNode }
 
+function SplitRow({ form, undo }: SplitRowProps) {
+  if (undo) return undo
+  return (
+    <SplitPortionRow
+      key={`${form.packagePortion ?? ''}:${String(form.split)}`}
+      packagePortion={form.packagePortion}
+      // once split, the package's count isn't suggested again
+      suggestCount={!form.split}
+      onSplit={form.splitPortion}
+    />
+  )
+}
+
+type DetailSectionsProps = {
+  readonly form: IngredientFormState
+  readonly errors: FieldErrors
+  readonly flagged: ReadonlySet<string>
+}
+
+/** The unit, the estimate mark and the note. */
+function DetailSections({ form, errors, flagged }: DetailSectionsProps) {
+  const { values } = form
+  return (
+    <>
       <GroupedSection
         header="Unit"
-        footer="Lets you log this ingredient in grams or in units. With the grams per unit, Calculate fills empty values per 100 g or per unit from the other."
+        footer="Lets you log this ingredient in grams or in units. Calculate fills empty values: per 100 g or per unit from the other with the grams per unit, the grams per unit from both calories, and calories from protein, carbs and fat."
       >
         <InputRow
           label="Unit name"
           placeholder="e.g. bar"
           value={values.unitLabel}
-          onChange={(event) => set('unitLabel', event.target.value)}
+          onChange={(event) => form.set('unitLabel', event.target.value)}
+          onClear={() => form.set('unitLabel', '')}
           error={errors.unitLabel}
         />
         <InputRow
@@ -207,21 +162,29 @@ export function IngredientForm({
           placeholder="–"
           suffix="g"
           value={values.unitWeightG}
-          onChange={(event) => set('unitWeightG', event.target.value)}
+          onChange={(event) => form.set('unitWeightG', event.target.value)}
+          onClear={() => form.set('unitWeightG', '')}
+          flagged={flagged.has('unitWeightG')}
           error={errors.unitWeightG}
         />
-        <CalculateRow values={values} onCalculated={setValues} />
+        <CalculateRow values={values} onCalculated={form.replaceValues} />
       </GroupedSection>
-
+      <GroupedSection footer="E.g. a restaurant dish you guessed. Dishes with it are marked as an estimate too.">
+        <ToggleRow
+          label="Values are an estimate"
+          checked={values.kcalEstimated}
+          onChange={(estimated) => form.set('kcalEstimated', estimated)}
+        />
+      </GroupedSection>
       <GroupedSection header="Note" footer={errors.note}>
         <textarea
           aria-label="Note"
           rows={3}
           value={values.note}
-          onChange={(event) => set('note', event.target.value)}
+          onChange={(event) => form.set('note', event.target.value)}
           className="block w-full resize-none bg-transparent px-4 py-3 text-[17px] text-label outline-none"
         />
       </GroupedSection>
-    </form>
+    </>
   )
 }

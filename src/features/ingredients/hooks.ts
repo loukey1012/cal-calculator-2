@@ -14,6 +14,7 @@ import {
   fetchCategories,
   fetchCategoryGroups,
   fetchIngredients,
+  setIngredientBarcode,
   updateIngredient,
   type Category,
   type CategoryGroup,
@@ -104,11 +105,19 @@ export function useInvalidateIngredients(householdId: string): () => Promise<unk
     ])
 }
 
+function useCacheSaved(householdId: string): (saved: Ingredient) => void {
+  const queryClient = useQueryClient()
+  return (saved) =>
+    queryClient.setQueryData<Ingredient[]>(ingredientKeys.ingredients(householdId), (list) =>
+      list ? [...list.filter((ingredient) => ingredient.id !== saved.id), saved] : list,
+    )
+}
+
 export function useSaveIngredient(
   householdId: string,
 ): UseMutationResult<Ingredient, Error, SaveIngredientInput> {
   const invalidate = useInvalidateIngredients(householdId)
-  const queryClient = useQueryClient()
+  const cacheSaved = useCacheSaved(householdId)
   return useMutation({
     mutationFn: async ({ id, form, categories }: SaveIngredientInput) => {
       const categoryId = await resolveCategoryId(householdId, form.category, categories)
@@ -116,11 +125,23 @@ export function useSaveIngredient(
       return id ? updateIngredient(id, input) : createIngredient(householdId, input)
     },
     // in the list at once, e.g. for the amount step right after creating it on Cook
-    onSuccess: (saved) =>
-      queryClient.setQueryData<Ingredient[]>(ingredientKeys.ingredients(householdId), (list) =>
-        list ? [...list.filter((ingredient) => ingredient.id !== saved.id), saved] : list,
-      ),
+    onSuccess: cacheSaved,
     // also after a failure: a category may have been created before the ingredient failed
+    onSettled: invalidate,
+  })
+}
+
+export type LinkBarcodeInput = { readonly id: string; readonly barcode: string }
+
+/** Saves a scanned barcode on an existing ingredient, so scanning finds it from then on. */
+export function useLinkBarcode(
+  householdId: string,
+): UseMutationResult<Ingredient, Error, LinkBarcodeInput> {
+  const invalidate = useInvalidateIngredients(householdId)
+  const cacheSaved = useCacheSaved(householdId)
+  return useMutation({
+    mutationFn: ({ id, barcode }: LinkBarcodeInput) => setIngredientBarcode(id, barcode),
+    onSuccess: cacheSaved,
     onSettled: invalidate,
   })
 }

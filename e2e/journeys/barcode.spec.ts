@@ -41,7 +41,7 @@ test('scan a package: a photo is read, filled in from Open Food Facts, saved; fo
   await expect(sheet.getByText(/Filled in from Open Food Facts/)).toBeVisible()
   await expect(sheet.getByLabel('Name', { exact: true })).toHaveValue('Nutella')
   await expect(sheet.getByLabel('Barcode', { exact: true })).toHaveValue(NUTELLA)
-  await expect(sheet.getByLabel('Calories per 100 g')).toHaveValue('539')
+  await expect(sheet.getByLabel('Calories per 100 g', { exact: true })).toHaveValue('539')
   await sheet.getByRole('button', { name: 'Save' }).click()
   await expect(sheet).toBeHidden()
   await expect

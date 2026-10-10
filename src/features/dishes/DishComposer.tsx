@@ -17,11 +17,12 @@ import { ingredientNutrition, ingredientSource } from '../nutrition/fromIngredie
 import { itemTotals } from '../nutrition/totals'
 import {
   describeLine,
+  estimatedLineNames,
   lineWho,
   newId,
   rescaledLine,
+  withAddedLine,
   withKcalEstimated,
-  withLine,
   withName,
   withoutLine,
 } from './dishDraft'
@@ -62,6 +63,14 @@ export function DishComposer({
 }: DishComposerProps) {
   const top = useRef<HTMLDivElement>(null)
   const { step } = steps
+  const { householdId } = useCurrentUser()
+  const ingredients = useIngredients(householdId)
+  const estimatedIds = new Set(
+    (ingredients.data ?? []).flatMap((ingredient) =>
+      ingredient.kcal_estimated ? [ingredient.id] : [],
+    ),
+  )
+  const estimatedNames = estimatedLineNames(dish, estimatedIds)
   // a long form may be scrolled down; every step starts at its top
   const shownStep = useRef(stepKey(step))
   useEffect(() => {
@@ -108,6 +117,11 @@ export function DishComposer({
               checked={dish.kcalEstimated ?? false}
               onChange={(estimated) => onChange(withKcalEstimated(dish, estimated))}
             />
+            {estimatedNames.length > 0 && (
+              <p className="px-4 pb-3 text-[13px] text-label-secondary">
+                {estimatedNoteText(estimatedNames)}
+              </p>
+            )}
             <LeftoverStepper dish={dish} onChange={onChange} />
           </GroupedSection>
           {dish.lines.length > 0 && <DishTotals dish={dish} nameOf={nameOf} />}
@@ -121,7 +135,7 @@ export function DishComposer({
           dish={dish}
           portions={portions}
           onAdd={(line) => {
-            onChange(withLine(dish, line))
+            onChange(withAddedLine(dish, line, estimatedIds))
             steps.finish()
           }}
           onChange={(next) => {
@@ -132,6 +146,12 @@ export function DishComposer({
       )}
     </div>
   )
+}
+
+function estimatedNoteText(names: readonly string[]): string {
+  const list =
+    names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`
+  return `${list} ${names.length === 1 ? 'is' : 'are'} marked as an estimate.`
 }
 
 type StepViewProps = {

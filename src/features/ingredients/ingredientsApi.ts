@@ -67,6 +67,18 @@ export async function updateIngredient(id: string, input: IngredientInput): Prom
   return data
 }
 
+/** Gives an ingredient a (new) package barcode, e.g. one scanned for it later. */
+export async function setIngredientBarcode(id: string, barcode: string): Promise<Ingredient> {
+  const { data, error } = await supabase
+    .from('ingredients')
+    .update({ barcode })
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw ApiError.from(error)
+  return data
+}
+
 /** Logged meals keep their nutrition snapshot; their link to the ingredient is cleared. */
 export async function deleteIngredient(id: string): Promise<void> {
   const { error } = await supabase.from('ingredients').delete().eq('id', id)

@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { useCurrentUser } from '../../app/currentUser'
 import { Button } from '../../components/ios/Button'
 import { ErrorBanner } from '../../components/ios/ErrorBanner'
 import { toUserMessage } from '../../lib/errors'
+import { BarcodeLink } from '../barcode/BarcodeLink'
 import { PrefillNote } from '../barcode/PrefillNote'
 import { useProductPrefill } from '../barcode/useProductPrefill'
 import { useCategories, useCategoryGroups, useIngredients, useSaveIngredient } from './hooks'
@@ -16,6 +18,7 @@ type NewIngredientFormProps = {
   readonly initialName: string
   /** a scanned barcode: the form is filled in from Open Food Facts where possible */
   readonly barcode?: string | null
+  /** saved, or an existing one the scanned barcode was added to */
   readonly onSaved: (ingredient: Ingredient) => void
 }
 
@@ -32,6 +35,8 @@ export function NewIngredientForm({
   const ingredients = useIngredients(householdId)
   const typed = { ...EMPTY_INGREDIENT_FORM, name: initialName.trim() }
   const prefill = useProductPrefill(barcode, typed)
+  // bumped to put the form back to the values from Open Food Facts
+  const [resets, setResets] = useState(0)
 
   if (prefill?.status === 'loading') {
     return (
@@ -48,10 +53,27 @@ export function NewIngredientForm({
   return (
     <>
       <h3 className="mb-2 text-[20px] font-semibold">New ingredient</h3>
-      {prefill && <PrefillNote text={prefill.note} warnings={prefill.warnings} />}
+      {prefill && barcode && (
+        <BarcodeLink
+          barcode={barcode}
+          productName={prefill.info ? prefill.values.name : ''}
+          productBrand={prefill.values.brand}
+          onLinked={onSaved}
+        />
+      )}
+      {prefill && (
+        <PrefillNote
+          text={prefill.note}
+          warnings={prefill.warnings}
+          info={prefill.info}
+          onReset={() => setResets((count) => count + 1)}
+        />
+      )}
       <IngredientForm
+        key={resets}
         formId={FORM_ID}
         initialValues={prefill?.values ?? typed}
+        packagePortion={prefill?.info?.portion ?? null}
         categories={categoryList}
         groups={groups.data ?? []}
         savedIngredients={ingredients.data ?? []}

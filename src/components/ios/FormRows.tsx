@@ -1,4 +1,5 @@
 import { useId, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes } from 'react'
+import { ClearIcon } from './icons'
 
 function FieldError({ id, error }: { readonly id: string; readonly error?: string }) {
   if (!error) return null
@@ -17,6 +18,10 @@ type InputRowProps = InputHTMLAttributes<HTMLInputElement> & {
   readonly suffix?: string
   readonly error?: string
   readonly indent?: boolean
+  /** adds a clear button, shown while there is a value */
+  readonly onClear?: () => void
+  /** the value looks wrong (see the warnings above the form) */
+  readonly flagged?: boolean
 }
 
 /** iOS settings-style row: label left, right-aligned input, optional unit suffix. */
@@ -26,9 +31,12 @@ export function InputRow({
   suffix,
   error,
   indent = false,
+  onClear,
+  flagged = false,
   ...inputProps
 }: InputRowProps) {
   const id = useId()
+  const hasValue = String(inputProps.value ?? '').trim() !== ''
   return (
     <div className={`py-2.5 pr-4 ${indent ? 'pl-8' : 'pl-4'}`}>
       <div className="flex items-center gap-2">
@@ -40,10 +48,28 @@ export function InputRow({
           aria-label={accessibleLabel}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? `${id}-error` : undefined}
-          className="w-28 bg-transparent text-right text-[17px] text-label outline-none placeholder:text-label-secondary/60"
+          className={`w-28 bg-transparent text-right text-[17px] outline-none placeholder:text-label-secondary/60 ${
+            flagged ? 'font-semibold text-destructive' : 'text-label'
+          }`}
           {...inputProps}
         />
         {suffix && <span className="w-8 text-[15px] text-label-secondary">{suffix}</span>}
+        {/* the space stays when empty, so the values of all rows line up */}
+        {onClear && (
+          <span className="flex w-6 shrink-0 justify-center">
+            {hasValue && (
+              <button
+                type="button"
+                aria-label={`Clear ${accessibleLabel ?? label}`}
+                onClick={onClear}
+                // a 44 pt tap target around the small icon
+                className="-m-2.5 p-2.5 text-label-secondary/50 active:opacity-60"
+              >
+                <ClearIcon className="h-[18px] w-[18px]" />
+              </button>
+            )}
+          </span>
+        )}
       </div>
       <FieldError id={`${id}-error`} error={error} />
     </div>
