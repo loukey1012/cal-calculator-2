@@ -113,8 +113,11 @@ describe('scaleItemAmount', () => {
 })
 
 describe('describeAmount', () => {
-  test('shows grams or units with up to two decimals', () => {
+  test('shows grams, millilitres or units with up to two decimals', () => {
     expect(describeAmount(CREAM, 'en')).toBe('150 g')
+    expect(describeAmount(mealItem({ entered_amount: 250, entered_unit: 'ml' }), 'en')).toBe(
+      '250 ml',
+    )
     expect(describeAmount(mealItem({ entered_amount: 1, entered_unit: 'unit' }), 'en')).toBe(
       '1 unit',
     )

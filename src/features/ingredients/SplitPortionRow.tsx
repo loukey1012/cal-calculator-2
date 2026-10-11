@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Button } from '../../components/ios/Button'
 import { InputRow } from '../../components/ios/FormRows'
 import { parseDecimal } from '../../lib/numbers'
+import type { Measure } from '../nutrition/types'
+import { measureName } from '../nutrition/unitNames'
 import { isSplitCount, portionCount } from './formActions'
 
 type SplitPortionRowProps = {
@@ -9,6 +11,8 @@ type SplitPortionRowProps = {
   readonly packagePortion: string | null
   /** pre-fill the package's count (not once it was split) */
   readonly suggestCount: boolean
+  /** what the amount per unit is in: grams or ml */
+  readonly measure: Measure
   readonly onSplit: (parts: number) => void
 }
 
@@ -16,7 +20,12 @@ type SplitPortionRowProps = {
  * When the values per unit are for a portion of several pieces (e.g. 3 biscuits), splits them
  * so that one unit is one piece.
  */
-export function SplitPortionRow({ packagePortion, suggestCount, onSplit }: SplitPortionRowProps) {
+export function SplitPortionRow({
+  packagePortion,
+  suggestCount,
+  measure,
+  onSplit,
+}: SplitPortionRowProps) {
   const suggested = suggestCount ? portionCount(packagePortion) : null
   const [open, setOpen] = useState(false)
   const [text, setText] = useState(suggested === null ? '' : String(suggested))
@@ -55,7 +64,7 @@ export function SplitPortionRow({ packagePortion, suggestCount, onSplit }: Split
           />
           <div className="flex items-center justify-end gap-2 py-1 pr-2 pl-4">
             <p className="flex-1 text-[13px] text-label-secondary">
-              Divides every value per unit and the grams per unit.
+              Divides every value per unit and the {measureName(measure)} per unit.
             </p>
             <Button variant="plain" onClick={() => setOpen(false)}>
               Cancel

@@ -44,6 +44,7 @@ function basisFromRow(row: IngredientRow, suffix: '100' | 'unit'): NutritionValu
 
 export function ingredientNutrition(row: IngredientRow): IngredientNutrition {
   return {
+    measure: row.measure,
     per100g: basisFromRow(row, '100'),
     perUnit: basisFromRow(row, 'unit'),
     unitWeightG: row.unit_weight_g,

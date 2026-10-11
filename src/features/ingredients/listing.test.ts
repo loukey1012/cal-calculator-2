@@ -126,4 +126,10 @@ describe('nutritionSummary', () => {
       nutritionSummary(ingredient({ kcal_100: 155, kcal_unit: 90, unit_label: null }), 'en'),
     ).toBe('155 kcal / 100 g · 90 kcal / unit')
   })
+
+  test('per 100 ml for an ingredient measured in ml', () => {
+    expect(nutritionSummary(ingredient({ kcal_100: 64, measure: 'ml' }), 'en')).toBe(
+      '64 kcal / 100 ml',
+    )
+  })
 })

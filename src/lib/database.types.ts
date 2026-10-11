@@ -394,6 +394,7 @@ export type Database = {
           kcal_estimated: boolean
           kcal_unit: number | null
           legacy_id: string | null
+          measure: Database["public"]["Enums"]["ingredient_measure"]
           name: string
           note: string | null
           protein_100: number | null
@@ -426,6 +427,7 @@ export type Database = {
           kcal_estimated?: boolean
           kcal_unit?: number | null
           legacy_id?: string | null
+          measure?: Database["public"]["Enums"]["ingredient_measure"]
           name: string
           note?: string | null
           protein_100?: number | null
@@ -458,6 +460,7 @@ export type Database = {
           kcal_estimated?: boolean
           kcal_unit?: number | null
           legacy_id?: string | null
+          measure?: Database["public"]["Enums"]["ingredient_measure"]
           name?: string
           note?: string | null
           protein_100?: number | null
@@ -838,9 +841,10 @@ export type Database = {
       }
     }
     Enums: {
-      amount_unit: "g" | "unit"
+      amount_unit: "g" | "unit" | "ml"
       dish_line_allocation: "shared" | "per_portion"
       dish_split_mode: "equal" | "count" | "percent" | "weight"
+      ingredient_measure: "g" | "ml"
       meal_type: "breakfast" | "lunch" | "dinner" | "snack"
       nutrition_basis: "per_100g" | "per_unit"
     }
@@ -970,9 +974,10 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      amount_unit: ["g", "unit"],
+      amount_unit: ["g", "unit", "ml"],
       dish_line_allocation: ["shared", "per_portion"],
       dish_split_mode: ["equal", "count", "percent", "weight"],
+      ingredient_measure: ["g", "ml"],
       meal_type: ["breakfast", "lunch", "dinner", "snack"],
       nutrition_basis: ["per_100g", "per_unit"],
     },

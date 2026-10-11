@@ -4,8 +4,9 @@ import { SegmentedControl } from '../../components/ios/SegmentedControl'
 import { parseDecimal, roundTo } from '../../lib/numbers'
 import { formatKcal, macroSummary } from '../nutrition/format'
 import type { AmountUnit, NutritionTotals } from '../nutrition/types'
+import { amountSuffix, unitChoiceLabel } from '../nutrition/unitNames'
 
-const STEP: Record<AmountUnit, number> = { g: 10, unit: 1 }
+const STEP: Record<AmountUnit, number> = { g: 10, ml: 10, unit: 1 }
 const AMOUNT_DECIMALS = 2
 
 type AmountEditorProps = {
@@ -33,7 +34,7 @@ export function AmountEditor({
   const [amountText, setAmountText] = useState(initialAmount)
   const [unit, setUnit] = useState<AmountUnit>(units[0] ?? 'g')
   const [error, setError] = useState<string | null>(null)
-  const unitName = unit === 'g' ? 'g' : (unitLabel ?? 'units')
+  const unitName = amountSuffix(unit, unitLabel)
   const amount = parseDecimal(amountText)
   const totals = amount !== null && amount > 0 ? preview(amount, unit) : null
 
@@ -60,7 +61,7 @@ export function AmountEditor({
             label="Unit"
             options={units.map((value) => ({
               value,
-              label: value === 'g' ? 'Grams' : (unitLabel ?? 'Units'),
+              label: unitChoiceLabel(value, unitLabel),
             }))}
             value={unit}
             onChange={setUnit}

@@ -14,6 +14,8 @@ export const NUTRIENT_KEYS = [
 export type NutrientKey = (typeof NUTRIENT_KEYS)[number]
 export type AmountUnit = Enums<'amount_unit'>
 export type NutritionBasis = Enums<'nutrition_basis'>
+/** What an ingredient is measured in; per_100g then means per 100 of it (g or ml). */
+export type Measure = Enums<'ingredient_measure'>
 
 export type NutrientRecord<T> = { readonly [K in NutrientKey]: T }
 
@@ -24,6 +26,8 @@ export type NutrientValues = NutrientRecord<number | null>
 export type NutritionValues = { readonly kcal: number } & NutrientValues
 
 export type IngredientNutrition = {
+  /** grams when left out; for ml, per100g is per 100 ml and unitWeightG the ml per unit */
+  readonly measure?: Measure
   readonly per100g: NutritionValues | null
   readonly perUnit: NutritionValues | null
   readonly unitWeightG: number | null

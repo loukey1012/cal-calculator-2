@@ -247,6 +247,7 @@ export function withNutritionOf(
     per100g: source.per100gEnabled ? source.per100g : EMPTY_BASIS,
     perUnitEnabled: source.perUnitEnabled,
     perUnit: source.perUnitEnabled ? source.perUnit : EMPTY_BASIS,
+    measure: source.measure,
     unitLabel: source.unitLabel === '' ? values.unitLabel : source.unitLabel,
     unitWeightG: source.unitWeightG,
     kcalEstimated: source.kcalEstimated,

@@ -110,7 +110,7 @@ export function scaleItemAmount(
   return { entered_amount: amount, basis_multiplier: multiplier }
 }
 
-/** e.g. "150 g", "1 unit", "2,5 units" */
+/** e.g. "150 g", "250 ml", "1 unit", "2,5 units" */
 export function describeAmount(
   item: Pick<MealItem, 'entered_amount' | 'entered_unit'>,
   locale?: string,
@@ -118,7 +118,7 @@ export function describeAmount(
   const amount = new Intl.NumberFormat(locale, { maximumFractionDigits: AMOUNT_DECIMALS }).format(
     item.entered_amount,
   )
-  if (item.entered_unit === 'g') return `${amount} g`
+  if (item.entered_unit !== 'unit') return `${amount} ${item.entered_unit}`
   return `${amount} ${item.entered_amount === 1 ? 'unit' : 'units'}`
 }
 

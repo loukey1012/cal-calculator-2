@@ -131,12 +131,14 @@ export function groupByCategory(
   return [...named, uncategorized].filter((section) => section.ingredients.length > 0)
 }
 
-/** e.g. "92 kcal / 100 g · 210 kcal / bar"; "~" before guessed values */
+/** e.g. "92 kcal / 100 g · 210 kcal / bar" (or "/ 100 ml"); "~" before guessed values */
 export function nutritionSummary(ingredient: Ingredient, locale?: string): string {
   const kcal = (value: number) =>
     `${ingredient.kcal_estimated ? '~' : ''}${formatKcal(value, locale)} kcal`
   const parts = [
-    ingredient.kcal_100 === null ? null : `${kcal(ingredient.kcal_100)} / 100 g`,
+    ingredient.kcal_100 === null
+      ? null
+      : `${kcal(ingredient.kcal_100)} / 100 ${ingredient.measure}`,
     ingredient.kcal_unit === null
       ? null
       : `${kcal(ingredient.kcal_unit)} / ${ingredient.unit_label ?? DEFAULT_UNIT_LABEL}`,

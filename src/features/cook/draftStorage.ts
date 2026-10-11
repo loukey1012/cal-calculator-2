@@ -19,7 +19,7 @@ const itemSchema = z.object({
   name: z.string().min(1),
   brand: z.string().nullable(),
   entered_amount: z.number().positive(),
-  entered_unit: z.enum(['g', 'unit']),
+  entered_unit: z.enum(['g', 'ml', 'unit']),
   basis: z.enum(['per_100g', 'per_unit']),
   basis_multiplier: z.number().positive(),
   kcal: z.number().nonnegative(),

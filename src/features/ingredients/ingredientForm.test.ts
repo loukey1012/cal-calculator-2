@@ -114,6 +114,21 @@ describe('parseIngredientForm', () => {
     })
   })
 
+  test('measured in ml: saved as such, and more than 100 g per 100 ml is fine (e.g. honey)', () => {
+    const data = parsed(
+      form({
+        measure: 'ml',
+        per100gEnabled: true,
+        per100g: per100g({ kcal: '435', carbs: '116' }),
+      }),
+    )
+
+    expect(data.ingredient).toMatchObject({ measure: 'ml', kcal_100: 435, carbs_100: 116 })
+    expect(
+      parsed(form({ per100gEnabled: true, per100g: per100g({ kcal: '1' }) })).ingredient,
+    ).toMatchObject({ measure: 'g' })
+  })
+
   test('rejects values too large for the database columns', () => {
     const errors = errorsOf(
       form({
@@ -210,6 +225,12 @@ describe('toFormValues', () => {
       unitWeightG: '60',
     })
     expect(values.perUnit).toMatchObject({ kcal: '210', protein: '20.5', fat: '' })
+  })
+
+  test('keeps an ingredient measured in ml in ml', () => {
+    expect(toFormValues(ingredient({ name: 'Milk', kcal_100: 64, measure: 'ml' })).measure).toBe(
+      'ml',
+    )
   })
 
   test('round-trips through the parser unchanged', () => {

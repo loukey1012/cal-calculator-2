@@ -181,6 +181,51 @@ describe('productFormValues', () => {
     expect(values).toMatchObject({ perUnitEnabled: false, unitWeightG: '' })
   })
 
+  test('a drink sold in ml or litres is measured in ml: values per 100 ml, ml per portion', () => {
+    const values = productFormValues(
+      {
+        product_name: 'Hafer Drink',
+        product_quantity: 1000,
+        product_quantity_unit: 'ml',
+        serving_quantity: 250,
+        serving_quantity_unit: 'ml',
+        nutriments: { 'energy-kcal_100g': 46 },
+      },
+      '96385074',
+    )
+
+    expect(values).toMatchObject({
+      measure: 'ml',
+      per100g: basis({ kcal: '46' }),
+      perUnit: basis({ kcal: '115' }),
+      unitWeightG: '250',
+    })
+  })
+
+  test('a pack size printed in litres or cl also means ml', () => {
+    const drink = (quantity: string) =>
+      productFormValues({ quantity, nutriments: { 'energy-kcal_100g': 42 } }, '96385074')
+
+    expect(drink('1,5 l').measure).toBe('ml')
+    expect(drink('33 cl').measure).toBe('ml')
+    expect(drink('500 g').measure).toBe('g')
+    expect(drink('').measure).toBe('g')
+  })
+
+  test('a portion in cl is converted to ml', () => {
+    const values = productFormValues(
+      {
+        quantity: '1 l',
+        serving_quantity: 25,
+        serving_quantity_unit: 'cl',
+        nutriments: { 'energy-kcal_100g': 40 },
+      },
+      '96385074',
+    )
+
+    expect(values).toMatchObject({ measure: 'ml', unitWeightG: '250' })
+  })
+
   test('empty or null values from Open Food Facts are unknown, not 0', () => {
     const values = productFormValues(
       {
@@ -239,6 +284,19 @@ describe('warnings about odd product data', () => {
   test('a portion bigger than the whole pack', () => {
     expect(warningsOf({ ...COLA_BOTTLES, serving_quantity: 100 })).toContainEqual(
       expect.stringMatching(/portion \(100 g\) is bigger than the pack \(50 g\)/),
+    )
+  })
+
+  test('a drink’s portion and pack are compared in ml', () => {
+    const drink = {
+      quantity: '330 ml',
+      serving_quantity: 500,
+      serving_quantity_unit: 'ml',
+      nutriments: { 'energy-kcal_100g': 42 },
+    }
+
+    expect(warningsOf(drink)).toContainEqual(
+      expect.stringMatching(/portion \(500 ml\) is bigger than the pack \(330 ml\)/),
     )
   })
 

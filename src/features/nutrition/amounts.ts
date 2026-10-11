@@ -1,11 +1,11 @@
 import { roundTo } from '../../lib/numbers'
 import type { AmountUnit, IngredientNutrition, NutritionBasis, NutritionValues } from './types'
 
-const GRAMS_PER_BASIS = 100
+// values per 100 g, or per 100 ml for an ingredient measured in ml
+const AMOUNT_PER_BASIS = 100
 // matches meal_items.basis_multiplier numeric(10, 4)
 const MULTIPLIER_DECIMALS = 4
-const UNIT_ORDER: readonly AmountUnit[] = ['g', 'unit']
-const UNIT_NAMES: Record<AmountUnit, string> = { g: 'grams', unit: 'units' }
+const UNIT_NAMES: Record<AmountUnit, string> = { g: 'grams', ml: 'millilitres', unit: 'units' }
 
 export type ResolvedAmount = {
   readonly basis: NutritionBasis
@@ -20,17 +20,25 @@ type BasisChoice = {
   readonly multiplierFor: (amount: number) => number
 }
 
-/** Prefers the basis matching the entered unit; falls back to converting via the unit weight. */
+/**
+ * Prefers the basis matching the entered unit; falls back to converting via the unit weight
+ * (the ml per unit for an ingredient in ml). Grams and ml never convert into each other.
+ */
 function chooseBasis(
-  { per100g, perUnit, unitWeightG }: IngredientNutrition,
+  { measure = 'g', per100g, perUnit, unitWeightG }: IngredientNutrition,
   unit: AmountUnit,
 ): BasisChoice | null {
-  if (unit === 'g') {
+  if (unit !== 'unit') {
+    if (unit !== measure) return null
     if (per100g) {
-      return { basis: 'per_100g', values: per100g, multiplierFor: (g) => g / GRAMS_PER_BASIS }
+      return {
+        basis: 'per_100g',
+        values: per100g,
+        multiplierFor: (amount) => amount / AMOUNT_PER_BASIS,
+      }
     }
     if (perUnit && unitWeightG) {
-      return { basis: 'per_unit', values: perUnit, multiplierFor: (g) => g / unitWeightG }
+      return { basis: 'per_unit', values: perUnit, multiplierFor: (amount) => amount / unitWeightG }
     }
     return null
   }
@@ -39,14 +47,16 @@ function chooseBasis(
     return {
       basis: 'per_100g',
       values: per100g,
-      multiplierFor: (units) => (units * unitWeightG) / GRAMS_PER_BASIS,
+      multiplierFor: (units) => (units * unitWeightG) / AMOUNT_PER_BASIS,
     }
   }
   return null
 }
 
+/** The ingredient's measure (g or ml) and its unit, whichever it can be logged in. */
 export function availableUnits(nutrition: IngredientNutrition): readonly AmountUnit[] {
-  return UNIT_ORDER.filter((unit) => chooseBasis(nutrition, unit) !== null)
+  const units: readonly AmountUnit[] = [nutrition.measure ?? 'g', 'unit']
+  return units.filter((unit) => chooseBasis(nutrition, unit) !== null)
 }
 
 export function resolveAmount(

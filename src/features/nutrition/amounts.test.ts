@@ -20,6 +20,28 @@ const EGG_BOTH: IngredientNutrition = {
   unitWeightG: 58,
 }
 const EGG_PER_100G_WITH_WEIGHT: IngredientNutrition = { ...EGG_BOTH, perUnit: null }
+const MILK: IngredientNutrition = {
+  measure: 'ml',
+  per100g: values(64, { protein: 3.4 }),
+  perUnit: null,
+  unitWeightG: 250,
+}
+
+describe('millilitres', () => {
+  test('an ingredient measured in ml is logged in ml (and its unit), never in grams', () => {
+    expect(availableUnits(MILK)).toEqual(['ml', 'unit'])
+    expect(() => resolveAmount(MILK, 100, 'g')).toThrow(/grams/)
+  })
+
+  test('250 ml on values per 100 ml is 2.5 times them; a unit is its ml', () => {
+    expect(resolveAmount(MILK, 250, 'ml')).toMatchObject({ basis: 'per_100g', multiplier: 2.5 })
+    expect(resolveAmount(MILK, 2, 'unit')).toMatchObject({ basis: 'per_100g', multiplier: 5 })
+  })
+
+  test('an ingredient in grams is never logged in ml', () => {
+    expect(() => resolveAmount(CREAM, 100, 'ml')).toThrow(/millilitres/)
+  })
+})
 
 describe('availableUnits', () => {
   test('per-100g only: grams', () => {

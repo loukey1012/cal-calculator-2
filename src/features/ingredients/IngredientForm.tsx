@@ -1,9 +1,12 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { InputRow, ToggleRow } from '../../components/ios/FormRows'
 import { GroupedSection } from '../../components/ios/GroupedSection'
+import { SegmentedControl } from '../../components/ios/SegmentedControl'
 import type { FieldErrors } from '../../lib/forms'
 import { normalizeBarcode } from '../barcode/barcode'
 import { BarcodeFillRow } from '../barcode/BarcodeFillRow'
+import type { Measure } from '../nutrition/types'
+import { measureName, per100Name, unitChoiceLabel } from '../nutrition/unitNames'
 import { BasisSection } from './BasisSection'
 import { CalculateRow } from './CalculateRow'
 import { IdentitySection } from './IdentitySection'
@@ -23,6 +26,9 @@ import { ValueWarnings } from './ValueWarnings'
 
 const BASES: readonly BasisKey[] = ['per100g', 'perUnit']
 const ENABLED_KEY = { per100g: 'per100gEnabled', perUnit: 'perUnitEnabled' } as const
+const MEASURES: readonly Measure[] = ['g', 'ml']
+
+const capitalized = (text: string) => `${text.charAt(0).toUpperCase()}${text.slice(1)}`
 
 type IngredientFormProps = {
   readonly formId: string
@@ -94,10 +100,18 @@ export function IngredientForm({
         undo={undoAt('fill')}
       />
       <ValueWarnings warnings={warnings} />
+      <div className="mt-6">
+        <SegmentedControl
+          label="Measured in"
+          options={MEASURES.map((measure) => ({ value: measure, label: unitChoiceLabel(measure) }))}
+          value={values.measure}
+          onChange={(measure) => form.set('measure', measure)}
+        />
+      </div>
       {BASES.map((basis) => (
         <BasisSection
           key={basis}
-          title={basis === 'per100g' ? 'Per 100 g' : 'Per unit'}
+          title={basis === 'per100g' ? capitalized(per100Name(values.measure)) : 'Per unit'}
           basis={basis}
           enabled={values[ENABLED_KEY[basis]]}
           values={values[basis]}
@@ -128,6 +142,7 @@ function SplitRow({ form, undo }: SplitRowProps) {
       packagePortion={form.packagePortion}
       // once split, the package's count isn't suggested again
       suggestCount={!form.split}
+      measure={form.values.measure}
       onSplit={form.splitPortion}
     />
   )
@@ -142,11 +157,13 @@ type DetailSectionsProps = {
 /** The unit, the estimate mark and the note. */
 function DetailSections({ form, errors, flagged }: DetailSectionsProps) {
   const { values } = form
+  const amount = measureName(values.measure)
+  const per100 = per100Name(values.measure)
   return (
     <>
       <GroupedSection
         header="Unit"
-        footer="Lets you log this ingredient in grams or in units. Calculate fills empty values: per 100 g or per unit from the other with the grams per unit, the grams per unit from both calories, and calories from protein, carbs and fat."
+        footer={`Lets you log this ingredient in ${amount} or in units. Calculate fills empty values: ${per100} or per unit from the other with the ${amount} per unit, the ${amount} per unit from both calories, and calories from protein, carbs and fat.`}
       >
         <InputRow
           label="Unit name"
@@ -157,10 +174,10 @@ function DetailSections({ form, errors, flagged }: DetailSectionsProps) {
           error={errors.unitLabel}
         />
         <InputRow
-          label="Grams per unit"
+          label={capitalized(`${amount} per unit`)}
           inputMode="decimal"
           placeholder="–"
-          suffix="g"
+          suffix={values.measure}
           value={values.unitWeightG}
           onChange={(event) => form.set('unitWeightG', event.target.value)}
           onClear={() => form.set('unitWeightG', '')}

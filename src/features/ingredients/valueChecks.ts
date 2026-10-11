@@ -1,5 +1,7 @@
 import { parseDecimal } from '../../lib/numbers'
 import { macroKcal, mapBasis, NUTRITION_FIELDS, type NutritionBasis } from '../nutrition/bases'
+import type { Measure } from '../nutrition/types'
+import { measureName, per100Name } from '../nutrition/unitNames'
 import type { BasisKey, IngredientFormValues } from './ingredientForm'
 
 /**
@@ -22,10 +24,8 @@ export type ValueWarning = {
   readonly fields: readonly string[]
 }
 
-const BASIS_NAMES: Readonly<Record<BasisKey, string>> = {
-  per100g: 'per 100 g',
-  perUnit: 'per unit',
-}
+const basisName = (basis: BasisKey, measure: Measure) =>
+  basis === 'per100g' ? per100Name(measure) : 'per unit'
 
 function differs(actual: number, expected: number, share: number, absolute: number): boolean {
   const gap = Math.abs(actual - expected)
@@ -37,10 +37,10 @@ function numbersOf(values: IngredientFormValues, basis: BasisKey): NutritionBasi
   return enabled ? mapBasis((field) => parseDecimal(values[basis][field])) : null
 }
 
-/** Checks that hold for any amount: per 100 g and per unit alike. */
-function basisChecks(basis: BasisKey, numbers: NutritionBasis): ValueWarning[] {
+/** Checks that hold for any amount: per 100 g (or ml) and per unit alike. */
+function basisChecks(basis: BasisKey, numbers: NutritionBasis, measure: Measure): ValueWarning[] {
   const { kcal, carbs, sugar, fat, sat_fat } = numbers
-  const name = BASIS_NAMES[basis]
+  const name = basisName(basis, measure)
   const warnings: ValueWarning[] = []
   if (sugar !== null && carbs !== null && sugar > carbs) {
     warnings.push({ text: `More sugar than carbs ${name}.`, fields: [`${basis}.sugar`] })
@@ -62,14 +62,16 @@ function basisChecks(basis: BasisKey, numbers: NutritionBasis): ValueWarning[] {
   return warnings
 }
 
-function per100gLimits(numbers: NutritionBasis): ValueWarning[] {
+/** Pure fat has 900 kcal per 100 g; 100 ml of oil less. 100 ml of honey can hold over 100 g. */
+function per100gLimits(numbers: NutritionBasis, measure: Measure): ValueWarning[] {
   const warnings: ValueWarning[] = []
   if (numbers.kcal !== null && numbers.kcal > MAX_KCAL_PER_100G) {
     warnings.push({
-      text: `More than ${MAX_KCAL_PER_100G} kcal per 100 g isn’t possible.`,
+      text: `More than ${MAX_KCAL_PER_100G} kcal ${per100Name(measure)} isn’t possible.`,
       fields: ['per100g.kcal'],
     })
   }
+  if (measure === 'ml') return warnings
   const parts = (['protein', 'carbs', 'fat', 'fiber', 'salt'] as const).filter(
     (field) => numbers[field] !== null,
   )
@@ -83,11 +85,12 @@ function per100gLimits(numbers: NutritionBasis): ValueWarning[] {
   return warnings
 }
 
-/** Per unit should be per 100 g scaled by the grams per unit. */
+/** Per unit should be per 100 g scaled by the grams per unit (or ml). */
 function unitWeightCheck(
   per100g: NutritionBasis | null,
   perUnit: NutritionBasis | null,
   weightText: string,
+  measure: Measure,
 ): ValueWarning[] {
   const weight = parseDecimal(weightText)
   if (!per100g || !perUnit || weight === null || weight <= 0) return []
@@ -101,7 +104,7 @@ function unitWeightCheck(
   if (!mismatch) return []
   return [
     {
-      text: 'The values per unit don’t match the values per 100 g: check the grams per unit.',
+      text: `The values per unit don’t match the values ${per100Name(measure)}: check the ${measureName(measure)} per unit.`,
       fields: ['unitWeightG'],
     },
   ]
@@ -111,10 +114,13 @@ function unitWeightCheck(
 export function valueWarnings(values: IngredientFormValues): readonly ValueWarning[] {
   const per100g = numbersOf(values, 'per100g')
   const perUnit = numbersOf(values, 'perUnit')
+  const { measure } = values
   return [
-    ...(per100g ? [...per100gLimits(per100g), ...basisChecks('per100g', per100g)] : []),
-    ...(perUnit ? basisChecks('perUnit', perUnit) : []),
-    ...unitWeightCheck(per100g, perUnit, values.unitWeightG),
+    ...(per100g
+      ? [...per100gLimits(per100g, measure), ...basisChecks('per100g', per100g, measure)]
+      : []),
+    ...(perUnit ? basisChecks('perUnit', perUnit, measure) : []),
+    ...unitWeightCheck(per100g, perUnit, values.unitWeightG, measure),
   ]
 }
 

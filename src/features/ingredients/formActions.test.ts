@@ -240,6 +240,12 @@ describe('filling in from another source', () => {
     })
   })
 
+  test('copied values keep their measure: values per 100 ml stay per 100 ml', () => {
+    const milk = form({ measure: 'ml', per100gEnabled: true, per100g: per100g({ kcal: '64' }) })
+
+    expect(withNutritionOf(form({ name: '' }), milk).measure).toBe('ml')
+  })
+
   test('only the empty fields of a saved ingredient are filled in', () => {
     const saved = form({
       name: 'My skyr',

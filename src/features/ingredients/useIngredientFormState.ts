@@ -11,6 +11,7 @@ import {
 import type { BasisField, BasisKey, IngredientFormValues } from './ingredientForm'
 import { useUndo, type UndoOffer } from './useUndo'
 import type { FilledValues } from './ValueSources'
+import { per100Name } from '../nutrition/unitNames'
 
 /** What the form shows besides its values; undone together with them. */
 type FormState = {
@@ -19,11 +20,6 @@ type FormState = {
   readonly packagePortion: string | null
   /** the per-unit values were split into smaller units already */
   readonly split: boolean
-}
-
-const BASIS_NAMES: Readonly<Record<BasisKey, string>> = {
-  per100g: 'per 100 g',
-  perUnit: 'per unit',
 }
 
 const valuesText = (count: number) => (count === 1 ? '1 value' : `${count} values`)
@@ -86,7 +82,8 @@ export function useIngredientFormState(
     replaceValues: (values) => edit(() => values),
     clearAll: (basis) => {
       const { values } = latest.current
-      const message = `Cleared ${valuesText(filledCount(values, basis))} ${BASIS_NAMES[basis]}`
+      const name = basis === 'per100g' ? per100Name(values.measure) : 'per unit'
+      const message = `Cleared ${valuesText(filledCount(values, basis))} ${name}`
       change(basis, message, { values: clearBasis(values, basis) })
     },
     splitPortion: (parts) =>

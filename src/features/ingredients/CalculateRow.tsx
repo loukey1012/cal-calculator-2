@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Button } from '../../components/ios/Button'
+import { measureName } from '../nutrition/unitNames'
 import { calculateMissingValues } from './formActions'
 import type { IngredientFormValues } from './ingredientForm'
 
@@ -9,7 +10,6 @@ type CalculateRowProps = {
 }
 
 const NOTHING = 'Nothing to calculate: every value is filled in or unknown.'
-const NEEDS_WEIGHT = 'Enter the grams per unit first.'
 const ESTIMATED = 'Calories from protein, carbs and fat: marked as an estimate.'
 
 function filledText(count: number, kcalFromMacros: boolean): string {
@@ -27,7 +27,11 @@ export function CalculateRow({ values, onCalculated }: CalculateRowProps) {
       onCalculated(result.values)
       setMessage(filledText(result.count, result.kcalFromMacros))
     } else {
-      setMessage(result.kind === 'nothing' ? NOTHING : NEEDS_WEIGHT)
+      setMessage(
+        result.kind === 'nothing'
+          ? NOTHING
+          : `Enter the ${measureName(values.measure)} per unit first.`,
+      )
     }
   }
 

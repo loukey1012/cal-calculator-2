@@ -28,6 +28,7 @@ const EMPTY_INGREDIENT: Ingredient = {
   legacy_id: null,
   barcode: null,
   kcal_estimated: false,
+  measure: 'g',
   created_by: null,
   created_at: '',
   updated_at: '',

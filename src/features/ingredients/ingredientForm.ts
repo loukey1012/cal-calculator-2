@@ -3,13 +3,13 @@ import { fieldErrors, type FieldErrors } from '../../lib/forms'
 import { parseDecimal } from '../../lib/numbers'
 import { normalizeBarcode } from '../barcode/barcode'
 import { toWholeKcal } from '../nutrition/format'
-import { mapNutrients, NUTRIENT_KEYS } from '../nutrition/types'
+import { mapNutrients, NUTRIENT_KEYS, type Measure } from '../nutrition/types'
 import type { Ingredient, IngredientInput } from './ingredientsApi'
 
 /** Category select value meaning "create a new category with the typed name". */
 export const NEW_CATEGORY = '__new__'
 
-// grams of anything in 100 g can't exceed 100 (mirrors ingredients_per_100g_max)
+// grams of anything in 100 g can't exceed 100 (mirrors ingredients_per_100g_max); 100 ml can
 const GRAMS_PER_BASIS = 100
 // numeric(7, 2) columns hold at most 99999.99; calories get the same practical ceiling
 const MAX_NUMBER = 99999.99
@@ -41,6 +41,8 @@ export type IngredientFormValues = {
   readonly per100g: BasisFormValues
   readonly perUnitEnabled: boolean
   readonly perUnit: BasisFormValues
+  /** grams or millilitres: values per 100 of it, and the amount of it per unit */
+  readonly measure: Measure
   readonly unitLabel: string
   readonly unitWeightG: string
   /** the values are guessed or worked out, e.g. a restaurant dish */
@@ -61,6 +63,7 @@ export const EMPTY_INGREDIENT_FORM: IngredientFormValues = {
   per100g: EMPTY_BASIS,
   perUnitEnabled: false,
   perUnit: EMPTY_BASIS,
+  measure: 'g',
   unitLabel: '',
   unitWeightG: '',
   kcalEstimated: false,
@@ -117,56 +120,66 @@ function basisSchema(maxGrams?: number) {
 
 type ParsedBasis = z.output<ReturnType<typeof basisSchema>>
 
-const ingredientFormSchema = z
-  .object({
-    name: z
-      .string()
-      .trim()
-      .min(1, 'Enter a name')
-      .max(MAX_NAME, `Use at most ${MAX_NAME} characters`),
-    brand: optionalText(MAX_BRAND),
-    categoryId: z.string(),
-    newCategoryName: z.string().trim().max(MAX_CATEGORY, `Use at most ${MAX_CATEGORY} characters`),
-    newCategoryGroupId: z.string(),
-    note: optionalText(MAX_NOTE),
-    barcode: z.string().transform((raw, ctx) => {
-      if (raw.trim() === '') return null
-      const barcode = normalizeBarcode(raw)
-      if (barcode === null) {
-        ctx.addIssue({ code: 'custom', message: 'Not a valid barcode' })
-        return z.NEVER
+/** 100 g can't hold more than 100 g of anything; 100 ml of something dense (honey) can. */
+const ingredientFormSchema = (measure: Measure) =>
+  z
+    .object({
+      name: z
+        .string()
+        .trim()
+        .min(1, 'Enter a name')
+        .max(MAX_NAME, `Use at most ${MAX_NAME} characters`),
+      brand: optionalText(MAX_BRAND),
+      categoryId: z.string(),
+      newCategoryName: z
+        .string()
+        .trim()
+        .max(MAX_CATEGORY, `Use at most ${MAX_CATEGORY} characters`),
+      newCategoryGroupId: z.string(),
+      note: optionalText(MAX_NOTE),
+      barcode: z.string().transform((raw, ctx) => {
+        if (raw.trim() === '') return null
+        const barcode = normalizeBarcode(raw)
+        if (barcode === null) {
+          ctx.addIssue({ code: 'custom', message: 'Not a valid barcode' })
+          return z.NEVER
+        }
+        return barcode
+      }),
+      per100gEnabled: z.boolean(),
+      per100g: basisSchema(measure === 'g' ? GRAMS_PER_BASIS : undefined),
+      perUnitEnabled: z.boolean(),
+      perUnit: basisSchema(),
+      measure: z.enum(['g', 'ml']),
+      unitLabel: optionalText(MAX_UNIT_LABEL),
+      unitWeightG: optionalNumber().refine(
+        (value) => value === null || value > 0,
+        'Must be more than 0',
+      ),
+      kcalEstimated: z.boolean(),
+    })
+    .superRefine((form, ctx) => {
+      if (!form.per100gEnabled && !form.perUnitEnabled) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['per100gEnabled'],
+          message: 'Add calories per 100 g or per unit',
+        })
       }
-      return barcode
-    }),
-    per100gEnabled: z.boolean(),
-    per100g: basisSchema(GRAMS_PER_BASIS),
-    perUnitEnabled: z.boolean(),
-    perUnit: basisSchema(),
-    unitLabel: optionalText(MAX_UNIT_LABEL),
-    unitWeightG: optionalNumber().refine(
-      (value) => value === null || value > 0,
-      'Must be more than 0',
-    ),
-    kcalEstimated: z.boolean(),
-  })
-  .superRefine((form, ctx) => {
-    if (!form.per100gEnabled && !form.perUnitEnabled) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['per100gEnabled'],
-        message: 'Add calories per 100 g or per unit',
-      })
-    }
-    if (form.per100gEnabled && form.per100g.kcal === null) {
-      ctx.addIssue({ code: 'custom', path: ['per100g', 'kcal'], message: 'Enter the calories' })
-    }
-    if (form.perUnitEnabled && form.perUnit.kcal === null) {
-      ctx.addIssue({ code: 'custom', path: ['perUnit', 'kcal'], message: 'Enter the calories' })
-    }
-    if (form.categoryId === NEW_CATEGORY && form.newCategoryName === '') {
-      ctx.addIssue({ code: 'custom', path: ['newCategoryName'], message: 'Enter a category name' })
-    }
-  })
+      if (form.per100gEnabled && form.per100g.kcal === null) {
+        ctx.addIssue({ code: 'custom', path: ['per100g', 'kcal'], message: 'Enter the calories' })
+      }
+      if (form.perUnitEnabled && form.perUnit.kcal === null) {
+        ctx.addIssue({ code: 'custom', path: ['perUnit', 'kcal'], message: 'Enter the calories' })
+      }
+      if (form.categoryId === NEW_CATEGORY && form.newCategoryName === '') {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['newCategoryName'],
+          message: 'Enter a category name',
+        })
+      }
+    })
 
 const wholeKcal = (kcal: number | null | undefined) => (kcal == null ? null : toWholeKcal(kcal))
 
@@ -212,7 +225,7 @@ function categoryChoice({
 }
 
 export function parseIngredientForm(values: IngredientFormValues): IngredientFormResult {
-  const result = ingredientFormSchema.safeParse(values)
+  const result = ingredientFormSchema(values.measure).safeParse(values)
   if (!result.success) return { success: false, errors: fieldErrors(result.error) }
 
   const form = result.data
@@ -227,6 +240,7 @@ export function parseIngredientForm(values: IngredientFormValues): IngredientFor
         // a switched-off section is cleared, even if something was typed into it
         ...per100gColumns(form.per100gEnabled ? form.per100g : null),
         ...perUnitColumns(form.perUnitEnabled ? form.perUnit : null),
+        measure: form.measure,
         unit_label: form.unitLabel,
         unit_weight_g: form.unitWeightG,
         kcal_estimated: form.kcalEstimated,
@@ -257,6 +271,7 @@ export function toFormValues(ingredient: Ingredient): IngredientFormValues {
       kcal: asText(ingredient.kcal_unit),
       ...mapNutrients((key) => asText(ingredient[`${key}_unit`])),
     },
+    measure: ingredient.measure,
     unitLabel: asText(ingredient.unit_label),
     unitWeightG: asText(ingredient.unit_weight_g),
     kcalEstimated: ingredient.kcal_estimated,

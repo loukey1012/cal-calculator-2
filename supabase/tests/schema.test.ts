@@ -252,6 +252,35 @@ describe('ingredients', () => {
     expect(error?.code).toBe('23514')
   })
 
+  test('an ingredient is measured in grams unless set to millilitres', async () => {
+    // one insert each: a bulk insert sends NULL for keys only some rows have
+    const milk = await alice.client
+      .from('ingredients')
+      .insert({ household_id: householdId, name: 'Milk', kcal_100: 64, measure: 'ml' })
+      .select('measure')
+      .single()
+    const rice = await alice.client
+      .from('ingredients')
+      .insert({ household_id: householdId, name: 'Rice', kcal_100: 350 })
+      .select('measure')
+      .single()
+
+    expect(milk.data?.measure).toBe('ml')
+    expect(rice.data?.measure).toBe('g')
+  })
+
+  test('per 100 ml, more than 100 g of a nutrient is possible (e.g. honey)', async () => {
+    const { error } = await alice.client.from('ingredients').insert({
+      household_id: householdId,
+      name: 'Honey',
+      kcal_100: 435,
+      carbs_100: 116,
+      measure: 'ml',
+    })
+
+    expect(error).toBeNull()
+  })
+
   test('legacy ids are unique per household, not globally', async () => {
     const legacy = { legacy_id: 'firebase-doc-1', name: 'Imported', kcal_100: 50 }
     const mine = await alice.client
@@ -512,6 +541,29 @@ describe('meals', () => {
         kcal: 200,
       },
     ])
+
+    expect(error).toBeNull()
+  })
+
+  test('an amount can be logged in millilitres', async () => {
+    const meal = await alice.client.rpc('ensure_meal', {
+      p_user_id: alice.id,
+      p_date: '2026-09-01',
+      p_meal_type: 'snack',
+    })
+    expect(meal.error).toBeNull()
+
+    const { error } = await alice.client.from('meal_items').insert({
+      meal_id: meal.data,
+      name: 'Milk',
+      entered_amount: 250,
+      entered_unit: 'ml',
+      basis: 'per_100g',
+      basis_multiplier: 2.5,
+      kcal: 64,
+    })
+    // the other tests count alice's meals
+    await admin.from('meals').delete().eq('id', meal.data)
 
     expect(error).toBeNull()
   })

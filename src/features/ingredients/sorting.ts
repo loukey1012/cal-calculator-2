@@ -12,7 +12,7 @@ export const INGREDIENT_SORT_OPTIONS: readonly {
   { value: 'newest', label: 'Newest first', hint: 'The latest added on top' },
   { value: 'name', label: 'A–Z', hint: 'By category, then by name' },
   { value: 'used', label: 'Most used', hint: 'In dishes and logged food' },
-  { value: 'kcal', label: 'Fewest calories', hint: 'Per 100 g; per unit only ones after' },
+  { value: 'kcal', label: 'Fewest calories', hint: 'Per 100 g or ml; per unit only ones after' },
 ]
 
 /** How often each ingredient was used, by ingredient id; unused ones are missing. */

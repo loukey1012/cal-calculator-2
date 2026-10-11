@@ -1,0 +1,25 @@
+import { describe, expect, test } from 'vitest'
+import { amountSuffix, measureName, per100Name, unitChoiceLabel } from './unitNames'
+
+describe('unit names', () => {
+  test('after an amount: g, ml, or the unit name', () => {
+    expect(amountSuffix('g')).toBe('g')
+    expect(amountSuffix('ml', 'glass')).toBe('ml')
+    expect(amountSuffix('unit', 'glass')).toBe('glass')
+    expect(amountSuffix('unit', null)).toBe('units')
+  })
+
+  test('in sentences: per 100 g or ml, grams or millilitres', () => {
+    expect(per100Name('g')).toBe('per 100 g')
+    expect(per100Name('ml')).toBe('per 100 ml')
+    expect(measureName('g')).toBe('grams')
+    expect(measureName('ml')).toBe('millilitres')
+  })
+
+  test('to choose from: Grams, Millilitres, or the unit name', () => {
+    expect(unitChoiceLabel('g')).toBe('Grams')
+    expect(unitChoiceLabel('ml')).toBe('Millilitres')
+    expect(unitChoiceLabel('unit', 'bar')).toBe('bar')
+    expect(unitChoiceLabel('unit')).toBe('Units')
+  })
+})

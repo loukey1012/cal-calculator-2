@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { roundTo } from '../../lib/numbers'
 import { EMPTY_INGREDIENT_FORM, type IngredientFormValues } from '../ingredients/ingredientForm'
 import { NUTRITION_FIELDS, type NutritionBasis, type NutritionField } from '../nutrition/bases'
+import type { Measure } from '../nutrition/types'
 import { nutritionWarnings, resolveNutrition } from './productNutrition'
 
 /**
@@ -37,9 +38,14 @@ const OFF_NAMES: Readonly<Record<Exclude<NutritionField, 'kcal'>, string>> = {
   fiber: 'fiber',
   salt: 'salt',
 }
-const GRAM_UNITS = new Set(['g', 'gr', 'gram', 'grams'])
-// a printed pack size in grams, e.g. "50g", "50 gram", "1,5 g" (not "6 x 50 g")
-const PRINTED_GRAMS = /^\s*(\d+(?:[.,]\d+)?)\s*(g|gr|gram|grams)\s*$/i
+// how many g or ml one of each unit is
+const MEASURE_UNITS: Readonly<Record<Measure, Readonly<Record<string, number>>>> = {
+  g: { g: 1, gr: 1, gram: 1, grams: 1 },
+  ml: { ml: 1, cl: 10, dl: 100, l: 1000 },
+}
+const MEASURES: readonly Measure[] = ['g', 'ml']
+// a printed pack size, e.g. "50g", "50 gram", "1,5 l", "33 cl" (not "6 x 50 g")
+const PRINTED_AMOUNT = /^\s*(\d+(?:[.,]\d+)?)\s*([a-z]+)\s*$/i
 
 // numbers sometimes arrive as text; null and empty text mean unknown, not 0
 const amount = z
@@ -118,26 +124,61 @@ function basisOf(nutriments: Record<string, unknown>, suffix: Suffix): Nutrition
   }
 }
 
-/** A weight in grams; a quantity in another unit (e.g. "2 tbsp") isn't one. */
-function grams(quantity: number | undefined, unit: string | undefined): number | null {
+const unitKey = (unit: string) => unit.trim().toLowerCase()
+
+/** g for "g" or "gram", ml for "ml", "cl" or "l"; null for anything else (e.g. "tbsp") */
+function measureOf(unit: string | undefined): Measure | null {
+  if (unit === undefined) return null
+  return MEASURES.find((measure) => unitKey(unit) in MEASURE_UNITS[measure]) ?? null
+}
+
+function printedPack(product: ParsedProduct) {
+  const match = PRINTED_AMOUNT.exec(product.quantity ?? '')
+  if (!match?.[1] || !match[2] || measureOf(match[2]) === null) return null
+  return { quantity: Number(match[1].replace(',', '.')), unit: match[2] }
+}
+
+/** ml for a product sold or portioned by volume (a drink), otherwise g. */
+function productMeasure(product: ParsedProduct): Measure {
+  const units = [
+    product.product_quantity_unit,
+    product.serving_quantity_unit,
+    printedPack(product)?.unit,
+  ]
+  return units.some((unit) => measureOf(unit) === 'ml') ? 'ml' : 'g'
+}
+
+/**
+ * An amount in g or ml; a quantity in another unit (e.g. "2 tbsp") isn't one. Without a unit,
+ * Open Food Facts means the product's own measure.
+ */
+function amountIn(
+  measure: Measure,
+  quantity: number | undefined,
+  unit: string | undefined,
+): number | null {
   if (quantity === undefined || quantity <= 0) return null
-  return unit === undefined || GRAM_UNITS.has(unit.trim().toLowerCase()) ? quantity : null
+  if (unit === undefined) return quantity
+  const factor = MEASURE_UNITS[measure][unitKey(unit)]
+  return factor === undefined ? null : quantity * factor
 }
 
-function packGrams(product: ParsedProduct): number | null {
-  const stated = grams(product.product_quantity, product.product_quantity_unit)
+function packAmount(product: ParsedProduct, measure: Measure): number | null {
+  const stated = amountIn(measure, product.product_quantity, product.product_quantity_unit)
   if (stated !== null) return stated
-  const printed = PRINTED_GRAMS.exec(product.quantity ?? '')
-  return printed?.[1] ? Number(printed[1].replace(',', '.')) : null
+  const printed = printedPack(product)
+  return printed ? amountIn(measure, printed.quantity, printed.unit) : null
 }
 
-function reportedNutrition(product: ParsedProduct) {
+function reportedNutrition(product: ParsedProduct, measure: Measure) {
   const nutriments = product.nutriments ?? {}
   return {
+    measure,
+    // Open Food Facts keeps a drink's values per 100 ml under _100g
     per100g: basisOf(nutriments, '_100g'),
     perPortion: basisOf(nutriments, '_serving'),
-    portionG: grams(product.serving_quantity, product.serving_quantity_unit),
-    packG: packGrams(product),
+    portionG: amountIn(measure, product.serving_quantity, product.serving_quantity_unit),
+    packG: packAmount(product, measure),
   }
 }
 
@@ -205,7 +246,8 @@ function productInfo(product: ParsedProduct): ProductInfo {
  */
 export function productPrefill(raw: OffProduct, barcode: string): ProductPrefill {
   const product = productSchema.parse(raw)
-  const reported = reportedNutrition(product)
+  const measure = productMeasure(product)
+  const reported = reportedNutrition(product, measure)
   const { per100g, perPortion } = resolveNutrition(reported)
   return {
     values: {
@@ -217,6 +259,7 @@ export function productPrefill(raw: OffProduct, barcode: string): ProductPrefill
       per100g: formBasis(per100g),
       perUnitEnabled: perPortion.kcal !== null,
       perUnit: formBasis(perPortion),
+      measure,
       unitWeightG: asText(reported.portionG),
     },
     warnings: nutritionWarnings(reported),

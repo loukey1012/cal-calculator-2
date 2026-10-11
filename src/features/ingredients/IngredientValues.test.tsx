@@ -124,6 +124,51 @@ describe('clearing values', () => {
   })
 })
 
+describe('millilitres', () => {
+  test('values can be entered per 100 ml and ml per unit, and are saved as such', async () => {
+    const user = userEvent.setup()
+    renderSheet()
+    await user.type(screen.getByLabelText('Name'), 'Oat drink')
+
+    await user.click(screen.getByRole('radio', { name: 'Millilitres' }))
+    await user.click(screen.getByRole('switch', { name: 'Per 100 ml' }))
+    await user.type(screen.getByLabelText('Calories per 100 ml'), '46')
+    await user.type(screen.getByLabelText('Unit name'), 'glass')
+    await user.type(screen.getByLabelText('Millilitres per unit'), '250')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() =>
+      expect(createIngredient).toHaveBeenCalledWith(
+        'h1',
+        expect.objectContaining({ measure: 'ml', kcal_100: 46, unit_weight_g: 250 }),
+      ),
+    )
+  })
+
+  test('an ingredient in ml opens in ml; switching back shows grams again', async () => {
+    const user = userEvent.setup()
+    renderSheet({ editing: { ...SKYR, measure: 'ml' } })
+
+    expect(screen.getByRole('radio', { name: 'Millilitres' })).toBeChecked()
+    expect(screen.getByLabelText('Calories per 100 ml')).toHaveValue('62')
+
+    await user.click(screen.getByRole('radio', { name: 'Grams' }))
+    expect(screen.getByLabelText('Calories per 100 g')).toHaveValue('62')
+  })
+
+  test('per 100 ml, more than 100 g of sugar is not flagged (e.g. syrup)', async () => {
+    const user = userEvent.setup()
+    renderSheet()
+    await user.click(screen.getByRole('radio', { name: 'Millilitres' }))
+    await user.click(screen.getByRole('switch', { name: 'Per 100 ml' }))
+    await user.type(screen.getByLabelText('Calories per 100 ml'), '420')
+    await user.type(screen.getByLabelText('Carbs per 100 ml'), '105')
+    await user.type(screen.getByLabelText('Sugar per 100 ml'), '105')
+
+    expect(screen.queryByText(/more than 100 g/)).not.toBeInTheDocument()
+  })
+})
+
 describe('splitting a portion into units', () => {
   test('a portion of 3 becomes one unit each, with the package’s count suggested', async () => {
     vi.mocked(lookupProduct).mockResolvedValue({

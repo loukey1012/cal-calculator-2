@@ -5,6 +5,7 @@ import { SegmentedControl } from '../../components/ios/SegmentedControl'
 import { formatKcal, macroSummary } from '../nutrition/format'
 import { itemTotals } from '../nutrition/totals'
 import type { AmountUnit } from '../nutrition/types'
+import { amountSuffix, unitChoiceLabel } from '../nutrition/unitNames'
 import { parseAmount } from '../../lib/numbers'
 import { DecimalRow } from './DecimalRow'
 import { AmountChips } from './AmountChips'
@@ -89,7 +90,7 @@ export function DishLineEditor({
   })
   const [amounts, setAmounts] = useState<Readonly<Record<string, number | null>>>(initialAmounts)
   const [error, setError] = useState<string | null>(null)
-  const unitName = unit === 'g' ? 'g' : (unitLabel ?? 'units')
+  const unitName = amountSuffix(unit, unitLabel)
   const line = tryBuild(build, inputFor(who, unit, amount, amounts))
   const totals = line ? itemTotals(line.item) : null
   const whoOptions = [
@@ -127,7 +128,7 @@ export function DishLineEditor({
             label="Unit"
             options={units.map((value) => ({
               value,
-              label: value === 'g' ? 'Grams' : (unitLabel ?? 'Units'),
+              label: unitChoiceLabel(value, unitLabel),
             }))}
             value={unit}
             onChange={setUnit}
@@ -166,7 +167,7 @@ export function DishLineEditor({
               }}
               onTextChange={(text) => setAmountText((current) => ({ ...current, text }))}
             />
-            {unit !== 'g' && (
+            {unit === 'unit' && (
               <AmountChips
                 onWhole={pickAmount}
                 onFraction={(fraction) => pickAmount(withFraction(amountText.text, fraction))}

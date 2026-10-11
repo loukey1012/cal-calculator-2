@@ -300,6 +300,33 @@ describe('calories as an estimate', () => {
     expect(sentDish().kcalEstimated).toBe(false)
   })
 
+  test('an ingredient measured in ml is added in ml, or in its unit', async () => {
+    const oat = ingredient({
+      id: 'oat',
+      name: 'Oat drink',
+      measure: 'ml',
+      kcal_100: 46,
+      unit_label: 'glass',
+      unit_weight_g: 250,
+    })
+    vi.mocked(fetchIngredients).mockResolvedValue([PATTY, oat])
+    const user = userEvent.setup()
+    renderCook()
+
+    await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
+    await user.click(await screen.findByRole('button', { name: /Oat drink/ }))
+    const units = within(screen.getByRole('radiogroup', { name: 'Unit' }))
+    expect(units.getAllByRole('radio').map((radio) => radio.textContent)).toEqual([
+      'Millilitres',
+      'glass',
+    ])
+    await user.type(screen.getByLabelText('Amount'), '500')
+    expect(screen.getByTestId('line-preview')).toHaveTextContent('230 kcal')
+    await user.click(screen.getByRole('button', { name: 'Add to dish' }))
+
+    expect(screen.getByText('500 ml · shared')).toBeInTheDocument()
+  })
+
   test('a whole number and a fraction chip make an amount like 2 ½', async () => {
     const pizza = ingredient({ id: 'pizza', name: 'Pizza', kcal_unit: 800, unit_label: 'pizza' })
     vi.mocked(fetchIngredients).mockResolvedValue([PATTY, pizza])

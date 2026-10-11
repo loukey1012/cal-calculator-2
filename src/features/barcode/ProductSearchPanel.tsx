@@ -21,7 +21,7 @@ type ProductSearchPanelProps = {
 
 function hitSubtitle(hit: ProductHit): string {
   const kcal = hit.values.per100gEnabled
-    ? `${hit.values.per100g.kcal} kcal / 100 g`
+    ? `${hit.values.per100g.kcal} kcal / 100 ${hit.values.measure}`
     : `${hit.values.perUnit.kcal} kcal / portion`
   return [hit.values.brand, kcal].filter(Boolean).join(' · ')
 }

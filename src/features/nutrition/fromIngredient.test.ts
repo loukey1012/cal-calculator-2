@@ -18,6 +18,7 @@ const ROW: Tables<'ingredients'> = {
   sat_fat_100: null,
   fiber_100: null,
   salt_100: null,
+  measure: 'g',
   unit_label: 'bar',
   unit_weight_g: 60,
   kcal_unit: 210,
@@ -39,6 +40,7 @@ const ROW: Tables<'ingredients'> = {
 describe('ingredientNutrition', () => {
   test('maps per-unit columns and leaves the missing per-100g basis empty', () => {
     expect(ingredientNutrition(ROW)).toEqual({
+      measure: 'g',
       per100g: null,
       perUnit: values(210, { protein: 20, carbs: 15, fat: 8, salt: 0.2 }),
       unitWeightG: 60,
