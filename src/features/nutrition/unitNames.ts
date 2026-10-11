@@ -1,5 +1,14 @@
 import type { AmountUnit, Measure } from './types'
 
+/**
+ * An ingredient's measure. Ingredients cached on the phone before measures existed have none:
+ * they are grams (the database's default). Never bump the cache buster for it: queued offline
+ * changes would be lost.
+ */
+export function measureOf(ingredient: { readonly measure?: Measure | null }): Measure {
+  return ingredient.measure ?? 'g'
+}
+
 const MEASURE_NAMES = { g: 'Grams', ml: 'Millilitres' } as const
 
 /** "per 100 g" or "per 100 ml" */

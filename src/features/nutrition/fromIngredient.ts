@@ -2,6 +2,7 @@ import type { Tables } from '../../lib/database.types'
 import { roundTo } from '../../lib/numbers'
 import { resolveAmount } from './amounts'
 import { toWholeKcal } from './format'
+import { measureOf } from './unitNames'
 import {
   mapNutrients,
   type AmountUnit,
@@ -44,7 +45,7 @@ function basisFromRow(row: IngredientRow, suffix: '100' | 'unit'): NutritionValu
 
 export function ingredientNutrition(row: IngredientRow): IngredientNutrition {
   return {
-    measure: row.measure,
+    measure: measureOf(row),
     per100g: basisFromRow(row, '100'),
     perUnit: basisFromRow(row, 'unit'),
     unitWeightG: row.unit_weight_g,

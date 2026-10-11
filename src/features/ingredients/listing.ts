@@ -1,4 +1,5 @@
 import { formatKcal } from '../nutrition/format'
+import { measureOf } from '../nutrition/unitNames'
 import type { Category, CategoryGroup, Ingredient } from './ingredientsApi'
 
 /** Which ingredients the category chips let through. A broad category id of null is "Other". */
@@ -138,7 +139,7 @@ export function nutritionSummary(ingredient: Ingredient, locale?: string): strin
   const parts = [
     ingredient.kcal_100 === null
       ? null
-      : `${kcal(ingredient.kcal_100)} / 100 ${ingredient.measure}`,
+      : `${kcal(ingredient.kcal_100)} / 100 ${measureOf(ingredient)}`,
     ingredient.kcal_unit === null
       ? null
       : `${kcal(ingredient.kcal_unit)} / ${ingredient.unit_label ?? DEFAULT_UNIT_LABEL}`,

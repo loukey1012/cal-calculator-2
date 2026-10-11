@@ -3,6 +3,7 @@ import { fieldErrors, type FieldErrors } from '../../lib/forms'
 import { parseDecimal } from '../../lib/numbers'
 import { normalizeBarcode } from '../barcode/barcode'
 import { toWholeKcal } from '../nutrition/format'
+import { measureOf } from '../nutrition/unitNames'
 import { mapNutrients, NUTRIENT_KEYS, type Measure } from '../nutrition/types'
 import type { Ingredient, IngredientInput } from './ingredientsApi'
 
@@ -271,7 +272,7 @@ export function toFormValues(ingredient: Ingredient): IngredientFormValues {
       kcal: asText(ingredient.kcal_unit),
       ...mapNutrients((key) => asText(ingredient[`${key}_unit`])),
     },
-    measure: ingredient.measure,
+    measure: measureOf(ingredient),
     unitLabel: asText(ingredient.unit_label),
     unitWeightG: asText(ingredient.unit_weight_g),
     kcalEstimated: ingredient.kcal_estimated,

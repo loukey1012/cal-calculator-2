@@ -1,5 +1,12 @@
 import { describe, expect, test } from 'vitest'
-import { amountSuffix, measureName, per100Name, unitChoiceLabel } from './unitNames'
+import { amountSuffix, measureName, measureOf, per100Name, unitChoiceLabel } from './unitNames'
+
+describe('measureOf', () => {
+  test('an ingredient cached before measures existed counts as grams', () => {
+    expect(measureOf({})).toBe('g')
+    expect(measureOf({ measure: 'ml' })).toBe('ml')
+  })
+})
 
 describe('unit names', () => {
   test('after an amount: g, ml, or the unit name', () => {
