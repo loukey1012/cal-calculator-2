@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { CurrentUserContext } from '../../app/currentUser'
@@ -7,6 +7,7 @@ import { category, categoryGroup, ingredient } from './testData'
 
 vi.mock('./ingredientsApi', () => ({
   fetchIngredients: vi.fn(),
+  fetchIngredientUses: vi.fn(),
   fetchCategories: vi.fn(),
   fetchCategoryGroups: vi.fn().mockResolvedValue([]),
   createIngredient: vi.fn(),
@@ -16,6 +17,7 @@ vi.mock('./ingredientsApi', () => ({
 }))
 
 vi.mock('../barcode/openFoodFacts', () => ({ lookupProduct: vi.fn() }))
+vi.mock('../household/householdApi', () => ({ updateProfile: vi.fn() }))
 const scanned = vi.hoisted(() => ({ barcode: '' }))
 vi.mock('../barcode/BarcodeScanner', () => ({
   BarcodeScanner: ({ onResult }: { onResult: (barcode: string) => void }) => (
@@ -27,7 +29,13 @@ vi.mock('../barcode/BarcodeScanner', () => ({
 
 import { lookupProduct } from '../barcode/openFoodFacts'
 import { EMPTY_INGREDIENT_FORM } from './ingredientForm'
-import { fetchCategories, fetchCategoryGroups, fetchIngredients } from './ingredientsApi'
+import { updateProfile } from '../household/householdApi'
+import {
+  fetchCategories,
+  fetchCategoryGroups,
+  fetchIngredientUses,
+  fetchIngredients,
+} from './ingredientsApi'
 import { IngredientsPage } from './IngredientsPage'
 
 const PROFILE = {
@@ -41,9 +49,28 @@ const PROFILE = {
 }
 const CATEGORIES = [category('c1', 'Dairy'), category('c2', 'Bakery')]
 const INGREDIENTS = [
-  ingredient({ id: 'cream', name: 'Cream 7%', brand: 'Milbona', category_id: 'c1', kcal_100: 92 }),
-  ingredient({ id: 'cheese', name: 'Käse', category_id: 'c1', kcal_100: 350 }),
-  ingredient({ id: 'bread', name: 'Bread', category_id: 'c2', kcal_100: 250 }),
+  ingredient({
+    id: 'cream',
+    name: 'Cream 7%',
+    brand: 'Milbona',
+    category_id: 'c1',
+    kcal_100: 92,
+    created_at: '2026-10-02T10:00:00Z',
+  }),
+  ingredient({
+    id: 'cheese',
+    name: 'Käse',
+    category_id: 'c1',
+    kcal_100: 350,
+    created_at: '2026-10-01T10:00:00Z',
+  }),
+  ingredient({
+    id: 'bread',
+    name: 'Bread',
+    category_id: 'c2',
+    kcal_100: 250,
+    created_at: '2026-10-03T10:00:00Z',
+  }),
 ]
 
 function renderPage(appearance: Record<string, string> = {}) {
@@ -59,6 +86,59 @@ beforeEach(() => {
   vi.mocked(fetchIngredients).mockResolvedValue(INGREDIENTS)
   vi.mocked(fetchCategories).mockResolvedValue(CATEGORIES)
   vi.mocked(fetchCategoryGroups).mockResolvedValue([])
+  vi.mocked(fetchIngredientUses).mockResolvedValue({})
+  vi.mocked(updateProfile).mockResolvedValue()
+})
+
+/** the ingredient names in the order the list shows them */
+function shownNames(): (string | undefined)[] {
+  const names = INGREDIENTS.map(({ name }) => name)
+  return screen
+    .getAllByRole('button', { name: /kcal/ })
+    .map((row) => names.find((name) => row.textContent?.includes(name)))
+}
+
+describe('sorting', () => {
+  test('newest first by default: one list, the latest added on top, no category headings', async () => {
+    renderPage()
+    await screen.findByText('Cream 7%')
+
+    expect(shownNames()).toEqual(['Bread', 'Cream 7%', 'Käse'])
+    expect(screen.queryByRole('heading', { name: 'Dairy' })).not.toBeInTheDocument()
+  })
+
+  test('A–Z keeps the list grouped by category', async () => {
+    renderPage({ ingredientSort: 'name' })
+    await screen.findByText('Cream 7%')
+
+    expect(screen.getByRole('heading', { name: 'Bakery' })).toBeInTheDocument()
+    expect(shownNames()).toEqual(['Bread', 'Cream 7%', 'Käse'])
+  })
+
+  test('most used first', async () => {
+    vi.mocked(fetchIngredientUses).mockResolvedValue({ cheese: 4 })
+    renderPage({ ingredientSort: 'used' })
+    await screen.findByText('Cream 7%')
+
+    await waitFor(() => expect(shownNames()).toEqual(['Käse', 'Bread', 'Cream 7%']))
+  })
+
+  test('the order is picked from a menu and saved to the account', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByText('Cream 7%')
+
+    await user.click(screen.getByRole('button', { name: 'Sort: Newest first' }))
+    const sheet = within(screen.getByRole('dialog', { name: 'Sort by' }))
+    await user.click(sheet.getByRole('button', { name: /Fewest calories/ }))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await waitFor(() =>
+      expect(updateProfile).toHaveBeenCalledWith('u1', {
+        appearance: expect.objectContaining({ ingredientSort: 'kcal' }),
+      }),
+    )
+  })
 })
 
 describe('brands', () => {
@@ -196,7 +276,7 @@ describe('scanning on the Ingredients page', () => {
 
 describe('IngredientsPage', () => {
   test('lists ingredients grouped by category with brand and calories', async () => {
-    renderPage()
+    renderPage({ ingredientSort: 'name' })
 
     expect(await screen.findByText('Cream 7%')).toBeInTheDocument()
     expect(fetchIngredients).toHaveBeenCalledWith('h1')

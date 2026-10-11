@@ -806,6 +806,13 @@ export type Database = {
         }
         Returns: string
       }
+      ingredient_use_counts: {
+        Args: never
+        Returns: {
+          ingredient_id: string
+          uses: number
+        }[]
+      }
       join_household: {
         Args: { p_invite_code: string }
         Returns: {

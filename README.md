@@ -67,7 +67,8 @@ Built for a two-person household: both members log their own meals, can see and 
 
 ### Ingredient database (Ingredients tab)
 
-- Shared per household, **grouped by category**, with **accent-insensitive search** (`kase` finds `Käse`) and category filter chips: one sideways-scrolling line, all on screen, or **grouped** into broad categories that open their categories when tapped (Settings › Appearance).
+- Shared per household, with **accent-insensitive search** (`kase` finds `Käse`) and category filter chips: one sideways-scrolling line, all on screen, or **grouped** into broad categories that open their categories when tapped (Settings › Appearance).
+- **Sorting** (the button at the right, under the category chips): **Newest first** (default: the ingredient added last is on top), **A–Z** (grouped by category, as before), **Most used** (how often it went into a dish or was logged on its own; a dish eaten by two counts once) or **Fewest calories** (per 100 g; ingredients with values per unit only come after them). The same order applies to the Ingredients tab and the Cook search, and is saved to your account, like Appearance (`appearance.ingredientSort`).
 - **Brands stand out:** each ingredient's brand is a small label in the accent color above its name (in the Ingredients tab, the Cook search and Copy from an ingredient), so a list can be read for brands alone.
 - **Filter by brand** (under the category chips, on the Ingredients tab and in the Cook search): a list of the saved brands with how many ingredients each has, searchable; the chosen brand works together with the search and the category, and ⓧ shows every brand again. On Cook it stays chosen while you look at an ingredient's amount and come back.
 - Nutrition **per 100 g and/or per unit**: calories (whole numbers, rounded up), protein, carbs, sugar, fat, saturated fat, fiber, salt. Only calories are required.
@@ -156,10 +157,10 @@ Noted 2026-10-11.
 - [x] **Brands easier to see** in the ingredient lists (Ingredients tab and the ingredient search on Cook): the brand as a small accent-colored label above the name
 - [x] **Filter by brand**
 
-**4. Sorting the ingredient lists** (to do)
+**4. Sorting the ingredient lists** (done)
 
-- [ ] **Newest first**, so an ingredient you just added is at the top
-- [ ] **Other sort orders** to choose from
+- [x] **Newest first**, so an ingredient you just added is at the top
+- [x] **Other sort orders** to choose from: A–Z by category, Most used, Fewest calories; one choice for both lists, saved to the account
 
 ## Fixes and improvements (done)
 
@@ -262,7 +263,7 @@ scripts/
 - `meals` (unique per user, local date and meal type), `meal_items` (nutrition snapshot plus a basis multiplier)
 - `meal_items` of a cooked dish point to their `dish_portions` row and `dish_lines` row; plain items leave both empty
 - `dishes` (a cooking; split mode equal / count / percent / weight, cooked weight, `kcal_estimated` when its calories are only roughly known, a revision changed by every save), `dish_portions` (who ate it on which day and meal, or nobody yet = a leftover; split value; `discarded` for a thrown-away leftover, which keeps its share), `dish_lines` (ingredient snapshot like `meal_items`, either `shared` or `per_portion`), `dish_line_amounts` (own amount of a `per_portion` line per portion)
-- Views `meal_totals` and `daily_totals` (with `kcal_estimated`: some food came from a dish marked as an estimate). RPCs `create_household`, `join_household`, `ensure_meal`, `save_dish` and `delete_dish`.
+- Views `meal_totals` and `daily_totals` (with `kcal_estimated`: some food came from a dish marked as an estimate). RPCs `create_household`, `join_household`, `ensure_meal`, `save_dish` and `delete_dish`; `ingredient_use_counts` (how often each ingredient was used, for sorting by Most used; runs with the caller's rights, so RLS keeps it to the household).
 - **Live updates:** triggers on the household's tables send a small hint over Supabase Realtime Broadcast to the private channel `household:<id>` (what changed: a person's day, a dish, the ingredient database, …). Hints carry no data: the app marks the matching queries out of date, and what's on screen re-fetches through the normal RLS-checked queries. A failed hint never fails a save.
 - `save_dish` stores a whole dish at once and re-logs every eaten portion as meal items in its eater's meal (shared lines × the portion's share, own amounts as entered), so the totals views count dishes like any other food. Resending the same save does nothing; a save based on an outdated revision is rejected ("changed meanwhile"). It can also take over plain items of a meal ("share this meal").
 

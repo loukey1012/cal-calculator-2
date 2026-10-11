@@ -13,6 +13,7 @@ import {
   deleteIngredient,
   fetchCategories,
   fetchCategoryGroups,
+  fetchIngredientUses,
   fetchIngredients,
   setIngredientBarcode,
   updateIngredient,
@@ -25,6 +26,7 @@ export const ingredientKeys = {
   ingredients: (householdId: string) => ['ingredients', householdId] as const,
   categories: (householdId: string) => ['categories', householdId] as const,
   categoryGroups: (householdId: string) => ['categoryGroups', householdId] as const,
+  uses: (householdId: string) => ['ingredientUses', householdId] as const,
 }
 
 type IngredientsQueryOptions = {
@@ -40,6 +42,18 @@ export function useIngredients(
     queryKey: ingredientKeys.ingredients(householdId),
     queryFn: () => fetchIngredients(householdId),
     refetchOnMount: alwaysRefresh ? 'always' : true,
+  })
+}
+
+/** How often each ingredient was used; only loaded when `enabled` (sorting by most used). */
+export function useIngredientUses(
+  householdId: string,
+  enabled: boolean,
+): UseQueryResult<Record<string, number>> {
+  return useQuery({
+    queryKey: ingredientKeys.uses(householdId),
+    queryFn: () => fetchIngredientUses(),
+    enabled,
   })
 }
 

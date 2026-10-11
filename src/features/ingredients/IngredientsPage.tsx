@@ -17,6 +17,7 @@ import { ScanBarcodeButton } from '../barcode/ScanBarcodeButton'
 import { IngredientRow } from './IngredientRow'
 import { IngredientSheet } from './IngredientSheet'
 import { ListOptions } from './ListOptions'
+import { useIngredientSort } from './useIngredientSort'
 import { ALL_CATEGORIES, filterIngredients, groupByCategory, type CategoryFilter } from './listing'
 
 /** null ingredient = a new one, maybe for a scanned barcode */
@@ -31,6 +32,7 @@ export function IngredientsPage() {
   const [query, setQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>(ALL_CATEGORIES)
   const [brand, setBrand] = useState<string | null>(null)
+  const { sort, setSort, sorted } = useIngredientSort(householdId)
   const [editing, setEditing] = useState<Editing>(null)
   const categoryList = categories.data ?? []
 
@@ -55,22 +57,26 @@ export function IngredientsPage() {
     if (ingredients.data.length === 0) {
       return <EmptyState title="No ingredients yet" message="Tap + to add your first ingredient." />
     }
-    const sections = groupByCategory(
-      filterIngredients(ingredients.data, { query, category: categoryFilter, brand }, categoryList),
+    const matches = filterIngredients(
+      ingredients.data,
+      { query, category: categoryFilter, brand },
       categoryList,
     )
-    if (sections.length === 0) {
+    if (matches.length === 0) {
       return <EmptyState title="No matches" message="Try a different search, category or brand." />
     }
-    return sections.map((section) => (
+    const row = (ingredient: Ingredient) => (
+      <IngredientRow
+        key={ingredient.id}
+        ingredient={ingredient}
+        onClick={() => setEditing({ ingredient })}
+      />
+    )
+    // A–Z keeps the categories; any other order is one list, or it would only order within them
+    if (sort !== 'name') return <GroupedSection>{sorted(matches).map(row)}</GroupedSection>
+    return groupByCategory(matches, categoryList).map((section) => (
       <GroupedSection key={section.id} header={section.title}>
-        {section.ingredients.map((ingredient) => (
-          <IngredientRow
-            key={ingredient.id}
-            ingredient={ingredient}
-            onClick={() => setEditing({ ingredient })}
-          />
-        ))}
+        {section.ingredients.map(row)}
       </GroupedSection>
     ))
   }
@@ -116,7 +122,13 @@ export function IngredientsPage() {
           onChange={setCategoryFilter}
         />
       )}
-      <ListOptions ingredients={ingredients.data ?? []} brand={brand} onBrandChange={setBrand} />
+      <ListOptions
+        ingredients={ingredients.data ?? []}
+        brand={brand}
+        onBrandChange={setBrand}
+        sort={sort}
+        onSortChange={setSort}
+      />
       {renderContent()}
       <IngredientSheet
         // the pickers need their lists, or the category would show "None" when it is set

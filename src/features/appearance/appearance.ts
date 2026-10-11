@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { isNearWhite, mixHex, onColor, readableInk, visibleOn } from '../../lib/color'
 import { ownLookSchema, partnerLooksSchema } from '../household/partnerLook'
+import { INGREDIENT_SORTS } from '../ingredients/sorting'
 import type { RingKey } from '../nutrition/goals'
 
 const THEMES = ['system', 'light', 'dark'] as const
@@ -42,6 +43,7 @@ export const DEFAULT_APPEARANCE = {
   progressStyle: 'ringBars',
   categoryLayout: 'line',
   appIcon: 'graphite',
+  ingredientSort: 'newest',
 } as const satisfies Record<string, string>
 
 /** A color picked for one goal's ring and bar, on top of the palette. */
@@ -79,6 +81,8 @@ const appearanceSchema = z
     progressStyle: z.enum(PROGRESS_STYLES).catch(DEFAULT_APPEARANCE.progressStyle),
     categoryLayout: z.enum(CATEGORY_LAYOUTS).catch(DEFAULT_APPEARANCE.categoryLayout),
     appIcon: z.enum(APP_ICONS).catch(DEFAULT_APPEARANCE.appIcon),
+    // the order of both ingredient lists (Ingredients tab and the Cook search)
+    ingredientSort: z.enum(INGREDIENT_SORTS).catch(DEFAULT_APPEARANCE.ingredientSort),
     customGoalColors: customGoalColorsSchema.optional(),
     // the nickname and symbol you gave each household member
     partnerLooks: partnerLooksSchema,

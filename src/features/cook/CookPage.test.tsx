@@ -758,6 +758,27 @@ describe('the ingredient search', () => {
     ).toHaveAttribute('aria-pressed', 'true')
   })
 
+  test('the search shows the newest ingredient first, like the Ingredients tab', async () => {
+    const older = ingredient({ id: 'old', name: 'Apple', kcal_100: 52, created_at: '2026-10-01' })
+    const newer = ingredient({
+      id: 'new',
+      name: 'Zucchini',
+      kcal_100: 17,
+      created_at: '2026-10-11',
+    })
+    vi.mocked(fetchIngredients).mockResolvedValue([older, newer])
+    const user = userEvent.setup()
+    renderCook()
+    await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
+
+    const rows = await screen.findAllByRole('button', { name: /kcal \/ 100 g/ })
+    expect(rows.map((row) => row.textContent)).toEqual([
+      expect.stringContaining('Zucchini'),
+      expect.stringContaining('Apple'),
+    ])
+    expect(screen.getByRole('button', { name: 'Sort: Newest first' })).toBeInTheDocument()
+  })
+
   test('the search can show one brand, which stays chosen after looking at an amount', async () => {
     const skyr = ingredient({ id: 'skyr', name: 'Skyr', brand: 'Milbona', kcal_100: 62 })
     vi.mocked(fetchIngredients).mockResolvedValue([PATTY, skyr])

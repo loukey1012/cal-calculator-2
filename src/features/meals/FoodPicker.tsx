@@ -13,6 +13,7 @@ import type { Ingredient } from '../ingredients/ingredientsApi'
 import { IngredientRow } from '../ingredients/IngredientRow'
 import { ListOptions } from '../ingredients/ListOptions'
 import { filterIngredients, type IngredientFilter } from '../ingredients/listing'
+import { useIngredientSort } from '../ingredients/useIngredientSort'
 
 type FoodPickerProps = {
   /** the search and category, kept by the caller (they survive going to the amount and back) */
@@ -36,7 +37,8 @@ export function FoodPicker({ filter, onFilterChange, onPick, onNew, onCustom }: 
   const groups = useCategoryGroups(householdId)
   const { categoryLayout } = useMyAppearance()
   const categoryList = categories.data ?? []
-  const matches = filterIngredients(ingredients.data ?? [], filter, categoryList)
+  const { sort, setSort, sorted } = useIngredientSort(householdId)
+  const matches = sorted(filterIngredients(ingredients.data ?? [], filter, categoryList))
   const name = filter.query.trim()
 
   return (
@@ -72,6 +74,8 @@ export function FoodPicker({ filter, onFilterChange, onPick, onNew, onCustom }: 
         ingredients={ingredients.data ?? []}
         brand={filter.brand}
         onBrandChange={(brand) => onFilterChange({ ...filter, brand })}
+        sort={sort}
+        onSortChange={setSort}
       />
       <GroupedSection>
         <ListRow

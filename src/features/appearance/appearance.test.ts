@@ -21,9 +21,15 @@ describe('parseAppearance', () => {
       progressStyle: 'bars',
       categoryLayout: 'wrap',
       appIcon: 'pink',
+      ingredientSort: 'used',
     }
 
     expect(parseAppearance(stored)).toEqual(stored)
+  })
+
+  test('ingredient lists show the newest first until changed; an unknown order falls back', () => {
+    expect(DEFAULT_APPEARANCE.ingredientSort).toBe('newest')
+    expect(parseAppearance({ ingredientSort: 'random' }).ingredientSort).toBe('newest')
   })
 
   test.each([null, undefined, 'dark', 42, []])('falls back to the defaults for %j', (value) => {

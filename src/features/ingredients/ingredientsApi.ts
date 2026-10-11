@@ -23,6 +23,16 @@ export async function fetchIngredients(householdId: string): Promise<Ingredient[
   return data
 }
 
+/**
+ * How often each of the household's ingredients was used, by id (RLS keeps it to the
+ * household). A plain object, since the query cache is stored as JSON.
+ */
+export async function fetchIngredientUses(): Promise<Record<string, number>> {
+  const { data, error } = await supabase.rpc('ingredient_use_counts')
+  if (error) throw ApiError.from(error)
+  return Object.fromEntries(data.map(({ ingredient_id, uses }) => [ingredient_id, uses]))
+}
+
 export async function fetchCategories(householdId: string): Promise<Category[]> {
   const { data, error } = await supabase
     .from('categories')
