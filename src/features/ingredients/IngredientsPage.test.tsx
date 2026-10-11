@@ -61,6 +61,43 @@ beforeEach(() => {
   vi.mocked(fetchCategoryGroups).mockResolvedValue([])
 })
 
+describe('brands', () => {
+  test('a brand shows above the ingredient’s name, not in the grey line', async () => {
+    renderPage()
+
+    const row = await screen.findByRole('button', { name: /Cream 7%/ })
+    expect(within(row).getByText('Milbona')).toBeInTheDocument()
+    expect(within(row).getByText('92 kcal / 100 g')).toBeInTheDocument()
+  })
+
+  test('the list can be filtered by brand, and shows every brand again', async () => {
+    vi.mocked(fetchIngredients).mockResolvedValue([
+      ...INGREDIENTS,
+      ingredient({ id: 'skyr', name: 'Skyr', brand: 'milbona', category_id: 'c1', kcal_100: 62 }),
+      ingredient({ id: 'cola', name: 'Cola', brand: 'Coca-Cola', kcal_100: 42 }),
+    ])
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByText('Cream 7%')
+
+    await user.click(screen.getByRole('button', { name: 'Brand: All brands' }))
+    const sheet = within(screen.getByRole('dialog', { name: 'Brand' }))
+    await user.type(sheet.getByRole('searchbox', { name: 'Search brands' }), 'mil')
+    expect(sheet.queryByRole('button', { name: /Coca-Cola/ })).not.toBeInTheDocument()
+    await user.click(sheet.getByRole('button', { name: /Milbona 2/ }))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByText('Cream 7%')).toBeInTheDocument()
+    expect(screen.getByText('Skyr')).toBeInTheDocument()
+    expect(screen.queryByText('Bread')).not.toBeInTheDocument()
+    expect(screen.queryByText('Cola')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Show all brands' }))
+    expect(screen.getByText('Bread')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Brand: All brands' })).toBeInTheDocument()
+  })
+})
+
 describe('brand suggestions', () => {
   test('a new ingredient suggests the brands already saved', async () => {
     const user = userEvent.setup()
@@ -165,7 +202,8 @@ describe('IngredientsPage', () => {
     expect(fetchIngredients).toHaveBeenCalledWith('h1')
     expect(screen.getByRole('heading', { name: 'Bakery' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Dairy' })).toBeInTheDocument()
-    expect(screen.getByText('Milbona · 92 kcal / 100 g')).toBeInTheDocument()
+    expect(screen.getByText('Milbona')).toBeInTheDocument()
+    expect(screen.getByText('92 kcal / 100 g')).toBeInTheDocument()
   })
 
   test('searching filters by name, ignoring accents', async () => {

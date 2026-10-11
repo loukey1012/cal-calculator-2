@@ -13,6 +13,13 @@ describe('ListRow', () => {
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
   })
 
+  test('shows a small line above the title, e.g. the brand', () => {
+    render(<ListRow overline="Milbona" title="Skyr" subtitle="62 kcal / 100 g" />)
+
+    expect(screen.getByText('Milbona')).toBeInTheDocument()
+    expect(screen.getByText('Skyr')).toBeInTheDocument()
+  })
+
   test('is a button with a chevron when tappable', async () => {
     const onClick = vi.fn()
     render(<ListRow title="Lunch" detail="612 kcal" onClick={onClick} />)

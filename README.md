@@ -68,6 +68,8 @@ Built for a two-person household: both members log their own meals, can see and 
 ### Ingredient database (Ingredients tab)
 
 - Shared per household, **grouped by category**, with **accent-insensitive search** (`kase` finds `Käse`) and category filter chips: one sideways-scrolling line, all on screen, or **grouped** into broad categories that open their categories when tapped (Settings › Appearance).
+- **Brands stand out:** each ingredient's brand is a small label in the accent color above its name (in the Ingredients tab, the Cook search and Copy from an ingredient), so a list can be read for brands alone.
+- **Filter by brand** (under the category chips, on the Ingredients tab and in the Cook search): a list of the saved brands with how many ingredients each has, searchable; the chosen brand works together with the search and the category, and ⓧ shows every brand again. On Cook it stays chosen while you look at an ingredient's amount and come back.
 - Nutrition **per 100 g and/or per unit**: calories (whole numbers, rounded up), protein, carbs, sugar, fat, saturated fat, fiber, salt. Only calories are required.
 - Unit name and grams per unit, with **Calculate missing values**, which only fills empty fields and never replaces what you typed: calories from protein, carbs and fat (4/4/9 kcal per gram, fiber 2; this marks the ingredient as an estimate, which can be switched off), the grams per unit from the calories per 100 g and per unit, and then each section's empty values from the other with the grams per unit.
 - **Clearing values:** every filled value (and the unit name and grams per unit) has a grey ⓧ to empty just that field; **Clear values per 100 g / per unit** empties a whole section, which stays switched on for the right values. An **Undo** shows in place of the button for a few seconds.
@@ -149,10 +151,10 @@ Noted 2026-10-11.
 
 - [x] When choosing an amount in units, chips for **whole numbers** next to the fraction chips (¼ ⅓ ½ ⅔ ¾), e.g. 2 and ½ make 2 ½
 
-**3. Brands** (to do)
+**3. Brands** (done)
 
-- [ ] **Brands easier to see** in the ingredient lists (Ingredients tab and the ingredient search on Cook)
-- [ ] **Filter by brand**
+- [x] **Brands easier to see** in the ingredient lists (Ingredients tab and the ingredient search on Cook): the brand as a small accent-colored label above the name
+- [x] **Filter by brand**
 
 **4. Sorting the ingredient lists** (to do)
 

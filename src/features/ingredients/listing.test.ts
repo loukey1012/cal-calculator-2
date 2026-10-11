@@ -26,8 +26,8 @@ const BAR = ingredient({ id: 'bar', name: 'Protein bar', kcal_unit: 210, unit_la
 const ALL = [CREAM, CHEESE, BREAD, BAR]
 
 const CATEGORIES = [DAIRY, BAKERY]
-const filter = (query: string, category = ALL_CATEGORIES) =>
-  filterIngredients(ALL, { query, category }, CATEGORIES)
+const filter = (query: string, category = ALL_CATEGORIES, brand: string | null = null) =>
+  filterIngredients(ALL, { query, category, brand }, CATEGORIES)
 
 describe('filterIngredients', () => {
   test('without filters returns everything', () => {
@@ -51,6 +51,13 @@ describe('filterIngredients', () => {
 
   test('"Other" holds ungrouped categories and ingredients without a category', () => {
     expect(filter('', { kind: 'group', id: null })).toEqual([BREAD, BAR])
+  })
+
+  test('filters by brand, ignoring case and accents, combined with the rest', () => {
+    expect(filter('', ALL_CATEGORIES, 'Milbona')).toEqual([CREAM])
+    expect(filter('', ALL_CATEGORIES, 'MILBONA ')).toEqual([CREAM])
+    expect(filter('', { kind: 'category', id: 'c2' }, 'Milbona')).toEqual([])
+    expect(filter('käse', ALL_CATEGORIES, 'Milbona')).toEqual([])
   })
 })
 

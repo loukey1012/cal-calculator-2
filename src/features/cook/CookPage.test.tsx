@@ -758,6 +758,24 @@ describe('the ingredient search', () => {
     ).toHaveAttribute('aria-pressed', 'true')
   })
 
+  test('the search can show one brand, which stays chosen after looking at an amount', async () => {
+    const skyr = ingredient({ id: 'skyr', name: 'Skyr', brand: 'Milbona', kcal_100: 62 })
+    vi.mocked(fetchIngredients).mockResolvedValue([PATTY, skyr])
+    const user = userEvent.setup()
+    renderCook()
+    await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
+
+    await user.click(await screen.findByRole('button', { name: 'Brand: All brands' }))
+    const sheet = within(screen.getByRole('dialog', { name: 'Brand' }))
+    await user.click(sheet.getByRole('button', { name: /Milbona/ }))
+
+    expect(screen.queryByRole('button', { name: /Patty/ })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /Milbona Skyr/ }))
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+    expect(screen.getByRole('button', { name: 'Brand: Milbona' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Patty/ })).not.toBeInTheDocument()
+  })
+
   test('the chips follow the chosen layout, e.g. grouped', async () => {
     const user = userEvent.setup()
     renderCook('/cook', { categoryLayout: 'grouped' })

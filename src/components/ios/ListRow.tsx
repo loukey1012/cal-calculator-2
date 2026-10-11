@@ -2,6 +2,8 @@ import type { ReactNode } from 'react'
 import { ChevronRightIcon } from './icons'
 
 type ListRowProps = {
+  /** a small accent line above the title, e.g. the brand */
+  readonly overline?: ReactNode
   readonly title: ReactNode
   readonly subtitle?: ReactNode
   readonly detail?: ReactNode
@@ -11,11 +13,16 @@ type ListRowProps = {
 }
 
 /** A row inside a GroupedSection. */
-export function ListRow({ title, subtitle, detail, leading, onClick }: ListRowProps) {
+export function ListRow({ overline, title, subtitle, detail, leading, onClick }: ListRowProps) {
   const content = (
     <>
       {leading}
       <div className="min-w-0 flex-1">
+        {overline && (
+          <p className="truncate text-[11px] font-extrabold tracking-[0.07em] text-accent-ink uppercase">
+            {overline}
+          </p>
+        )}
         <p className="truncate text-[16px] font-semibold">{title}</p>
         {subtitle && (
           <p className="truncate text-[13px] font-medium text-label-secondary">{subtitle}</p>

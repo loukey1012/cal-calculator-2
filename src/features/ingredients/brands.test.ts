@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { brandSuggestions } from './brands'
+import { brandCounts, brandSuggestions } from './brands'
 import { ingredient } from './testData'
 
 const withBrand = (id: string, brand: string | null) => ingredient({ id, name: id, brand })
@@ -40,5 +40,17 @@ describe('brandSuggestions', () => {
     const many = Array.from({ length: 9 }, (_, index) => withBrand(`x${index}`, `Brand ${index}`))
 
     expect(brandSuggestions(many, 'brand')).toHaveLength(6)
+  })
+})
+
+describe('brandCounts', () => {
+  test('each saved brand once, alphabetically, with how many ingredients have it', () => {
+    expect(brandCounts(SAVED)).toEqual([
+      { brand: 'Clever', count: 3 },
+      { brand: 'Coca-Cola', count: 1 },
+      { brand: 'Milbona', count: 1 },
+      { brand: 'Müller', count: 1 },
+      { brand: 'Rocco', count: 1 },
+    ])
   })
 })

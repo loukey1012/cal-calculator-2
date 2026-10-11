@@ -10,7 +10,9 @@ import { ScanBarcodeButton } from '../barcode/ScanBarcodeButton'
 import { CategoryFilterChips } from '../ingredients/CategoryFilterChips'
 import { useCategories, useCategoryGroups, useIngredients } from '../ingredients/hooks'
 import type { Ingredient } from '../ingredients/ingredientsApi'
-import { filterIngredients, nutritionSummary, type IngredientFilter } from '../ingredients/listing'
+import { IngredientRow } from '../ingredients/IngredientRow'
+import { ListOptions } from '../ingredients/ListOptions'
+import { filterIngredients, type IngredientFilter } from '../ingredients/listing'
 
 type FoodPickerProps = {
   /** the search and category, kept by the caller (they survive going to the amount and back) */
@@ -66,6 +68,11 @@ export function FoodPicker({ filter, onFilterChange, onPick, onNew, onCustom }: 
           onChange={(category) => onFilterChange({ ...filter, category })}
         />
       )}
+      <ListOptions
+        ingredients={ingredients.data ?? []}
+        brand={filter.brand}
+        onBrandChange={(brand) => onFilterChange({ ...filter, brand })}
+      />
       <GroupedSection>
         <ListRow
           title="New ingredient"
@@ -94,12 +101,9 @@ export function FoodPicker({ filter, onFilterChange, onPick, onNew, onCustom }: 
       {matches.length > 0 && (
         <GroupedSection header="Ingredients">
           {matches.map((ingredient) => (
-            <ListRow
+            <IngredientRow
               key={ingredient.id}
-              title={ingredient.name}
-              subtitle={[ingredient.brand, nutritionSummary(ingredient)]
-                .filter(Boolean)
-                .join(' · ')}
+              ingredient={ingredient}
               onClick={() => onPick(ingredient)}
             />
           ))}

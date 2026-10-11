@@ -9,7 +9,12 @@ export type CategoryFilter =
 
 export const ALL_CATEGORIES: CategoryFilter = { kind: 'all' }
 
-export type IngredientFilter = { readonly query: string; readonly category: CategoryFilter }
+export type IngredientFilter = {
+  readonly query: string
+  readonly category: CategoryFilter
+  /** one brand only (case and accents don't matter), or null for every brand */
+  readonly brand: string | null
+}
 
 /** A broad category with its categories, as the grouped chips show it. */
 export type ChipGroup = {
@@ -56,10 +61,14 @@ function matchesCategory(
   return (groupId ?? null) === filter.id
 }
 
+function matchesBrand(ingredient: Ingredient, brand: string | null): boolean {
+  return brand === null || searchable(ingredient.brand ?? '') === searchable(brand)
+}
+
 /** `categories` tell which broad category each category is in; only broad filters need them. */
 export function filterIngredients(
   ingredients: readonly Ingredient[],
-  { query, category }: IngredientFilter,
+  { query, category, brand }: IngredientFilter,
   categories: readonly Category[] = [],
 ): readonly Ingredient[] {
   const needle = searchable(query)
@@ -67,6 +76,7 @@ export function filterIngredients(
   return ingredients.filter(
     (ingredient) =>
       matchesCategory(ingredient, category, groupIds) &&
+      matchesBrand(ingredient, brand) &&
       (needle === '' ||
         searchable(`${ingredient.name} ${ingredient.brand ?? ''}`).includes(needle)),
   )

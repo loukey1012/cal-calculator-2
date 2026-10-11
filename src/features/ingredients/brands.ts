@@ -3,8 +3,15 @@ import { searchable } from './listing'
 
 const MAX_SUGGESTIONS = 6
 
+export type BrandCount = { readonly brand: string; readonly count: number }
+
 /** Each saved brand once, in the spelling used most often (ties: the first one seen). */
 function savedBrands(ingredients: readonly Ingredient[]): string[] {
+  return brandCounts(ingredients).map(({ brand }) => brand)
+}
+
+/** Each saved brand once, alphabetically, in its most used spelling, with how many have it. */
+export function brandCounts(ingredients: readonly Ingredient[]): BrandCount[] {
   const spellings = new Map<string, Map<string, number>>()
   for (const { brand } of ingredients) {
     const spelling = brand?.trim()
@@ -14,9 +21,12 @@ function savedBrands(ingredients: readonly Ingredient[]): string[] {
     counts.set(spelling, (counts.get(spelling) ?? 0) + 1)
     spellings.set(key, counts)
   }
-  return [...spellings.values()].map(
-    (counts) => [...counts].reduce((best, next) => (next[1] > best[1] ? next : best))[0],
-  )
+  return [...spellings.values()]
+    .map((counts) => ({
+      brand: [...counts].reduce((best, next) => (next[1] > best[1] ? next : best))[0],
+      count: [...counts.values()].reduce((sum, count) => sum + count, 0),
+    }))
+    .toSorted((a, b) => a.brand.localeCompare(b.brand))
 }
 
 /**

@@ -5,7 +5,6 @@ import { EmptyState } from '../../components/ios/EmptyState'
 import { ErrorBanner } from '../../components/ios/ErrorBanner'
 import { GroupedSection } from '../../components/ios/GroupedSection'
 import { PlusIcon } from '../../components/ios/icons'
-import { ListRow } from '../../components/ios/ListRow'
 import { PageHeader } from '../../components/ios/PageHeader'
 import { SearchField } from '../../components/ios/SearchField'
 import { toUserMessage } from '../../lib/errors'
@@ -15,14 +14,10 @@ import { useCategories, useCategoryGroups, useIngredients } from './hooks'
 import type { Ingredient } from './ingredientsApi'
 import { findByBarcode } from '../barcode/barcode'
 import { ScanBarcodeButton } from '../barcode/ScanBarcodeButton'
+import { IngredientRow } from './IngredientRow'
 import { IngredientSheet } from './IngredientSheet'
-import {
-  ALL_CATEGORIES,
-  filterIngredients,
-  groupByCategory,
-  nutritionSummary,
-  type CategoryFilter,
-} from './listing'
+import { ListOptions } from './ListOptions'
+import { ALL_CATEGORIES, filterIngredients, groupByCategory, type CategoryFilter } from './listing'
 
 /** null ingredient = a new one, maybe for a scanned barcode */
 type Editing = { readonly ingredient: Ingredient | null; readonly barcode?: string } | null
@@ -35,6 +30,7 @@ export function IngredientsPage() {
   const { categoryLayout } = useMyAppearance()
   const [query, setQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>(ALL_CATEGORIES)
+  const [brand, setBrand] = useState<string | null>(null)
   const [editing, setEditing] = useState<Editing>(null)
   const categoryList = categories.data ?? []
 
@@ -60,19 +56,18 @@ export function IngredientsPage() {
       return <EmptyState title="No ingredients yet" message="Tap + to add your first ingredient." />
     }
     const sections = groupByCategory(
-      filterIngredients(ingredients.data, { query, category: categoryFilter }, categoryList),
+      filterIngredients(ingredients.data, { query, category: categoryFilter, brand }, categoryList),
       categoryList,
     )
     if (sections.length === 0) {
-      return <EmptyState title="No matches" message="Try a different search or category." />
+      return <EmptyState title="No matches" message="Try a different search, category or brand." />
     }
     return sections.map((section) => (
       <GroupedSection key={section.id} header={section.title}>
         {section.ingredients.map((ingredient) => (
-          <ListRow
+          <IngredientRow
             key={ingredient.id}
-            title={ingredient.name}
-            subtitle={[ingredient.brand, nutritionSummary(ingredient)].filter(Boolean).join(' · ')}
+            ingredient={ingredient}
             onClick={() => setEditing({ ingredient })}
           />
         ))}
@@ -121,6 +116,7 @@ export function IngredientsPage() {
           onChange={setCategoryFilter}
         />
       )}
+      <ListOptions ingredients={ingredients.data ?? []} brand={brand} onBrandChange={setBrand} />
       {renderContent()}
       <IngredientSheet
         // the pickers need their lists, or the category would show "None" when it is set

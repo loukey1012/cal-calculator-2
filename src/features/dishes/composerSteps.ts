@@ -14,7 +14,7 @@ export type ComposerStep =
 export const MAIN_STEP: ComposerStep = { kind: 'main' }
 
 /** what a new ingredient search starts with */
-export const NO_FILTER: IngredientFilter = { query: '', category: ALL_CATEGORIES }
+export const NO_FILTER: IngredientFilter = { query: '', category: ALL_CATEGORIES, brand: null }
 
 /**
  * Moving between the composer's steps. On the Cook tab each step is a page of its own (so a back

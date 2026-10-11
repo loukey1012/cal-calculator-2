@@ -282,7 +282,7 @@ describe('filling in values from elsewhere', () => {
     await user.type(screen.getByLabelText('Name'), 'Skyr vanilla')
 
     await user.click(await screen.findByRole('button', { name: 'Copy from an ingredient' }))
-    await user.click(await screen.findByRole('button', { name: /^Skyr/ }))
+    await user.click(await screen.findByRole('button', { name: /^Milbona Skyr/ }))
 
     expect(screen.getByLabelText('Name')).toHaveValue('Skyr vanilla')
     expect(screen.getByLabelText('Calories per 100 g')).toHaveValue('62')

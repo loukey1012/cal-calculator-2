@@ -68,6 +68,22 @@ export function ChevronRightIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
+export function ChevronDownIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon strokeWidth={2.4} {...props}>
+      <path d="M6 9.5l6 6 6-6" />
+    </Icon>
+  )
+}
+
+export function CheckIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon strokeWidth={2.4} {...props}>
+      <path d="M5 12.5l4.5 4.5L19 7.5" />
+    </Icon>
+  )
+}
+
 export function PlusIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <Icon strokeWidth={2.2} {...props}>
