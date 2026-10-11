@@ -7,7 +7,7 @@ import { itemTotals } from '../nutrition/totals'
 import type { AmountUnit } from '../nutrition/types'
 import { parseAmount } from '../../lib/numbers'
 import { DecimalRow } from './DecimalRow'
-import { FractionChips } from './FractionChips'
+import { AmountChips } from './AmountChips'
 import { withFraction } from './fractions'
 import type { LineAmounts, LineWho } from './dishDraft'
 import type { DishLine } from './portions'
@@ -82,7 +82,7 @@ export function DishLineEditor({
   const [who, setWho] = useState<WhoValue>(whoValue(initialWho))
   const [unit, setUnit] = useState<AmountUnit>(units[0] ?? 'g')
   const [amount, setAmount] = useState<number | null>(initialAmount)
-  // a fraction chip sets the amount row's text; the row starts over with it
+  // an amount chip sets the amount row's text; the row starts over with it
   const [amountText, setAmountText] = useState<{ readonly text: string; readonly key: number }>({
     text: initialAmount === null ? '' : String(initialAmount),
     key: 0,
@@ -97,6 +97,12 @@ export function DishLineEditor({
     ...portions.map(({ id, name }) => ({ value: `only:${id}` as const, label: `Only ${name}` })),
     { value: 'own' as const, label: 'Own amounts' },
   ]
+
+  function pickAmount(text: string) {
+    setAmountText((current) => ({ text, key: current.key + 1 }))
+    setAmount(parseAmount(text))
+    setError(null)
+  }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -161,13 +167,9 @@ export function DishLineEditor({
               onTextChange={(text) => setAmountText((current) => ({ ...current, text }))}
             />
             {unit !== 'g' && (
-              <FractionChips
-                onPick={(fraction) => {
-                  const text = withFraction(amountText.text, fraction)
-                  setAmountText((current) => ({ text, key: current.key + 1 }))
-                  setAmount(parseAmount(text))
-                  setError(null)
-                }}
+              <AmountChips
+                onWhole={pickAmount}
+                onFraction={(fraction) => pickAmount(withFraction(amountText.text, fraction))}
               />
             )}
           </>

@@ -14,7 +14,7 @@ Built for a two-person household: both members log their own meals, can see and 
 
 - **One place for everything you eat**, alone or together: a snack, a quick breakfast or a dish cooked for two. The Today and History pages only show, change and delete.
 - **Who eats:** tap yourself and/or your partner. **When:** the day (today, or an earlier one) and the meal, which follows the time of day until you pick one (e.g. Dinner in the evening).
-- Add ingredients from the shared **ingredient database** (with search) or as a **custom one-off item** that isn't saved to the database. Amounts in **grams or the ingredient's own unit** (e.g. "Riegel"), with a **live preview** of calories and macros. For units, **fraction chips** (¼ ⅓ ½ ⅔ ¾) fill in parts the iPhone number pad can't type: "1" then ½ makes "1 1/2", and ⅓ stays an exact third. Typed fractions such as "1/3" work too.
+- Add ingredients from the shared **ingredient database** (with search) or as a **custom one-off item** that isn't saved to the database. Amounts in **grams or the ingredient's own unit** (e.g. "Riegel"), with a **live preview** of calories and macros. For units, **amount chips** in two rows: **whole numbers** (1 to 5) set the amount, and **fractions** (¼ ⅓ ½ ⅔ ¾) fill in parts the iPhone number pad can't type: 2 then ½ makes "2 1/2", and ⅓ stays an exact third. Typed fractions such as "1/3" work too.
 - The ingredient search has the **category chips** of the Ingredients page, in the layout chosen under Appearance › Category chips. The search and the chosen chip stay while you look at an amount and go back; a new search starts over.
 - Not in the database yet? **New ingredient** in the search creates it right there (the name you searched for already filled in, same form as on the Ingredients page). It is saved to the shared ingredients and goes straight to its amount; Back from there leads to the search. Also in the dish editor on Today and History.
 - Adding an ingredient goes **step by step like the Settings pages**: the search and the amount each slide in as a page of their own. **‹ Back** or a **swipe to the right** goes back one step (amount → search, still showing what you searched for → dish), never to another tab. Back in the dish editor on Today and History goes one step at a time too.
@@ -135,6 +135,29 @@ Everything here is saved **to your account**, never to the device: you get the s
 - **App icon:** eight versions of the C-ring icon: **Graphite** (default), Classic, Pink, Sunset, Progress, Ember, Leaf and Violet. Used when you add the app to the home screen (also before signing in, on a phone you used before) and in the browser tab. Picking a new icon **copies the app's link** (a short message confirms it), ready to paste into Safari when adding the app again. To change an installed icon, see [Installing on the iPhone](#installing-on-the-iphone).
 
 ---
+
+## Fixes and improvements (planned)
+
+Noted 2026-10-11.
+
+**1. Millilitres** (to do)
+
+- [ ] When entering an ingredient's values, choose **g or ml**: values per 100 g or per 100 ml, grams or ml per unit (no conversion between the two)
+- [ ] Adding it to a dish asks for the amount in **ml** (and in its unit), and shows ml in the dish, on Today and in History
+
+**2. Whole numbers next to the fractions** (done)
+
+- [x] When choosing an amount in units, chips for **whole numbers** next to the fraction chips (¼ ⅓ ½ ⅔ ¾), e.g. 2 and ½ make 2 ½
+
+**3. Brands** (to do)
+
+- [ ] **Brands easier to see** in the ingredient lists (Ingredients tab and the ingredient search on Cook)
+- [ ] **Filter by brand**
+
+**4. Sorting the ingredient lists** (to do)
+
+- [ ] **Newest first**, so an ingredient you just added is at the top
+- [ ] **Other sort orders** to choose from
 
 ## Fixes and improvements (done)
 

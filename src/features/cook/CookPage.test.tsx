@@ -300,6 +300,24 @@ describe('calories as an estimate', () => {
     expect(sentDish().kcalEstimated).toBe(false)
   })
 
+  test('a whole number and a fraction chip make an amount like 2 ½', async () => {
+    const pizza = ingredient({ id: 'pizza', name: 'Pizza', kcal_unit: 800, unit_label: 'pizza' })
+    vi.mocked(fetchIngredients).mockResolvedValue([PATTY, pizza])
+    const user = userEvent.setup()
+    renderCook()
+
+    await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
+    await user.click(await screen.findByRole('button', { name: /Pizza/ }))
+    await user.click(screen.getByRole('button', { name: '3' }))
+    expect(screen.getByLabelText('Amount')).toHaveValue('3')
+    // a number replaces what was there, a fraction goes after it
+    await user.click(screen.getByRole('button', { name: '2' }))
+    await user.click(screen.getByRole('button', { name: '1/2' }))
+
+    expect(screen.getByLabelText('Amount')).toHaveValue('2 1/2')
+    expect(screen.getByTestId('line-preview')).toHaveTextContent('2,000 kcal')
+  })
+
   test('a dish is exact unless marked', async () => {
     const user = userEvent.setup()
     renderCook()
