@@ -57,13 +57,16 @@ test('editing an ingredient updates the last two weeks’ meals of both, not old
 
   // Assert
   await expect(page.getByText('Updated in 2 meals')).toBeVisible()
+  // kcal of each logged food, oldest meal first
   const kcalOf = async (userId: string) => {
     const { data } = await backend.admin
-      .from('meal_items')
-      .select('kcal, meals!inner(user_id, date)')
-      .eq('meals.user_id', userId)
-      .order('date', { referencedTable: 'meals' })
-    return data?.map((item) => Number(item.kcal))
+      .from('meals')
+      .select('date, meal_items(kcal)')
+      .eq('user_id', userId)
+      .order('date')
+    return data?.flatMap((meal) =>
+      (meal.meal_items as { kcal: number }[]).map((item) => Number(item.kcal)),
+    )
   }
   // hers: three weeks ago unchanged, today's new; mine (from the dish) new
   await expect.poll(() => kcalOf(partner.id)).toEqual([60, 80])
