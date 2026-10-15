@@ -175,9 +175,9 @@ Noted 2026-10-15.
 - [x] Your symbol is changed only under **Account** (next to your name)
 - [x] Under **Members** you're still listed, but your row can't be tapped; only your partner's row opens a page
 
-**7. New Today tab icon** (to do)
+**7. New Today tab icon** (done)
 
-- [ ] The Today tab icon becomes the app icon's "C" ring with the dot at its opening, in one color like the other tab icons
+- [x] The Today tab icon becomes the app icon's "C" ring with the dot at its opening, in one color like the other tab icons
 
 **8. Liquid Glass** (to do)
 
