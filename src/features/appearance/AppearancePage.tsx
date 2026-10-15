@@ -9,12 +9,15 @@ import {
   APP_ICON_PATH,
   appIconSummary,
   appColorsSummary,
+  BACKGROUND_APPEARANCE_PATH,
+  backgroundSummary,
   CATEGORY_CHIPS_APPEARANCE_PATH,
   categoryChipsSummary,
   PROGRESS_APPEARANCE_PATH,
   progressSummary,
 } from './appearanceLabels'
 import { AppearanceSubPage } from './AppearanceSubPage'
+import { BackgroundAppearancePage } from './BackgroundAppearancePage'
 import { CategoryChipsAppearancePage } from './CategoryChipsAppearancePage'
 import { ProgressAppearancePage } from './ProgressAppearancePage'
 import { useAppearanceSettings } from './useAppearanceSettings'
@@ -26,6 +29,7 @@ export function AppearancePage() {
   if (pathname === PROGRESS_APPEARANCE_PATH) return <ProgressAppearancePage />
   if (pathname === CATEGORY_CHIPS_APPEARANCE_PATH) return <CategoryChipsAppearancePage />
   if (pathname === APP_ICON_PATH) return <AppIconPage />
+  if (pathname === BACKGROUND_APPEARANCE_PATH) return <BackgroundAppearancePage />
   return <AppearanceMenu />
 }
 
@@ -60,6 +64,13 @@ function AppearanceMenu() {
           detail={categoryChipsSummary(appearance)}
           onClick={() => open(CATEGORY_CHIPS_APPEARANCE_PATH)}
         />
+        {appearance.glass === 'all' && (
+          <ListRow
+            title="Background"
+            detail={backgroundSummary(appearance)}
+            onClick={() => open(BACKGROUND_APPEARANCE_PATH)}
+          />
+        )}
         <ListRow
           title="App icon"
           detail={appIconSummary(appearance)}

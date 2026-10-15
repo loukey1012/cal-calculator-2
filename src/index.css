@@ -178,24 +178,217 @@
   backdrop-filter: blur(30px) saturate(190%);
 }
 
+/* The color background behind Full: up to four spots (colors, positions, sizes) set by
+   useGlassField from Settings › Appearance › Background. Registered, so a change fades over and
+   drift can move them. */
+@property --gf-c1 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --gf-x1 {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 50%;
+}
+@property --gf-y1 {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 50%;
+}
+@property --gf-s1 {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 50%;
+}
+@property --gf-dx1 {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+@property --gf-dy1 {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+@property --gf-c2 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --gf-x2 {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 50%;
+}
+@property --gf-y2 {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 50%;
+}
+@property --gf-s2 {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 50%;
+}
+@property --gf-dx2 {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+@property --gf-dy2 {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+@property --gf-c3 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --gf-x3 {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 50%;
+}
+@property --gf-y3 {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 50%;
+}
+@property --gf-s3 {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 50%;
+}
+@property --gf-dx3 {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+@property --gf-dy3 {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+@property --gf-c4 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --gf-x4 {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 50%;
+}
+@property --gf-y4 {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 50%;
+}
+@property --gf-s4 {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 50%;
+}
+@property --gf-dx4 {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+@property --gf-dy4 {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+
+:root {
+  transition:
+    --gf-c1 1.4s ease,
+    --gf-x1 1.4s ease,
+    --gf-y1 1.4s ease,
+    --gf-s1 1.4s ease,
+    --gf-c2 1.4s ease,
+    --gf-x2 1.4s ease,
+    --gf-y2 1.4s ease,
+    --gf-s2 1.4s ease,
+    --gf-c3 1.4s ease,
+    --gf-x3 1.4s ease,
+    --gf-y3 1.4s ease,
+    --gf-s3 1.4s ease,
+    --gf-c4 1.4s ease,
+    --gf-x4 1.4s ease,
+    --gf-y4 1.4s ease,
+    --gf-s4 1.4s ease;
+}
+
 :root[data-glass='all'] .glass-field {
   background:
     radial-gradient(
-      60% 45% at 15% 10%,
-      color-mix(in srgb, var(--goal-kcal) var(--glass-field-strength), transparent),
+      var(--gf-s1) calc(var(--gf-s1) * 0.75) at calc(var(--gf-x1) + var(--gf-dx1))
+        calc(var(--gf-y1) + var(--gf-dy1)),
+      color-mix(in srgb, var(--gf-c1) var(--glass-field-strength), transparent),
       transparent 70%
     ),
     radial-gradient(
-      55% 40% at 90% 30%,
-      color-mix(in srgb, var(--goal-fat) var(--glass-field-strength), transparent),
+      var(--gf-s2) calc(var(--gf-s2) * 0.75) at calc(var(--gf-x2) + var(--gf-dx2))
+        calc(var(--gf-y2) + var(--gf-dy2)),
+      color-mix(in srgb, var(--gf-c2) var(--glass-field-strength), transparent),
       transparent 70%
     ),
     radial-gradient(
-      70% 50% at 40% 95%,
-      color-mix(in srgb, var(--goal-fiber) var(--glass-field-strength), transparent),
+      var(--gf-s3) calc(var(--gf-s3) * 0.75) at calc(var(--gf-x3) + var(--gf-dx3))
+        calc(var(--gf-y3) + var(--gf-dy3)),
+      color-mix(in srgb, var(--gf-c3) var(--glass-field-strength), transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      var(--gf-s4) calc(var(--gf-s4) * 0.75) at calc(var(--gf-x4) + var(--gf-dx4))
+        calc(var(--gf-y4) + var(--gf-dy4)),
+      color-mix(in srgb, var(--gf-c4) var(--glass-field-strength), transparent),
       transparent 70%
     ),
     var(--glass-field-base);
+}
+
+/* Slow drift: the spots float a little, unless the phone asks for less motion */
+@keyframes glass-drift {
+  0% {
+    --gf-dx1: 0%;
+    --gf-dy1: 0%;
+    --gf-dx2: 0%;
+    --gf-dy2: 0%;
+    --gf-dx3: 0%;
+    --gf-dy3: 0%;
+    --gf-dx4: 0%;
+    --gf-dy4: 0%;
+  }
+  50% {
+    --gf-dx1: 6%;
+    --gf-dy1: 4%;
+    --gf-dx2: -5%;
+    --gf-dy2: 6%;
+    --gf-dx3: 4%;
+    --gf-dy3: -6%;
+    --gf-dx4: -6%;
+    --gf-dy4: -4%;
+  }
+  100% {
+    --gf-dx1: -4%;
+    --gf-dy1: 6%;
+    --gf-dx2: -6%;
+    --gf-dy2: -5%;
+    --gf-dx3: 6%;
+    --gf-dy3: 4%;
+    --gf-dx4: 4%;
+    --gf-dy4: -6%;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-glass='all'][data-glass-drift] .glass-field {
+    animation: glass-drift 36s ease-in-out infinite alternate;
+  }
 }
 
 :root[data-glass='all'] .glass-clear {

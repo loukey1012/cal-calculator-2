@@ -8,18 +8,48 @@ import type {
   LightStyle,
   ProgressStyle,
 } from './appearance'
+import { DEFAULT_GLASS_FIELD, type FieldChange, type FieldMode } from './glassField'
 
 export const APPEARANCE_PATH = '/settings/appearance'
 export const APP_COLORS_PATH = `${APPEARANCE_PATH}/colors`
 export const PROGRESS_APPEARANCE_PATH = `${APPEARANCE_PATH}/progress`
 export const CATEGORY_CHIPS_APPEARANCE_PATH = `${APPEARANCE_PATH}/category-chips`
 export const APP_ICON_PATH = `${APPEARANCE_PATH}/app-icon`
+export const BACKGROUND_APPEARANCE_PATH = `${APPEARANCE_PATH}/background`
 
 export const THEME_OPTIONS = [
   { value: 'system', label: 'System' },
   { value: 'light', label: 'Light' },
   { value: 'dark', label: 'Dark' },
 ] as const
+
+export const FIELD_MODE_OPTIONS: ReadonlyArray<{ value: FieldMode; label: string }> = [
+  { value: 'style', label: 'Style' },
+  { value: 'custom', label: 'Custom' },
+  { value: 'random', label: 'Random' },
+  { value: 'cycle', label: 'Cycle' },
+  { value: 'goal', label: 'Goal' },
+]
+
+const FIELD_MODE_SUMMARIES: Record<FieldMode, string> = {
+  style: 'Style colors',
+  custom: 'Custom',
+  random: 'Random',
+  cycle: 'Cycle',
+  goal: 'Goal-aware',
+}
+
+export const FIELD_CHANGE_OPTIONS: ReadonlyArray<{ value: FieldChange; label: string }> = [
+  { value: 'tab', label: 'Every tab change' },
+  { value: 'start', label: 'Once per app start' },
+]
+
+/** e.g. "Random · drifting" */
+export function backgroundSummary(appearance: Appearance): string {
+  const field = appearance.glassField ?? DEFAULT_GLASS_FIELD
+  const mode = FIELD_MODE_SUMMARIES[field.mode]
+  return field.drift ? `${mode} · drifting` : mode
+}
 
 export const GLASS_OPTIONS: ReadonlyArray<{ value: GlassLevel; label: string }> = [
   { value: 'off', label: 'Off' },

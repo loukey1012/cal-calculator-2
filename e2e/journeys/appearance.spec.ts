@@ -224,3 +224,42 @@ test('Liquid Glass: Minimal for every field, Full for everything, kept across a 
   await page.reload()
   await expect(html).toHaveAttribute('data-glass', 'all')
 })
+
+test('the background behind Full: random colors change with the tab, saved to the account', async ({
+  page,
+  backend,
+}) => {
+  const me = await backend.user('Nora')
+  await backend.household([me])
+  await backend.admin
+    .from('profiles')
+    .update({ appearance: { glass: 'all' } })
+    .eq('id', me.id)
+  await logIn(page, me)
+  const html = page.locator('html')
+  const firstSpot = () => html.evaluate((root) => root.style.getPropertyValue('--gf-c1'))
+  const tabs = page.getByRole('navigation', { name: 'Tabs' })
+  // the style colors to begin with
+  await expect.poll(firstSpot).toBe('var(--goal-kcal)')
+
+  await tabs.getByRole('button', { name: 'Settings' }).click()
+  const settings = activePage(page)
+  await settings.getByRole('button', { name: /Appearance/ }).click()
+  await settings.getByRole('button', { name: /Background/ }).click()
+  await settings.getByRole('radio', { name: 'Random' }).click()
+  await expect.poll(firstSpot).toMatch(/^#[0-9a-f]{6}$/)
+
+  const before = await firstSpot()
+  await tabs.getByRole('button', { name: 'Today' }).click()
+  await expect.poll(firstSpot).not.toBe(before)
+  await expect
+    .poll(async () => {
+      const { data } = await backend.admin
+        .from('profiles')
+        .select('appearance')
+        .eq('id', me.id)
+        .single()
+      return data?.appearance
+    })
+    .toMatchObject({ glass: 'all', glassField: { mode: 'random', changeOn: 'tab' } })
+})

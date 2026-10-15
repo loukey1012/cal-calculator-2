@@ -3,6 +3,7 @@ import { isNearWhite, mixHex, onColor, readableInk, visibleOn } from '../../lib/
 import { ownLookSchema, partnerLooksSchema } from '../household/partnerLook'
 import { INGREDIENT_SORTS } from '../ingredients/sorting'
 import type { RingKey } from '../nutrition/goals'
+import { parseGlassField } from './glassField'
 
 const THEMES = ['system', 'light', 'dark'] as const
 const LIGHT_STYLES = ['classic', 'pink'] as const
@@ -91,6 +92,11 @@ const appearanceSchema = z
     // the order of both ingredient lists (Ingredients tab and the Cook search)
     ingredientSort: z.enum(INGREDIENT_SORTS).catch(DEFAULT_APPEARANCE.ingredientSort),
     glass: z.enum(GLASS_LEVELS).catch(DEFAULT_APPEARANCE.glass),
+    // the color background behind Liquid Glass Full; checked field by field in glassField.ts
+    glassField: z
+      .unknown()
+      .transform((value) => (value === undefined ? undefined : parseGlassField(value)))
+      .optional(),
     customGoalColors: customGoalColorsSchema.optional(),
     // the nickname and symbol you gave each household member
     partnerLooks: partnerLooksSchema,

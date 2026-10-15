@@ -30,6 +30,17 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-15T22:06',
+    kind: 'new',
+    title: 'The background behind Liquid Glass Full',
+    items: [
+      'Settings › Appearance › Background: Style, Custom, Random, Cycle or Goal-aware colors',
+      'Custom: your own spots, dragged where you want them; Cycle: your own list of colors',
+      'Random and Cycle change on every tab change or once per app start',
+      'Strength, and Slow drift to let the colors float',
+    ],
+  },
+  {
     at: '2026-10-15T21:53',
     kind: 'fix',
     title: 'Undid the Liquid Glass and accent color changes for light styles',

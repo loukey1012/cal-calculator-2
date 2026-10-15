@@ -130,6 +130,7 @@ Everything here is saved **to your account**, never to the device: you get the s
   - **Light style:** **Classic** (cool grey and white) or **Pink** (blush page, rose-tinted cards, text and tracks, pink-leaning goal colors). Used whenever the app is light, also with System during the day.
   - **Dark style:** **Soft** (deep grey, rounded) or **Graphite** (near-black, Space Grotesk numbers, uppercase labels; stored as `bento`). Used whenever the app is dark, also with System at night.
   - **Liquid Glass:** **Off**, **Minimal** (the tab bar, sheets and every field turn to translucent, blurred glass: lists, form groups, search fields, chips, pills, buttons, meal cards, segmented controls; only the big progress card stays solid) or **Full** (the progress card too, over a soft color background made from the style's own ring colors). Works on top of every light and dark style; rows you can swipe to delete stay solid.
+  - **Background** (with Liquid Glass Full): the colors behind the glass, as up to four soft spots. **Style** (the style's ring colors), **Custom** (your own 2–4 spots: color and size in a sheet, drag them in the preview or move them with the arrow keys), **Random** and **Cycle** (through your own list of colors; both change on every tab change or once per app start), **Goal**-aware (calm early in the day, warmer near your calorie goal, a red tint once over it). Strength slider and **Slow drift** (the spots float slowly; off when the phone asks for less motion). Changes fade over.
   - **Accent color:** any color (buttons, the active tab, your avatar). Text in the accent color is darkened or lightened automatically so it stays readable, e.g. Lime or White on a light background; a White accent gets a thin edge on its buttons, chips and avatar.
 - **Progress** (with a live preview at the top)
   - **Progress style:** Rings, **Ring + bars** (default: a calorie ring, bars for the macros), Bars or Compact.
@@ -254,15 +255,15 @@ Noted 2026-10-15 after testing points 1–8 on the iPhone (these come before poi
 
 **18. The background behind the glass** (to do, new)
 
-- [ ] For Full, a **Background** page in Appearance with these modes:
+- [x] For Full, a **Background** page in Appearance with these modes:
   - **Style colors** (default): from your style's ring colors
   - **Custom**: 2–4 color spots, each with its own color; drag them where you want on a preview, set their size and the overall strength
   - **Random**: new colors and positions
   - **Cycle**: you pick a set of colors and it moves on to the next ones
   - **Goal-aware**: calm colors early in the day, warmer as you near your calorie goal, a red tint once over it
-- [ ] For Random and Cycle you choose when it changes: **on every tab change** or **once per app start**
-- [ ] **Slow drift**: the spots float slowly, in any mode (off by itself when the phone asks for reduced motion)
-- [ ] Saved to your account like every other appearance setting
+- [x] For Random and Cycle you choose when it changes: **on every tab change** or **once per app start**
+- [x] **Slow drift**: the spots float slowly, in any mode (off by itself when the phone asks for reduced motion)
+- [x] Saved to your account like every other appearance setting
 
 **19. "Values are correct"** (to do, changes point 1)
 
@@ -446,7 +447,7 @@ pnpm icons          # regenerate the icon PNGs: the default set from public/icon
 
 To add an app icon choice: put its SVG in `public/icons/<name>/icon.svg`, add `<name>` to `APP_ICONS` (`src/features/appearance/appearance.ts`) and a label to `APP_ICON_OPTIONS`, then run `pnpm icons`.
 
-**End-to-end journeys** (log a meal on Cook, Back and the back swipe going one step at a time on Cook, category chips and creating a missing ingredient from the Cook search, the new-version toast on the first start only, a White and a custom accent color, your own symbol, a single food changed in place, a meal eaten out logged as an estimate, a saved brand picked from the suggestions, a package scanned from a photo and filled in from Open Food Facts, a scanned portion of 3 biscuits split into single units with a wrong value cleared, values of a similar product found by name, an unknown package on Cook added to the saved ingredient it is plus an estimated ingredient marking the dish, a live camera scan on Cook, weight for today and an earlier day with calorie and weight trends, cooking together for two, sharing a meal afterwards, leftovers, goals and partner, partner nickname and symbol, Today fitting the screen, history, ingredients, category management, offline, a partner's change showing up live and after the app was in the background, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color, a drink saved and logged in ml, the newest ingredient on top with a brand filter and a saved sort order, Liquid Glass Minimal for every field and Full for everything, kept across a restart, an edited ingredient reaching both people's meals of the last two weeks but not older ones, an odd ingredient marked correct until its values change) run the real app against the dev project. Build it against dev and pass the test credentials:
+**End-to-end journeys** (log a meal on Cook, Back and the back swipe going one step at a time on Cook, category chips and creating a missing ingredient from the Cook search, the new-version toast on the first start only, a White and a custom accent color, your own symbol, a single food changed in place, a meal eaten out logged as an estimate, a saved brand picked from the suggestions, a package scanned from a photo and filled in from Open Food Facts, a scanned portion of 3 biscuits split into single units with a wrong value cleared, values of a similar product found by name, an unknown package on Cook added to the saved ingredient it is plus an estimated ingredient marking the dish, a live camera scan on Cook, weight for today and an earlier day with calorie and weight trends, cooking together for two, sharing a meal afterwards, leftovers, goals and partner, partner nickname and symbol, Today fitting the screen, history, ingredients, category management, offline, a partner's change showing up live and after the app was in the background, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color, a drink saved and logged in ml, the newest ingredient on top with a brand filter and a saved sort order, Liquid Glass Minimal for every field and Full for everything, kept across a restart, random background colors changing with the tab, an edited ingredient reaching both people's meals of the last two weeks but not older ones, an odd ingredient marked correct until its values change) run the real app against the dev project. Build it against dev and pass the test credentials:
 
 ```bash
 set -a; . ./.env.test.local; set +a

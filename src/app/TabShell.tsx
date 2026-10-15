@@ -23,6 +23,9 @@ import { HistoryPage } from '../features/history/HistoryPage'
 import { IngredientsPage } from '../features/ingredients/IngredientsPage'
 import { SettingsPage } from '../features/settings/SettingsPage'
 import { TodayPage } from '../features/today/TodayPage'
+import { useTodayProgress } from '../features/today/todayProgress'
+import { parseAppearance } from '../features/appearance/appearance'
+import { useGlassField } from '../features/appearance/useGlassField'
 import { useCurrentUser } from './currentUser'
 import { useResumeOfflineChanges, useSaveWhenHidden } from './offlineLifecycle'
 import { PageStack } from './PageStack'
@@ -116,6 +119,8 @@ export function TabShell() {
   const navigate = useNavigate()
   const routeIndex = tabIndexForPath(pathname)
   const activeIndex = Math.max(routeIndex, 0)
+  // the color background behind Liquid Glass Full, new colors on tab changes if chosen
+  useGlassField(parseAppearance(profile.appearance), activeIndex, useTodayProgress())
   const activeIndexRef = useRef(activeIndex)
   const pageRefs = useRef<(HTMLDivElement | null)[]>([])
   // the scroll containers of the tabs with sub-pages, where their page stacks live
