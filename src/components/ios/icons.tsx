@@ -92,6 +92,16 @@ export function PlusIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
+/** A pencil on a square, like iOS compose: write something of your own */
+export function ComposeIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon {...props}>
+      <path d="M11 4.5H6.5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V13" />
+      <path d="M17.6 3.9a1.9 1.9 0 0 1 2.7 2.7L12.4 14.5 9 15.2l.7-3.4 7.9-7.9Z" />
+    </Icon>
+  )
+}
+
 export function SearchIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <Icon strokeWidth={2} {...props}>

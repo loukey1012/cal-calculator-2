@@ -243,8 +243,8 @@ Noted 2026-10-15 after testing points 1–8 on the iPhone (these come before poi
 
 **16. Cook search: + and a custom item button** (to do, changes point 4)
 
-- [ ] The **+** above the Cook search works like the one on the Ingredients tab: it opens a new ingredient straight away (named after the search), no menu
-- [ ] Next to it a **pencil** button opens a custom item straight away
+- [x] The **+** above the Cook search works like the one on the Ingredients tab: it opens a new ingredient straight away (named after the search), no menu
+- [x] Next to it a **pencil** button opens a custom item straight away
 
 **17. Liquid Glass: Minimal and Full** (to do, changes point 8)
 

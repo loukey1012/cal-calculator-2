@@ -232,11 +232,7 @@ test('the Cook search: category chips, and a missing ingredient created right th
   await cook.getByRole('group', { name: 'Categories' }).getByRole('button', { name: 'All' }).click()
   await cook.getByLabel('Search ingredients').fill('Feta')
   await expect(cook.getByText('No matches.')).toBeVisible()
-  await cook.getByRole('button', { name: 'Add new' }).click()
-  await page
-    .getByRole('dialog', { name: 'Add new' })
-    .getByRole('button', { name: /New ingredient/ })
-    .click()
+  await cook.getByRole('button', { name: 'New ingredient' }).click()
   await expect(cook.getByLabel('Name', { exact: true })).toHaveValue('Feta')
   await cook.getByRole('switch', { name: 'Per 100 g' }).click()
   await cook.getByLabel('Calories per 100 g').fill('264')
