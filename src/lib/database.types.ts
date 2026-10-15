@@ -831,6 +831,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      keep_alive: { Args: never; Returns: boolean }
       save_dish: {
         Args: {
           p_base_revision?: string

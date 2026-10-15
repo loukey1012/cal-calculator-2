@@ -149,9 +149,9 @@ Noted 2026-10-11.
 - [ ] An automatic check that goes through the ingredient database once a week and flags ingredients whose values look wrong (the same checks as in the ingredient form)
 - [ ] Flagged ingredients get a **Check values** badge and filter on the Ingredients tab, plus a push notification when something new is found (see point 10)
 
-**2. Keeping the Supabase projects awake** (to do)
+**2. Keeping the Supabase projects awake** (done)
 
-- [ ] An automatic request now and then to **both** Supabase projects (the real one and the dev one), so a project without use for a while isn't paused (and later deleted) by Supabase
+- [x] An automatic request now and then to **both** Supabase projects (the real one and the dev one), so a project without use for a while isn't paused (and later deleted) by Supabase
 
 **3. Ingredient changes in past meals** (done)
 
@@ -345,7 +345,7 @@ scripts/
 - `meals` (unique per user, local date and meal type), `meal_items` (nutrition snapshot plus a basis multiplier; amounts in `g`, `ml` or `unit`, where `per_100g` means per 100 ml for an amount in ml)
 - `meal_items` of a cooked dish point to their `dish_portions` row and `dish_lines` row; plain items leave both empty
 - `dishes` (a cooking; split mode equal / count / percent / weight, cooked weight, `kcal_estimated` when its calories are only roughly known, a revision changed by every save), `dish_portions` (who ate it on which day and meal, or nobody yet = a leftover; split value; `discarded` for a thrown-away leftover, which keeps its share), `dish_lines` (ingredient snapshot like `meal_items`, either `shared` or `per_portion`), `dish_line_amounts` (own amount of a `per_portion` line per portion)
-- Views `meal_totals` and `daily_totals` (with `kcal_estimated`: some food came from a dish marked as an estimate). RPCs `create_household`, `join_household`, `ensure_meal`, `save_dish` and `delete_dish`; `ingredient_use_counts` (how often each ingredient was used, for sorting by Most used; runs with the caller's rights, so RLS keeps it to the household).
+- Views `meal_totals` and `daily_totals` (with `kcal_estimated`: some food came from a dish marked as an estimate). RPCs `create_household`, `join_household`, `ensure_meal`, `save_dish` and `delete_dish`; `ingredient_use_counts` (how often each ingredient was used, for sorting by Most used; runs with the caller's rights, so RLS keeps it to the household). `keep_alive` returns `true` to anyone, for the keep-alive workflow.
 - **Live updates:** triggers on the household's tables send a small hint over Supabase Realtime Broadcast to the private channel `household:<id>` (what changed: a person's day, a dish, the ingredient database, …). Hints carry no data: the app marks the matching queries out of date, and what's on screen re-fetches through the normal RLS-checked queries. A failed hint never fails a save.
 - `save_dish` stores a whole dish at once and re-logs every eaten portion as meal items in its eater's meal (shared lines × the portion's share, own amounts as entered), so the totals views count dishes like any other food. Resending the same save does nothing; a save based on an outdated revision is rejected ("changed meanwhile"). It can also take over plain items of a meal ("share this meal").
 
@@ -438,6 +438,7 @@ MIGRATION_SUPABASE_URL=... MIGRATION_SUPABASE_SERVICE_ROLE_KEY=... \
 
 - **Vercel** builds every push to `main` (`vercel.json`: SPA rewrites, long-lived caching for hashed assets, no caching for the service worker and `index.html`).
 - Vercel environment variables: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (production project).
+- **Keep-alive** (`.github/workflows/keep-alive.yml`): every other day (and on demand from the Actions tab) it calls the `keep_alive()` function on both Supabase projects, so neither is paused for a week without use. It uses the public anon keys from the repository secrets `SUPABASE_PROD_URL` / `SUPABASE_PROD_ANON_KEY` and `SUPABASE_TEST_URL` / `SUPABASE_TEST_ANON_KEY`. GitHub switches scheduled workflows off after 60 days without any repository activity; if that happens, switch it back on in the Actions tab.
 - **GitHub Actions** (`.github/workflows/ci.yml`) on every push and pull request: lint, typecheck, format, unit tests with coverage. On pushes to `main` it also runs, against the dev project with the `SUPABASE_TEST_*` repository secrets, the database integration tests and the WebKit smoke tests plus end-to-end journeys (WebKit with an iPhone profile, 4 at a time; the offline restart additionally in Chromium, since Playwright's WebKit has no service workers); pull requests run the smoke tests alone. The jobs run side by side (about 2½–3 minutes); browser installs get a time limit and one retry, and each job a time limit, so a hanging install fails fast.
 
 ## Installing on the iPhone

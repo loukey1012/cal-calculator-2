@@ -1,0 +1,31 @@
+# Supabase pauses a free project after a week without use (and later deletes it). This calls the
+# harmless keep_alive() function on both projects every other day, with their public anon keys.
+name: Keep Supabase awake
+
+on:
+  schedule:
+    - cron: '23 5 */2 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [prod, dev]
+    steps:
+      - name: Call keep_alive on ${{ matrix.project }}
+        env:
+          URL: ${{ matrix.project == 'prod' && secrets.SUPABASE_PROD_URL || secrets.SUPABASE_TEST_URL }}
+          KEY: ${{ matrix.project == 'prod' && secrets.SUPABASE_PROD_ANON_KEY || secrets.SUPABASE_TEST_ANON_KEY }}
+        run: |
+          answer=$(curl --fail-with-body --silent --show-error --retry 3 --retry-delay 10 \
+            -X POST "$URL/rest/v1/rpc/keep_alive" \
+            -H "apikey: $KEY" -H 'Content-Type: application/json' -d '{}')
+          echo "keep_alive answered: $answer"
+          test "$answer" = 'true'
