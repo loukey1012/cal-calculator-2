@@ -137,6 +137,7 @@ Everything here is saved **to your account**, never to the device: you get the s
   - **Ring colors:** give Calories, Protein, Carbs, Fat or Fiber **its own color**; the others keep the palette's. "Use palette color" undoes one, and choosing a palette resets them all. A custom color stays the same in every theme, except that a White ring is darkened just enough to show on light cards.
 - **Choosing a color** works the same everywhere (accent, ring colors, your partner's and your own symbol color): **35 preset colors** in one list by hue (every color the separate lists offered before, plus **White**), and **Custom** (the rainbow circle) for any color with the system color picker: moving through the picker only previews the color, **Use this color** saves it (saving every color passed on the way would close the picker on the iPhone).
 - **Category chips** (with a preview): **One line** (default, scrolls sideways), **All on screen** (slimmer chips wrapping into rows) or **Grouped** (broad categories such as Fresh; tapping one filters by it and opens its categories below) for the category filter on the Ingredients page. Wrapped chips are **arranged automatically to fill as few rows as possible** ("All" stays first; alphabetical within each row), measured on the device and re-arranged when the width or fonts change.
+- **Patch notes:** tap the version line at the bottom of Settings to see every change with its day and hour, newest first.
 - **App icon:** eight versions of the C-ring icon: **Graphite** (default), Classic, Pink, Sunset, Progress, Ember, Leaf and Violet. Used when you add the app to the home screen (also before signing in, on a phone you used before) and in the browser tab. Picking a new icon **copies the app's link** (a short message confirms it), ready to paste into Safari when adding the app again. To change an installed icon, see [Installing on the iPhone](#installing-on-the-iphone).
 
 ---
@@ -232,6 +233,47 @@ Noted 2026-10-15.
 
 - [ ] Settings › Export: pick a date range and get CSV files of both of you: every logged food (person, date, meal, food, amount, nutrients) and the daily totals with weight, cheat days and eating out
 
+Noted 2026-10-15 after testing points 1–8 on the iPhone (these come before point 9).
+
+**21. Patch notes** (to do, built first)
+
+- [x] A **Patch notes** page, a little hidden: tap the version line at the bottom of Settings
+- [x] Every change with its date and hour and what it does, newest first, in plain words
+- [x] Starts with the history so far; from now on every change adds an entry when it ships
+
+**16. Cook search: + and a custom item button** (to do, changes point 4)
+
+- [ ] The **+** above the Cook search works like the one on the Ingredients tab: it opens a new ingredient straight away (named after the search), no menu
+- [ ] Next to it a **pencil** button opens a custom item straight away
+
+**17. Liquid Glass: Minimal and Full** (to do, changes point 8)
+
+- [ ] **Controls** is renamed **Minimal** and covers every field: search fields, chips and pills (categories, Brand, Sort, Check values, Add weight), input fields, buttons, segmented controls, the meal cards on Today and the rows in lists. Only the big progress card stays solid
+- [ ] **Everything** is renamed **Full**: all of Minimal, the progress card too, over the color background
+- [ ] Rows you can swipe to delete stay solid in both
+
+**18. The background behind the glass** (to do, new)
+
+- [ ] For Full, a **Background** page in Appearance with these modes:
+  - **Style colors** (default): from your style's ring colors
+  - **Custom**: 2–4 color spots, each with its own color; drag them where you want on a preview, set their size and the overall strength
+  - **Random**: new colors and positions
+  - **Cycle**: you pick a set of colors and it moves on to the next ones
+  - **Goal-aware**: calm colors early in the day, warmer as you near your calorie goal, a red tint once over it
+- [ ] For Random and Cycle you choose when it changes: **on every tab change** or **once per app start**
+- [ ] **Slow drift**: the spots float slowly, in any mode (off by itself when the phone asks for reduced motion)
+- [ ] Saved to your account like every other appearance setting
+
+**19. "Values are correct"** (to do, changes point 1)
+
+- [ ] A flagged ingredient can be marked **Values are correct**; the flag goes away for both of you
+- [ ] If someone later changes its values and a warning still applies, it is flagged again
+
+**20. Ingredient review by Claude** (to do, extends point 1)
+
+- [ ] A Claude Code routine reviews the ingredient database **every week** (and whenever you ask): typos in names, brand spellings that don't match (e.g. "Milbona" and "Milbonna"), odd unit names and unit weights, likely duplicates, values that don't fit the product
+- [ ] What it finds shows up on a **Review** page on the Ingredients tab: the reason and a suggested fix, with **Apply fix** (changes the ingredient; recent meals follow as in point 3) or **Ignore**. Nothing is changed without you
+
 ## Fixes and improvements, October 11 (done)
 
 Noted and shipped 2026-10-11.
@@ -326,6 +368,7 @@ src/
     goals/        goal history, goal form, progress card (rings / ring + bars / bars / compact)
     live/         live updates: the household's Realtime channel, hint → query mapping, batched refreshes
     nutrition/    pure nutrition math: units, totals, goals, formatting
+    patchNotes/   the patch notes list (every commit adds an entry) and its page
     today/ history/ settings/   tab pages
   lib/            supabase client, env validation, errors, persistence, dates, numbers
 docs/            build plans with the decisions behind them (current: plan-2026-10-15.md)

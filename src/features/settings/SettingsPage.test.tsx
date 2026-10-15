@@ -94,6 +94,21 @@ describe('SettingsPage', () => {
     expect(screen.getByText(/^Version .+ · test123$/)).toBeInTheDocument()
   })
 
+  test('the version line opens the patch notes, newest first, with day and hour', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(screen.getByRole('button', { name: /^Version / }))
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Patch notes' })).toBeInTheDocument()
+    const days = screen.getAllByRole('heading', { level: 2 })
+    expect(days.length).toBeGreaterThan(5)
+    expect(screen.getAllByText(/^\d{2}:\d{2}$/).length).toBeGreaterThan(100)
+
+    await user.click(screen.getByRole('button', { name: 'Settings' }))
+    expect(screen.getByRole('heading', { level: 1, name: 'Settings' })).toBeInTheDocument()
+  })
+
   test('changes the name and refreshes the profile', async () => {
     vi.mocked(updateProfile).mockResolvedValue()
     const user = userEvent.setup()

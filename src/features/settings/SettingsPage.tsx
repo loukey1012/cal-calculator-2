@@ -26,6 +26,7 @@ import { useLookOf } from '../household/usePersonLook'
 import { formatInviteCode } from '../household/inviteCode'
 import { shareInviteCode } from '../household/shareInvite'
 import { goalForDate, type Goal } from '../nutrition/goals'
+import { PATCH_NOTES_PATH, PatchNotesPage } from '../patchNotes/PatchNotesPage'
 import { useToday } from '../today/useToday'
 import { AccountSection } from './AccountSection'
 
@@ -49,6 +50,7 @@ export function SettingsPage() {
   if (pathname === CATEGORIES_PATH) return <CategoriesPage />
   if (pathname === PARTNER_PATH) return <PartnerPage />
   if (pathname === OWN_LOOK_PATH) return <OwnLookPage />
+  if (pathname === PATCH_NOTES_PATH) return <PatchNotesPage />
   return <SettingsOverview />
 }
 
@@ -156,9 +158,14 @@ function SettingsOverview() {
           Log out
         </Button>
       </div>
-      <p className="mt-6 text-center text-[13px] text-label-secondary">
+      {/* a little hidden: the version line opens the patch notes */}
+      <button
+        type="button"
+        onClick={() => navigate(PATCH_NOTES_PATH, { replace: true })}
+        className="mt-6 block w-full text-center text-[13px] text-label-secondary"
+      >
         Version {formatVersion(APP_VERSION)}
-      </p>
+      </button>
     </>
   )
 }
