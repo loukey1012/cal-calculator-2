@@ -6,10 +6,11 @@ import { toUserMessage } from '../../lib/errors'
 import { BarcodeLink } from '../barcode/BarcodeLink'
 import { PrefillNote } from '../barcode/PrefillNote'
 import { useProductPrefill } from '../barcode/useProductPrefill'
-import { useDeleteIngredient, useIngredients, useSaveIngredient } from './hooks'
+import { useDeleteIngredient, useIngredients, useMarkValuesOk, useSaveIngredient } from './hooks'
 import { IngredientForm } from './IngredientForm'
 import { EMPTY_INGREDIENT_FORM, toFormValues } from './ingredientForm'
 import type { Category, CategoryGroup, Ingredient } from './ingredientsApi'
+import { valuesMarkedOk } from './valueChecks'
 
 const FORM_ID = 'ingredient-form'
 
@@ -45,12 +46,16 @@ export function IngredientSheet({
   const ingredients = useIngredients(householdId)
   const prefill = useProductPrefill(ingredient ? null : barcode, EMPTY_INGREDIENT_FORM)
   const remove = useDeleteIngredient(householdId)
+  const markOk = useMarkValuesOk(householdId)
+  // the latest saved version, e.g. right after marking its values as correct
+  const saved = ingredients.data?.find(({ id }) => id === ingredient?.id) ?? ingredient
   // bumped to put the form back to the values from Open Food Facts
   const [resets, setResets] = useState(0)
-  const error = save.error ?? remove.error
+  const error = save.error ?? remove.error ?? markOk.error
 
   function close() {
     save.reset()
+    markOk.reset()
     remove.reset()
     onClose()
   }
@@ -114,6 +119,16 @@ export function IngredientSheet({
             categories={categories}
             groups={groups}
             savedIngredients={ingredients.data ?? []}
+            valuesConfirmation={
+              saved
+                ? {
+                    marked: valuesMarkedOk(saved),
+                    pending: markOk.isPending,
+                    onMark: () => markOk.mutate({ ingredient: saved, ok: true }),
+                    onUndo: () => markOk.mutate({ ingredient: saved, ok: false }),
+                  }
+                : undefined
+            }
             onSubmit={(form) =>
               save.mutate(
                 { id: ingredient?.id ?? null, form, categories },

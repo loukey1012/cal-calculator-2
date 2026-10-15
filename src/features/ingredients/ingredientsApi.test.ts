@@ -12,6 +12,7 @@ import {
   fetchCategories,
   fetchCategoryGroups,
   fetchIngredients,
+  markValuesOk,
   updateIngredient,
 } from './ingredientsApi'
 import { category, categoryGroup, ingredient } from './testData'
@@ -69,6 +70,16 @@ describe('ingredientsApi', () => {
     expect(query.eq).toHaveBeenCalledWith('id', 'i1')
   })
 
+  test('markValuesOk stores the values marked as correct, or clears them', async () => {
+    const query = fakeQuery({ data: CREAM, error: null })
+    supabaseMock.from.mockReturnValueOnce(query)
+    const values = { kcal_100: 92 }
+
+    await expect(markValuesOk('i1', values)).resolves.toEqual(CREAM)
+    expect(query.update).toHaveBeenCalledWith({ values_ok: values })
+    expect(query.eq).toHaveBeenCalledWith('id', 'i1')
+  })
+
   test('deleteIngredient deletes by id', async () => {
     const query = fakeQuery({ data: null, error: null })
     supabaseMock.from.mockReturnValueOnce(query)
@@ -97,6 +108,7 @@ describe('ingredientsApi', () => {
     ['createIngredient', () => createIngredient('h1', INPUT)],
     ['updateIngredient', () => updateIngredient('i1', INPUT)],
     ['deleteIngredient', () => deleteIngredient('i1')],
+    ['markValuesOk', () => markValuesOk('i1', null)],
     ['createCategory', () => createCategory('h1', 'x', null)],
   ])('%s turns database errors into ApiError', async (_name, call) => {
     supabaseMock.from.mockReturnValueOnce(fakeQuery({ data: null, error: DB_ERROR }))

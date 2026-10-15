@@ -408,6 +408,7 @@ export type Database = {
           unit_label: string | null
           unit_weight_g: number | null
           updated_at: string
+          values_ok: Json | null
         }
         Insert: {
           barcode?: string | null
@@ -441,6 +442,7 @@ export type Database = {
           unit_label?: string | null
           unit_weight_g?: number | null
           updated_at?: string
+          values_ok?: Json | null
         }
         Update: {
           barcode?: string | null
@@ -474,6 +476,7 @@ export type Database = {
           unit_label?: string | null
           unit_weight_g?: number | null
           updated_at?: string
+          values_ok?: Json | null
         }
         Relationships: [
           {

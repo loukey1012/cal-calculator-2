@@ -30,6 +30,15 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-15T21:27',
+    kind: 'new',
+    title: 'Values are correct',
+    items: [
+      'A flagged ingredient can be marked as correct; the flag goes away for both of you',
+      'It comes back if the values change and still look wrong',
+    ],
+  },
+  {
     at: '2026-10-15T21:20',
     kind: 'new',
     title: 'Liquid Glass: Minimal and Full',

@@ -130,7 +130,31 @@ export function flaggedFields(warnings: readonly ValueWarning[]): ReadonlySet<st
   return new Set(warnings.flatMap((warning) => warning.fields))
 }
 
-/** A saved ingredient whose values look wrong, by the same checks as the form. */
+/** The columns the checks look at, as stored when someone marks the values as correct. */
+export type CheckedValues = Readonly<Record<string, string | number | null>>
+
+const CHECKED_COLUMNS = [
+  'measure',
+  'unit_weight_g',
+  ...NUTRITION_FIELDS.flatMap((field) => [`${field}_100`, `${field}_unit`] as const),
+] as const satisfies ReadonlyArray<keyof Ingredient>
+
+export function checkedValues(ingredient: Ingredient): CheckedValues {
+  return Object.fromEntries(CHECKED_COLUMNS.map((column) => [column, ingredient[column]]))
+}
+
+/** Someone marked these values as correct, and they haven't changed since. */
+export function valuesMarkedOk(ingredient: Ingredient): boolean {
+  const marked = ingredient.values_ok
+  if (marked === null || typeof marked !== 'object' || Array.isArray(marked)) return false
+  const current = checkedValues(ingredient)
+  return CHECKED_COLUMNS.every((column) => (marked[column] ?? null) === current[column])
+}
+
+/**
+ * A saved ingredient whose values look wrong, by the same checks as the form, unless someone
+ * marked exactly these values as correct.
+ */
 export function needsCheck(ingredient: Ingredient): boolean {
-  return valueWarnings(toFormValues(ingredient)).length > 0
+  return !valuesMarkedOk(ingredient) && valueWarnings(toFormValues(ingredient)).length > 0
 }

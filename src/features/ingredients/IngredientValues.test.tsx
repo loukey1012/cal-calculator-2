@@ -13,14 +13,17 @@ vi.mock('./ingredientsApi', () => ({
   createCategory: vi.fn(),
   fetchCategories: vi.fn(),
   setIngredientBarcode: vi.fn(),
+  markValuesOk: vi.fn(),
 }))
 vi.mock('../barcode/openFoodFacts', () => ({ lookupProduct: vi.fn(), searchProducts: vi.fn() }))
 
 import { lookupProduct, searchProducts } from '../barcode/openFoodFacts'
 import { EMPTY_INGREDIENT_FORM, type IngredientFormValues } from './ingredientForm'
+import { checkedValues } from './valueChecks'
 import {
   createIngredient,
   fetchIngredients,
+  markValuesOk,
   setIngredientBarcode,
   updateIngredient,
   type Ingredient,
@@ -476,5 +479,48 @@ describe('an unknown barcode for an ingredient already saved', () => {
 
     expect(confirm).toHaveBeenCalledWith(expect.stringMatching(/already has a barcode/))
     expect(setIngredientBarcode).not.toHaveBeenCalled()
+  })
+})
+
+describe('Values are correct', () => {
+  // more saturated fat than fat: flagged
+  const ODD = ingredient({
+    id: 'odd',
+    name: 'Odd Butter',
+    kcal_100: 740,
+    fat_100: 20,
+    sat_fat_100: 50,
+  })
+
+  test('a flagged ingredient can be marked correct with its saved values', async () => {
+    vi.mocked(markValuesOk).mockResolvedValue({ ...ODD, values_ok: checkedValues(ODD) })
+    const user = userEvent.setup()
+    renderSheet({ editing: ODD })
+
+    await user.click(screen.getByRole('button', { name: 'Values are correct' }))
+
+    await waitFor(() => expect(markValuesOk).toHaveBeenCalledWith('odd', checkedValues(ODD)))
+  })
+
+  test('a marked one says so and can be undone', async () => {
+    vi.mocked(markValuesOk).mockResolvedValue(ODD)
+    const user = userEvent.setup()
+    renderSheet({ editing: { ...ODD, values_ok: checkedValues(ODD) } })
+
+    expect(screen.getByText('Marked as correct')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Undo' }))
+
+    await waitFor(() => expect(markValuesOk).toHaveBeenCalledWith('odd', null))
+  })
+
+  test('while the values are being changed, they can’t be marked', async () => {
+    const user = userEvent.setup()
+    renderSheet({ editing: ODD })
+
+    await user.clear(screen.getByLabelText('Saturated fat per 100 g'))
+    await user.type(screen.getByLabelText('Saturated fat per 100 g'), '40')
+
+    expect(screen.getByText('Check these values')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Values are correct' })).not.toBeInTheDocument()
   })
 })

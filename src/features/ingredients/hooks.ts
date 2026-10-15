@@ -7,6 +7,7 @@ import {
 } from '@tanstack/react-query'
 import { ApiError } from '../../lib/errors'
 import type { CategoryChoice, ParsedIngredientForm } from './ingredientForm'
+import { checkedValues } from './valueChecks'
 import {
   createCategory,
   createIngredient,
@@ -15,6 +16,7 @@ import {
   fetchCategoryGroups,
   fetchIngredientUses,
   fetchIngredients,
+  markValuesOk,
   setIngredientBarcode,
   updateIngredient,
   type Category,
@@ -155,6 +157,20 @@ export function useLinkBarcode(
   const cacheSaved = useCacheSaved(householdId)
   return useMutation({
     mutationFn: ({ id, barcode }: LinkBarcodeInput) => setIngredientBarcode(id, barcode),
+    onSuccess: cacheSaved,
+    onSettled: invalidate,
+  })
+}
+
+/** "Values are correct" for an ingredient's current values, or undone (false). */
+export function useMarkValuesOk(
+  householdId: string,
+): UseMutationResult<Ingredient, Error, { readonly ingredient: Ingredient; readonly ok: boolean }> {
+  const invalidate = useInvalidateIngredients(householdId)
+  const cacheSaved = useCacheSaved(householdId)
+  return useMutation({
+    mutationFn: ({ ingredient, ok }) =>
+      markValuesOk(ingredient.id, ok ? checkedValues(ingredient) : null),
     onSuccess: cacheSaved,
     onSettled: invalidate,
   })

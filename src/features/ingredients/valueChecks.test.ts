@@ -1,7 +1,13 @@
 import { describe, expect, test } from 'vitest'
 import { EMPTY_INGREDIENT_FORM, type IngredientFormValues } from './ingredientForm'
 import { ingredient } from './testData'
-import { flaggedFields, needsCheck, valueWarnings } from './valueChecks'
+import {
+  checkedValues,
+  flaggedFields,
+  needsCheck,
+  valuesMarkedOk,
+  valueWarnings,
+} from './valueChecks'
 
 function form(overrides: Partial<IngredientFormValues>): IngredientFormValues {
   return { ...EMPTY_INGREDIENT_FORM, name: 'Gummies', ...overrides }
@@ -119,5 +125,30 @@ describe('needsCheck', () => {
     const butter = ingredient({ name: 'Butter', kcal_100: 740, fat_100: 82, sat_fat_100: 50 })
 
     expect(needsCheck(butter)).toBe(false)
+  })
+})
+
+describe('Values are correct', () => {
+  const oddFat = ingredient({ name: 'Butter', kcal_100: 740, fat_100: 20, sat_fat_100: 50 })
+
+  test('an ingredient marked correct with its current values needs no check', () => {
+    const marked = { ...oddFat, values_ok: checkedValues(oddFat) }
+
+    expect(valuesMarkedOk(marked)).toBe(true)
+    expect(needsCheck(marked)).toBe(false)
+  })
+
+  test('once its values change, a warning that still applies flags it again', () => {
+    const marked = { ...oddFat, values_ok: checkedValues(oddFat) }
+    const edited = { ...marked, sat_fat_100: 55 }
+
+    expect(valuesMarkedOk(edited)).toBe(false)
+    expect(needsCheck(edited)).toBe(true)
+  })
+
+  test('the name or brand changing doesn’t matter, only the values', () => {
+    const marked = { ...oddFat, values_ok: checkedValues(oddFat) }
+
+    expect(needsCheck({ ...marked, name: 'Kerrygold', brand: 'Ornua' })).toBe(false)
   })
 })
