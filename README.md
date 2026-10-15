@@ -170,10 +170,10 @@ Noted 2026-10-15.
 - [ ] Saturates and sugars are shown indented as "of which" lines
 - [ ] The progress rings and bars on Today keep their order (kcal · protein · carbs · fat)
 
-**6. One place to change your symbol** (to do)
+**6. One place to change your symbol** (done)
 
-- [ ] Your symbol is changed only under **Account** (next to your name)
-- [ ] Under **Members** you're still listed, but your row can't be tapped; only your partner's row opens a page
+- [x] Your symbol is changed only under **Account** (next to your name)
+- [x] Under **Members** you're still listed, but your row can't be tapped; only your partner's row opens a page
 
 **7. New Today tab icon** (to do)
 

@@ -76,6 +76,17 @@ describe('SettingsPage', () => {
     expect(screen.getByText('4Y5R-FXKY-MJ4P')).toBeInTheDocument()
   })
 
+  test('your own member row is shown but only the partner row opens a page', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    expect(await screen.findByText('Lukas (you)')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Lukas \(you\)/ })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /Anna/ }))
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Partner' })).toBeInTheDocument()
+  })
+
   test('shows the running version at the bottom', () => {
     renderPage()
 

@@ -73,15 +73,13 @@ beforeEach(() => {
 })
 
 describe('Settings › your symbol', () => {
-  test('opens from your row under Members, and from Account', async () => {
+  test('opens from Account only, not from your row under Members', async () => {
     const user = userEvent.setup()
     renderPage('/settings')
 
-    await user.click(await screen.findByRole('button', { name: /Lukas \(you\)/ }))
-    expect(screen.getByRole('heading', { level: 1, name: 'Your symbol' })).toBeInTheDocument()
-
-    await user.click(screen.getByRole('button', { name: 'Settings' }))
-    await user.click(await screen.findByRole('button', { name: /^Symbol/ }))
+    expect(await screen.findByText('Lukas (you)')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Lukas \(you\)/ })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /^Symbol/ }))
     expect(screen.getByRole('heading', { level: 1, name: 'Your symbol' })).toBeInTheDocument()
   })
 
@@ -127,8 +125,8 @@ describe('Settings › your symbol', () => {
   test('your symbol shows for you under Members', async () => {
     renderPage('/settings', { ownLook: { symbol: '🔥' } })
 
-    const row = await screen.findByRole('button', { name: /Lukas \(you\)/ })
-    expect(row).toHaveTextContent('🔥')
+    const row = await screen.findByText('Lukas (you)')
+    expect(row.closest('div.flex')).toHaveTextContent('🔥')
   })
 
   test('reset goes back to your initial', async () => {

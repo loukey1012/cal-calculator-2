@@ -139,7 +139,8 @@ function SettingsOverview() {
                 title={memberLabel(look, isYou)}
                 // your partner's account name, next to the nickname you gave them
                 detail={isYou ? undefined : displayName(member)}
-                onClick={() => navigate(isYou ? OWN_LOOK_PATH : PARTNER_PATH, { replace: true })}
+                // your own symbol is changed under Account, next to your name
+                onClick={isYou ? undefined : () => navigate(PARTNER_PATH, { replace: true })}
               />
             )
           })}
