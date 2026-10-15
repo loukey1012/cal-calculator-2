@@ -83,7 +83,7 @@ export function SwipeableRow({ children, onDelete, deleteLabel = 'Delete' }: Swi
         {deleteLabel}
       </button>
       <div
-        className={`relative bg-bg-elevated ${dragging ? '' : 'transition-transform duration-200'}`}
+        className={`glass-solid relative bg-bg-elevated ${dragging ? '' : 'transition-transform duration-200'}`}
         style={{ transform: `translateX(${offset}px)` }}
       >
         {children}

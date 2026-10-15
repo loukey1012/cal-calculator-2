@@ -27,6 +27,7 @@ type AppearanceCache = {
   readonly lightStyle: string
   readonly darkStyle: string
   readonly appIcon: string
+  readonly glass: string
   readonly variables: Record<string, string>
 }
 
@@ -48,7 +49,7 @@ export function useAppearance(profile: Pick<Profile, 'appearance' | 'accent_colo
   const appearance = parseAppearance(profile.appearance)
   const scheme: Scheme = resolveScheme(appearance, prefersDark)
   const accent = profile.accent_color.toLowerCase()
-  const { theme, lightStyle, darkStyle, goalPalette, appIcon } = appearance
+  const { theme, lightStyle, darkStyle, goalPalette, appIcon, glass } = appearance
   // a string, so a new but equal object from the next profile load doesn't repaint
   const customColors = JSON.stringify(appearance.customGoalColors ?? {})
 
@@ -56,14 +57,17 @@ export function useAppearance(profile: Pick<Profile, 'appearance' | 'accent_colo
     const root = document.documentElement
     const variables = appearanceVariables(goalPalette, scheme, accent, JSON.parse(customColors))
     root.dataset.scheme = scheme
+    if (glass === 'off') delete root.dataset.glass
+    else root.dataset.glass = glass
     for (const [name, value] of Object.entries(variables)) root.style.setProperty(name, value)
-    writeCache({ theme, lightStyle, darkStyle, appIcon, variables })
+    writeCache({ theme, lightStyle, darkStyle, appIcon, glass, variables })
     return () => {
       // signed out: back to the device's own light/dark look
       root.dataset.scheme = window.matchMedia(DARK_QUERY).matches ? 'soft' : 'light'
+      delete root.dataset.glass
       for (const name of Object.keys(variables)) root.style.removeProperty(name)
     }
-  }, [scheme, accent, theme, lightStyle, darkStyle, goalPalette, appIcon, customColors])
+  }, [scheme, accent, theme, lightStyle, darkStyle, goalPalette, appIcon, glass, customColors])
 
   useEffect(() => {
     applyAppIcon(appIcon)

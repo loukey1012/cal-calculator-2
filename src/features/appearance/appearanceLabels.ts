@@ -3,6 +3,7 @@ import type {
   Appearance,
   CategoryLayout,
   DarkStyle,
+  GlassLevel,
   GoalPalette,
   LightStyle,
   ProgressStyle,
@@ -19,6 +20,12 @@ export const THEME_OPTIONS = [
   { value: 'light', label: 'Light' },
   { value: 'dark', label: 'Dark' },
 ] as const
+
+export const GLASS_OPTIONS: ReadonlyArray<{ value: GlassLevel; label: string }> = [
+  { value: 'off', label: 'Off' },
+  { value: 'controls', label: 'Controls' },
+  { value: 'all', label: 'Everything' },
+]
 
 export const LIGHT_STYLE_LABELS: Record<LightStyle, string> = {
   classic: 'Classic',

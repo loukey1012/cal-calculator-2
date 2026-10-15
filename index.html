@@ -24,6 +24,7 @@
         var theme = 'system'
         var lightStyle = 'light'
         var darkStyle = 'soft'
+        var glass = 'off'
         var variables = {}
         try {
           var cache = JSON.parse(localStorage.getItem('calculator-appearance') || 'null')
@@ -31,6 +32,7 @@
             theme = cache.theme
             lightStyle = cache.lightStyle === 'pink' ? 'pink' : 'light'
             darkStyle = cache.darkStyle === 'bento' ? 'bento' : 'soft'
+            glass = cache.glass === 'controls' || cache.glass === 'all' ? cache.glass : 'off'
             variables = cache.variables || {}
           }
         } catch (error) {
@@ -38,6 +40,7 @@
         }
         var dark = theme === 'dark' || (theme !== 'light' && prefersDark)
         root.dataset.scheme = dark ? darkStyle : lightStyle
+        if (glass !== 'off') root.dataset.glass = glass
         for (var name in variables) {
           var value = variables[name]
           if (/^--[a-z-]+$/.test(name) && /^#[0-9a-f]{6}$/i.test(value)) {

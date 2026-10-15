@@ -158,3 +158,45 @@ test('the accent can be White (with a thin edge on light cards) or any custom co
     })
     .toBe('#123456')
 })
+
+test('Liquid Glass: controls or everything, on top of the chosen style, kept across a restart', async ({
+  page,
+  backend,
+}) => {
+  const me = await backend.user('Lena')
+  await backend.household([me])
+  await logIn(page, me)
+  const html = page.locator('html')
+  const tabBar = page.getByRole('navigation', { name: 'Tabs' }).getByRole('list')
+  await expect(tabBar).toHaveCSS('backdrop-filter', /blur\(24px\)/)
+
+  await page.getByRole('button', { name: 'Settings' }).click()
+  await activePage(page)
+    .getByRole('button', { name: /Appearance/ })
+    .click()
+  const settings = activePage(page)
+  await settings.getByRole('button', { name: /App colors/ }).click()
+  await settings.getByRole('radio', { name: 'Dark', exact: true }).click()
+  await settings.getByRole('radio', { name: 'Controls' }).click()
+
+  // the tab bar is glass now; the dark style stays
+  await expect(html).toHaveAttribute('data-glass', 'controls')
+  await expect(html).toHaveAttribute('data-scheme', 'soft')
+  await expect(tabBar).toHaveCSS('backdrop-filter', /blur\(22px\)/)
+
+  await settings.getByRole('radio', { name: 'Everything' }).click()
+  await expect(html).toHaveAttribute('data-glass', 'all')
+  await expect
+    .poll(async () => {
+      const { data } = await backend.admin
+        .from('profiles')
+        .select('appearance')
+        .eq('id', me.id)
+        .single()
+      return data?.appearance
+    })
+    .toMatchObject({ theme: 'dark', glass: 'all' })
+
+  await page.reload()
+  await expect(html).toHaveAttribute('data-glass', 'all')
+})

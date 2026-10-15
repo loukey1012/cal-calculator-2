@@ -130,6 +130,84 @@
   color-scheme: dark;
 }
 
+/* Liquid Glass (Settings › Appearance › App colors), on top of any style. "controls": the tab bar
+   and sheets are translucent, blurred glass. "all": the cards too, over a soft color field made
+   from the scheme's own ring colors. Rows that can be swiped stay solid: their red Delete sits
+   right behind them. */
+:root {
+  --glass-bar: rgb(255 255 255 / 0.42);
+  --glass-sheet: rgb(250 251 253 / 0.62);
+  --glass-card: rgb(255 255 255 / 0.45);
+  --glass-edge:
+    inset 0 1px 0 rgb(255 255 255 / 0.9), inset 0 -1px 0 rgb(255 255 255 / 0.35),
+    inset 0 0 0 1px rgb(255 255 255 / 0.45), 0 10px 30px rgb(20 24 40 / 0.14);
+  --glass-blur: blur(22px) saturate(190%);
+  --glass-field-base: #eef1f7;
+  --glass-field-strength: 50%;
+}
+
+:root[data-scheme='pink'] {
+  --glass-field-base: #fbeef4;
+}
+
+:root[data-scheme='soft'],
+:root[data-scheme='bento'] {
+  --glass-bar: rgb(40 42 50 / 0.42);
+  --glass-sheet: rgb(30 32 38 / 0.62);
+  --glass-card: rgb(255 255 255 / 0.07);
+  --glass-edge:
+    inset 0 1px 0 rgb(255 255 255 / 0.22), inset 0 -1px 0 rgb(255 255 255 / 0.06),
+    inset 0 0 0 1px rgb(255 255 255 / 0.1), 0 12px 32px rgb(0 0 0 / 0.5);
+  --glass-field-base: #0b0c12;
+  --glass-field-strength: 40%;
+}
+
+:root[data-glass] .glass-bar {
+  background-color: var(--glass-bar);
+  box-shadow: var(--glass-edge);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+
+:root[data-glass] .glass-sheet {
+  background-color: var(--glass-sheet);
+  box-shadow: var(--glass-edge);
+  -webkit-backdrop-filter: blur(30px) saturate(190%);
+  backdrop-filter: blur(30px) saturate(190%);
+}
+
+:root[data-glass='all'] .glass-field {
+  background:
+    radial-gradient(
+      60% 45% at 15% 10%,
+      color-mix(in srgb, var(--goal-kcal) var(--glass-field-strength), transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      55% 40% at 90% 30%,
+      color-mix(in srgb, var(--goal-fat) var(--glass-field-strength), transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      70% 50% at 40% 95%,
+      color-mix(in srgb, var(--goal-fiber) var(--glass-field-strength), transparent),
+      transparent 70%
+    ),
+    var(--glass-field-base);
+}
+
+:root[data-glass='all'] .glass-clear {
+  background: transparent;
+}
+
+/* every card and grouped list, but not inside sheets (they are glass already) */
+:root[data-glass='all'] .bg-bg-elevated:not(.glass-solid, [role='dialog'] *) {
+  background-color: var(--glass-card);
+  box-shadow: var(--glass-edge);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+}
+
 @theme inline {
   --color-accent: var(--accent);
   --color-accent-ink: var(--accent-ink);

@@ -3,6 +3,7 @@ import { SCHEME_SURFACES, type DarkStyle, type LightStyle, type Scheme } from '.
 import {
   APPEARANCE_PATH,
   DARK_STYLE_LABELS,
+  GLASS_OPTIONS,
   LIGHT_STYLE_LABELS,
   THEME_OPTIONS,
 } from './appearanceLabels'
@@ -117,6 +118,18 @@ export function AppColorsPage() {
           value={appearance.darkStyle}
           onChange={(darkStyle) => change('darkStyle', darkStyle)}
           options={styleCards(DARK_STYLES, DARK_STYLE_LABELS)}
+        />
+      </SettingSection>
+
+      <SettingSection
+        title="Liquid Glass"
+        footer="Controls: the tab bar and sheets turn to glass. Everything: the cards too, over a soft background in your style’s colors. Works with every style."
+      >
+        <SegmentedControl
+          label="Liquid Glass"
+          options={GLASS_OPTIONS}
+          value={appearance.glass}
+          onChange={(glass) => change('glass', glass)}
         />
       </SettingSection>
 

@@ -335,8 +335,9 @@ export function PageStack({
             aria-hidden={isUnder || undefined}
             className={
               moving
-                ? 'absolute inset-0 overflow-hidden bg-bg will-change-transform'
-                : 'min-h-full bg-bg'
+                ? // a sliding page keeps a background, so the one below never shows through
+                  'glass-field absolute inset-0 overflow-hidden bg-bg will-change-transform'
+                : 'glass-clear min-h-full bg-bg'
             }
             style={moving && !isUnder ? { boxShadow: TOP_SHADOW } : undefined}
           >

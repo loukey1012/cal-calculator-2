@@ -22,9 +22,16 @@ describe('parseAppearance', () => {
       categoryLayout: 'wrap',
       appIcon: 'pink',
       ingredientSort: 'used',
+      glass: 'all',
     }
 
     expect(parseAppearance(stored)).toEqual(stored)
+  })
+
+  test('Liquid Glass is off until chosen; an unknown level falls back to off', () => {
+    expect(DEFAULT_APPEARANCE.glass).toBe('off')
+    expect(parseAppearance({ glass: 'controls' }).glass).toBe('controls')
+    expect(parseAppearance({ glass: 'shiny' }).glass).toBe('off')
   })
 
   test('ingredient lists show the newest first until changed; an unknown order falls back', () => {

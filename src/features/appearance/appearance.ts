@@ -10,6 +10,11 @@ const DARK_STYLES = ['soft', 'bento'] as const
 const GOAL_PALETTES = ['vivid', 'pastel', 'accent', 'contrast'] as const
 const PROGRESS_STYLES = ['rings', 'ringBars', 'bars', 'compact'] as const
 const CATEGORY_LAYOUTS = ['line', 'wrap', 'grouped'] as const
+/**
+ * Liquid Glass, on top of any style: off; the controls (tab bar, sheets) as glass; or everything,
+ * also the cards, over a soft color field. Applied as data-glass on the root (see index.css).
+ */
+const GLASS_LEVELS = ['off', 'controls', 'all'] as const
 /** The home-screen icons to pick from; each has its files in public/icons/<name>/. */
 export const APP_ICONS = [
   'graphite',
@@ -32,6 +37,7 @@ export type ProgressStyle = (typeof PROGRESS_STYLES)[number]
  */
 export type CategoryLayout = (typeof CATEGORY_LAYOUTS)[number]
 export type AppIcon = (typeof APP_ICONS)[number]
+export type GlassLevel = (typeof GLASS_LEVELS)[number]
 /** What is actually painted: light (the classic light style), pink, or one of the dark styles. */
 export type Scheme = 'light' | 'pink' | DarkStyle
 
@@ -44,6 +50,7 @@ export const DEFAULT_APPEARANCE = {
   categoryLayout: 'line',
   appIcon: 'graphite',
   ingredientSort: 'newest',
+  glass: 'off',
 } as const satisfies Record<string, string>
 
 /** A color picked for one goal's ring and bar, on top of the palette. */
@@ -83,6 +90,7 @@ const appearanceSchema = z
     appIcon: z.enum(APP_ICONS).catch(DEFAULT_APPEARANCE.appIcon),
     // the order of both ingredient lists (Ingredients tab and the Cook search)
     ingredientSort: z.enum(INGREDIENT_SORTS).catch(DEFAULT_APPEARANCE.ingredientSort),
+    glass: z.enum(GLASS_LEVELS).catch(DEFAULT_APPEARANCE.glass),
     customGoalColors: customGoalColorsSchema.optional(),
     // the nickname and symbol you gave each household member
     partnerLooks: partnerLooksSchema,

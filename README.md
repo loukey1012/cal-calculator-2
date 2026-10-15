@@ -129,6 +129,7 @@ Everything here is saved **to your account**, never to the device: you get the s
   - **Theme:** System, Light or Dark.
   - **Light style:** **Classic** (cool grey and white) or **Pink** (blush page, rose-tinted cards, text and tracks, pink-leaning goal colors). Used whenever the app is light, also with System during the day.
   - **Dark style:** **Soft** (deep grey, rounded) or **Graphite** (near-black, Space Grotesk numbers, uppercase labels; stored as `bento`). Used whenever the app is dark, also with System at night.
+  - **Liquid Glass:** **Off**, **Controls** (the tab bar and sheets turn to translucent, blurred glass) or **Everything** (the cards too, over a soft color background made from the style's own ring colors). Works on top of every light and dark style; rows you can swipe to delete stay solid.
   - **Accent color:** any color (buttons, the active tab, your avatar). Text in the accent color is darkened or lightened automatically so it stays readable, e.g. Lime or White on a light background; a White accent gets a thin edge on its buttons, chips and avatar.
 - **Progress** (with a live preview at the top)
   - **Progress style:** Rings, **Ring + bars** (default: a calorie ring, bars for the macros), Bars or Compact.
@@ -180,10 +181,10 @@ Noted 2026-10-15.
 
 - [x] The Today tab icon becomes the app icon's "C" ring with the dot at its opening, in one color like the other tab icons
 
-**8. Liquid Glass** (to do)
+**8. Liquid Glass** (done)
 
-- [ ] First a visual comparison of two versions: a **Liquid Glass switch** that works with any style vs. a **Glass style** of its own (light and dark); the chosen one gets built
-- [ ] Translucent, blurred glass for the tab bar, sheets, headers and cards; saved to your account like every other appearance setting
+- [x] Both versions from the comparison, as one setting in Settings › Appearance › App colors: **Off**, **Controls** (tab bar and sheets as glass) or **Everything** (the cards too, over a soft color background)
+- [x] Works on top of every style, light and dark; saved to your account like every other appearance setting
 
 **9. Reading nutrition labels** (to do)
 
@@ -402,7 +403,7 @@ pnpm icons          # regenerate the icon PNGs: the default set from public/icon
 
 To add an app icon choice: put its SVG in `public/icons/<name>/icon.svg`, add `<name>` to `APP_ICONS` (`src/features/appearance/appearance.ts`) and a label to `APP_ICON_OPTIONS`, then run `pnpm icons`.
 
-**End-to-end journeys** (log a meal on Cook, Back and the back swipe going one step at a time on Cook, category chips and creating a missing ingredient from the Cook search, the new-version toast on the first start only, a White and a custom accent color, your own symbol, a single food changed in place, a meal eaten out logged as an estimate, a saved brand picked from the suggestions, a package scanned from a photo and filled in from Open Food Facts, a scanned portion of 3 biscuits split into single units with a wrong value cleared, values of a similar product found by name, an unknown package on Cook added to the saved ingredient it is plus an estimated ingredient marking the dish, a live camera scan on Cook, weight for today and an earlier day with calorie and weight trends, cooking together for two, sharing a meal afterwards, leftovers, goals and partner, partner nickname and symbol, Today fitting the screen, history, ingredients, category management, offline, a partner's change showing up live and after the app was in the background, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color, a drink saved and logged in ml, the newest ingredient on top with a brand filter and a saved sort order, an edited ingredient reaching both people's meals of the last two weeks but not older ones) run the real app against the dev project. Build it against dev and pass the test credentials:
+**End-to-end journeys** (log a meal on Cook, Back and the back swipe going one step at a time on Cook, category chips and creating a missing ingredient from the Cook search, the new-version toast on the first start only, a White and a custom accent color, your own symbol, a single food changed in place, a meal eaten out logged as an estimate, a saved brand picked from the suggestions, a package scanned from a photo and filled in from Open Food Facts, a scanned portion of 3 biscuits split into single units with a wrong value cleared, values of a similar product found by name, an unknown package on Cook added to the saved ingredient it is plus an estimated ingredient marking the dish, a live camera scan on Cook, weight for today and an earlier day with calorie and weight trends, cooking together for two, sharing a meal afterwards, leftovers, goals and partner, partner nickname and symbol, Today fitting the screen, history, ingredients, category management, offline, a partner's change showing up live and after the app was in the background, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color, a drink saved and logged in ml, the newest ingredient on top with a brand filter and a saved sort order, Liquid Glass for the controls and then everything, kept across a restart, an edited ingredient reaching both people's meals of the last two weeks but not older ones) run the real app against the dev project. Build it against dev and pass the test credentials:
 
 ```bash
 set -a; . ./.env.test.local; set +a

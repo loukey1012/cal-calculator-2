@@ -14,6 +14,21 @@ function boot(cache: object | null): string | undefined {
 afterEach(() => {
   localStorage.clear()
   delete document.documentElement.dataset.scheme
+  delete document.documentElement.dataset.glass
+})
+
+describe('index.html boot script, Liquid Glass', () => {
+  test.each([
+    ['controls', 'controls'],
+    ['all', 'all'],
+    ['off', undefined],
+    ['shiny', undefined],
+    [undefined, undefined],
+  ])('starts with the cached glass %s', (glass, applied) => {
+    boot({ theme: 'light', glass, variables: {} })
+
+    expect(document.documentElement.dataset.glass).toBe(applied)
+  })
 })
 
 describe('index.html boot script', () => {

@@ -47,6 +47,22 @@ describe('useAppearance', () => {
     expect(variable('--accent')).toBe('')
   })
 
+  test('applies the Liquid Glass choice to the whole app and remembers it for the next start', () => {
+    const { rerender, unmount } = renderHook(
+      ({ glass }) => useAppearance({ accent_color: '#007aff', appearance: { glass } }),
+      { initialProps: { glass: 'controls' } },
+    )
+    expect(root.dataset.glass).toBe('controls')
+    const cache = JSON.parse(localStorage.getItem(APPEARANCE_CACHE_KEY) ?? 'null')
+    expect(cache).toMatchObject({ glass: 'controls' })
+
+    rerender({ glass: 'all' })
+    expect(root.dataset.glass).toBe('all')
+
+    unmount()
+    expect(root.dataset.glass).toBeUndefined()
+  })
+
   test('paints the pink light style', () => {
     renderHook(() =>
       useAppearance({

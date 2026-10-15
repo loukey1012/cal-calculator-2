@@ -84,7 +84,7 @@ function SheetPanel({ onClose, title, action, children }: Omit<SheetProps, 'open
         aria-labelledby={titleId}
         tabIndex={-1}
         style={dragOffset ? { transform: `translateY(${dragOffset}px)` } : undefined}
-        className="relative flex max-h-[92dvh] w-full max-w-md animate-sheet-in flex-col rounded-t-[28px] bg-bg pb-safe-bottom text-label outline-none"
+        className="glass-sheet relative flex max-h-[92dvh] w-full max-w-md animate-sheet-in flex-col rounded-t-[28px] bg-bg pb-safe-bottom text-label outline-none"
       >
         <div
           data-testid="sheet-drag-handle"

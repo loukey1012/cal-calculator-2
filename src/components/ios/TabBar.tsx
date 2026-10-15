@@ -14,7 +14,7 @@ type TabBarProps = {
 export function TabBar({ items, activeIndex, onSelect, onReselect }: TabBarProps) {
   return (
     <nav aria-label="Tabs" className="fixed inset-x-0 bottom-tabbar z-10 px-4">
-      <ul className="mx-auto flex h-(--tabbar-height) max-w-md items-center justify-between rounded-full bg-bar px-2 shadow-bar backdrop-blur-xl">
+      <ul className="glass-bar mx-auto flex h-(--tabbar-height) max-w-md items-center justify-between rounded-full bg-bar px-2 shadow-bar backdrop-blur-xl">
         {items.map((item, index) => {
           const active = index === activeIndex
           return (
