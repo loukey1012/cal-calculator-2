@@ -6,20 +6,31 @@ import type { BasisField, BasisFormValues, BasisKey } from './ingredientForm'
 
 type NutrientRow = {
   readonly field: BasisField
+  /** what the row reads, e.g. "of which sugars" */
   readonly label: string
+  /** the nutrient's own name, for screen readers and the clear button */
+  readonly name: string
   readonly suffix: string
+  /** an "of which" line under its parent */
   readonly indent?: boolean
 }
 
+/** In the order of a nutrition label. */
 const NUTRIENT_ROWS: readonly NutrientRow[] = [
-  { field: 'kcal', label: 'Calories', suffix: 'kcal' },
-  { field: 'protein', label: 'Protein', suffix: 'g' },
-  { field: 'carbs', label: 'Carbs', suffix: 'g' },
-  { field: 'sugar', label: 'Sugar', suffix: 'g', indent: true },
-  { field: 'fat', label: 'Fat', suffix: 'g' },
-  { field: 'sat_fat', label: 'Saturated fat', suffix: 'g', indent: true },
-  { field: 'fiber', label: 'Fiber', suffix: 'g' },
-  { field: 'salt', label: 'Salt', suffix: 'g' },
+  { field: 'kcal', label: 'Calories', name: 'Calories', suffix: 'kcal' },
+  { field: 'fat', label: 'Fat', name: 'Fat', suffix: 'g' },
+  {
+    field: 'sat_fat',
+    label: 'of which saturates',
+    name: 'Saturated fat',
+    suffix: 'g',
+    indent: true,
+  },
+  { field: 'carbs', label: 'Carbs', name: 'Carbs', suffix: 'g' },
+  { field: 'sugar', label: 'of which sugars', name: 'Sugar', suffix: 'g', indent: true },
+  { field: 'fiber', label: 'Fiber', name: 'Fiber', suffix: 'g' },
+  { field: 'protein', label: 'Protein', name: 'Protein', suffix: 'g' },
+  { field: 'salt', label: 'Salt', name: 'Salt', suffix: 'g' },
 ]
 
 type BasisSectionProps = {
@@ -62,11 +73,11 @@ export function BasisSection({
     <GroupedSection>
       <ToggleRow label={title} checked={enabled} onChange={onToggle} error={toggleError} />
       {enabled &&
-        NUTRIENT_ROWS.map(({ field, label, suffix, indent }) => (
+        NUTRIENT_ROWS.map(({ field, label, name, suffix, indent }) => (
           <InputRow
             key={field}
             label={label}
-            accessibleLabel={`${label} ${title.toLowerCase()}`}
+            accessibleLabel={`${name} ${title.toLowerCase()}`}
             suffix={suffix}
             indent={indent}
             inputMode="decimal"

@@ -86,6 +86,29 @@ beforeEach(() => {
   vi.mocked(updateIngredient).mockResolvedValue(SKYR)
 })
 
+describe('the order of the values', () => {
+  test('follows a nutrition label, with saturates and sugars as "of which" lines', () => {
+    renderSheet({ editing: SKYR })
+
+    const per100 = screen
+      .getAllByRole('textbox')
+      .map((input) => input.getAttribute('aria-label'))
+      .filter((label) => label?.endsWith(' per 100 g'))
+    expect(per100).toEqual([
+      'Calories per 100 g',
+      'Fat per 100 g',
+      'Saturated fat per 100 g',
+      'Carbs per 100 g',
+      'Sugar per 100 g',
+      'Fiber per 100 g',
+      'Protein per 100 g',
+      'Salt per 100 g',
+    ])
+    expect(screen.getAllByText('of which saturates').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('of which sugars').length).toBeGreaterThan(0)
+  })
+})
+
 describe('clearing values', () => {
   test('a row’s clear button empties just that value', async () => {
     const user = userEvent.setup()

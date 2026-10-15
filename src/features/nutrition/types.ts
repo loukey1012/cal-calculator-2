@@ -1,13 +1,16 @@
 import type { Enums } from '../../lib/database.types'
 
-/** Optional nutrients, in display order. Calories (kcal) are always present. */
+/**
+ * Optional nutrients, in the order of a nutrition label (fat, of which saturates, carbohydrate,
+ * of which sugars, fibre, protein, salt). Calories (kcal) are always present.
+ */
 export const NUTRIENT_KEYS = [
-  'protein',
-  'carbs',
-  'sugar',
   'fat',
   'sat_fat',
+  'carbs',
+  'sugar',
   'fiber',
+  'protein',
   'salt',
 ] as const
 

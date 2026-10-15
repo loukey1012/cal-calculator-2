@@ -164,11 +164,11 @@ Noted 2026-10-11.
 
 Noted 2026-10-15.
 
-**5. Nutrients in label order** (to do)
+**5. Nutrients in label order** (done)
 
-- [ ] Everywhere nutrients are listed or entered (ingredient form, ingredient details, dish and day totals, barcode prefill), they follow the order of a nutrition label: Energy, Fat, _of which saturates_, Carbohydrate, _of which sugars_, Fibre, Protein, Salt
-- [ ] Saturates and sugars are shown indented as "of which" lines
-- [ ] The progress rings and bars on Today keep their order (kcal · protein · carbs · fat)
+- [x] Everywhere nutrients are listed or entered (ingredient form, ingredient details, dish and day totals, barcode prefill), they follow the order of a nutrition label: Energy, Fat, _of which saturates_, Carbohydrate, _of which sugars_, Fibre, Protein, Salt
+- [x] Saturates and sugars are shown indented as "of which" lines
+- [x] The progress rings and bars on Today keep their order (kcal · protein · carbs · fat)
 
 **6. One place to change your symbol** (done)
 

@@ -21,9 +21,10 @@ const BASIS_OPTIONS = [
 type NumberField = 'kcal' | 'protein' | 'carbs' | 'fat'
 const NUMBER_ROWS: ReadonlyArray<{ field: NumberField; label: string; suffix: string }> = [
   { field: 'kcal', label: 'Calories', suffix: 'kcal' },
-  { field: 'protein', label: 'Protein', suffix: 'g' },
-  { field: 'carbs', label: 'Carbs', suffix: 'g' },
+  // label order
   { field: 'fat', label: 'Fat', suffix: 'g' },
+  { field: 'carbs', label: 'Carbs', suffix: 'g' },
+  { field: 'protein', label: 'Protein', suffix: 'g' },
 ]
 
 type CustomItemFormProps = {

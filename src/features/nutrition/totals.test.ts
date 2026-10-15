@@ -18,7 +18,7 @@ describe('itemTotals', () => {
     const totals = itemTotals(CREAM_150G)
 
     expect(totals.carbs).toBe(0)
-    expect(totals.missing).toEqual(['carbs', 'sugar', 'sat_fat', 'fiber', 'salt'])
+    expect(totals.missing).toEqual(['sat_fat', 'carbs', 'sugar', 'fiber', 'salt'])
   })
 })
 
@@ -51,7 +51,7 @@ describe('mealTotals / sumTotals', () => {
 
     expect(totals.kcal).toBe(538)
     expect(totals.protein).toBeCloseTo(1.95)
-    expect(totals.missing).toEqual(['protein', 'carbs', 'sugar', 'fat', 'sat_fat', 'fiber', 'salt'])
+    expect(totals.missing).toEqual(['fat', 'sat_fat', 'carbs', 'sugar', 'fiber', 'protein', 'salt'])
   })
 
   test('an empty meal totals zero with nothing missing', () => {
@@ -80,6 +80,6 @@ describe('mealTotals / sumTotals', () => {
 
     expect(day.kcal).toBe(638)
     expect(day.protein).toBeCloseTo(31.95)
-    expect(day.missing).toEqual(['carbs', 'sugar', 'sat_fat', 'fiber', 'salt'])
+    expect(day.missing).toEqual(['sat_fat', 'carbs', 'sugar', 'fiber', 'salt'])
   })
 })
