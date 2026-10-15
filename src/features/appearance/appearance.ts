@@ -1,12 +1,5 @@
 import { z } from 'zod'
-import {
-  CONTROL_CONTRAST,
-  isNearWhite,
-  mixHex,
-  onColor,
-  readableInk,
-  visibleOn,
-} from '../../lib/color'
+import { isNearWhite, mixHex, onColor, readableInk, visibleOn } from '../../lib/color'
 import { ownLookSchema, partnerLooksSchema } from '../household/partnerLook'
 import { INGREDIENT_SORTS } from '../ingredients/sorting'
 import type { RingKey } from '../nutrition/goals'
@@ -22,11 +15,6 @@ const CATEGORY_LAYOUTS = ['line', 'wrap', 'grouped'] as const
  * also the cards, over a soft color field. Applied as data-glass on the root (see index.css).
  */
 const GLASS_LEVELS = ['off', 'controls', 'all'] as const
-/**
- * The accent as text and icons on light styles: slightly darker (just enough contrast for
- * controls), or exactly the chosen color with a thin dark edge (data-accent-edge, index.css).
- */
-const ACCENT_ON_LIGHT = ['darker', 'edge'] as const
 /** The home-screen icons to pick from; each has its files in public/icons/<name>/. */
 export const APP_ICONS = [
   'graphite',
@@ -50,7 +38,6 @@ export type ProgressStyle = (typeof PROGRESS_STYLES)[number]
 export type CategoryLayout = (typeof CATEGORY_LAYOUTS)[number]
 export type AppIcon = (typeof APP_ICONS)[number]
 export type GlassLevel = (typeof GLASS_LEVELS)[number]
-export type AccentOnLight = (typeof ACCENT_ON_LIGHT)[number]
 /** What is actually painted: light (the classic light style), pink, or one of the dark styles. */
 export type Scheme = 'light' | 'pink' | DarkStyle
 
@@ -64,7 +51,6 @@ export const DEFAULT_APPEARANCE = {
   appIcon: 'graphite',
   ingredientSort: 'newest',
   glass: 'off',
-  accentOnLight: 'darker',
 } as const satisfies Record<string, string>
 
 /** A color picked for one goal's ring and bar, on top of the palette. */
@@ -105,7 +91,6 @@ const appearanceSchema = z
     // the order of both ingredient lists (Ingredients tab and the Cook search)
     ingredientSort: z.enum(INGREDIENT_SORTS).catch(DEFAULT_APPEARANCE.ingredientSort),
     glass: z.enum(GLASS_LEVELS).catch(DEFAULT_APPEARANCE.glass),
-    accentOnLight: z.enum(ACCENT_ON_LIGHT).catch(DEFAULT_APPEARANCE.accentOnLight),
     customGoalColors: customGoalColorsSchema.optional(),
     // the nickname and symbol you gave each household member
     partnerLooks: partnerLooksSchema,
@@ -195,31 +180,14 @@ export function goalColors(
 
 const ACCENT_EDGE = 'rgb(0 0 0 / 0.14)'
 
-export function isLightScheme(scheme: Scheme): boolean {
-  return scheme === 'light' || scheme === 'pink'
-}
-
-/**
- * The accent as text and icons, visible on both the page and the cards. Light styles: darkened
- * only to the contrast controls need, or exact (it then gets a dark edge from index.css). Dark
- * styles: lightened to the contrast of body text, as before.
- */
-function accentInk(scheme: Scheme, accent: string, accentOnLight: AccentOnLight): string {
-  const { bg, card } = SCHEME_SURFACES[scheme]
-  if (!isLightScheme(scheme)) return readableInk(readableInk(accent, bg), card)
-  if (accentOnLight === 'edge') return accent
-  return readableInk(readableInk(accent, bg, CONTROL_CONTRAST), card, CONTROL_CONTRAST)
-}
-
 /** CSS custom properties that depend on the user's choices (the rest come from the scheme). */
 export function appearanceVariables(
   goalPalette: GoalPalette,
   scheme: Scheme,
   accent: string,
   customGoalColors: CustomGoalColors = {},
-  accentOnLight: AccentOnLight = DEFAULT_APPEARANCE.accentOnLight,
 ): Record<string, string> {
-  const { card } = SCHEME_SURFACES[scheme]
+  const { bg, card } = SCHEME_SURFACES[scheme]
   // a custom ring color (e.g. White) must still show on the cards
   const visibleCustom = Object.fromEntries(
     Object.entries(customGoalColors).map(([goal, color]) => [goal, visibleOn(color, card)]),
@@ -229,7 +197,8 @@ export function appearanceVariables(
     '--accent': accent,
     // a white accent fill gets a thin edge on white
     '--accent-edge': isNearWhite(accent) ? ACCENT_EDGE : 'transparent',
-    '--accent-ink': accentInk(scheme, accent, accentOnLight),
+    // accent used as text must stay readable on both the page and the cards
+    '--accent-ink': readableInk(readableInk(accent, bg), card),
     '--on-accent': onColor(accent),
     '--goal-kcal': kcal,
     '--goal-protein': protein,

@@ -120,10 +120,6 @@ describe('Appearance pages', () => {
     expect(radio('Dark style', /Soft/)).toHaveAttribute('aria-checked', 'true')
     expect(radio('Accent color', 'Blue')).toHaveAttribute('aria-checked', 'true')
     expect(radio('Liquid Glass', 'Off')).toHaveAttribute('aria-checked', 'true')
-    expect(radio('Accent on light styles', 'Slightly darker')).toHaveAttribute(
-      'aria-checked',
-      'true',
-    )
   })
 
   test('the progress page shows its defaults', () => {
@@ -170,7 +166,6 @@ describe('Appearance pages', () => {
     [COLORS, 'Light style', /Pink/, { lightStyle: 'pink' }],
     [COLORS, 'Liquid Glass', 'Minimal', { glass: 'controls' }],
     [COLORS, 'Liquid Glass', 'Full', { glass: 'all' }],
-    [COLORS, 'Accent on light styles', 'Exact, with an edge', { accentOnLight: 'edge' }],
     [PROGRESS, 'Goal colors', /Pastel/, { goalPalette: 'pastel' }],
     [PROGRESS, 'Progress style', 'Compact', { progressStyle: 'compact' }],
     [PROGRESS, 'Progress style', 'Ring + bars', { progressStyle: 'ringBars' }],

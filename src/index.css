@@ -138,15 +138,14 @@
    colors. Rows that can be swiped stay solid: their red Delete sits right behind them. */
 :root {
   --glass-bar: rgb(255 255 255 / 0.42);
-  /* nearly solid on light styles: the dimmed page behind would turn a thinner sheet grey */
-  --glass-sheet: rgb(250 251 253 / 0.9);
-  --glass-card: rgb(255 255 255 / 0.56);
+  --glass-sheet: rgb(250 251 253 / 0.62);
+  --glass-card: rgb(255 255 255 / 0.45);
   --glass-edge:
     inset 0 1px 0 rgb(255 255 255 / 0.9), inset 0 -1px 0 rgb(255 255 255 / 0.35),
     inset 0 0 0 1px rgb(255 255 255 / 0.45), 0 10px 30px rgb(20 24 40 / 0.14);
   --glass-blur: blur(22px) saturate(190%);
   --glass-field-base: #eef1f7;
-  --glass-field-strength: 38%;
+  --glass-field-strength: 50%;
 }
 
 :root[data-scheme='pink'] {
@@ -167,18 +166,14 @@
 
 :root[data-glass] .glass-bar {
   background-color: var(--glass-bar);
-  /* a ring (e.g. the selected style card) stays in front of the glass edge */
-  box-shadow:
-    var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--glass-edge);
+  box-shadow: var(--glass-edge);
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
 }
 
 :root[data-glass] .glass-sheet {
   background-color: var(--glass-sheet);
-  /* a ring (e.g. the selected style card) stays in front of the glass edge */
-  box-shadow:
-    var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--glass-edge);
+  box-shadow: var(--glass-edge);
   -webkit-backdrop-filter: blur(30px) saturate(190%);
   backdrop-filter: blur(30px) saturate(190%);
 }
@@ -207,11 +202,6 @@
   background: transparent;
 }
 
-/* Full on a light style: grey text sits on the color field, so it gets a little darker */
-:root[data-glass='all']:not([data-scheme='soft'], [data-scheme='bento']) {
-  --label-secondary: #474d58;
-}
-
 /* Minimal on a light style has no color field behind it: whiter glass, so cards stay visible */
 :root[data-glass='controls']:not([data-scheme='soft'], [data-scheme='bento']) {
   --glass-card: rgb(255 255 255 / 0.66);
@@ -221,9 +211,7 @@
 :root[data-glass] .glass-surface.bg-bg-elevated,
 :root[data-glass] .glass-surface.bg-track {
   background-color: var(--glass-card);
-  /* a ring (e.g. the selected style card) stays in front of the glass edge */
-  box-shadow:
-    var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--glass-edge);
+  box-shadow: var(--glass-edge);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   backdrop-filter: blur(24px) saturate(180%);
 }
@@ -231,18 +219,9 @@
 /* Full: every other card too, e.g. the progress card (sheets are glass already) */
 :root[data-glass='all'] .bg-bg-elevated:not(.glass-solid, [role='dialog'] *) {
   background-color: var(--glass-card);
-  /* a ring (e.g. the selected style card) stays in front of the glass edge */
-  box-shadow:
-    var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--glass-edge);
+  box-shadow: var(--glass-edge);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   backdrop-filter: blur(24px) saturate(180%);
-}
-
-/* "Exact, with an edge" (Appearance › App colors): the exact accent as text and icons on light
-   styles, kept readable on white by a thin dark edge; a tinted tile keeps its fill without one */
-:root[data-accent-edge] .text-accent-ink:not([class*='bg-']),
-:root[data-accent-edge] .text-accent-ink[class*='bg-'] > svg {
-  filter: drop-shadow(0 0 0.6px rgb(0 0 0 / 0.75)) drop-shadow(0 0 0.3px rgb(0 0 0 / 0.6));
 }
 
 @theme inline {

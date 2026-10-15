@@ -30,6 +30,12 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-15T21:53',
+    kind: 'fix',
+    title: 'Undid the Liquid Glass and accent color changes for light styles',
+    items: ['Everything is as before that change; the Accent on light styles setting is gone'],
+  },
+  {
     at: '2026-10-15T21:50',
     kind: 'fix',
     title: 'Liquid Glass and accent colors on light styles',

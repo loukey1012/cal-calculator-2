@@ -23,16 +23,9 @@ describe('parseAppearance', () => {
       appIcon: 'pink',
       ingredientSort: 'used',
       glass: 'all',
-      accentOnLight: 'edge',
     }
 
     expect(parseAppearance(stored)).toEqual(stored)
-  })
-
-  test('accent on light styles is slightly darker until changed', () => {
-    expect(DEFAULT_APPEARANCE.accentOnLight).toBe('darker')
-    expect(parseAppearance({ accentOnLight: 'edge' }).accentOnLight).toBe('edge')
-    expect(parseAppearance({ accentOnLight: 'neon' }).accentOnLight).toBe('darker')
   })
 
   test('Liquid Glass is off until chosen; an unknown level falls back to off', () => {
@@ -157,12 +150,12 @@ describe('the pink scheme', () => {
   })
 
   test.each(COLOR_PRESETS.map((color) => [color.name, color.value]))(
-    'accent text and icons in %s stay visible on pink (3:1, the minimum for controls)',
+    'accent text in %s stays readable on pink',
     (_name, accent) => {
       const ink = appearanceVariables('vivid', 'pink', accent)['--accent-ink'] ?? ''
 
-      expect(contrastRatio(ink, SCHEME_SURFACES.pink.bg)).toBeGreaterThanOrEqual(3)
-      expect(contrastRatio(ink, SCHEME_SURFACES.pink.card)).toBeGreaterThanOrEqual(3)
+      expect(contrastRatio(ink, SCHEME_SURFACES.pink.bg)).toBeGreaterThanOrEqual(4.5)
+      expect(contrastRatio(ink, SCHEME_SURFACES.pink.card)).toBeGreaterThanOrEqual(4.5)
     },
   )
 })
@@ -249,37 +242,14 @@ describe('appearanceVariables', () => {
     expect(appearanceVariables('vivid', 'light', '#007aff')['--accent-edge']).toBe('transparent')
   })
 
-  test('keeps accent text visible even for a light accent on a light page', () => {
+  test('keeps accent text readable even for a light accent on a light page', () => {
     const vars = appearanceVariables('vivid', 'light', '#c6f432')
 
     expect(vars['--accent']).toBe('#c6f432')
     expect(
       contrastRatio(vars['--accent-ink'] ?? '', SCHEME_SURFACES.light.bg),
-    ).toBeGreaterThanOrEqual(3)
+    ).toBeGreaterThanOrEqual(4.5)
     expect(vars['--on-accent']).toBe('#0c0c0d')
-  })
-
-  test('a bright turquoise is only darkened a little on light styles', () => {
-    const turquoise = '#2dd4bf'
-    const ink = appearanceVariables('vivid', 'light', turquoise)['--accent-ink'] ?? ''
-
-    expect(contrastRatio(ink, SCHEME_SURFACES.light.card)).toBeGreaterThanOrEqual(3)
-    // less than the 4.5:1 of body text, so it stays close to the chosen color
-    expect(contrastRatio(ink, SCHEME_SURFACES.light.card)).toBeLessThan(4.5)
-  })
-
-  test('"Exact, with an edge" keeps the exact accent on light styles only', () => {
-    const turquoise = '#2dd4bf'
-
-    expect(appearanceVariables('vivid', 'light', turquoise, {}, 'edge')['--accent-ink']).toBe(
-      turquoise,
-    )
-    expect(appearanceVariables('vivid', 'pink', turquoise, {}, 'edge')['--accent-ink']).toBe(
-      turquoise,
-    )
-    expect(appearanceVariables('vivid', 'soft', turquoise, {}, 'edge')['--accent-ink']).toBe(
-      appearanceVariables('vivid', 'soft', turquoise)['--accent-ink'],
-    )
   })
 
   test('sets one variable per goal color', () => {
