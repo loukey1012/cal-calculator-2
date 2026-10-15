@@ -30,6 +30,11 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-15T22:17',
+    kind: 'internal',
+    title: 'Planned: background settings by amount, position and colors; no swiping while dragging',
+  },
+  {
     at: '2026-10-15T22:06',
     kind: 'new',
     title: 'The background behind Liquid Glass Full',

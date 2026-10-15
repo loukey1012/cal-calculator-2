@@ -242,6 +242,21 @@ Noted 2026-10-15 after testing points 1–8 on the iPhone (these come before poi
 - [x] Every change with its date and hour and what it does, newest first, in plain words
 - [x] Starts with the history so far; from now on every change adds an entry when it ships
 
+Noted 2026-10-15 after testing point 18 (these come next, before point 20).
+
+**23. Dragging without swiping away** (to do)
+
+- [ ] Anywhere something is dragged (sliders, the spots in the Background preview, and any such control later), a sideways drag moves the control and never switches tabs or swipes back
+
+**22. Background: amount, position and colors** (to do, changes point 18)
+
+- [ ] The Background page is reorganized into three choices, all independent of each other:
+  - **Spots**: how many, **1 to 6**
+  - **Position**: **Specified** (each spot where you drag it), **Random** (new places **on every tab change** or **once per app start**) or **Moving** (the spots wander around on their own at a speed you choose: slow, medium, fast)
+  - **Colors**: **Custom** (you pick each spot's color), **Preset** (ready-made palettes: your style's ring colors, Sunset, Ocean, Forest, Candy), **Cycle** (moves through your own list of colors) or **Random**; Cycle and Random change **on every tab change** or **once per app start**
+- [ ] Each spot's size can still be set; the Strength slider stays
+- [ ] **Slow drift** is removed (Moving replaces it) and the **Goal** colors are removed
+
 **16. Cook search: + and a custom item button** (to do, changes point 4)
 
 - [x] The **+** above the Cook search works like the one on the Ingredients tab: it opens a new ingredient straight away (named after the search), no menu
