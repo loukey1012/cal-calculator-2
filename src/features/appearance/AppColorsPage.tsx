@@ -2,6 +2,7 @@ import { SegmentedControl } from '../../components/ios/SegmentedControl'
 import { SCHEME_SURFACES, type DarkStyle, type LightStyle, type Scheme } from './appearance'
 import {
   APPEARANCE_PATH,
+  ACCENT_ON_LIGHT_OPTIONS,
   DARK_STYLE_LABELS,
   GLASS_OPTIONS,
   LIGHT_STYLE_LABELS,
@@ -138,6 +139,18 @@ export function AppColorsPage() {
           label="Accent color"
           value={profile.accent_color}
           onChange={(accent_color) => update.mutate({ accent_color })}
+        />
+      </SettingSection>
+
+      <SettingSection
+        title="Accent on light styles"
+        footer="Slightly darker: your color, darkened just enough for buttons and icons to show on white. Exact, with an edge: your exact color with a thin dark edge."
+      >
+        <SegmentedControl
+          label="Accent on light styles"
+          options={ACCENT_ON_LIGHT_OPTIONS}
+          value={appearance.accentOnLight}
+          onChange={(accentOnLight) => change('accentOnLight', accentOnLight)}
         />
       </SettingSection>
     </AppearanceSubPage>

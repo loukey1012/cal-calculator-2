@@ -4,6 +4,7 @@ import type { Profile } from '../household/householdApi'
 import {
   appearanceVariables,
   DEFAULT_APPEARANCE,
+  isLightScheme,
   parseAppearance,
   resolveScheme,
   type Scheme,
@@ -28,6 +29,7 @@ type AppearanceCache = {
   readonly darkStyle: string
   readonly appIcon: string
   readonly glass: string
+  readonly accentOnLight: string
   readonly variables: Record<string, string>
 }
 
@@ -49,25 +51,45 @@ export function useAppearance(profile: Pick<Profile, 'appearance' | 'accent_colo
   const appearance = parseAppearance(profile.appearance)
   const scheme: Scheme = resolveScheme(appearance, prefersDark)
   const accent = profile.accent_color.toLowerCase()
-  const { theme, lightStyle, darkStyle, goalPalette, appIcon, glass } = appearance
+  const { theme, lightStyle, darkStyle, goalPalette, appIcon, glass, accentOnLight } = appearance
   // a string, so a new but equal object from the next profile load doesn't repaint
   const customColors = JSON.stringify(appearance.customGoalColors ?? {})
 
   useEffect(() => {
     const root = document.documentElement
-    const variables = appearanceVariables(goalPalette, scheme, accent, JSON.parse(customColors))
+    const variables = appearanceVariables(
+      goalPalette,
+      scheme,
+      accent,
+      JSON.parse(customColors),
+      accentOnLight,
+    )
     root.dataset.scheme = scheme
     if (glass === 'off') delete root.dataset.glass
     else root.dataset.glass = glass
+    if (accentOnLight === 'edge' && isLightScheme(scheme)) root.dataset.accentEdge = 'on'
+    else delete root.dataset.accentEdge
     for (const [name, value] of Object.entries(variables)) root.style.setProperty(name, value)
-    writeCache({ theme, lightStyle, darkStyle, appIcon, glass, variables })
+    writeCache({ theme, lightStyle, darkStyle, appIcon, glass, accentOnLight, variables })
     return () => {
       // signed out: back to the device's own light/dark look
       root.dataset.scheme = window.matchMedia(DARK_QUERY).matches ? 'soft' : 'light'
       delete root.dataset.glass
+      delete root.dataset.accentEdge
       for (const name of Object.keys(variables)) root.style.removeProperty(name)
     }
-  }, [scheme, accent, theme, lightStyle, darkStyle, goalPalette, appIcon, glass, customColors])
+  }, [
+    scheme,
+    accent,
+    theme,
+    lightStyle,
+    darkStyle,
+    goalPalette,
+    appIcon,
+    glass,
+    accentOnLight,
+    customColors,
+  ])
 
   useEffect(() => {
     applyAppIcon(appIcon)

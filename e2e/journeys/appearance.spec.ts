@@ -208,6 +208,11 @@ test('Liquid Glass: Minimal for every field, Full for everything, kept across a 
   await settings.getByRole('button', { name: /App colors/ }).click()
   await settings.getByRole('radio', { name: 'Full' }).click()
   await expect(html).toHaveAttribute('data-glass', 'all')
+  // the chosen style still has its frame over the glass
+  await expect(settings.getByRole('radio', { name: /^Soft/ })).toHaveCSS(
+    'box-shadow',
+    /0px 0px 0px 4px/,
+  )
   await tabs.getByRole('button', { name: 'Today' }).click()
   await expect(progressCard).toHaveCSS('backdrop-filter', /blur/)
   await expect

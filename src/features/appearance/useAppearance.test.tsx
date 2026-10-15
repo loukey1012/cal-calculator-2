@@ -63,6 +63,22 @@ describe('useAppearance', () => {
     expect(root.dataset.glass).toBeUndefined()
   })
 
+  test('the exact accent with an edge is marked on light styles only', () => {
+    const { rerender, unmount } = renderHook(
+      ({ theme }) =>
+        useAppearance({ accent_color: '#2dd4bf', appearance: { theme, accentOnLight: 'edge' } }),
+      { initialProps: { theme: 'light' } },
+    )
+    expect(root.dataset.accentEdge).toBe('on')
+    expect(variable('--accent-ink')).toBe('#2dd4bf')
+
+    rerender({ theme: 'dark' })
+    expect(root.dataset.accentEdge).toBeUndefined()
+
+    unmount()
+    expect(root.dataset.accentEdge).toBeUndefined()
+  })
+
   test('paints the pink light style', () => {
     renderHook(() =>
       useAppearance({

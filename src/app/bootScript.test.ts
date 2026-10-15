@@ -15,6 +15,7 @@ afterEach(() => {
   localStorage.clear()
   delete document.documentElement.dataset.scheme
   delete document.documentElement.dataset.glass
+  delete document.documentElement.dataset.accentEdge
 })
 
 describe('index.html boot script, Liquid Glass', () => {
@@ -43,5 +44,17 @@ describe('index.html boot script', () => {
     [{ theme: 'light', lightStyle: 'sepia' }, 'light'],
   ])('paints %j as %s', (cache, scheme) => {
     expect(boot({ ...cache, variables: {} })).toBe(scheme)
+  })
+})
+
+describe('index.html boot script, accent on light styles', () => {
+  test.each([
+    [{ theme: 'light', accentOnLight: 'edge' }, 'on'],
+    [{ theme: 'dark', accentOnLight: 'edge' }, undefined],
+    [{ theme: 'light', accentOnLight: 'darker' }, undefined],
+  ])('%j marks the accent edge: %s', (cache, edge) => {
+    boot({ ...cache, variables: {} })
+
+    expect(document.documentElement.dataset.accentEdge).toBe(edge)
   })
 })

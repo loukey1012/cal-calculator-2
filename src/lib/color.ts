@@ -52,12 +52,22 @@ export function onColor(fill: string): string {
   return contrastRatio(fill, LIGHT_INK) >= LARGE_TEXT_CONTRAST ? LIGHT_INK : DARK_INK
 }
 
-/** `color`, darkened or lightened just enough to be readable as text on `background`. */
-export function readableInk(color: string, background: string): string {
+/** The minimum contrast for buttons, icons and other controls (WCAG non-text and large text). */
+export const CONTROL_CONTRAST = LARGE_TEXT_CONTRAST
+
+/**
+ * `color`, darkened or lightened just enough to be readable as text on `background` (4.5:1 by
+ * default; `minContrast` 3 for buttons and icons, which keeps it closer to the chosen color).
+ */
+export function readableInk(
+  color: string,
+  background: string,
+  minContrast: number = TEXT_CONTRAST,
+): string {
   const target = luminance(background) > 0.5 ? DARK_INK : LIGHT_INK
   for (let weight = 0; weight < 1; weight += MIX_STEP) {
     const candidate = mixHex(color, target, weight)
-    if (contrastRatio(candidate, background) >= TEXT_CONTRAST) return candidate
+    if (contrastRatio(candidate, background) >= minContrast) return candidate
   }
   return target
 }

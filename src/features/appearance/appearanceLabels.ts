@@ -1,4 +1,5 @@
 import type {
+  AccentOnLight,
   AppIcon,
   Appearance,
   CategoryLayout,
@@ -26,6 +27,11 @@ export const GLASS_OPTIONS: ReadonlyArray<{ value: GlassLevel; label: string }> 
   // stored values stay 'controls' and 'all' so saved choices keep working after the rename
   { value: 'controls', label: 'Minimal' },
   { value: 'all', label: 'Full' },
+]
+
+export const ACCENT_ON_LIGHT_OPTIONS: ReadonlyArray<{ value: AccentOnLight; label: string }> = [
+  { value: 'darker', label: 'Slightly darker' },
+  { value: 'edge', label: 'Exact, with an edge' },
 ]
 
 export const LIGHT_STYLE_LABELS: Record<LightStyle, string> = {
