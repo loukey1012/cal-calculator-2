@@ -144,10 +144,11 @@ Everything here is saved **to your account**, never to the device: you get the s
 
 Noted 2026-10-11.
 
-**1. Checking the data automatically** (to do)
+**1. Checking the data automatically** (in the app: done; the weekly push comes with point 10)
 
-- [ ] An automatic check that goes through the ingredient database once a week and flags ingredients whose values look wrong (the same checks as in the ingredient form)
-- [ ] Flagged ingredients get a **Check values** badge and filter on the Ingredients tab, plus a push notification when something new is found (see point 10)
+- [x] Ingredients whose values look wrong (the same checks as in the ingredient form) say **Check values** in both ingredient lists, always up to date
+- [x] A **Check values · N** filter on the Ingredients tab shows only those (it appears while there are any)
+- [ ] An automatic check once a week sends a push notification when something new is flagged (see point 10)
 
 **2. Keeping the Supabase projects awake** (done)
 

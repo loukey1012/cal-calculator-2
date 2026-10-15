@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useCurrentUser } from '../../app/currentUser'
 import { Button } from '../../components/ios/Button'
 import { EmptyState } from '../../components/ios/EmptyState'
@@ -22,6 +22,7 @@ import { IngredientSheet } from './IngredientSheet'
 import { ListOptions } from './ListOptions'
 import { recentWindowStart, updatedMealsMessage } from './recentMeals'
 import { useApplyToRecentMeals } from './useApplyToRecentMeals'
+import { needsCheck } from './valueChecks'
 import { useIngredientSort } from './useIngredientSort'
 import { ALL_CATEGORIES, filterIngredients, groupByCategory, type CategoryFilter } from './listing'
 
@@ -37,12 +38,17 @@ export function IngredientsPage() {
   const [query, setQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>(ALL_CATEGORIES)
   const [brand, setBrand] = useState<string | null>(null)
+  const [checkOnly, setCheckOnly] = useState(false)
   const { sort, setSort, sorted } = useIngredientSort(householdId)
   const [editing, setEditing] = useState<Editing>(null)
   const today = useToday()
   const toast = useToast()
   const applyToRecent = useApplyToRecentMeals()
   const categoryList = categories.data ?? []
+  const toCheck = useMemo(
+    () => new Set((ingredients.data ?? []).filter(needsCheck).map(({ id }) => id)),
+    [ingredients.data],
+  )
 
   function renderContent() {
     if (ingredients.isPending) {
@@ -69,7 +75,7 @@ export function IngredientsPage() {
       ingredients.data,
       { query, category: categoryFilter, brand },
       categoryList,
-    )
+    ).filter(({ id }) => !checkOnly || toCheck.has(id))
     if (matches.length === 0) {
       return <EmptyState title="No matches" message="Try a different search, category or brand." />
     }
@@ -136,6 +142,7 @@ export function IngredientsPage() {
         onBrandChange={setBrand}
         sort={sort}
         onSortChange={setSort}
+        check={{ count: toCheck.size, only: checkOnly, onChange: setCheckOnly }}
       />
       {renderContent()}
       <IngredientSheet

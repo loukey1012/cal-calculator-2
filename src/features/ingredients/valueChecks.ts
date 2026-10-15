@@ -2,7 +2,8 @@ import { parseDecimal } from '../../lib/numbers'
 import { macroKcal, mapBasis, NUTRITION_FIELDS, type NutritionBasis } from '../nutrition/bases'
 import type { Measure } from '../nutrition/types'
 import { measureName, per100Name } from '../nutrition/unitNames'
-import type { BasisKey, IngredientFormValues } from './ingredientForm'
+import { toFormValues, type BasisKey, type IngredientFormValues } from './ingredientForm'
+import type { Ingredient } from './ingredientsApi'
 
 /**
  * Values in the ingredient form that look wrong (typos, odd product data), checked on every
@@ -127,4 +128,9 @@ export function valueWarnings(values: IngredientFormValues): readonly ValueWarni
 /** The fields any warning points at. */
 export function flaggedFields(warnings: readonly ValueWarning[]): ReadonlySet<string> {
   return new Set(warnings.flatMap((warning) => warning.fields))
+}
+
+/** A saved ingredient whose values look wrong, by the same checks as the form. */
+export function needsCheck(ingredient: Ingredient): boolean {
+  return valueWarnings(toFormValues(ingredient)).length > 0
 }

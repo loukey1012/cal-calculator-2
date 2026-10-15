@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import { EMPTY_INGREDIENT_FORM, type IngredientFormValues } from './ingredientForm'
-import { flaggedFields, valueWarnings } from './valueChecks'
+import { ingredient } from './testData'
+import { flaggedFields, needsCheck, valueWarnings } from './valueChecks'
 
 function form(overrides: Partial<IngredientFormValues>): IngredientFormValues {
   return { ...EMPTY_INGREDIENT_FORM, name: 'Gummies', ...overrides }
@@ -104,5 +105,19 @@ describe('valueWarnings', () => {
     expect(
       valueWarnings(form({ per100gEnabled: true, per100g: { ...odd, sugar: 'abc' } })),
     ).toEqual([])
+  })
+})
+
+describe('needsCheck', () => {
+  test('a saved ingredient whose values don’t fit together needs a check', () => {
+    const oddFat = ingredient({ name: 'Butter', kcal_100: 740, fat_100: 20, sat_fat_100: 50 })
+
+    expect(needsCheck(oddFat)).toBe(true)
+  })
+
+  test('one whose values fit together doesn’t', () => {
+    const butter = ingredient({ name: 'Butter', kcal_100: 740, fat_100: 82, sat_fat_100: 50 })
+
+    expect(needsCheck(butter)).toBe(false)
   })
 })

@@ -440,6 +440,53 @@ describe('IngredientsPage', () => {
   })
 })
 
+describe('checking values', () => {
+  // more saturated fat than fat: can't be right
+  const ODD = ingredient({
+    id: 'odd',
+    name: 'Odd Butter',
+    category_id: 'c1',
+    kcal_100: 740,
+    fat_100: 20,
+    sat_fat_100: 50,
+  })
+
+  test('an ingredient whose values look wrong is marked, and a filter shows only those', async () => {
+    // Arrange
+    vi.mocked(fetchIngredients).mockResolvedValue([...INGREDIENTS, ODD])
+    const user = userEvent.setup()
+    renderPage()
+
+    // Assert: marked in the list
+    expect(await screen.findByRole('button', { name: /Odd Butter/ })).toHaveTextContent(
+      'Check values',
+    )
+    expect(screen.getByRole('button', { name: /Bread/ })).not.toHaveTextContent('Check values')
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Check values: 1' }))
+
+    // Assert: only the odd one is left
+    expect(screen.getByRole('button', { name: 'Check values: 1' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(screen.getByRole('button', { name: /Odd Butter/ })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Bread/ })).not.toBeInTheDocument()
+
+    // and back to all
+    await user.click(screen.getByRole('button', { name: 'Check values: 1' }))
+    expect(screen.getByRole('button', { name: /Bread/ })).toBeInTheDocument()
+  })
+
+  test('no filter when every ingredient looks right', async () => {
+    renderPage()
+
+    await screen.findByRole('button', { name: /Bread/ })
+    expect(screen.queryByRole('button', { name: /^Check values/ })).not.toBeInTheDocument()
+  })
+})
+
 describe('editing an ingredient updates recent meals', () => {
   const LUNCH = { userId: 'u1', date: '2026-10-14', mealType: 'lunch' as const }
   const HER_LUNCH = { ...LUNCH, userId: 'u2' }
