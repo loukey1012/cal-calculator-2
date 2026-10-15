@@ -175,7 +175,6 @@ function StepView({ step, steps, dish, portions, onAdd, onChange }: StepViewProp
           onNew={(barcode) =>
             steps.open({ kind: 'newIngredient', ...(barcode ? { barcode } : {}) })
           }
-          onCustom={() => steps.open({ kind: 'custom' })}
         />
       )
     case 'newIngredient':

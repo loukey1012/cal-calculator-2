@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useCurrentUser } from '../../app/currentUser'
-import { BackButton } from '../../components/ios/BackButton'
 import { Button } from '../../components/ios/Button'
 import { ErrorBanner } from '../../components/ios/ErrorBanner'
 import { toUserMessage } from '../../lib/errors'
 import { usePeople } from '../household/hooks'
 import type { Profile } from '../household/householdApi'
 import { useLookOf } from '../household/usePersonLook'
+import { ComposerBar } from './ComposerBar'
 import { confirmDeleteDish } from './confirmDelete'
 import { useLocalComposerSteps, type ComposerSteps } from './composerSteps'
 import { DishComposer } from './DishComposer'
@@ -36,7 +36,7 @@ export function DishEditor({ dishId, date, onDone }: DishEditorProps) {
   const steps = useLocalComposerSteps()
   return (
     <>
-      <BackButton onClick={steps.step.kind === 'main' ? onDone : steps.back} />
+      <ComposerBar steps={steps} onBack={steps.step.kind === 'main' ? onDone : steps.back} />
       <LoadedDish dishId={dishId} date={date} onDone={onDone} steps={steps} />
     </>
   )

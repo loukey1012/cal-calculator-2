@@ -1,7 +1,6 @@
 import { useCurrentUser } from '../../app/currentUser'
 import { ErrorBanner } from '../../components/ios/ErrorBanner'
 import { GroupedSection } from '../../components/ios/GroupedSection'
-import { ListRow } from '../../components/ios/ListRow'
 import { SearchField } from '../../components/ios/SearchField'
 import { toUserMessage } from '../../lib/errors'
 import { useMyAppearance } from '../appearance/useMyAppearance'
@@ -22,14 +21,13 @@ type FoodPickerProps = {
   readonly onPick: (ingredient: Ingredient) => void
   /** create a missing ingredient, saved to the shared database; maybe for a scanned barcode */
   readonly onNew: (barcode?: string) => void
-  readonly onCustom: () => void
 }
 
 function Note({ text }: { readonly text: string }) {
   return <p className="mt-6 px-4 text-center text-[15px] text-label-secondary">{text}</p>
 }
 
-export function FoodPicker({ filter, onFilterChange, onPick, onNew, onCustom }: FoodPickerProps) {
+export function FoodPicker({ filter, onFilterChange, onPick, onNew }: FoodPickerProps) {
   const { householdId } = useCurrentUser()
   // a partner may have added ingredients since the list was loaded
   const ingredients = useIngredients(householdId, { alwaysRefresh: true })
@@ -39,7 +37,6 @@ export function FoodPicker({ filter, onFilterChange, onPick, onNew, onCustom }: 
   const categoryList = categories.data ?? []
   const { sort, setSort, sorted } = useIngredientSort(householdId)
   const matches = sorted(filterIngredients(ingredients.data ?? [], filter, categoryList))
-  const name = filter.query.trim()
 
   return (
     <>
@@ -77,27 +74,13 @@ export function FoodPicker({ filter, onFilterChange, onPick, onNew, onCustom }: 
         sort={sort}
         onSortChange={setSort}
       />
-      <GroupedSection>
-        <ListRow
-          title="New ingredient"
-          subtitle={
-            name ? `Save “${name}” to your ingredients` : 'Save a new one to your ingredients'
-          }
-          onClick={() => onNew()}
-        />
-        <ListRow
-          title="Custom item"
-          subtitle="Quick one-off, not saved to your ingredients"
-          onClick={onCustom}
-        />
-      </GroupedSection>
       {ingredients.isError && <ErrorBanner message={toUserMessage(ingredients.error)} />}
       {ingredients.isPending && <Note text="Loading…" />}
       {ingredients.isSuccess && matches.length === 0 && (
         <Note
           text={
             ingredients.data.length === 0
-              ? 'No ingredients yet. Add a new one, or use a custom item.'
+              ? 'No ingredients yet. Add one with the + above.'
               : 'No matches.'
           }
         />

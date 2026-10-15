@@ -234,6 +234,7 @@ describe('cooking alone', () => {
     renderCook()
 
     await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
+    await user.click(screen.getByRole('button', { name: 'Add new' }))
     await user.click(await screen.findByRole('button', { name: /Custom item/ }))
     await user.type(screen.getByLabelText('Name'), 'Soup')
     await user.type(screen.getByLabelText('Calories'), '80')
@@ -257,6 +258,7 @@ describe('calories as an estimate', () => {
 
     // Act
     await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
+    await user.click(screen.getByRole('button', { name: 'Add new' }))
     await user.click(await screen.findByRole('button', { name: /Custom item/ }))
     await user.type(screen.getByLabelText('Name'), 'Pizza')
     await user.type(screen.getByLabelText('Calories'), '90')
@@ -620,6 +622,28 @@ function createsFeta() {
 }
 
 describe('the ingredient search', () => {
+  test('New ingredient and Custom item sit behind a + at the top, not in the list', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    renderCook()
+    await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
+    await user.type(screen.getByLabelText('Search ingredients'), 'Feta')
+
+    // Assert: not in the list
+    expect(screen.queryByRole('button', { name: /New ingredient/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Custom item/ })).not.toBeInTheDocument()
+
+    // Act
+    await user.click(screen.getByRole('button', { name: 'Add new' }))
+
+    // Assert: both in the menu, the new one named after the search
+    const menu = screen.getByRole('dialog', { name: 'Add new' })
+    expect(within(menu).getByRole('button', { name: /New ingredient/ })).toHaveTextContent(
+      'Save “Feta” to your ingredients',
+    )
+    expect(within(menu).getByRole('button', { name: /Custom item/ })).toBeInTheDocument()
+  })
+
   test('a missing ingredient is created right there and goes straight to its amount', async () => {
     // Arrange
     createsFeta()
@@ -630,6 +654,7 @@ describe('the ingredient search', () => {
     expect(await screen.findByText('No matches.')).toBeInTheDocument()
 
     // Act: the name searched for is already filled in
+    await user.click(screen.getByRole('button', { name: 'Add new' }))
     await user.click(screen.getByRole('button', { name: /New ingredient/ }))
     expect(currentPath()).toBe('/cook/add/new')
     expect(screen.getByLabelText('Name')).toHaveValue('Feta')
@@ -654,6 +679,7 @@ describe('the ingredient search', () => {
     const user = userEvent.setup()
     renderCook()
     await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
+    await user.click(screen.getByRole('button', { name: 'Add new' }))
     await user.click(screen.getByRole('button', { name: /New ingredient/ }))
     await user.type(screen.getByLabelText('Name'), 'Feta')
     await user.click(screen.getByRole('switch', { name: 'Per 100 g' }))
@@ -754,6 +780,7 @@ describe('the ingredient search', () => {
     const user = userEvent.setup()
     renderCook()
     await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
+    await user.click(screen.getByRole('button', { name: 'Add new' }))
     await user.click(screen.getByRole('button', { name: /New ingredient/ }))
 
     await user.click(screen.getByRole('button', { name: 'Save ingredient' }))

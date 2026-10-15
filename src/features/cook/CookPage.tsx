@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useCurrentUser } from '../../app/currentUser'
-import { BackButton } from '../../components/ios/BackButton'
 import { Button } from '../../components/ios/Button'
 import { PageHeader } from '../../components/ios/PageHeader'
+import { ComposerBar } from '../dishes/ComposerBar'
 import { DishComposer } from '../dishes/DishComposer'
 import { useSaveDish } from '../dishes/hooks'
 import { portionName } from '../dishes/portionName'
@@ -78,8 +78,8 @@ export function CookPage() {
           <LeftoversCard today={today} mealOfDay={mealOfDay} />
         </>
       ) : (
-        <div className="flex min-h-11 items-center pt-3 pb-2">
-          <BackButton onClick={steps.back} />
+        <div className="pt-3 pb-2">
+          <ComposerBar steps={steps} onBack={steps.back} />
         </div>
       )}
       <DishComposer

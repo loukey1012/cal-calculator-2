@@ -37,7 +37,11 @@ test('log a meal on Cook: from the database and as a custom item, then change an
   await cook.getByRole('button', { name: 'Add to dish' }).click()
 
   await cook.getByRole('button', { name: 'Add ingredient' }).click()
-  await cook.getByRole('button', { name: /Custom item/ }).click()
+  await cook.getByRole('button', { name: 'Add new' }).click()
+  await page
+    .getByRole('dialog', { name: 'Add new' })
+    .getByRole('button', { name: /Custom item/ })
+    .click()
   await cook.getByLabel('Name', { exact: true }).fill('Croissant')
   await cook.getByRole('radio', { name: 'Per unit' }).click()
   await cook.getByLabel('Calories').fill('231,2')
@@ -133,7 +137,11 @@ test('a meal eaten out is logged as an estimate and the day shows ~', async ({ p
   await cookFor(activePage(page), page, /Dinner/)
   const cook = activePage(page)
   await cook.getByRole('button', { name: 'Add ingredient' }).click()
-  await cook.getByRole('button', { name: /Custom item/ }).click()
+  await cook.getByRole('button', { name: 'Add new' }).click()
+  await page
+    .getByRole('dialog', { name: 'Add new' })
+    .getByRole('button', { name: /Custom item/ })
+    .click()
   await cook.getByLabel('Name', { exact: true }).fill('Pizza')
   await cook.getByRole('radio', { name: 'Per unit' }).click()
   await cook.getByLabel('Calories').fill('900')

@@ -50,7 +50,11 @@ test('select a past day in History and add a forgotten dinner beneath the calend
   const cook = activePage(page)
   await expect(cook.getByLabel('Day')).toHaveValue(localDay(1))
   await cook.getByRole('button', { name: 'Add ingredient' }).click()
-  await cook.getByRole('button', { name: /Custom item/ }).click()
+  await cook.getByRole('button', { name: 'Add new' }).click()
+  await page
+    .getByRole('dialog', { name: 'Add new' })
+    .getByRole('button', { name: /Custom item/ })
+    .click()
   await cook.getByLabel('Name', { exact: true }).fill('Forgotten pizza')
   await cook.getByRole('radio', { name: 'Per unit' }).click()
   await cook.getByLabel('Calories').fill('450')

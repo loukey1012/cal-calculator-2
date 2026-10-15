@@ -158,9 +158,9 @@ Noted 2026-10-11.
 - [ ] When an ingredient is edited, meals with it from the **last 14 days** (today and the 13 days before) get the new values automatically, for both of you; older meals keep their old values
 - [ ] After saving, a short note says how many meals were updated (e.g. "Updated in 5 meals")
 
-**4. Cook: New ingredient and Custom item at the top** (to do)
+**4. Cook: New ingredient and Custom item at the top** (done)
 
-- [ ] In the Cook ingredient search, New ingredient and Custom item move from the list to a small **+** at the top, like on the Ingredients tab
+- [x] In the Cook ingredient search, New ingredient and Custom item move from the list to a small **+** at the top, like on the Ingredients tab
 
 Noted 2026-10-15.
 
