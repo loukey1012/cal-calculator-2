@@ -22,7 +22,7 @@ export function SearchField({
   placeholder = 'Search',
 }: SearchFieldProps) {
   return (
-    <div className="flex items-center gap-2 rounded-2xl bg-bg-elevated px-3 py-2.5 shadow-card">
+    <div className="glass-surface flex items-center gap-2 rounded-2xl bg-bg-elevated px-3 py-2.5 shadow-card">
       <SearchIcon className="h-4 w-4 shrink-0 text-label-secondary" />
       <input
         type="search"

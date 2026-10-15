@@ -1,4 +1,4 @@
-import { activePage, expect, logIn, test } from './backend.ts'
+import { activePage, expect, localDay, logIn, test } from './backend.ts'
 
 test('the chosen look is saved to the account and follows the user to a new device', async ({
   page,
@@ -159,33 +159,57 @@ test('the accent can be White (with a thin edge on light cards) or any custom co
     .toBe('#123456')
 })
 
-test('Liquid Glass: controls or everything, on top of the chosen style, kept across a restart', async ({
+test('Liquid Glass: Minimal for every field, Full for everything, kept across a restart', async ({
   page,
   backend,
 }) => {
   const me = await backend.user('Lena')
   await backend.household([me])
+  await backend.admin
+    .from('goal_history')
+    .insert({ user_id: me.id, valid_from: localDay(30), kcal: 2000 })
   await logIn(page, me)
   const html = page.locator('html')
-  const tabBar = page.getByRole('navigation', { name: 'Tabs' }).getByRole('list')
-  await expect(tabBar).toHaveCSS('backdrop-filter', /blur\(24px\)/)
+  const tabs = page.getByRole('navigation', { name: 'Tabs' })
+  const today = activePage(page)
+  const progressCard = today
+    .getByRole('list', { name: 'Goals' })
+    .locator('xpath=ancestor::section[1]')
+  const mealCard = today.getByRole('button', { name: /Breakfast/ })
+  await expect(progressCard).toBeVisible()
+  await expect(mealCard).toHaveCSS('backdrop-filter', 'none')
 
-  await page.getByRole('button', { name: 'Settings' }).click()
+  await tabs.getByRole('button', { name: 'Settings' }).click()
   await activePage(page)
     .getByRole('button', { name: /Appearance/ })
     .click()
   const settings = activePage(page)
   await settings.getByRole('button', { name: /App colors/ }).click()
   await settings.getByRole('radio', { name: 'Dark', exact: true }).click()
-  await settings.getByRole('radio', { name: 'Controls' }).click()
+  await settings.getByRole('radio', { name: 'Minimal' }).click()
 
-  // the tab bar is glass now; the dark style stays
+  // Minimal: the tab bar and every field are glass, the dark style stays
   await expect(html).toHaveAttribute('data-glass', 'controls')
   await expect(html).toHaveAttribute('data-scheme', 'soft')
-  await expect(tabBar).toHaveCSS('backdrop-filter', /blur\(22px\)/)
+  await expect(tabs.getByRole('list')).toHaveCSS('backdrop-filter', /blur\(22px\)/)
+  await expect(settings.getByRole('radiogroup', { name: 'Theme' })).toHaveCSS(
+    'backdrop-filter',
+    /blur/,
+  )
+  await tabs.getByRole('button', { name: 'Today' }).click()
+  await expect(mealCard).toHaveCSS('backdrop-filter', /blur/)
+  // only the big progress card stays solid
+  await expect(progressCard).toHaveCSS('backdrop-filter', 'none')
 
-  await settings.getByRole('radio', { name: 'Everything' }).click()
+  // Full: the progress card too
+  // the Settings tab opens at its start again
+  await tabs.getByRole('button', { name: 'Settings' }).click()
+  await settings.getByRole('button', { name: /Appearance/ }).click()
+  await settings.getByRole('button', { name: /App colors/ }).click()
+  await settings.getByRole('radio', { name: 'Full' }).click()
   await expect(html).toHaveAttribute('data-glass', 'all')
+  await tabs.getByRole('button', { name: 'Today' }).click()
+  await expect(progressCard).toHaveCSS('backdrop-filter', /blur/)
   await expect
     .poll(async () => {
       const { data } = await backend.admin

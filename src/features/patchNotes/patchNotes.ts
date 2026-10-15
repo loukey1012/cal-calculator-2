@@ -30,6 +30,15 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-15T21:20',
+    kind: 'new',
+    title: 'Liquid Glass: Minimal and Full',
+    items: [
+      'Controls is now called Minimal and covers every field: lists, search fields, chips, buttons, meal cards',
+      'Everything is now called Full: the progress card too, over the color background',
+    ],
+  },
+  {
     at: '2026-10-15T21:04',
     kind: 'internal',
     title: 'Steadier test for ingredient edits reaching recent meals',

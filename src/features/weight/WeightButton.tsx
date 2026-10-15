@@ -12,7 +12,7 @@ type WeightButtonProps = {
 }
 
 const PILL =
-  'flex min-h-9 shrink-0 items-center gap-1.5 rounded-full bg-bg-elevated px-3 text-[15px] font-bold shadow-card'
+  'glass-surface flex min-h-9 shrink-0 items-center gap-1.5 rounded-full bg-bg-elevated px-3 text-[15px] font-bold shadow-card'
 
 /** Today's header: the current weight; tap to enter today's. */
 export function WeightButton({ userId, today, isOwn }: WeightButtonProps) {

@@ -23,8 +23,9 @@ export const THEME_OPTIONS = [
 
 export const GLASS_OPTIONS: ReadonlyArray<{ value: GlassLevel; label: string }> = [
   { value: 'off', label: 'Off' },
-  { value: 'controls', label: 'Controls' },
-  { value: 'all', label: 'Everything' },
+  // stored values stay 'controls' and 'all' so saved choices keep working after the rename
+  { value: 'controls', label: 'Minimal' },
+  { value: 'all', label: 'Full' },
 ]
 
 export const LIGHT_STYLE_LABELS: Record<LightStyle, string> = {

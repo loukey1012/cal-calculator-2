@@ -123,7 +123,7 @@ export function AppColorsPage() {
 
       <SettingSection
         title="Liquid Glass"
-        footer="Controls: the tab bar and sheets turn to glass. Everything: the cards too, over a soft background in your style’s colors. Works with every style."
+        footer="Minimal: the tab bar, sheets and every field, button and list turn to glass. Full: the progress card too, over a soft background in your style’s colors. Works with every style."
       >
         <SegmentedControl
           label="Liquid Glass"

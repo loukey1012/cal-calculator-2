@@ -34,7 +34,7 @@ export function BrandFilter({ ingredients, brand, onChange }: BrandFilterProps) 
         aria-label={`Brand: ${label}`}
         aria-haspopup="dialog"
         onClick={() => setOpen(true)}
-        className={`flex h-8 min-w-0 items-center gap-1 rounded-full px-3 text-[14px] font-bold ${
+        className={`glass-surface flex h-8 min-w-0 items-center gap-1 rounded-full px-3 text-[14px] font-bold ${
           brand === null
             ? 'bg-bg-elevated text-label shadow-card'
             : 'accent-edge bg-accent text-on-accent'

@@ -14,7 +14,11 @@ export function SegmentedControl<T extends string>({
   onChange,
 }: SegmentedControlProps<T>) {
   return (
-    <div role="radiogroup" aria-label={label} className="flex gap-1 rounded-2xl bg-track p-1">
+    <div
+      role="radiogroup"
+      aria-label={label}
+      className="glass-surface flex gap-1 rounded-2xl bg-track p-1"
+    >
       {options.map((option) => {
         const selected = option.value === value
         return (

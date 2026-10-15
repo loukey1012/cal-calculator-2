@@ -130,10 +130,12 @@
   color-scheme: dark;
 }
 
-/* Liquid Glass (Settings › Appearance › App colors), on top of any style. "controls": the tab bar
-   and sheets are translucent, blurred glass. "all": the cards too, over a soft color field made
-   from the scheme's own ring colors. Rows that can be swiped stay solid: their red Delete sits
-   right behind them. */
+/* Liquid Glass (Settings › Appearance › App colors), on top of any style. "controls" (shown as
+   Minimal): the tab bar, sheets and every field (anything marked glass-surface: lists, form groups,
+   search fields, chips, pills, buttons, meal cards, segmented controls) are translucent, blurred
+   glass while they show their plain surface (a selected chip keeps its accent). "all" (Full): every
+   card too, the progress card included, over a soft color field made from the scheme's own ring
+   colors. Rows that can be swiped stay solid: their red Delete sits right behind them. */
 :root {
   --glass-bar: rgb(255 255 255 / 0.42);
   --glass-sheet: rgb(250 251 253 / 0.62);
@@ -200,7 +202,21 @@
   background: transparent;
 }
 
-/* every card and grouped list, but not inside sheets (they are glass already) */
+/* Minimal on a light style has no color field behind it: whiter glass, so cards stay visible */
+:root[data-glass='controls']:not([data-scheme='soft'], [data-scheme='bento']) {
+  --glass-card: rgb(255 255 255 / 0.66);
+}
+
+/* Minimal and Full: every field */
+:root[data-glass] .glass-surface.bg-bg-elevated,
+:root[data-glass] .glass-surface.bg-track {
+  background-color: var(--glass-card);
+  box-shadow: var(--glass-edge);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+}
+
+/* Full: every other card too, e.g. the progress card (sheets are glass already) */
 :root[data-glass='all'] .bg-bg-elevated:not(.glass-solid, [role='dialog'] *) {
   background-color: var(--glass-card);
   box-shadow: var(--glass-edge);

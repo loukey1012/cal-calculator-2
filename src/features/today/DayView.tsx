@@ -52,7 +52,7 @@ function MealCard({ type, label, subtitle, onOpen }: MealCardProps) {
     <button
       type="button"
       onClick={onOpen}
-      className="flex min-w-0 flex-col gap-1.5 rounded-[22px] bg-bg-elevated p-3 text-left shadow-card transition-transform active:scale-[0.98]"
+      className="glass-surface flex min-w-0 flex-col gap-1.5 rounded-[22px] bg-bg-elevated p-3 text-left shadow-card transition-transform active:scale-[0.98]"
     >
       {/* icon beside the name keeps the 2×2 grid short enough for Today to fit the screen */}
       <span className="flex items-center gap-2">

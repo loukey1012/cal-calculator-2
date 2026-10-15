@@ -38,7 +38,7 @@ export function ListOptions({
             aria-label={`${CHECK_VALUES_LABEL}: ${check.count}`}
             aria-pressed={check.only}
             onClick={() => check.onChange(!check.only)}
-            className={`h-8 shrink-0 rounded-full px-3 text-[14px] font-bold ${
+            className={`glass-surface h-8 shrink-0 rounded-full px-3 text-[14px] font-bold ${
               check.only
                 ? 'bg-destructive text-white'
                 : 'bg-bg-elevated text-destructive shadow-card'
