@@ -140,6 +140,96 @@ Everything here is saved **to your account**, never to the device: you get the s
 
 ---
 
+## Fixes and improvements (planned)
+
+Noted 2026-10-11.
+
+**1. Checking the data automatically** (to do)
+
+- [ ] An automatic check that goes through the ingredient database once a week and flags ingredients whose values look wrong (the same checks as in the ingredient form)
+- [ ] Flagged ingredients get a **Check values** badge and filter on the Ingredients tab, plus a push notification when something new is found (see point 10)
+
+**2. Keeping the Supabase projects awake** (to do)
+
+- [ ] An automatic request now and then to **both** Supabase projects (the real one and the dev one), so a project without use for a while isn't paused (and later deleted) by Supabase
+
+**3. Ingredient changes in past meals** (to do)
+
+- [ ] When an ingredient is edited, meals with it from the **last 14 days** (today and the 13 days before) get the new values automatically, for both of you; older meals keep their old values
+- [ ] After saving, a short note says how many meals were updated (e.g. "Updated in 5 meals")
+
+**4. Cook: New ingredient and Custom item at the top** (to do)
+
+- [ ] In the Cook ingredient search, New ingredient and Custom item move from the list to a small **+** at the top, like on the Ingredients tab
+
+Noted 2026-10-15.
+
+**5. Nutrients in label order** (to do)
+
+- [ ] Everywhere nutrients are listed or entered (ingredient form, ingredient details, dish and day totals, barcode prefill), they follow the order of a nutrition label: Energy, Fat, _of which saturates_, Carbohydrate, _of which sugars_, Fibre, Protein, Salt
+- [ ] Saturates and sugars are shown indented as "of which" lines
+- [ ] The progress rings and bars on Today keep their order (kcal · protein · carbs · fat)
+
+**6. One place to change your symbol** (to do)
+
+- [ ] Your symbol is changed only under **Account** (next to your name)
+- [ ] Under **Members** you're still listed, but your row can't be tapped; only your partner's row opens a page
+
+**7. New Today tab icon** (to do)
+
+- [ ] The Today tab icon becomes the app icon's "C" ring with the dot at its opening, in one color like the other tab icons
+
+**8. Liquid Glass** (to do)
+
+- [ ] First a visual comparison of two versions: a **Liquid Glass switch** that works with any style vs. a **Glass style** of its own (light and dark); the chosen one gets built
+- [ ] Translucent, blurred glass for the tab bar, sheets, headers and cards; saved to your account like every other appearance setting
+
+**9. Reading nutrition labels** (to do)
+
+- [ ] For products without a barcode: take a photo of the nutrition table (or pick one from your photos) and the ingredient form gets filled in
+- [ ] Text recognition runs on the phone (no online service, works offline); it loads only the first time you use it
+- [ ] Reads German and English labels and takes the per-100 g / per-100 ml column; you always check the values before saving
+
+**10. Notifications** (to do)
+
+- [ ] Push notifications on the iPhone (home-screen app), switched on once in Settings
+- [ ] **Everything is set per person**, saved to your account: each kind on or off, and every time below can be changed
+- [ ] A **Send test notification** button
+- [ ] **Partner changes your day**: your partner logs, edits or deletes a meal for you, or shares a dish with you
+- [ ] **Unsaved Cook dish**: a dish has been sitting on Cook without being logged for a while (default 30 minutes, adjustable)
+- [ ] **Meal reminders**: nothing logged for breakfast, lunch or dinner by a time you set (defaults 10:00, 14:00, 20:00; each one on or off)
+- [ ] **Day summary**: kcal and macros vs. your goal, what you ate. Default: the **next morning** about the day before (so evening snacks count); each person can switch to the same day and pick the time (e.g. 23:00)
+- [ ] **Odd ingredient values**: the weekly database check (point 1) found something new
+
+**11. Unsaved Cook dishes** (to do)
+
+- [ ] A dish on Cook that hasn't been logged yet gets a badge on the Cook tab
+- [ ] Combined with the "Unsaved Cook dish" notification from point 10 (this needs the Cook draft to be saved to your account instead of only on the phone)
+
+**12. Quick picks** (to do)
+
+- [ ] **Favorites**: star an ingredient; each of you has your own favorites
+- [ ] **Recent**: the ingredients you used last
+- [ ] Both show at the top of the Cook ingredient search before you type, and as filters in both ingredient lists
+
+**13. Cheat days and eating out** (to do)
+
+- [ ] **Cheat day**: mark a day as a cheat day
+- [ ] **Eaten out**: mark a meal as eaten out (empty, or with the food you do know, e.g. a drink); its day then counts as unknown and shows e.g. "≥ 900 kcal · eaten out" instead of an exact total
+- [ ] Both: a badge on the day in History and on Today, the day is left out of the Trends averages, and the rings don't show the over-goal look that day
+- [ ] Both can be set, changed and removed on any day, also past ones, by either of you (like meals)
+
+**14. Recipes** (to do)
+
+- [ ] Save a dish or a whole meal by name as a **recipe**: its ingredient lines, split and own amounts; shared by both of you
+- [ ] A **Recipes** list on Cook: tap one and Cook is filled in as saved; change anything, then log. Rename, change and delete recipes
+- [ ] Recipes use the current values of their ingredients
+- [ ] **Copy a meal** to another day (and meal)
+
+**15. Export** (to do)
+
+- [ ] Settings › Export: pick a date range and get CSV files of both of you: every logged food (person, date, meal, food, amount, nutrients) and the daily totals with weight, cheat days and eating out
+
 ## Fixes and improvements, October 11 (done)
 
 Noted and shipped 2026-10-11.
@@ -195,17 +285,7 @@ Planned 2026-10-07, all five groups shipped 2026-10-08, one group at a time.
 
 ## Coming next
 
-| Area        | Planned                                                                                                                       |
-| ----------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| Recipes     | Save dishes and meals by name as recipes, and cook or log them again (with remembered own amounts)                            |
-| Quick picks | Recent and favorite ingredients                                                                                               |
-| Meal reuse  | Copy a meal to another day, or save it as a template                                                                          |
-| Export      | Download your logged data as CSV                                                                                              |
-| Reminders   | Push reminders to log meals                                                                                                   |
-| Cheat days  | Mark a day as a cheat day                                                                                                     |
-| Eating out  | Log a meal whose calories are unknown (e.g. a kebab): an estimate from a photo or description (AI or similar), to be explored |
-
-**Recipes** and meal templates will build on the Cook tab: a recipe fills in a dish (the same ingredient lines and splits), saved by name.
+Everything planned is listed under **Fixes and improvements (planned)** above (meal reminders are part of point 10, meal reuse is part of point 14). A step-by-step build plan with all decisions is in [`docs/plan-2026-10-15.md`](docs/plan-2026-10-15.md).
 
 ---
 
@@ -246,6 +326,7 @@ src/
     nutrition/    pure nutrition math: units, totals, goals, formatting
     today/ history/ settings/   tab pages
   lib/            supabase client, env validation, errors, persistence, dates, numbers
+docs/            build plans with the decisions behind them (current: plan-2026-10-15.md)
 e2e/
   smoke.spec.ts   no-backend checks (shell loads, installable)
   journeys/       real user journeys against the dev project, throwaway users per test
