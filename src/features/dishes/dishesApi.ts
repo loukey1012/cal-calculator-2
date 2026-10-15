@@ -112,6 +112,16 @@ export async function fetchDish(dishId: string): Promise<Dish | null> {
   return data ? dishFromRow(data) : null
 }
 
+/** The dishes with these ids that exist (and the household may see). */
+export async function fetchDishes(dishIds: readonly string[]): Promise<Dish[]> {
+  const { data, error } = await supabase
+    .from('dishes')
+    .select(DISH_COLUMNS)
+    .in('id', [...dishIds])
+  if (error) throw ApiError.from(error)
+  return data.map(dishFromRow)
+}
+
 /** Dishes cooked since `since` (ISO time) with a portion nobody has eaten or thrown away. */
 export async function fetchLeftoverDishes(since: string): Promise<Dish[]> {
   const leftovers = await supabase

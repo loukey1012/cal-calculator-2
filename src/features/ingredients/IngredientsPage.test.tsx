@@ -17,6 +17,7 @@ vi.mock('./ingredientsApi', () => ({
 }))
 
 vi.mock('../barcode/openFoodFacts', () => ({ lookupProduct: vi.fn() }))
+vi.mock('./applyToRecentMeals', () => ({ applyToRecentMeals: vi.fn() }))
 vi.mock('../household/householdApi', () => ({ updateProfile: vi.fn() }))
 const scanned = vi.hoisted(() => ({ barcode: '' }))
 vi.mock('../barcode/BarcodeScanner', () => ({
@@ -28,13 +29,16 @@ vi.mock('../barcode/BarcodeScanner', () => ({
 }))
 
 import { lookupProduct } from '../barcode/openFoodFacts'
+import { applyToRecentMeals } from './applyToRecentMeals'
 import { EMPTY_INGREDIENT_FORM } from './ingredientForm'
 import { updateProfile } from '../household/householdApi'
 import {
   fetchCategories,
   fetchCategoryGroups,
   fetchIngredientUses,
+  createIngredient,
   fetchIngredients,
+  updateIngredient,
 } from './ingredientsApi'
 import { IngredientsPage } from './IngredientsPage'
 
@@ -433,5 +437,69 @@ describe('IngredientsPage', () => {
 
     const dialog = within(screen.getByRole('dialog', { name: 'Edit Ingredient' }))
     expect(dialog.getByLabelText('Name')).toHaveValue('Cream 7%')
+  })
+})
+
+describe('editing an ingredient updates recent meals', () => {
+  const LUNCH = { userId: 'u1', date: '2026-10-14', mealType: 'lunch' as const }
+  const HER_LUNCH = { ...LUNCH, userId: 'u2' }
+
+  async function editCream() {
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByRole('button', { name: /Cream 7%/ }))
+    const calories = screen.getByLabelText('Calories per 100 g')
+    await user.clear(calories)
+    await user.type(calories, '100')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+  }
+
+  test('the new values reach the last two weeks’ meals, and a note says how many', async () => {
+    // Arrange
+    const saved = { ...INGREDIENTS[0]!, kcal_100: 100 }
+    vi.mocked(updateIngredient).mockResolvedValue(saved)
+    vi.mocked(applyToRecentMeals).mockResolvedValue([LUNCH, HER_LUNCH])
+
+    // Act
+    await editCream()
+
+    // Assert
+    expect(await screen.findByText('Updated in 2 meals')).toBeInTheDocument()
+    const [ingredient, since] = vi.mocked(applyToRecentMeals).mock.lastCall ?? []
+    expect(ingredient).toEqual(saved)
+    expect(since).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+  })
+
+  test('no note when no recent meal had it', async () => {
+    vi.mocked(updateIngredient).mockResolvedValue(INGREDIENTS[0]!)
+    vi.mocked(applyToRecentMeals).mockResolvedValue([])
+
+    await editCream()
+
+    await waitFor(() => expect(applyToRecentMeals).toHaveBeenCalled())
+    expect(screen.queryByText(/^Updated in/)).not.toBeInTheDocument()
+  })
+
+  test('says so when the meals couldn’t be updated', async () => {
+    vi.mocked(updateIngredient).mockResolvedValue(INGREDIENTS[0]!)
+    vi.mocked(applyToRecentMeals).mockRejectedValue(new TypeError('Load failed'))
+
+    await editCream()
+
+    expect(await screen.findByText(/Recent meals weren’t updated/)).toBeInTheDocument()
+  })
+
+  test('a new ingredient has no meals to update', async () => {
+    const user = userEvent.setup()
+    vi.mocked(createIngredient).mockResolvedValue(INGREDIENTS[0]!)
+    renderPage()
+    await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
+    await user.type(screen.getByLabelText('Name'), 'Milk')
+    await user.click(screen.getByRole('switch', { name: 'Per 100 g' }))
+    await user.type(screen.getByLabelText('Calories per 100 g'), '64')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() => expect(createIngredient).toHaveBeenCalled())
+    expect(applyToRecentMeals).not.toHaveBeenCalled()
   })
 })

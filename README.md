@@ -24,7 +24,7 @@ Built for a two-person household: both members log their own meals, can see and 
 - **Save meal** logs everything at once (each person's portion into their own meal) and goes back to where you came from.
 - The draft is **kept on the phone** while you put it together, so switching tabs or iOS closing the app loses nothing. **Discard** starts over.
 - **Leftovers** of the last 7 days are listed at the top of Cook: eat one in any meal (for you or your partner), or **throw it away** (it keeps its share, so the eaten portions never change). While food is left, a **"Chili left"** pill sits next to "Meals" on Today and opens Cook.
-- Every logged food keeps a **snapshot of its nutrition values**, so editing an ingredient later never changes past meals.
+- Every logged food keeps a **snapshot of its nutrition values**. Editing an ingredient updates the food logged with it in the **last 14 days** (today and the 13 days before, for both of you, plain food and dishes alike) and says how many meals changed; older meals keep the values they were logged with.
 - Works offline like every change (queued on the phone, sent in order once back online).
 
 ### Today
@@ -153,10 +153,10 @@ Noted 2026-10-11.
 
 - [ ] An automatic request now and then to **both** Supabase projects (the real one and the dev one), so a project without use for a while isn't paused (and later deleted) by Supabase
 
-**3. Ingredient changes in past meals** (to do)
+**3. Ingredient changes in past meals** (done)
 
-- [ ] When an ingredient is edited, meals with it from the **last 14 days** (today and the 13 days before) get the new values automatically, for both of you; older meals keep their old values
-- [ ] After saving, a short note says how many meals were updated (e.g. "Updated in 5 meals")
+- [x] When an ingredient is edited, meals with it from the **last 14 days** (today and the 13 days before) get the new values automatically, for both of you; older meals keep their old values
+- [x] After saving, a short note says how many meals were updated (e.g. "Updated in 5 meals")
 
 **4. Cook: New ingredient and Custom item at the top** (done)
 
@@ -401,7 +401,7 @@ pnpm icons          # regenerate the icon PNGs: the default set from public/icon
 
 To add an app icon choice: put its SVG in `public/icons/<name>/icon.svg`, add `<name>` to `APP_ICONS` (`src/features/appearance/appearance.ts`) and a label to `APP_ICON_OPTIONS`, then run `pnpm icons`.
 
-**End-to-end journeys** (log a meal on Cook, Back and the back swipe going one step at a time on Cook, category chips and creating a missing ingredient from the Cook search, the new-version toast on the first start only, a White and a custom accent color, your own symbol, a single food changed in place, a meal eaten out logged as an estimate, a saved brand picked from the suggestions, a package scanned from a photo and filled in from Open Food Facts, a scanned portion of 3 biscuits split into single units with a wrong value cleared, values of a similar product found by name, an unknown package on Cook added to the saved ingredient it is plus an estimated ingredient marking the dish, a live camera scan on Cook, weight for today and an earlier day with calorie and weight trends, cooking together for two, sharing a meal afterwards, leftovers, goals and partner, partner nickname and symbol, Today fitting the screen, history, ingredients, category management, offline, a partner's change showing up live and after the app was in the background, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color, a drink saved and logged in ml, the newest ingredient on top with a brand filter and a saved sort order) run the real app against the dev project. Build it against dev and pass the test credentials:
+**End-to-end journeys** (log a meal on Cook, Back and the back swipe going one step at a time on Cook, category chips and creating a missing ingredient from the Cook search, the new-version toast on the first start only, a White and a custom accent color, your own symbol, a single food changed in place, a meal eaten out logged as an estimate, a saved brand picked from the suggestions, a package scanned from a photo and filled in from Open Food Facts, a scanned portion of 3 biscuits split into single units with a wrong value cleared, values of a similar product found by name, an unknown package on Cook added to the saved ingredient it is plus an estimated ingredient marking the dish, a live camera scan on Cook, weight for today and an earlier day with calorie and weight trends, cooking together for two, sharing a meal afterwards, leftovers, goals and partner, partner nickname and symbol, Today fitting the screen, history, ingredients, category management, offline, a partner's change showing up live and after the app was in the background, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color, a drink saved and logged in ml, the newest ingredient on top with a brand filter and a saved sort order, an edited ingredient reaching both people's meals of the last two weeks but not older ones) run the real app against the dev project. Build it against dev and pass the test credentials:
 
 ```bash
 set -a; . ./.env.test.local; set +a

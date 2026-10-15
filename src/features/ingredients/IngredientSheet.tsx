@@ -26,6 +26,8 @@ type IngredientSheetProps = {
   readonly onClose: () => void
   /** the scanned barcode was added to this existing ingredient: show it instead */
   readonly onOpenIngredient: (ingredient: Ingredient) => void
+  /** an existing ingredient was saved with changes */
+  readonly onUpdated?: (ingredient: Ingredient) => void
 }
 
 export function IngredientSheet({
@@ -37,6 +39,7 @@ export function IngredientSheet({
   groups,
   onClose,
   onOpenIngredient,
+  onUpdated,
 }: IngredientSheetProps) {
   const save = useSaveIngredient(householdId)
   const ingredients = useIngredients(householdId)
@@ -112,7 +115,15 @@ export function IngredientSheet({
             groups={groups}
             savedIngredients={ingredients.data ?? []}
             onSubmit={(form) =>
-              save.mutate({ id: ingredient?.id ?? null, form, categories }, { onSuccess: close })
+              save.mutate(
+                { id: ingredient?.id ?? null, form, categories },
+                {
+                  onSuccess: (saved) => {
+                    if (ingredient) onUpdated?.(saved)
+                    close()
+                  },
+                },
+              )
             }
           />
         </>

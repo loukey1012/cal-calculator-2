@@ -7,8 +7,11 @@ import { GroupedSection } from '../../components/ios/GroupedSection'
 import { PlusIcon } from '../../components/ios/icons'
 import { PageHeader } from '../../components/ios/PageHeader'
 import { SearchField } from '../../components/ios/SearchField'
+import { Toast } from '../../components/ios/Toast'
+import { useToast } from '../../components/ios/useToast'
 import { toUserMessage } from '../../lib/errors'
 import { useMyAppearance } from '../appearance/useMyAppearance'
+import { useToday } from '../today/useToday'
 import { CategoryFilterChips } from './CategoryFilterChips'
 import { useCategories, useCategoryGroups, useIngredients } from './hooks'
 import type { Ingredient } from './ingredientsApi'
@@ -17,6 +20,8 @@ import { ScanBarcodeButton } from '../barcode/ScanBarcodeButton'
 import { IngredientRow } from './IngredientRow'
 import { IngredientSheet } from './IngredientSheet'
 import { ListOptions } from './ListOptions'
+import { recentWindowStart, updatedMealsMessage } from './recentMeals'
+import { useApplyToRecentMeals } from './useApplyToRecentMeals'
 import { useIngredientSort } from './useIngredientSort'
 import { ALL_CATEGORIES, filterIngredients, groupByCategory, type CategoryFilter } from './listing'
 
@@ -34,6 +39,9 @@ export function IngredientsPage() {
   const [brand, setBrand] = useState<string | null>(null)
   const { sort, setSort, sorted } = useIngredientSort(householdId)
   const [editing, setEditing] = useState<Editing>(null)
+  const today = useToday()
+  const toast = useToast()
+  const applyToRecent = useApplyToRecentMeals()
   const categoryList = categories.data ?? []
 
   function renderContent() {
@@ -140,7 +148,21 @@ export function IngredientsPage() {
         groups={groups.data ?? []}
         onClose={() => setEditing(null)}
         onOpenIngredient={(ingredient) => setEditing({ ingredient })}
+        onUpdated={(ingredient) =>
+          applyToRecent.mutate(
+            { ingredient, since: recentWindowStart(today) },
+            {
+              onSuccess: (meals) => {
+                const message = updatedMealsMessage(meals.length)
+                if (message) toast.show(message)
+              },
+              onError: (error) =>
+                toast.show(`Recent meals weren’t updated: ${toUserMessage(error)}`),
+            },
+          )
+        }
       />
+      <Toast message={toast.message} onDone={toast.hide} />
     </>
   )
 }

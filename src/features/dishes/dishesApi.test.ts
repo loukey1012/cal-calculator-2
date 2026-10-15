@@ -5,7 +5,7 @@ const { supabaseMock } = vi.hoisted(() => ({ supabaseMock: { from: vi.fn(), rpc:
 vi.mock('../../lib/supabase', () => ({ supabase: supabaseMock }))
 
 import { ApiError } from '../../lib/errors'
-import { deleteDish, fetchDish, fetchLeftoverDishes, saveDish } from './dishesApi'
+import { deleteDish, fetchDish, fetchDishes, fetchLeftoverDishes, saveDish } from './dishesApi'
 import { gramsItem, HER_LUNCH, ME_LUNCH, testDish } from './testData'
 
 const DB_ERROR = { message: 'permission denied', code: '42501' }
@@ -119,6 +119,24 @@ describe('fetchDish', () => {
     supabaseMock.from.mockReturnValueOnce(fakeQuery({ data: null, error: DB_ERROR }))
 
     await expect(fetchDish('dish-1')).rejects.toEqual(new ApiError('permission denied', '42501'))
+  })
+})
+
+describe('fetchDishes', () => {
+  test('loads the dishes with these ids', async () => {
+    const query = fakeQuery({ data: [], error: null })
+    supabaseMock.from.mockReturnValueOnce(query)
+
+    await expect(fetchDishes(['dish-1', 'dish-2'])).resolves.toEqual([])
+
+    expect(supabaseMock.from).toHaveBeenCalledWith('dishes')
+    expect(query.in).toHaveBeenCalledWith('id', ['dish-1', 'dish-2'])
+  })
+
+  test('a failed load is reported', async () => {
+    supabaseMock.from.mockReturnValueOnce(fakeQuery({ data: null, error: DB_ERROR }))
+
+    await expect(fetchDishes(['dish-1'])).rejects.toBeInstanceOf(ApiError)
   })
 })
 
