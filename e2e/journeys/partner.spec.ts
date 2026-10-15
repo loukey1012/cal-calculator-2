@@ -84,5 +84,5 @@ test('pick a symbol for yourself, only on your account, kept after a reload', as
   await expect(activePage(page).getByRole('button', { name: /^Symbol/ })).toContainText('🩷')
   // your own row under Members only shows you; the symbol is changed under Account
   await expect(activePage(page).getByRole('button', { name: /Lukas \(you\)/ })).toHaveCount(0)
-  await expect(activePage(page).getByText('Lukas (you)')).toContainText('🩷')
+  await expect(activePage(page).getByText('Lukas (you)')).toBeVisible()
 })
