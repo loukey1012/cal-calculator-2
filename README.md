@@ -300,10 +300,10 @@ Noted 2026-10-16 after testing points 22 and 23 (these come next, before point 2
 - [x] A flagged ingredient can be marked **Values are correct**; the flag goes away for both of you
 - [x] If someone later changes its values and a warning still applies, it is flagged again
 
-**20. Ingredient review by Claude** (to do, extends point 1)
+**20. Ingredient review by Claude** (in the app: done; the weekly routine is set up with you)
 
 - [ ] A Claude Code routine reviews the ingredient database **every week** (and whenever you ask): typos in names, brand spellings that don't match (e.g. "Milbona" and "Milbonna"), odd unit names and unit weights, likely duplicates, values that don't fit the product
-- [ ] What it finds shows up on a **Review** page on the Ingredients tab: the reason and a suggested fix, with **Apply fix** (changes the ingredient; recent meals follow as in point 3) or **Ignore**. Nothing is changed without you
+- [x] What it finds shows up on a **Review** page on the Ingredients tab: the reason and a suggested fix, with **Apply fix** (changes the ingredient; recent meals follow as in point 3) or **Ignore**. Nothing is changed without you
 
 ## Fixes and improvements, October 11 (done)
 
@@ -422,6 +422,7 @@ scripts/
 - `meal_items` of a cooked dish point to their `dish_portions` row and `dish_lines` row; plain items leave both empty
 - `dishes` (a cooking; split mode equal / count / percent / weight, cooked weight, `kcal_estimated` when its calories are only roughly known, a revision changed by every save), `dish_portions` (who ate it on which day and meal, or nobody yet = a leftover; split value; `discarded` for a thrown-away leftover, which keeps its share), `dish_lines` (ingredient snapshot like `meal_items`, either `shared` or `per_portion`), `dish_line_amounts` (own amount of a `per_portion` line per portion)
 - Views `meal_totals` and `daily_totals` (with `kcal_estimated`: some food came from a dish marked as an estimate). RPCs `create_household`, `join_household`, `ensure_meal`, `save_dish` and `delete_dish`; `ingredient_use_counts` (how often each ingredient was used, for sorting by Most used; runs with the caller's rights, so RLS keeps it to the household). `keep_alive` returns `true` to anyone, for the keep-alive workflow.
+- `ingredient_findings` (what the ingredient review routine found: ingredient, kind, message, suggested fix as `column → value`, `open` / `applied` / `ignored`, who decided when). Members read them and only change the decision; the routine adds them through `submit_ingredient_findings` and reads the ingredients through `review_ingredients`, both authorized by the household's review key (`review_keys`, stored as a SHA-256 hash, readable by nobody). A finding is never added twice for the same ingredient, kind and fix.
 - **Live updates:** triggers on the household's tables send a small hint over Supabase Realtime Broadcast to the private channel `household:<id>` (what changed: a person's day, a dish, the ingredient database, …). Hints carry no data: the app marks the matching queries out of date, and what's on screen re-fetches through the normal RLS-checked queries. A failed hint never fails a save.
 - `save_dish` stores a whole dish at once and re-logs every eaten portion as meal items in its eater's meal (shared lines × the portion's share, own amounts as entered), so the totals views count dishes like any other food. Resending the same save does nothing; a save based on an outdated revision is rejected ("changed meanwhile"). It can also take over plain items of a meal ("share this meal").
 
@@ -433,6 +434,7 @@ scripts/
 - Joining a household only works through an invite code. Profiles can't be moved between households directly.
 - The anon key in the app is public by design; RLS is the protection. The service-role key is only used in local scripts and CI (dev project), never in the app.
 - **Sign-ups are disabled in Supabase**, since both accounts exist. Nobody new can create an account.
+- The **ingredient review routine** never gets the service-role key: with the anon key and its household's review key it can only read that household's ingredients and add findings. It changes no data; members apply or ignore each finding.
 
 ---
 
@@ -498,6 +500,21 @@ pnpm exec supabase link --project-ref <dev-ref> -p "$DEV_DB_PASSWORD"
 pnpm exec supabase db push --linked -p "$DEV_DB_PASSWORD"
 pnpm test:db                    # prove it on dev first
 # then link production, push the same migration, and link dev again
+```
+
+### Ingredient review routine
+
+A Claude Code routine (cloud, weekly and on request) follows `scripts/review/ROUTINE.md`: it fetches the household's ingredients with `node scripts/review/review.ts fetch`, looks for typos, brand and unit-name variants, implausible unit weights, duplicates and values that don't fit, and sends findings with `node scripts/review/review.ts submit findings.json` (checked by `scripts/review/findings.ts`, then again by the database). They show up under **Ingredients › Review**.
+
+The routine's environment needs `REVIEW_SUPABASE_URL`, `REVIEW_SUPABASE_ANON_KEY` (the app's public key) and `REVIEW_KEY`, plus network access to the Supabase project. A review key is created once per household; only its hash is stored:
+
+```bash
+KEY=$(openssl rand -base64 32 | tr -d '=+/')
+HASH=$(printf '%s' "$KEY" | sha256sum | cut -d' ' -f1)
+pnpm exec supabase db query --linked \
+  "insert into public.review_keys (household_id, key_hash) values ('<household-id>', decode('$HASH', 'hex'))
+   on conflict (household_id) do update set key_hash = excluded.key_hash"
+echo "$KEY"   # goes into the routine's environment as REVIEW_KEY, nowhere else
 ```
 
 ### Importing the old Firebase data

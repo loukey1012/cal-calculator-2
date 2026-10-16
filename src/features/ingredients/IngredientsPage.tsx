@@ -16,6 +16,8 @@ import { CategoryFilterChips } from './CategoryFilterChips'
 import { useCategories, useCategoryGroups, useIngredients } from './hooks'
 import type { Ingredient } from './ingredientsApi'
 import { findByBarcode } from '../barcode/barcode'
+import { useOpenFindings } from '../review/hooks'
+import { ReviewSheet } from '../review/ReviewSheet'
 import { ScanBarcodeButton } from '../barcode/ScanBarcodeButton'
 import { IngredientRow } from './IngredientRow'
 import { IngredientSheet } from './IngredientSheet'
@@ -41,6 +43,8 @@ export function IngredientsPage() {
   const [checkOnly, setCheckOnly] = useState(false)
   const { sort, setSort, sorted } = useIngredientSort(householdId)
   const [editing, setEditing] = useState<Editing>(null)
+  const [reviewing, setReviewing] = useState(false)
+  const findings = useOpenFindings(householdId)
   const today = useToday()
   const toast = useToast()
   const applyToRecent = useApplyToRecentMeals()
@@ -49,6 +53,20 @@ export function IngredientsPage() {
     () => new Set((ingredients.data ?? []).filter(needsCheck).map(({ id }) => id)),
     [ingredients.data],
   )
+
+  // an edited ingredient (in its sheet or by a review fix) updates recent meals too
+  function followInRecentMeals(ingredient: Ingredient) {
+    applyToRecent.mutate(
+      { ingredient, since: recentWindowStart(today) },
+      {
+        onSuccess: (meals) => {
+          const message = updatedMealsMessage(meals.length)
+          if (message) toast.show(message)
+        },
+        onError: (error) => toast.show(`Recent meals weren’t updated: ${toUserMessage(error)}`),
+      },
+    )
+  }
 
   function renderContent() {
     if (ingredients.isPending) {
@@ -143,6 +161,7 @@ export function IngredientsPage() {
         sort={sort}
         onSortChange={setSort}
         check={{ count: toCheck.size, only: checkOnly, onChange: setCheckOnly }}
+        review={{ count: findings.data?.length ?? 0, onOpen: () => setReviewing(true) }}
       />
       {renderContent()}
       <IngredientSheet
@@ -155,19 +174,18 @@ export function IngredientsPage() {
         groups={groups.data ?? []}
         onClose={() => setEditing(null)}
         onOpenIngredient={(ingredient) => setEditing({ ingredient })}
-        onUpdated={(ingredient) =>
-          applyToRecent.mutate(
-            { ingredient, since: recentWindowStart(today) },
-            {
-              onSuccess: (meals) => {
-                const message = updatedMealsMessage(meals.length)
-                if (message) toast.show(message)
-              },
-              onError: (error) =>
-                toast.show(`Recent meals weren’t updated: ${toUserMessage(error)}`),
-            },
-          )
-        }
+        onUpdated={followInRecentMeals}
+      />
+      <ReviewSheet
+        open={reviewing}
+        findings={findings.data ?? []}
+        ingredients={ingredients.data ?? []}
+        onClose={() => setReviewing(false)}
+        onOpenIngredient={(ingredient) => {
+          setReviewing(false)
+          setEditing({ ingredient })
+        }}
+        onUpdated={followInRecentMeals}
       />
       <Toast message={toast.message} onDone={toast.hide} />
     </>

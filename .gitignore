@@ -27,3 +27,7 @@ test-results/
 .vscode/*
 !.vscode/extensions.json
 .idea/
+
+# ingredient review routine (scripts/review)
+review-data.json
+findings.json

@@ -1,0 +1,19 @@
+import type { Finding } from './reviewApi'
+
+const EMPTY_FINDING: Finding = {
+  id: 'f0',
+  household_id: 'h1',
+  ingredient_id: 'i1',
+  kind: 'typo',
+  message: 'The name looks misspelled.',
+  suggestion: { name: 'Butter' },
+  status: 'open',
+  run_id: 'run-1',
+  created_at: '2026-10-16T08:00:00Z',
+  decided_by: null,
+  decided_at: null,
+}
+
+export function finding(overrides: Partial<Finding>): Finding {
+  return { ...EMPTY_FINDING, ...overrides }
+}

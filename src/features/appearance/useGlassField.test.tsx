@@ -72,12 +72,14 @@ describe('useGlassField', () => {
       position: { mode: 'random', randomOn: 'tab' },
       colors: { mode: 'random', changeOn: 'start' },
     })
-    const place = variable('--gf-x1')
+    // all three spots: one alone may stay put, e.g. pressed against the edge
+    const places = () => ['1', '2', '3'].map((n) => variable(`--gf-x${n}`) + variable(`--gf-y${n}`))
+    const before = places()
     const color = variable('--gf-c1')
 
     rerender({ tab: 1 })
 
-    expect(variable('--gf-x1')).not.toBe(place)
+    expect(places()).not.toEqual(before)
     expect(variable('--gf-c1')).toBe(color)
   })
 

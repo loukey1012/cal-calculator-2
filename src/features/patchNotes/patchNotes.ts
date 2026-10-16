@@ -30,6 +30,15 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-16T10:38',
+    kind: 'new',
+    title: 'Ingredient review: suggestions to apply or ignore',
+    items: [
+      'A weekly review of the ingredient database (typos, brand and unit spellings, unit weights, duplicates, values that don’t fit) will show its findings under Ingredients › Review',
+      'Each finding shows the reason and the suggested change; Apply fix changes the ingredient and recent meals, Ignore keeps it as it is. Nothing changes on its own',
+    ],
+  },
+  {
     at: '2026-10-16T10:17',
     kind: 'fix',
     title: 'Background presets, random places and the selected style',

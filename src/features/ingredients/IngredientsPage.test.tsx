@@ -5,6 +5,11 @@ import { CurrentUserContext } from '../../app/currentUser'
 import { renderWithProviders } from '../../test/render'
 import { category, categoryGroup, ingredient } from './testData'
 
+vi.mock('../review/reviewApi', () => ({
+  fetchOpenFindings: vi.fn().mockResolvedValue([]),
+  decideFinding: vi.fn(),
+  patchIngredient: vi.fn(),
+}))
 vi.mock('./ingredientsApi', () => ({
   fetchIngredients: vi.fn(),
   fetchIngredientUses: vi.fn(),

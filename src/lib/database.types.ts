@@ -375,6 +375,70 @@ export type Database = {
         }
         Relationships: []
       }
+      ingredient_findings: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          household_id: string
+          id: string
+          ingredient_id: string
+          kind: Database["public"]["Enums"]["finding_kind"]
+          message: string
+          run_id: string
+          status: Database["public"]["Enums"]["finding_status"]
+          suggestion: Json
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          household_id: string
+          id?: string
+          ingredient_id: string
+          kind: Database["public"]["Enums"]["finding_kind"]
+          message: string
+          run_id: string
+          status?: Database["public"]["Enums"]["finding_status"]
+          suggestion?: Json
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          household_id?: string
+          id?: string
+          ingredient_id?: string
+          kind?: Database["public"]["Enums"]["finding_kind"]
+          message?: string
+          run_id?: string
+          status?: Database["public"]["Enums"]["finding_status"]
+          suggestion?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingredient_findings_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ingredient_findings_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ingredient_findings_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ingredients: {
         Row: {
           barcode: string | null
@@ -683,6 +747,32 @@ export type Database = {
           },
         ]
       }
+      review_keys: {
+        Row: {
+          created_at: string
+          household_id: string
+          key_hash: string
+        }
+        Insert: {
+          created_at?: string
+          household_id: string
+          key_hash: string
+        }
+        Update: {
+          created_at?: string
+          household_id?: string
+          key_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_keys_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: true
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       weight_entries: {
         Row: {
           created_at: string
@@ -835,6 +925,7 @@ export type Database = {
         }
       }
       keep_alive: { Args: never; Returns: boolean }
+      review_ingredients: { Args: { p_key: string }; Returns: Json }
       save_dish: {
         Args: {
           p_base_revision?: string
@@ -843,11 +934,24 @@ export type Database = {
         }
         Returns: undefined
       }
+      submit_ingredient_findings: {
+        Args: { p_findings: Json; p_key: string; p_run_id: string }
+        Returns: number
+      }
     }
     Enums: {
       amount_unit: "g" | "unit" | "ml"
       dish_line_allocation: "shared" | "per_portion"
       dish_split_mode: "equal" | "count" | "percent" | "weight"
+      finding_kind:
+        | "typo"
+        | "brand"
+        | "unit_name"
+        | "unit_weight"
+        | "duplicate"
+        | "values"
+        | "other"
+      finding_status: "open" | "applied" | "ignored"
       ingredient_measure: "g" | "ml"
       meal_type: "breakfast" | "lunch" | "dinner" | "snack"
       nutrition_basis: "per_100g" | "per_unit"
@@ -981,6 +1085,16 @@ export const Constants = {
       amount_unit: ["g", "unit", "ml"],
       dish_line_allocation: ["shared", "per_portion"],
       dish_split_mode: ["equal", "count", "percent", "weight"],
+      finding_kind: [
+        "typo",
+        "brand",
+        "unit_name",
+        "unit_weight",
+        "duplicate",
+        "values",
+        "other",
+      ],
+      finding_status: ["open", "applied", "ignored"],
       ingredient_measure: ["g", "ml"],
       meal_type: ["breakfast", "lunch", "dinner", "snack"],
       nutrition_basis: ["per_100g", "per_unit"],

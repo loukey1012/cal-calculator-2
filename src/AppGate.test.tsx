@@ -3,6 +3,11 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { renderWithProviders } from './test/render'
 
+vi.mock('./features/review/reviewApi', () => ({
+  fetchOpenFindings: vi.fn().mockResolvedValue([]),
+  decideFinding: vi.fn(),
+  patchIngredient: vi.fn(),
+}))
 vi.mock('./features/weight/weightApi', () => ({
   fetchWeights: vi.fn().mockResolvedValue([]),
   saveWeight: vi.fn(),
