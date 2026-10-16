@@ -32,7 +32,6 @@ const ROW: Tables<'ingredients'> = {
   legacy_id: null,
   barcode: null,
   kcal_estimated: false,
-  values_ok: null,
   created_by: null,
   created_at: '',
   updated_at: '',

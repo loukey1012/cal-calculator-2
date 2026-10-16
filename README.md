@@ -77,7 +77,7 @@ Built for a two-person household: both members log their own meals, can see and 
 - **Clearing values:** every filled value (and the unit name and grams per unit) has a grey ⓧ to empty just that field; **Clear values per 100 g / per unit** empties a whole section, which stays switched on for the right values. An **Undo** shows in place of the button for a few seconds.
 - **Split into smaller units** (in Per unit): when the values per unit are for a portion of several pieces (e.g. "3 Kekse (30 g)"), enter how many pieces a portion is and every value per unit and the grams per unit are divided by it; per 100 g stays. For scanned products the package's portion is shown and its count already filled in.
 - **Fill in values** for food without values on it: **Copy from an ingredient** (search your saved ones; takes over the values, unit and estimate mark, the name only when still empty) or **Search Open Food Facts** by name (photo, brand and calories per result; a similar product's values, never its barcode). It searches when you tap Search, through the app's own address (`/off/search`, forwarded to Open Food Facts' search service by Vercel and by the dev server), because Open Food Facts doesn't allow searches straight from the browser. Both have Undo.
-- **Check these values:** while you type, values that look wrong are listed above the values and shown in red: per unit not matching per 100 g and the grams per unit, calories that don't fit protein, carbs and fat, more than 100 g of nutrients per 100 g (not per 100 ml: 100 ml of honey or syrup weighs more than 100 g) or over 900 kcal, more sugar than carbs or saturated fat than fat (per 100 g and per unit). They go away once fixed; saving is never blocked. A saved ingredient with such values says **Check values** in both lists, and a **Check values · N** filter on the Ingredients tab shows only those. If the values really are right, **Values are correct** (in the box, while the saved values are shown) clears the flag for both of you; it comes back if the values change and still look wrong.
+- **Check these values:** while you type, values that look wrong are listed above the values and shown in red: per unit not matching per 100 g and the grams per unit, calories that don't fit protein, carbs and fat, more than 100 g of nutrients per 100 g (not per 100 ml: 100 ml of honey or syrup weighs more than 100 g) or over 900 kcal, more sugar than carbs or saturated fat than fat (per 100 g and per unit). They go away once fixed; saving is never blocked. Ingredients already saved are checked by the weekly review (point 20).
 - **Values are an estimate:** a switch for values you guessed, e.g. a dish from your favorite restaurant saved as an ingredient. Lists show its calories with "~" (e.g. "~900 kcal / pizza"), and dishes with it are marked as an estimate.
 - **Brand** with suggestions: typing shows the brands already saved (those starting with the text first, then those containing it; case and accents don't matter, each brand once in its usual spelling). Tap one to take it exactly as saved; a new brand can still be typed.
 - Category (created on the fly, optionally inside a **broad category** such as Fresh › Meat & Fish), note.
@@ -147,11 +147,10 @@ Everything here is saved **to your account**, never to the device: you get the s
 
 Noted 2026-10-11.
 
-**1. Checking the data automatically** (in the app: done; the weekly push comes with point 10)
+**1. Checking the data automatically** (replaced by the weekly review, point 20; the push comes with point 10)
 
-- [x] Ingredients whose values look wrong (the same checks as in the ingredient form) say **Check values** in both ingredient lists, always up to date
-- [x] A **Check values · N** filter on the Ingredients tab shows only those (it appears while there are any)
-- [ ] An automatic check once a week sends a push notification when something new is flagged (see point 10)
+- [x] ~~Ingredients whose values look wrong say **Check values** in both lists, with a **Check values · N** filter~~ (removed 2026-10-16: the weekly review covers it, under **Review** in the Ingredients header)
+- [ ] A push notification when the weekly review finds something new (see point 10)
 
 **2. Keeping the Supabase projects awake** (done)
 
@@ -272,6 +271,18 @@ Noted 2026-10-16 after testing points 22 and 23 (these come next, before point 2
 
 - [x] The selected choice (e.g. the light and dark style cards) keeps its frame with Liquid Glass Minimal and Full
 
+Noted 2026-10-16 after trying the review (point 20).
+
+**27. Review in the header, Check values removed** (done)
+
+- [x] **Review · N** sits in the Ingredients header next to +, so it never covers the brand filter
+- [x] The Check values label, its filter and **Values are correct** are gone; the warnings while typing in the ingredient form stay
+
+**28. The review checks meals too** (to do)
+
+- [ ] For both of you, the past week: a meal missing between others or a day with nothing logged, days far below the calorie goal, and odd entries (implausible amounts, the same food twice in one meal, 0 kcal items)
+- [ ] Meal findings show under Review with the person, day and meal; **Open day** opens it in History; **Done** or **Ignore**. Meals are never changed automatically
+
 **16. Cook search: + and a custom item button** (done, changes point 4)
 
 - [x] The **+** above the Cook search works like the one on the Ingredients tab: it opens a new ingredient straight away (named after the search), no menu
@@ -295,7 +306,7 @@ Noted 2026-10-16 after testing points 22 and 23 (these come next, before point 2
 - [x] **Slow drift**: the spots float slowly, in any mode (off by itself when the phone asks for reduced motion)
 - [x] Saved to your account like every other appearance setting
 
-**19. "Values are correct"** (done, changes point 1)
+**19. "Values are correct"** (removed 2026-10-16: ignoring a finding in the weekly review replaces it)
 
 - [x] A flagged ingredient can be marked **Values are correct**; the flag goes away for both of you
 - [x] If someone later changes its values and a warning still applies, it is flagged again
@@ -417,7 +428,7 @@ scripts/
 
 - `households`, `profiles` (one per auth user, created by a trigger; holds the name, accent color and `appearance` JSON, up to 4 KB)
 - `goal_history` (goal valid from a date; calories, and optionally protein, carbs, fat, fiber and a target weight), `weight_entries` (one weight per person and day, counting until the next; the household reads them, only you write yours)
-- `category_groups` (the household's broad categories), `categories` (optionally in a group; deleting a group leaves its categories ungrouped), `ingredients` (per-100 g and/or per-unit columns; `measure` `g` or `ml`: for ml the `_100` columns are per 100 ml and `unit_weight_g` is the ml per unit, and the at-most-100-g-per-100-g check doesn't apply; at least one calorie value required; optional `barcode`, 8–14 digits, unique per household; `kcal_estimated` for guessed values; `values_ok`: the value columns as they were when someone marked them as correct)
+- `category_groups` (the household's broad categories), `categories` (optionally in a group; deleting a group leaves its categories ungrouped), `ingredients` (per-100 g and/or per-unit columns; `measure` `g` or `ml`: for ml the `_100` columns are per 100 ml and `unit_weight_g` is the ml per unit, and the at-most-100-g-per-100-g check doesn't apply; at least one calorie value required; optional `barcode`, 8–14 digits, unique per household; `kcal_estimated` for guessed values)
 - `meals` (unique per user, local date and meal type), `meal_items` (nutrition snapshot plus a basis multiplier; amounts in `g`, `ml` or `unit`, where `per_100g` means per 100 ml for an amount in ml)
 - `meal_items` of a cooked dish point to their `dish_portions` row and `dish_lines` row; plain items leave both empty
 - `dishes` (a cooking; split mode equal / count / percent / weight, cooked weight, `kcal_estimated` when its calories are only roughly known, a revision changed by every save), `dish_portions` (who ate it on which day and meal, or nobody yet = a leftover; split value; `discarded` for a thrown-away leftover, which keeps its share), `dish_lines` (ingredient snapshot like `meal_items`, either `shared` or `per_portion`), `dish_line_amounts` (own amount of a `per_portion` line per portion)
@@ -479,7 +490,7 @@ pnpm icons          # regenerate the icon PNGs: the default set from public/icon
 
 To add an app icon choice: put its SVG in `public/icons/<name>/icon.svg`, add `<name>` to `APP_ICONS` (`src/features/appearance/appearance.ts`) and a label to `APP_ICON_OPTIONS`, then run `pnpm icons`.
 
-**End-to-end journeys** (log a meal on Cook, Back and the back swipe going one step at a time on Cook, category chips and creating a missing ingredient from the Cook search, the new-version toast on the first start only, a White and a custom accent color, your own symbol, a single food changed in place, a meal eaten out logged as an estimate, a saved brand picked from the suggestions, a package scanned from a photo and filled in from Open Food Facts, a scanned portion of 3 biscuits split into single units with a wrong value cleared, values of a similar product found by name, an unknown package on Cook added to the saved ingredient it is plus an estimated ingredient marking the dish, a live camera scan on Cook, weight for today and an earlier day with calorie and weight trends, cooking together for two, sharing a meal afterwards, leftovers, goals and partner, partner nickname and symbol, Today fitting the screen, history, ingredients, category management, offline, a partner's change showing up live and after the app was in the background, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color, a drink saved and logged in ml, the newest ingredient on top with a brand filter and a saved sort order, Liquid Glass Minimal for every field and Full for everything, kept across a restart, random background colors changing with the tab and moving spots, an edited ingredient reaching both people's meals of the last two weeks but not older ones, an odd ingredient marked correct until its values change) run the real app against the dev project. Build it against dev and pass the test credentials:
+**End-to-end journeys** (log a meal on Cook, Back and the back swipe going one step at a time on Cook, category chips and creating a missing ingredient from the Cook search, the new-version toast on the first start only, a White and a custom accent color, your own symbol, a single food changed in place, a meal eaten out logged as an estimate, a saved brand picked from the suggestions, a package scanned from a photo and filled in from Open Food Facts, a scanned portion of 3 biscuits split into single units with a wrong value cleared, values of a similar product found by name, an unknown package on Cook added to the saved ingredient it is plus an estimated ingredient marking the dish, a live camera scan on Cook, weight for today and an earlier day with calorie and weight trends, cooking together for two, sharing a meal afterwards, leftovers, goals and partner, partner nickname and symbol, Today fitting the screen, history, ingredients, category management, offline, a partner's change showing up live and after the app was in the background, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color, a drink saved and logged in ml, the newest ingredient on top with a brand filter and a saved sort order, Liquid Glass Minimal for every field and Full for everything, kept across a restart, random background colors changing with the tab and moving spots, an edited ingredient reaching both people's meals of the last two weeks but not older ones, an ingredient review finding applied and another ignored) run the real app against the dev project. Build it against dev and pass the test credentials:
 
 ```bash
 set -a; . ./.env.test.local; set +a

@@ -30,6 +30,15 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-16T11:55',
+    kind: 'fix',
+    title: 'Review moved to the Ingredients header; the Check values label and filter are gone',
+    items: [
+      'Review · N sits next to + and no longer covers the brand filter',
+      'The weekly review replaces the Check values label, its filter and Values are correct; the warnings while typing in the ingredient form stay',
+    ],
+  },
+  {
     at: '2026-10-16T11:29',
     kind: 'new',
     title:

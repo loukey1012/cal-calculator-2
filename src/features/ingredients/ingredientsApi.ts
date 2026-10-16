@@ -1,4 +1,4 @@
-import type { Json, Tables, TablesInsert } from '../../lib/database.types'
+import type { Tables, TablesInsert } from '../../lib/database.types'
 import { ApiError } from '../../lib/errors'
 import { supabase } from '../../lib/supabase'
 
@@ -78,21 +78,6 @@ export async function updateIngredient(id: string, input: IngredientInput): Prom
 }
 
 /** Gives an ingredient a (new) package barcode, e.g. one scanned for it later. */
-/** Marks the values as correct (the checked columns as they are now), or clears that with null. */
-export async function markValuesOk(
-  id: string,
-  values: { readonly [column: string]: Json } | null,
-): Promise<Ingredient> {
-  const { data, error } = await supabase
-    .from('ingredients')
-    .update({ values_ok: values })
-    .eq('id', id)
-    .select()
-    .single()
-  if (error) throw ApiError.from(error)
-  return data
-}
-
 export async function setIngredientBarcode(id: string, barcode: string): Promise<Ingredient> {
   const { data, error } = await supabase
     .from('ingredients')

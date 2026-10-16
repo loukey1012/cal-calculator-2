@@ -13,6 +13,6 @@ keep its status table and the README checkboxes up to date as items ship.
 date and hour (local time) and what changed in plain, neutral words. The list lives in
 `src/features/patchNotes/patchNotes.ts` once item 21 is built.
 
-**Next up (as of 2026-10-16):** item 20 (ingredient review routine by Claude), then 9–15. Items
-22–26 are shipped and wait for the user's iPhone test. Build 2–3 items, push, then stop with a
-short summary for the user to test.
+**Next up (as of 2026-10-16):** items 9–15 (9 = reading nutrition labels on the device). Items
+20–26 are shipped; item 20's weekly routine runs on claude.ai (see the plan). Build 2–3 items,
+push, then stop with a short summary for the user to test.

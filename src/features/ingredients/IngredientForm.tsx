@@ -22,7 +22,7 @@ import { UndoBar } from './UndoBar'
 import { useIngredientFormState, type IngredientFormState } from './useIngredientFormState'
 import { flaggedFields, valueWarnings } from './valueChecks'
 import { ValueSources } from './ValueSources'
-import { ValueWarnings, type ValuesConfirmation } from './ValueWarnings'
+import { ValueWarnings } from './ValueWarnings'
 
 const BASES: readonly BasisKey[] = ['per100g', 'perUnit']
 const ENABLED_KEY = { per100g: 'per100gEnabled', perUnit: 'perUnitEnabled' } as const
@@ -42,14 +42,6 @@ type IngredientFormProps = {
   readonly packagePortion?: string | null
   /** a saved ingredient is edited (its barcode can be looked up again) */
   readonly editing?: boolean
-  /** marking the saved values as correct; offered while they are unchanged */
-  readonly valuesConfirmation?: ValuesConfirmation
-}
-
-/** The fields the value checks look at, to tell whether they still show the saved values. */
-function checkedFields(values: IngredientFormValues): string {
-  const { per100gEnabled, per100g, perUnitEnabled, perUnit, measure, unitWeightG } = values
-  return JSON.stringify({ per100gEnabled, per100g, perUnitEnabled, perUnit, measure, unitWeightG })
 }
 
 export function IngredientForm({
@@ -61,7 +53,6 @@ export function IngredientForm({
   savedIngredients = [],
   packagePortion = null,
   editing = false,
-  valuesConfirmation,
 }: IngredientFormProps) {
   const form = useIngredientFormState(initialValues, packagePortion)
   const { values } = form
@@ -108,12 +99,7 @@ export function IngredientForm({
         onFill={form.fill}
         undo={undoAt('fill')}
       />
-      <ValueWarnings
-        warnings={warnings}
-        confirmation={
-          checkedFields(values) === checkedFields(initialValues) ? valuesConfirmation : undefined
-        }
-      />
+      <ValueWarnings warnings={warnings} />
       <div className="mt-6">
         <SegmentedControl
           label="Measured in"

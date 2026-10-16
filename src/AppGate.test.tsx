@@ -3,6 +3,8 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { renderWithProviders } from './test/render'
 
+// no real Realtime connection in tests (it would reach the backend from .env.local)
+vi.mock('./features/live/liveChannel', () => ({ openLiveChannel: () => ({ close: () => {} }) }))
 vi.mock('./features/review/reviewApi', () => ({
   fetchOpenFindings: vi.fn().mockResolvedValue([]),
   decideFinding: vi.fn(),

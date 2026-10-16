@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useCurrentUser } from '../../app/currentUser'
 import { Button } from '../../components/ios/Button'
 import { EmptyState } from '../../components/ios/EmptyState'
@@ -17,6 +17,7 @@ import { useCategories, useCategoryGroups, useIngredients } from './hooks'
 import type { Ingredient } from './ingredientsApi'
 import { findByBarcode } from '../barcode/barcode'
 import { useOpenFindings } from '../review/hooks'
+import { ReviewButton } from '../review/ReviewButton'
 import { ReviewSheet } from '../review/ReviewSheet'
 import { ScanBarcodeButton } from '../barcode/ScanBarcodeButton'
 import { IngredientRow } from './IngredientRow'
@@ -24,7 +25,6 @@ import { IngredientSheet } from './IngredientSheet'
 import { ListOptions } from './ListOptions'
 import { recentWindowStart, updatedMealsMessage } from './recentMeals'
 import { useApplyToRecentMeals } from './useApplyToRecentMeals'
-import { needsCheck } from './valueChecks'
 import { useIngredientSort } from './useIngredientSort'
 import { ALL_CATEGORIES, filterIngredients, groupByCategory, type CategoryFilter } from './listing'
 
@@ -40,19 +40,15 @@ export function IngredientsPage() {
   const [query, setQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>(ALL_CATEGORIES)
   const [brand, setBrand] = useState<string | null>(null)
-  const [checkOnly, setCheckOnly] = useState(false)
   const { sort, setSort, sorted } = useIngredientSort(householdId)
   const [editing, setEditing] = useState<Editing>(null)
   const [reviewing, setReviewing] = useState(false)
   const findings = useOpenFindings(householdId)
+  const openFindings = findings.data?.length ?? 0
   const today = useToday()
   const toast = useToast()
   const applyToRecent = useApplyToRecentMeals()
   const categoryList = categories.data ?? []
-  const toCheck = useMemo(
-    () => new Set((ingredients.data ?? []).filter(needsCheck).map(({ id }) => id)),
-    [ingredients.data],
-  )
 
   // an edited ingredient (in its sheet or by a review fix) updates recent meals too
   function followInRecentMeals(ingredient: Ingredient) {
@@ -93,7 +89,7 @@ export function IngredientsPage() {
       ingredients.data,
       { query, category: categoryFilter, brand },
       categoryList,
-    ).filter(({ id }) => !checkOnly || toCheck.has(id))
+    )
     if (matches.length === 0) {
       return <EmptyState title="No matches" message="Try a different search, category or brand." />
     }
@@ -118,14 +114,17 @@ export function IngredientsPage() {
       <PageHeader
         title="Ingredients"
         action={
-          <Button
-            variant="plain"
-            aria-label="Add ingredient"
-            className="-mr-2"
-            onClick={() => setEditing({ ingredient: null })}
-          >
-            <PlusIcon className="h-6 w-6" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <ReviewButton count={openFindings} onClick={() => setReviewing(true)} />
+            <Button
+              variant="plain"
+              aria-label="Add ingredient"
+              className="-mr-2"
+              onClick={() => setEditing({ ingredient: null })}
+            >
+              <PlusIcon className="h-6 w-6" />
+            </Button>
+          </div>
         }
       />
       <SearchField
@@ -160,8 +159,6 @@ export function IngredientsPage() {
         onBrandChange={setBrand}
         sort={sort}
         onSortChange={setSort}
-        check={{ count: toCheck.size, only: checkOnly, onChange: setCheckOnly }}
-        review={{ count: findings.data?.length ?? 0, onOpen: () => setReviewing(true) }}
       />
       {renderContent()}
       <IngredientSheet
