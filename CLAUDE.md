@@ -13,6 +13,6 @@ keep its status table and the README checkboxes up to date as items ship.
 date and hour (local time) and what changed in plain, neutral words. The list lives in
 `src/features/patchNotes/patchNotes.ts` once item 21 is built.
 
-**Next up (as of 2026-10-16):** items 9–15 (9 = reading nutrition labels on the device). Items
-16–28 are shipped; the weekly review routine (items 20, 28) runs on claude.ai (see the plan). Build
-2–3 items, push, then stop with a short summary for the user to test.
+**Next up (as of 2026-10-16):** the remaining items, small first: 11 (Cook badge) · 15 · 29 · 12
+· 13 · 9 · 14 · 10; see "New order and item 29" in the plan. Never use the word "cheat" (item 13 is
+"Doesn't count"). Build 2–3 items, push, then stop with a short summary for the user to test.

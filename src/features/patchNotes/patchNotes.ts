@@ -30,6 +30,11 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-16T12:56',
+    kind: 'internal',
+    title: 'Planned: ring colors when over, days that don’t count; the remaining items reordered',
+  },
+  {
     at: '2026-10-16T12:22',
     kind: 'internal',
     title: 'The review routine is now called CALculator weekly review',
@@ -264,7 +269,7 @@ export const PATCH_NOTES: readonly PatchNote[] = [
     kind: 'new',
     title: 'Barcode scanner: live camera, photo or typed number, filled in from Open Food Facts',
   },
-  { at: '2026-10-08T13:12', kind: 'internal', title: 'Cheat days on the roadmap' },
+  { at: '2026-10-08T13:12', kind: 'internal', title: 'Days that don’t count on the roadmap' },
   {
     at: '2026-10-08T12:49',
     kind: 'new',

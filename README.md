@@ -187,6 +187,13 @@ Noted 2026-10-15.
 - [x] Both versions from the comparison, as one setting in Settings › Appearance › App colors: **Off**, **Controls** (tab bar and sheets as glass) or **Everything** (the cards too, over a soft color background)
 - [x] Works on top of every style, light and dark; saved to your account like every other appearance setting
 
+**Order from 2026-10-16** (small first, big last): 11 (Cook badge) · 15 · 29 · 12 · 13 · 9 · 14 · 10 (with the push of 11).
+
+**29. Rings and bars when over** (to do)
+
+- [ ] Calories, carbs and fat change color once full: one color from 100 % up to 110 %, another above 110 % (protein and fiber keep theirs)
+- [ ] One pair of colors for all three in Appearance › Progress › **When over**: signal presets (**Signal**: amber and red, the default; **Ember**: orange and deep red; **Neon**: purple and magenta), your own two colors, or **Off**
+
 **9. Reading nutrition labels** (to do)
 
 - [ ] For products without a barcode: take a photo of the nutrition table (or pick one from your photos) and the ingredient form gets filled in
@@ -202,7 +209,7 @@ Noted 2026-10-15.
 - [ ] **Unsaved Cook dish**: a dish has been sitting on Cook without being logged for a while (default 30 minutes, adjustable)
 - [ ] **Meal reminders**: nothing logged for breakfast, lunch or dinner by a time you set (defaults 10:00, 14:00, 20:00; each one on or off)
 - [ ] **Day summary**: kcal and macros vs. your goal, what you ate. Default: the **next morning** about the day before (so evening snacks count); each person can switch to the same day and pick the time (e.g. 23:00)
-- [ ] **Odd ingredient values**: the weekly database check (point 1) found something new
+- [ ] **Weekly review**: the weekly review (point 20) found something new
 
 **11. Unsaved Cook dishes** (to do)
 
@@ -215,11 +222,11 @@ Noted 2026-10-15.
 - [ ] **Recent**: the ingredients you used last
 - [ ] Both show at the top of the Cook ingredient search before you type, and as filters in both ingredient lists
 
-**13. Cheat days and eating out** (to do)
+**13. Days that don't count, and eating out** (to do)
 
-- [ ] **Cheat day**: mark a day as a cheat day
+- [ ] **Doesn't count** 🙈: mark a day of yours as not counting
 - [ ] **Eaten out**: mark a meal as eaten out (empty, or with the food you do know, e.g. a drink); its day then counts as unknown and shows e.g. "≥ 900 kcal · eaten out" instead of an exact total
-- [ ] Both: a badge on the day in History and on Today, the day is left out of the Trends averages, and the rings don't show the over-goal look that day
+- [ ] Both: a badge on the day in History and on Today, the day is left out of the Trends averages, the rings don't show the over colors that day (point 29) and the weekly review skips it
 - [ ] Both can be set, changed and removed on any day, also past ones, by either of you (like meals)
 
 **14. Recipes** (to do)
@@ -231,7 +238,7 @@ Noted 2026-10-15.
 
 **15. Export** (to do)
 
-- [ ] Settings › Export: pick a date range and get CSV files of both of you: every logged food (person, date, meal, food, amount, nutrients) and the daily totals with weight, cheat days and eating out
+- [ ] Settings › Export: pick a date range and get CSV files of both of you: every logged food (person, date, meal, food, amount, nutrients) and the daily totals with weight (the "doesn't count" and "eaten out" columns come with point 13)
 
 Noted 2026-10-15 after testing points 1–8 on the iPhone (these come before point 9).
 
