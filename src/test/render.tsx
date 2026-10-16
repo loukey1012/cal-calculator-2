@@ -7,20 +7,28 @@ export type RenderWithProvidersResult = RenderResult & { readonly queryClient: Q
 
 type RenderOptions = {
   readonly route?: string
+  /** navigation state of that first entry, e.g. what Open day passes to History */
+  readonly state?: unknown
   /** the app keeps data fresh for a while; tests default to always-stale */
   readonly staleTime?: number
 }
 
+/** A router entry for a route like "/cook?person=u2", with optional navigation state. */
+function entryOf(route: string, state: unknown) {
+  const [pathname = '/', query] = route.split('?')
+  return { pathname, search: query ? `?${query}` : '', state }
+}
+
 export function renderWithProviders(
   ui: ReactElement,
-  { route = '/', staleTime = 0 }: RenderOptions = {},
+  { route = '/', state, staleTime = 0 }: RenderOptions = {},
 ): RenderWithProvidersResult {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime }, mutations: { retry: false } },
   })
   const result = render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>
+      <MemoryRouter initialEntries={[entryOf(route, state)]}>{ui}</MemoryRouter>
     </QueryClientProvider>,
   )
   return { ...result, queryClient }

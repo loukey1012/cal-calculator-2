@@ -1,17 +1,8 @@
 import { Button } from '../../components/ios/Button'
 import type { Ingredient } from '../ingredients/ingredientsApi'
-import type { Finding, FindingKind } from './reviewApi'
+import { FINDING_KIND_LABELS } from './kinds'
+import type { Finding } from './reviewApi'
 import { describeChanges, suggestionPatch, type IngredientPatch } from './suggestion'
-
-const KIND_LABELS: Record<FindingKind, string> = {
-  typo: 'Typo',
-  brand: 'Brand',
-  unit_name: 'Unit name',
-  unit_weight: 'Unit weight',
-  duplicate: 'Duplicate',
-  values: 'Values',
-  other: 'Other',
-}
 
 type FindingCardProps = {
   readonly finding: Finding
@@ -23,7 +14,7 @@ type FindingCardProps = {
   readonly onOpen: () => void
 }
 
-/** One finding: its ingredient, why it was flagged, the suggested change, and the decision. */
+/** An ingredient finding: the ingredient, why it was flagged, the suggested change, the decision. */
 export function FindingCard({
   finding,
   ingredient,
@@ -48,7 +39,7 @@ export function FindingCard({
           {name}
         </button>
         <span className="shrink-0 rounded-full bg-fill px-2.5 py-0.5 text-[13px] font-semibold text-label-secondary">
-          {KIND_LABELS[finding.kind]}
+          {FINDING_KIND_LABELS[finding.kind]}
         </span>
       </div>
       <p className="mt-1 text-[15px] text-label">{finding.message}</p>

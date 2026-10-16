@@ -83,7 +83,7 @@ describe('keysForHint', () => {
   )
 
   test('a finding from the review routine, or one decided on the other phone, refreshes the review', () => {
-    const hint = parseHint({ table: 'ingredient_findings', actor: null })
+    const hint = parseHint({ table: 'review_findings', actor: null })
 
     expect(hint).not.toBeNull()
     expect(keysForHint(hint!, HOUSEHOLD)).toEqual([['ingredientFindings', HOUSEHOLD]])

@@ -375,70 +375,6 @@ export type Database = {
         }
         Relationships: []
       }
-      ingredient_findings: {
-        Row: {
-          created_at: string
-          decided_at: string | null
-          decided_by: string | null
-          household_id: string
-          id: string
-          ingredient_id: string
-          kind: Database["public"]["Enums"]["finding_kind"]
-          message: string
-          run_id: string
-          status: Database["public"]["Enums"]["finding_status"]
-          suggestion: Json
-        }
-        Insert: {
-          created_at?: string
-          decided_at?: string | null
-          decided_by?: string | null
-          household_id: string
-          id?: string
-          ingredient_id: string
-          kind: Database["public"]["Enums"]["finding_kind"]
-          message: string
-          run_id: string
-          status?: Database["public"]["Enums"]["finding_status"]
-          suggestion?: Json
-        }
-        Update: {
-          created_at?: string
-          decided_at?: string | null
-          decided_by?: string | null
-          household_id?: string
-          id?: string
-          ingredient_id?: string
-          kind?: Database["public"]["Enums"]["finding_kind"]
-          message?: string
-          run_id?: string
-          status?: Database["public"]["Enums"]["finding_status"]
-          suggestion?: Json
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ingredient_findings_decided_by_fkey"
-            columns: ["decided_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ingredient_findings_household_id_fkey"
-            columns: ["household_id"]
-            isOneToOne: false
-            referencedRelation: "households"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ingredient_findings_ingredient_id_fkey"
-            columns: ["ingredient_id"]
-            isOneToOne: false
-            referencedRelation: "ingredients"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       ingredients: {
         Row: {
           barcode: string | null
@@ -744,6 +680,96 @@ export type Database = {
           },
         ]
       }
+      review_findings: {
+        Row: {
+          created_at: string
+          date: string | null
+          decided_at: string | null
+          decided_by: string | null
+          household_id: string
+          id: string
+          ingredient_id: string | null
+          kind: Database["public"]["Enums"]["finding_kind"]
+          meal_item_id: string | null
+          meal_type: Database["public"]["Enums"]["meal_type"] | null
+          message: string
+          run_id: string
+          status: Database["public"]["Enums"]["finding_status"]
+          suggestion: Json
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          date?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          household_id: string
+          id?: string
+          ingredient_id?: string | null
+          kind: Database["public"]["Enums"]["finding_kind"]
+          meal_item_id?: string | null
+          meal_type?: Database["public"]["Enums"]["meal_type"] | null
+          message: string
+          run_id: string
+          status?: Database["public"]["Enums"]["finding_status"]
+          suggestion?: Json
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          date?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          household_id?: string
+          id?: string
+          ingredient_id?: string | null
+          kind?: Database["public"]["Enums"]["finding_kind"]
+          meal_item_id?: string | null
+          meal_type?: Database["public"]["Enums"]["meal_type"] | null
+          message?: string
+          run_id?: string
+          status?: Database["public"]["Enums"]["finding_status"]
+          suggestion?: Json
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingredient_findings_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ingredient_findings_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ingredient_findings_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_findings_meal_item_id_fkey"
+            columns: ["meal_item_id"]
+            isOneToOne: false
+            referencedRelation: "meal_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_findings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       review_keys: {
         Row: {
           created_at: string
@@ -923,6 +949,10 @@ export type Database = {
       }
       keep_alive: { Args: never; Returns: boolean }
       review_ingredients: { Args: { p_key: string }; Returns: Json }
+      review_meals: {
+        Args: { p_from: string; p_key: string; p_to: string }
+        Returns: Json
+      }
       save_dish: {
         Args: {
           p_base_revision?: string
@@ -931,7 +961,7 @@ export type Database = {
         }
         Returns: undefined
       }
-      submit_ingredient_findings: {
+      submit_review_findings: {
         Args: { p_findings: Json; p_key: string; p_run_id: string }
         Returns: number
       }
@@ -948,6 +978,11 @@ export type Database = {
         | "duplicate"
         | "values"
         | "other"
+        | "missing_meal"
+        | "low_day"
+        | "odd_amount"
+        | "double_entry"
+        | "zero_kcal"
       finding_status: "open" | "applied" | "ignored"
       ingredient_measure: "g" | "ml"
       meal_type: "breakfast" | "lunch" | "dinner" | "snack"
@@ -1090,6 +1125,11 @@ export const Constants = {
         "duplicate",
         "values",
         "other",
+        "missing_meal",
+        "low_day",
+        "odd_amount",
+        "double_entry",
+        "zero_kcal",
       ],
       finding_status: ["open", "applied", "ignored"],
       ingredient_measure: ["g", "ml"],

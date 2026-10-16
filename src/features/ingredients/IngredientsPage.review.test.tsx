@@ -18,10 +18,15 @@ vi.mock('../review/reviewApi', () => ({
   patchIngredient: vi.fn(),
 }))
 vi.mock('./applyToRecentMeals', () => ({ applyToRecentMeals: vi.fn() }))
-vi.mock('../household/householdApi', () => ({ updateProfile: vi.fn() }))
+vi.mock('../household/householdApi', () => ({
+  updateProfile: vi.fn(),
+  fetchMembers: vi.fn(),
+}))
 
 import { decideFinding, fetchOpenFindings, patchIngredient } from '../review/reviewApi'
 import { applyToRecentMeals } from './applyToRecentMeals'
+import { fetchMembers } from '../household/householdApi'
+import { useLocation } from 'react-router'
 import { fetchIngredients } from './ingredientsApi'
 import { IngredientsPage } from './IngredientsPage'
 
@@ -58,10 +63,41 @@ const DUPLICATE = finding({
   suggestion: {},
 })
 
+const PARTNER = { ...PROFILE, id: 'u2', display_name: 'Anna' }
+const NO_LUNCH = finding({
+  id: 'm1',
+  ingredient_id: null,
+  user_id: 'u2',
+  date: '2026-10-10',
+  meal_type: 'lunch',
+  kind: 'missing_meal',
+  message: 'Breakfast and dinner are logged, but no lunch.',
+  suggestion: {},
+})
+const LOW_DAY = finding({
+  id: 'm2',
+  ingredient_id: null,
+  user_id: 'u1',
+  date: '2026-10-09',
+  kind: 'low_day',
+  message: '640 kcal against a goal of 2000.',
+  suggestion: {},
+})
+
+function LocationProbe() {
+  const location = useLocation()
+  return (
+    <output data-testid="location">
+      {location.pathname} {JSON.stringify(location.state)}
+    </output>
+  )
+}
+
 function renderPage() {
   return renderWithProviders(
     <CurrentUserContext value={{ profile: PROFILE, householdId: 'h1' }}>
       <IngredientsPage />
+      <LocationProbe />
     </CurrentUserContext>,
   )
 }
@@ -82,6 +118,7 @@ beforeEach(() => {
   vi.mocked(fetchOpenFindings).mockResolvedValue([TYPO, UNIT])
   vi.mocked(decideFinding).mockResolvedValue()
   vi.mocked(applyToRecentMeals).mockResolvedValue([])
+  vi.mocked(fetchMembers).mockResolvedValue([PROFILE, PARTNER])
 })
 
 describe('Ingredients › Review', () => {
@@ -170,5 +207,65 @@ describe('Ingredients › Review', () => {
     expect(await within(sheet).findByRole('alert')).toBeInTheDocument()
     expect(card(sheet, 'Buter')).toBeInTheDocument()
     expect(decideFinding).not.toHaveBeenCalled()
+  })
+
+  describe('meal findings', () => {
+    beforeEach(() => vi.mocked(fetchOpenFindings).mockResolvedValue([TYPO, NO_LUNCH, LOW_DAY]))
+
+    test('are listed under Meals with the person, the day and the meal', async () => {
+      const { sheet } = await openReview(3)
+
+      expect(within(sheet).getByRole('heading', { name: 'Ingredients' })).toBeInTheDocument()
+      expect(within(sheet).getByRole('heading', { name: 'Meals' })).toBeInTheDocument()
+      // the partner by their nickname (default "baby"), yourself by your name
+      const noLunch = within(sheet).getByRole('article', { name: /^baby/ })
+      expect(noLunch).toHaveTextContent('Missing meal')
+      expect(noLunch).toHaveTextContent('Lunch')
+      expect(noLunch).toHaveTextContent('Breakfast and dinner are logged, but no lunch.')
+      expect(within(sheet).getByRole('article', { name: /^Lukas/ })).toHaveTextContent('Low day')
+    })
+
+    test('Open day opens that person’s day in History', async () => {
+      const { user, sheet } = await openReview(3)
+
+      await user.click(
+        within(within(sheet).getByRole('article', { name: /^baby/ })).getByRole('button', {
+          name: 'Open day',
+        }),
+      )
+
+      expect(screen.getByTestId('location')).toHaveTextContent(
+        '/history/2026-10-10 {"person":"u2"}',
+      )
+      expect(screen.queryByRole('dialog', { name: 'Review' })).not.toBeInTheDocument()
+    })
+
+    test('Done and Ignore decide a meal finding; meals are never changed', async () => {
+      const { user, sheet } = await openReview(3)
+      vi.mocked(fetchOpenFindings).mockResolvedValue([TYPO, LOW_DAY])
+
+      await user.click(
+        within(within(sheet).getByRole('article', { name: /^baby/ })).getByRole('button', {
+          name: 'Done',
+        }),
+      )
+      vi.mocked(fetchOpenFindings).mockResolvedValue([TYPO])
+      await user.click(
+        within(within(sheet).getByRole('article', { name: /^Lukas/ })).getByRole('button', {
+          name: 'Ignore',
+        }),
+      )
+
+      await waitFor(() => expect(decideFinding).toHaveBeenCalledWith('m1', 'applied', 'u1'))
+      await waitFor(() => expect(decideFinding).toHaveBeenCalledWith('m2', 'ignored', 'u1'))
+      expect(patchIngredient).not.toHaveBeenCalled()
+    })
+
+    test('with only one kind of finding there are no section titles', async () => {
+      vi.mocked(fetchOpenFindings).mockResolvedValue([NO_LUNCH])
+      const { sheet } = await openReview(1)
+
+      expect(within(sheet).queryByRole('heading', { name: 'Meals' })).not.toBeInTheDocument()
+    })
   })
 })

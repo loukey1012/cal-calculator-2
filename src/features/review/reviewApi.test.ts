@@ -21,7 +21,7 @@ describe('reviewApi', () => {
     supabaseMock.from.mockReturnValueOnce(query)
 
     await expect(fetchOpenFindings('h1')).resolves.toEqual([TYPO])
-    expect(supabaseMock.from).toHaveBeenCalledWith('ingredient_findings')
+    expect(supabaseMock.from).toHaveBeenCalledWith('review_findings')
     expect(query.eq).toHaveBeenCalledWith('household_id', 'h1')
     expect(query.eq).toHaveBeenCalledWith('status', 'open')
     expect(query.order).toHaveBeenCalledWith('created_at')

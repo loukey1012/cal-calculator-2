@@ -1,6 +1,6 @@
-import { activePage, expect, logIn, test } from './backend.ts'
+import { activePage, expect, localDay, logIn, test } from './backend.ts'
 
-test('a finding from the ingredient review is applied, another one ignored', async ({
+test('the weekly review: an ingredient fix applied, one ignored, a meal finding opens its day', async ({
   page,
   backend,
 }) => {
@@ -21,7 +21,7 @@ test('a finding from the ingredient review is applied, another one ignored', asy
     .select('id, name')
   const idOf = (name: string) => ingredients?.find((row) => row.name === name)?.id
   // what the review routine would have sent
-  await backend.admin.from('ingredient_findings').insert([
+  const seeded = await backend.admin.from('review_findings').insert([
     {
       household_id: household,
       ingredient_id: idOf('Buter'),
@@ -39,6 +39,17 @@ test('a finding from the ingredient review is applied, another one ignored', asy
       run_id: 'journey',
     },
   ])
+  // a day finding (in its own insert: a batch would send its missing suggestion as null)
+  const seededDay = await backend.admin.from('review_findings').insert({
+    household_id: household,
+    user_id: me.id,
+    date: localDay(3),
+    meal_type: 'lunch',
+    kind: 'missing_meal',
+    message: 'Breakfast and dinner are logged, but no lunch.',
+    run_id: 'journey',
+  })
+  expect(seeded.error ?? seededDay.error).toBeNull()
   await logIn(page, me)
   await page
     .getByRole('navigation', { name: 'Tabs' })
@@ -46,7 +57,7 @@ test('a finding from the ingredient review is applied, another one ignored', asy
     .click()
   const list = activePage(page)
 
-  await list.getByRole('button', { name: 'Review: 2' }).click()
+  await list.getByRole('button', { name: 'Review: 3' }).click()
   const review = page.getByRole('dialog', { name: 'Review' })
   const typo = review.getByRole('article', { name: /Buter/ })
   await expect(typo).toContainText('Buter → Butter')
@@ -55,15 +66,30 @@ test('a finding from the ingredient review is applied, another one ignored', asy
     .getByRole('article', { name: /Milk/ })
     .getByRole('button', { name: 'Ignore' })
     .click()
-  await expect(review).toContainText('Nothing left to review.')
+  await expect(review.getByRole('article', { name: /^Rita/ })).toContainText('Missing meal')
 
-  await page.keyboard.press('Escape')
+  // the meal finding opens that day in History
+  await review
+    .getByRole('article', { name: /^Rita/ })
+    .getByRole('button', { name: 'Open day' })
+    .click()
+  await expect(review).toBeHidden()
+  await expect(page).toHaveURL(new RegExp(`/history/${localDay(3)}$`))
+  await expect(activePage(page).getByRole('heading', { level: 1, name: 'History' })).toBeVisible()
+  await page
+    .getByRole('navigation', { name: 'Tabs' })
+    .getByRole('button', { name: 'Ingredients' })
+    .click()
   await expect(list.getByRole('button', { name: /^Butter/ })).toBeVisible()
+  await list.getByRole('button', { name: 'Review: 1' }).click()
+  await review.getByRole('article', { name: /^Rita/ }).getByRole('button', { name: 'Done' }).click()
+  await expect(review).toContainText('Nothing left to review.')
+  await page.keyboard.press('Escape')
   await expect(list.getByRole('button', { name: /^Review/ })).toHaveCount(0)
   await expect
     .poll(async () => {
       const { data } = await backend.admin
-        .from('ingredient_findings')
+        .from('review_findings')
         .select('kind, status, decided_by')
         .eq('household_id', household)
         .order('kind')
@@ -72,5 +98,6 @@ test('a finding from the ingredient review is applied, another one ignored', asy
     .toEqual([
       { kind: 'typo', status: 'applied', decided_by: me.id },
       { kind: 'unit_weight', status: 'ignored', decided_by: me.id },
+      { kind: 'missing_meal', status: 'applied', decided_by: me.id },
     ])
 })

@@ -26,7 +26,7 @@ const hintSchema = z.discriminatedUnion('table', [
       'categories',
       'category_groups',
       'households',
-      'ingredient_findings',
+      'review_findings',
     ]),
     actor,
   }),
@@ -59,7 +59,7 @@ export function keysForHint(hint: LiveHint, householdId: string): readonly Query
         ingredientKeys.categories(householdId),
         ingredientKeys.categoryGroups(householdId),
       ]
-    case 'ingredient_findings':
+    case 'review_findings':
       return [reviewKeys.findings(householdId)]
     case 'goal_history':
       return [goalKeys.goals(hint.user_id)]

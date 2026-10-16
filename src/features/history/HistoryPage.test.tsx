@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useLocation } from 'react-router'
+import { useLocation, useNavigate } from 'react-router'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { CurrentUserContext } from '../../app/currentUser'
 import { renderWithProviders } from '../../test/render'
@@ -61,11 +61,25 @@ function LocationProbe() {
   return <output data-testid="path">{useLocation().pathname}</output>
 }
 
+/** Like the review's Open day: elsewhere in the app, while History stays mounted. */
+function OpenPartnersDay() {
+  const navigate = useNavigate()
+  return (
+    <button
+      type="button"
+      onClick={() => navigate('/history/2026-09-10', { state: { person: 'u2' } })}
+    >
+      Open partner’s day
+    </button>
+  )
+}
+
 function renderPage(route = '/history') {
   return renderWithProviders(
     <CurrentUserContext value={{ profile: PROFILE, householdId: 'h1' }}>
       <HistoryPage />
       <LocationProbe />
+      <OpenPartnersDay />
     </CurrentUserContext>,
     { route },
   )
@@ -196,6 +210,40 @@ describe('HistoryPage', () => {
 
     await waitFor(() =>
       expect(fetchDailyTotals).toHaveBeenCalledWith('u2', '2026-10-01', '2026-10-31'),
+    )
+  })
+
+  test('opened for someone’s day from elsewhere, shows that person, month and day', async () => {
+    vi.mocked(fetchMembers).mockResolvedValue([PROFILE, PARTNER])
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByRole('radio', { name: 'baby' })
+
+    await user.click(screen.getByRole('button', { name: 'Open partner’s day' }))
+
+    expect(screen.getByRole('radio', { name: 'baby' })).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByRole('heading', { level: 2, name: 'September 2026' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: /September 10/ })).toBeInTheDocument()
+    await waitFor(() =>
+      expect(fetchDailyTotals).toHaveBeenCalledWith('u2', '2026-09-01', '2026-09-30'),
+    )
+  })
+
+  test('opened fresh for someone’s day also shows that person', async () => {
+    vi.mocked(fetchMembers).mockResolvedValue([PROFILE, PARTNER])
+    renderWithProviders(
+      <CurrentUserContext value={{ profile: PROFILE, householdId: 'h1' }}>
+        <HistoryPage />
+      </CurrentUserContext>,
+      { route: '/history/2026-09-10', state: { person: 'u2' } },
+    )
+
+    expect(await screen.findByRole('radio', { name: 'baby' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    )
+    await waitFor(() =>
+      expect(fetchDailyTotals).toHaveBeenCalledWith('u2', '2026-09-01', '2026-09-30'),
     )
   })
 })

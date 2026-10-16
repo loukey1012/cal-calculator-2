@@ -14,5 +14,5 @@ date and hour (local time) and what changed in plain, neutral words. The list li
 `src/features/patchNotes/patchNotes.ts` once item 21 is built.
 
 **Next up (as of 2026-10-16):** items 9–15 (9 = reading nutrition labels on the device). Items
-20–26 are shipped; item 20's weekly routine runs on claude.ai (see the plan). Build 2–3 items,
-push, then stop with a short summary for the user to test.
+16–28 are shipped; the weekly review routine (items 20, 28) runs on claude.ai (see the plan). Build
+2–3 items, push, then stop with a short summary for the user to test.

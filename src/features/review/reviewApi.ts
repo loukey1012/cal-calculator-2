@@ -4,14 +4,17 @@ import { supabase } from '../../lib/supabase'
 import type { Ingredient } from '../ingredients/ingredientsApi'
 import type { IngredientPatch } from './suggestion'
 
-/** Something the ingredient review routine found (see the ingredient_review migration). */
-export type Finding = Tables<'ingredient_findings'>
+/**
+ * Something the weekly review routine found, about an ingredient or about a person's day (see
+ * the ingredient_review and review_meals migrations).
+ */
+export type Finding = Tables<'review_findings'>
 export type FindingKind = Enums<'finding_kind'>
 export type FindingDecision = Exclude<Enums<'finding_status'>, 'open'>
 
 export async function fetchOpenFindings(householdId: string): Promise<Finding[]> {
   const { data, error } = await supabase
-    .from('ingredient_findings')
+    .from('review_findings')
     .select('*')
     .eq('household_id', householdId)
     .eq('status', 'open')
@@ -27,7 +30,7 @@ export async function decideFinding(
   userId: string,
 ): Promise<void> {
   const { error } = await supabase
-    .from('ingredient_findings')
+    .from('review_findings')
     .update({ status, decided_by: userId, decided_at: new Date().toISOString() })
     .eq('id', id)
   if (error) throw ApiError.from(error)

@@ -10,13 +10,15 @@ let carol: TestUser
 let householdId: string
 let butterId: string
 let cheeseId: string
+let butterItemId: string
+let carolItemId: string
 const reviewKey = randomBytes(32).toString('base64url')
 const routine = anonClient()
 
 const hashOf = (key: string) => `\\x${createHash('sha256').update(key).digest('hex')}`
 
 async function submit(findings: unknown[], runId = 'run-1') {
-  return routine.rpc('submit_ingredient_findings', {
+  return routine.rpc('submit_review_findings', {
     p_key: reviewKey,
     p_run_id: runId,
     p_findings: findings,
@@ -51,6 +53,59 @@ beforeAll(async () => {
     .single()
   if (cheese.error) throw new Error(cheese.error.message)
   cheeseId = cheese.data.id
+
+  // Alice: breakfast and dinner on the 10th (no lunch), a meal outside the range; Carol: a day
+  const breakfast = await alice.client.rpc('ensure_meal', {
+    p_user_id: alice.id,
+    p_date: '2026-10-10',
+    p_meal_type: 'breakfast',
+  })
+  const dinner = await alice.client.rpc('ensure_meal', {
+    p_user_id: alice.id,
+    p_date: '2026-10-10',
+    p_meal_type: 'dinner',
+  })
+  const early = await alice.client.rpc('ensure_meal', {
+    p_user_id: alice.id,
+    p_date: '2026-09-20',
+    p_meal_type: 'lunch',
+  })
+  const carols = await carol.client.rpc('ensure_meal', {
+    p_user_id: carol.id,
+    p_date: '2026-10-10',
+    p_meal_type: 'lunch',
+  })
+  const item = (meal_id: string, name: string, multiplier: number, kcal: number) => ({
+    meal_id,
+    name,
+    entered_amount: multiplier * 100,
+    entered_unit: 'g',
+    basis: 'per_100g',
+    basis_multiplier: multiplier,
+    kcal,
+    protein: 10,
+  })
+  const items = await alice.client
+    .from('meal_items')
+    .insert([
+      item(breakfast.data, 'Butter', 20, 740),
+      item(dinner.data, 'Pasta', 1.5, 350),
+      item(early.data, 'Soup', 3, 40),
+    ])
+    .select('id, name')
+  if (items.error) throw new Error(items.error.message)
+  butterItemId = items.data.find(({ name }) => name === 'Butter')?.id ?? ''
+  const carolsItem = await carol.client
+    .from('meal_items')
+    .insert(item(carols.data, 'Cake', 1, 400))
+    .select('id')
+    .single()
+  if (carolsItem.error) throw new Error(carolsItem.error.message)
+  carolItemId = carolsItem.data.id
+  const goal = await alice.client
+    .from('goal_history')
+    .insert({ user_id: alice.id, valid_from: '2026-10-01', kcal: 2000 })
+  if (goal.error) throw new Error(goal.error.message)
 
   const key = await admin
     .from('review_keys')
@@ -102,7 +157,7 @@ describe('the review routine', () => {
 
     expect(error).toBeNull()
     expect(added).toBe(1)
-    const seen = await bob.client.from('ingredient_findings').select('*')
+    const seen = await bob.client.from('review_findings').select('*')
     expect(seen.data).toHaveLength(1)
     expect(seen.data?.[0]).toMatchObject({
       ingredient_id: butterId,
@@ -111,7 +166,7 @@ describe('the review routine', () => {
       run_id: 'run-1',
       suggestion: { name: 'Butter' },
     })
-    const other = await carol.client.from('ingredient_findings').select('*')
+    const other = await carol.client.from('review_findings').select('*')
     expect(other.data).toEqual([])
   })
 
@@ -140,7 +195,7 @@ describe('the review routine', () => {
   })
 
   test('a wrong key or too many findings at once writes nothing', async () => {
-    const wrongKey = await routine.rpc('submit_ingredient_findings', {
+    const wrongKey = await routine.rpc('submit_review_findings', {
       p_key: 'not-the-key',
       p_run_id: 'run-3',
       p_findings: [{ ingredient_id: butterId, kind: 'other', message: 'x', suggestion: {} }],
@@ -158,18 +213,184 @@ describe('the review routine', () => {
     expect(wrongKey.error?.code).toBe('28000')
     expect(tooMany.error).not.toBeNull()
     const { count } = await alice.client
-      .from('ingredient_findings')
+      .from('review_findings')
       .select('*', { count: 'exact', head: true })
     expect(count).toBe(1)
   })
 })
 
+describe('the review routine and meals', () => {
+  const RANGE = { p_from: '2026-10-04', p_to: '2026-10-10' }
+
+  test('reads both members, their goals and their meals of the given days, with totals', async () => {
+    const { data, error } = await routine.rpc('review_meals', { p_key: reviewKey, ...RANGE })
+
+    expect(error).toBeNull()
+    expect(data.members).toEqual(
+      expect.arrayContaining([
+        { id: alice.id, name: 'alice-review' },
+        { id: bob.id, name: 'bob-review' },
+      ]),
+    )
+    expect(data.members).toHaveLength(2)
+    expect(data.goals).toEqual([
+      expect.objectContaining({ user_id: alice.id, valid_from: '2026-10-01', kcal: 2000 }),
+    ])
+    const meals = data.meals as Array<{
+      user_id: string
+      date: string
+      meal_type: string
+      items: Array<{ id: string; name: string; amount: number; unit: string; kcal: number }>
+    }>
+    // the September lunch and Carol's lunch are left out
+    expect(meals.map(({ date, meal_type }) => `${date} ${meal_type}`).sort()).toEqual([
+      '2026-10-10 breakfast',
+      '2026-10-10 dinner',
+    ])
+    const butter = meals.find(({ meal_type }) => meal_type === 'breakfast')?.items[0]
+    expect(butter).toMatchObject({ id: butterItemId, name: 'Butter', amount: 2000, unit: 'g' })
+    // 20 × 740 kcal per 100 g
+    expect(butter?.kcal).toBe(14800)
+    expect(data.days).toEqual([
+      expect.objectContaining({ user_id: alice.id, date: '2026-10-10', kcal: 15325 }),
+    ])
+  })
+
+  test('a range of more than 31 days or a wrong key reads nothing', async () => {
+    const tooLong = await routine.rpc('review_meals', {
+      p_key: reviewKey,
+      p_from: '2026-08-01',
+      p_to: '2026-10-10',
+    })
+    const wrongKey = await routine.rpc('review_meals', { p_key: 'nope', ...RANGE })
+
+    expect(tooLong.error?.code).toBe('22023')
+    expect(wrongKey.error?.code).toBe('28000')
+  })
+
+  test('writes a finding about a member’s day, once, and never about another household', async () => {
+    const day = {
+      user_id: alice.id,
+      date: '2026-10-10',
+      meal_type: 'lunch',
+      kind: 'missing_meal',
+      message: 'Breakfast and dinner are logged, but no lunch.',
+    }
+    const odd = {
+      user_id: alice.id,
+      date: '2026-10-10',
+      meal_type: 'breakfast',
+      meal_item_id: butterItemId,
+      kind: 'odd_amount',
+      message: '2000 g of butter is a lot for one breakfast.',
+    }
+
+    const { data: added, error } = await submit(
+      [
+        day,
+        odd,
+        { ...day, user_id: carol.id, message: 'Not ours.' },
+        { ...odd, meal_item_id: carolItemId, message: 'Not her item.' },
+      ],
+      'run-meals',
+    )
+    const again = await submit([day], 'run-meals-2')
+
+    expect(error).toBeNull()
+    expect(added).toBe(2)
+    expect(again.data).toBe(0)
+    const seen = await bob.client
+      .from('review_findings')
+      .select('kind, user_id, date, meal_type, meal_item_id, ingredient_id')
+      .not('user_id', 'is', null)
+      .order('kind')
+    expect(seen.data).toEqual([
+      {
+        kind: 'missing_meal',
+        user_id: alice.id,
+        date: '2026-10-10',
+        meal_type: 'lunch',
+        meal_item_id: null,
+        ingredient_id: null,
+      },
+      {
+        kind: 'odd_amount',
+        user_id: alice.id,
+        date: '2026-10-10',
+        meal_type: 'breakfast',
+        meal_item_id: butterItemId,
+        ingredient_id: null,
+      },
+    ])
+  })
+
+  test('reads its earlier meal findings with the meals, and only ingredient ones with the ingredients', async () => {
+    const meals = await routine.rpc('review_meals', { p_key: reviewKey, ...RANGE })
+    const ingredients = await routine.rpc('review_ingredients', { p_key: reviewKey })
+
+    expect((meals.data.findings as Array<{ kind: string }>).map(({ kind }) => kind).sort()).toEqual(
+      ['missing_meal', 'odd_amount'],
+    )
+    expect(
+      (ingredients.data.findings as Array<{ kind: string }>).every(({ kind }) => kind === 'typo'),
+    ).toBe(true)
+  })
+
+  test('deleting the item a finding points at removes that finding, not the meal', async () => {
+    const extra = await alice.client
+      .from('meal_items')
+      .insert({
+        meal_id: (
+          await alice.client.rpc('ensure_meal', {
+            p_user_id: alice.id,
+            p_date: '2026-10-09',
+            p_meal_type: 'snack',
+          })
+        ).data,
+        name: 'Chips',
+        entered_amount: 1,
+        entered_unit: 'g',
+        basis: 'per_100g',
+        basis_multiplier: 0.01,
+        kcal: 0,
+      })
+      .select('id')
+      .single()
+    await submit(
+      [
+        {
+          user_id: alice.id,
+          date: '2026-10-09',
+          meal_type: 'snack',
+          meal_item_id: extra.data?.id,
+          kind: 'zero_kcal',
+          message: 'Chips with 0 kcal.',
+        },
+      ],
+      'run-delete',
+    )
+
+    const removed = await alice.client.from('meal_items').delete().eq('id', extra.data?.id)
+    const { count } = await alice.client
+      .from('review_findings')
+      .select('*', { count: 'exact', head: true })
+      .eq('kind', 'zero_kcal')
+
+    expect(removed.error).toBeNull()
+    expect(count).toBe(0)
+  })
+})
+
 describe('members and findings', () => {
   test('either member decides a finding: applied or ignored, and when', async () => {
-    const { data: finding } = await alice.client.from('ingredient_findings').select('id').single()
+    const { data: finding } = await alice.client
+      .from('review_findings')
+      .select('id')
+      .not('ingredient_id', 'is', null)
+      .single()
 
     const { data, error } = await bob.client
-      .from('ingredient_findings')
+      .from('review_findings')
       .update({ status: 'ignored', decided_by: bob.id, decided_at: new Date().toISOString() })
       .eq('id', finding?.id)
       .select('status, decided_by')
@@ -180,9 +401,13 @@ describe('members and findings', () => {
   })
 
   test('members can’t write findings themselves or change what one says', async () => {
-    const { data: finding } = await alice.client.from('ingredient_findings').select('id').single()
+    const { data: finding } = await alice.client
+      .from('review_findings')
+      .select('id')
+      .not('ingredient_id', 'is', null)
+      .single()
 
-    const inserted = await alice.client.from('ingredient_findings').insert({
+    const inserted = await alice.client.from('review_findings').insert({
       household_id: householdId,
       ingredient_id: butterId,
       kind: 'other',
@@ -190,11 +415,11 @@ describe('members and findings', () => {
       run_id: 'mine',
     })
     const reworded = await alice.client
-      .from('ingredient_findings')
+      .from('review_findings')
       .update({ message: 'Something else' })
       .eq('id', finding?.id)
     const deleted = await alice.client
-      .from('ingredient_findings')
+      .from('review_findings')
       .delete()
       .eq('id', finding?.id)
       .select('id')
@@ -205,10 +430,14 @@ describe('members and findings', () => {
   })
 
   test('another household can’t decide our findings', async () => {
-    const { data: finding } = await alice.client.from('ingredient_findings').select('id').single()
+    const { data: finding } = await alice.client
+      .from('review_findings')
+      .select('id')
+      .not('ingredient_id', 'is', null)
+      .single()
 
     const { data } = await carol.client
-      .from('ingredient_findings')
+      .from('review_findings')
       .update({ status: 'applied' })
       .eq('id', finding?.id)
       .select('id')

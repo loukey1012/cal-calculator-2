@@ -76,7 +76,9 @@ export function useApplyFinding(
   return useMutation({
     mutationFn: async ({ finding, patch }) => {
       const changed =
-        Object.keys(patch).length > 0 ? await patchIngredient(finding.ingredient_id, patch) : null
+        finding.ingredient_id && Object.keys(patch).length > 0
+          ? await patchIngredient(finding.ingredient_id, patch)
+          : null
       await decideFinding(finding.id, 'applied', userId)
       return changed
     },

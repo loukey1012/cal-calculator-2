@@ -30,6 +30,15 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-16T12:17',
+    kind: 'new',
+    title: 'The weekly review checks meals too',
+    items: [
+      'For both of you, the past week: a meal missing between others or a day with nothing logged, days far below the calorie goal, and odd entries such as implausible amounts, the same food twice in one meal or 0 kcal items',
+      'Meal findings show under Review with the person, day and meal; Open day opens it in History, then Done or Ignore. Meals are never changed automatically',
+    ],
+  },
+  {
     at: '2026-10-16T11:55',
     kind: 'fix',
     title: 'Review moved to the Ingredients header; the Check values label and filter are gone',

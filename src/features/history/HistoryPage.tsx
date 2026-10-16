@@ -41,6 +41,12 @@ const VIEW_OPTIONS = [
   { value: 'trends', label: 'Trends' },
 ] as const satisfies ReadonlyArray<{ value: HistoryView; label: string }>
 
+/** The person a navigation asks History to show, e.g. `{ person: id }` from the review. */
+function openedFor(state: unknown): string | null {
+  if (typeof state !== 'object' || state === null || !('person' in state)) return null
+  return typeof state.person === 'string' ? state.person : null
+}
+
 /**
  * Month calendar (the selected day, kept in the URL, opens beneath it, fully editable) or the
  * trends of calories, nutrients and weight.
@@ -48,10 +54,11 @@ const VIEW_OPTIONS = [
 export function HistoryPage() {
   const { profile, householdId } = useCurrentUser()
   const today = useToday()
-  const { pathname } = useLocation()
+  const location = useLocation()
+  const { pathname } = location
   const navigate = useNavigate()
   const people = usePeople(profile, householdId)
-  const [selectedId, setSelectedId] = useState(profile.id)
+  const [selectedId, setSelectedId] = useState(() => openedFor(location.state) ?? profile.id)
   const [view, setView] = useState<HistoryView>('calendar')
   const person = people.find((member) => member.id === selectedId) ?? profile
 
@@ -62,6 +69,15 @@ export function HistoryPage() {
       ? requestedDay
       : null
   const [month, setMonth] = useState(() => monthStart(selectedDay ?? today))
+
+  // opened from elsewhere for someone's day (the review's Open day): that person and its month
+  const [seenNavigation, setSeenNavigation] = useState(location.key)
+  if (seenNavigation !== location.key) {
+    setSeenNavigation(location.key)
+    const person = openedFor(location.state)
+    if (person) setSelectedId(person)
+    if (selectedDay) setMonth(monthStart(selectedDay))
+  }
 
   // selecting replaces the entry: browsing days builds no back stack
   function toggleDay(day: string) {
