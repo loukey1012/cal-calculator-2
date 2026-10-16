@@ -4,6 +4,7 @@ import { ownLookSchema, partnerLooksSchema } from '../household/partnerLook'
 import { INGREDIENT_SORTS } from '../ingredients/sorting'
 import type { RingKey } from '../nutrition/goals'
 import { parseGlassField } from './glassField'
+import { DEFAULT_OVER_COLORS, overColorPair, parseOverColors, type OverColors } from './overColors'
 
 const THEMES = ['system', 'light', 'dark'] as const
 const LIGHT_STYLES = ['classic', 'pink'] as const
@@ -98,6 +99,11 @@ const appearanceSchema = z
       .transform((value) => (value === undefined ? undefined : parseGlassField(value)))
       .optional(),
     customGoalColors: customGoalColorsSchema.optional(),
+    // the colors of full and over rings (calories, carbs, fat); checked in overColors.ts
+    overColors: z
+      .unknown()
+      .transform((value) => (value === undefined ? undefined : parseOverColors(value)))
+      .optional(),
     // the nickname and symbol you gave each household member
     partnerLooks: partnerLooksSchema,
     ownLook: ownLookSchema,
@@ -192,6 +198,7 @@ export function appearanceVariables(
   scheme: Scheme,
   accent: string,
   customGoalColors: CustomGoalColors = {},
+  overColors: OverColors = DEFAULT_OVER_COLORS,
 ): Record<string, string> {
   const { bg, card } = SCHEME_SURFACES[scheme]
   // a custom ring color (e.g. White) must still show on the cards
@@ -211,5 +218,16 @@ export function appearanceVariables(
     '--goal-carbs': carbs,
     '--goal-fat': fat,
     '--goal-fiber': fiber,
+    ...overVariables(overColors, card),
+  }
+}
+
+/** Full and over ring colors; none when off, so rings keep their own color (index.css fallback). */
+function overVariables(overColors: OverColors, card: string): Record<string, string> {
+  const pair = overColorPair(overColors)
+  if (!pair) return {}
+  return {
+    '--goal-over-full': visibleOn(pair.full, card),
+    '--goal-over-well': visibleOn(pair.well, card),
   }
 }

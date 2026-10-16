@@ -47,6 +47,8 @@ vi.mock('../features/history/historyApi', () => ({
 vi.mock('../features/auth/authApi', () => ({ signOut: vi.fn() }))
 vi.mock('../features/live/liveChannel', () => ({ openLiveChannel: () => ({ close: () => {} }) }))
 
+import { newCookDraft, withDish } from '../features/cook/cookDraft'
+import { saveCookDraft } from '../features/cook/draftStorage'
 import { TabShell } from './TabShell'
 
 const PROFILE = {
@@ -82,6 +84,7 @@ beforeEach(() => {
 
 afterEach(() => {
   document.documentElement.style.removeProperty('--accent')
+  localStorage.clear()
 })
 
 describe('TabShell', () => {
@@ -95,6 +98,21 @@ describe('TabShell', () => {
 
     expect(visibleTitle()).toHaveTextContent(title)
     expect(tabs().getByRole('button', { name: title })).toHaveAttribute('aria-current', 'page')
+  })
+
+  test('a dish waiting on Cook puts a badge on the Cook tab, wherever you are', () => {
+    const draft = newCookDraft('u1')
+    saveCookDraft('u1', withDish(draft, { ...draft.dish, name: 'Pasta' }))
+
+    renderShell('/today')
+
+    expect(tabs().getByRole('button', { name: 'Cook, unsaved dish' })).toBeInTheDocument()
+  })
+
+  test('no badge while Cook is empty', () => {
+    renderShell('/today')
+
+    expect(tabs().getByRole('button', { name: 'Cook' })).toBeInTheDocument()
   })
 
   test.each(['/', '/unknown'])('%s redirects to Today', (route) => {

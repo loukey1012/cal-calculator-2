@@ -12,6 +12,8 @@ export type FakeQuery = {
   readonly is: Mock
   readonly in: Mock
   readonly gte: Mock
+  readonly lte: Mock
+  readonly range: Mock
   readonly order: Mock
   readonly single: Mock
   readonly maybeSingle: Mock
@@ -31,6 +33,8 @@ export function fakeQuery(result: QueryResult): FakeQuery {
     is: vi.fn(),
     in: vi.fn(),
     gte: vi.fn(),
+    lte: vi.fn(),
+    range: vi.fn(),
     order: vi.fn(),
     single: vi.fn(() => promise),
     maybeSingle: vi.fn(() => promise),
@@ -39,7 +43,9 @@ export function fakeQuery(result: QueryResult): FakeQuery {
   for (const method of [query.select, query.insert, query.upsert, query.update, query.delete]) {
     method.mockReturnValue(query)
   }
-  for (const filter of [query.eq, query.is, query.in, query.gte]) filter.mockReturnValue(query)
+  for (const filter of [query.eq, query.is, query.in, query.gte, query.lte, query.range]) {
+    filter.mockReturnValue(query)
+  }
   query.order.mockReturnValue(query)
   return query
 }

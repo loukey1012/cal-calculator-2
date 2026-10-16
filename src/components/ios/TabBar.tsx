@@ -1,6 +1,12 @@
 import type { ReactNode } from 'react'
 
-type TabBarItem = { readonly id: string; readonly label: string; readonly icon: ReactNode }
+type TabBarItem = {
+  readonly id: string
+  readonly label: string
+  readonly icon: ReactNode
+  /** a dot on the icon, read out after the name, e.g. "unsaved dish" */
+  readonly badge?: string
+}
 
 type TabBarProps = {
   readonly items: readonly TabBarItem[]
@@ -21,7 +27,7 @@ export function TabBar({ items, activeIndex, onSelect, onReselect }: TabBarProps
             <li key={item.id}>
               <button
                 type="button"
-                aria-label={item.label}
+                aria-label={item.badge ? `${item.label}, ${item.badge}` : item.label}
                 aria-current={active ? 'page' : undefined}
                 onClick={() => (active ? onReselect(index) : onSelect(index))}
                 className={`flex h-12 items-center justify-center gap-2 rounded-full transition-colors ${
@@ -30,7 +36,16 @@ export function TabBar({ items, activeIndex, onSelect, onReselect }: TabBarProps
                     : 'w-13 text-label-secondary'
                 }`}
               >
-                <span className="h-6 w-6 shrink-0">{item.icon}</span>
+                <span className="relative h-6 w-6 shrink-0">
+                  {item.icon}
+                  {item.badge && (
+                    <span
+                      data-testid="tab-badge"
+                      aria-hidden="true"
+                      className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-accent ring-2 ring-bar"
+                    />
+                  )}
+                </span>
                 {active && <span aria-hidden="true">{item.label}</span>}
               </button>
             </li>

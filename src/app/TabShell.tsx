@@ -1,10 +1,10 @@
 import useEmblaCarousel from 'embla-carousel-react'
 import {
-  Fragment,
   memo,
   useEffect,
   useRef,
   useState,
+  type ComponentProps,
   type ComponentType,
   type ReactNode,
 } from 'react'
@@ -18,7 +18,9 @@ import {
 } from '../components/ios/icons'
 import { TabBar } from '../components/ios/TabBar'
 import { CookPage } from '../features/cook/CookPage'
+import { hasContent } from '../features/cook/cookDraft'
 import { CookSession } from '../features/cook/CookSession'
+import { useCookSession } from '../features/cook/cookSessionContext'
 import { HistoryPage } from '../features/history/HistoryPage'
 import { IngredientsPage } from '../features/ingredients/IngredientsPage'
 import { SettingsPage } from '../features/settings/SettingsPage'
@@ -46,8 +48,6 @@ const TABS = [
     Page: CookPage,
     // the steps of adding an ingredient (/cook/add, /cook/add/<id>) are pages pushed on top
     hasSubPages: true,
-    // the draft all of those pages share
-    Session: CookSession,
   },
   { id: 'history', label: 'History', path: '/history', icon: <HistoryIcon />, Page: HistoryPage },
   {
@@ -107,7 +107,25 @@ function backPathFor(pathname: string): string | null {
 }
 
 /** The signed-in app: five pages side by side, switched by the tab bar or by swiping. */
+/** The tab bar; Cook carries a badge while a dish waits there, not logged yet. */
+function ShellTabBar(props: Omit<ComponentProps<typeof TabBar>, 'items'>) {
+  const { draft } = useCookSession()
+  const items = TABS.map((tab) =>
+    tab.id === 'cook' && hasContent(draft) ? { ...tab, badge: 'unsaved dish' } : tab,
+  )
+  return <TabBar items={items} {...props} />
+}
+
+/** The tabs; the Cook draft lives above them, so the tab bar can show it's waiting. */
 export function TabShell() {
+  return (
+    <CookSession>
+      <ShellContent />
+    </CookSession>
+  )
+}
+
+function ShellContent() {
   const { profile, householdId } = useCurrentUser()
   useAppearance(profile)
   useResumeOfflineChanges()
@@ -209,7 +227,6 @@ export function TabShell() {
             const { id, Page } = tab
             const active = index === activeIndex
             const hasSubPages = 'hasSubPages' in tab
-            const Session = 'Session' in tab ? tab.Session : Fragment
             const container = stackContainers[id] ?? null
             return (
               <div
@@ -225,26 +242,24 @@ export function TabShell() {
                 aria-hidden={active ? undefined : true}
                 className="no-scrollbar stable-paint-layer relative h-full min-w-0 flex-[0_0_100%] overflow-x-hidden overflow-y-auto overscroll-contain"
               >
-                <Session>
-                  {hasSubPages ? (
-                    <PageStack
-                      path={active ? pathname : tab.path}
-                      backPath={active ? backPath : null}
-                      animated={active}
-                      container={container}
-                      renderPage={() => (
-                        <PageFrame>
-                          <Page />
-                        </PageFrame>
-                      )}
-                      onBack={(path) => navigate(path, { replace: true })}
-                    />
-                  ) : (
-                    <PageFrame>
-                      <TabPageContent Page={Page} />
-                    </PageFrame>
-                  )}
-                </Session>
+                {hasSubPages ? (
+                  <PageStack
+                    path={active ? pathname : tab.path}
+                    backPath={active ? backPath : null}
+                    animated={active}
+                    container={container}
+                    renderPage={() => (
+                      <PageFrame>
+                        <Page />
+                      </PageFrame>
+                    )}
+                    onBack={(path) => navigate(path, { replace: true })}
+                  />
+                ) : (
+                  <PageFrame>
+                    <TabPageContent Page={Page} />
+                  </PageFrame>
+                )}
               </div>
             )
           })}
@@ -252,8 +267,7 @@ export function TabShell() {
       </div>
       <SyncStatus />
       <UpdateToasts updatedThisStart={wasUpdatedThisStart()} update={updateReady} />
-      <TabBar
-        items={TABS}
+      <ShellTabBar
         activeIndex={activeIndex}
         onSelect={(index) => navigate(TABS[index]?.path ?? TABS[0].path, { replace: true })}
         onReselect={(index) => pageRefs.current[index]?.scrollTo({ top: 0, behavior: 'smooth' })}

@@ -5,6 +5,8 @@ import { goalColors, type Appearance, type CustomGoalColors, type GoalPalette } 
 import { APPEARANCE_PATH, PALETTE_OPTIONS, PROGRESS_OPTIONS } from './appearanceLabels'
 import { OptionCards, SettingSection } from './AppearanceOptions'
 import { AppearanceSubPage } from './AppearanceSubPage'
+import { OverColorsSection } from './OverColorsSection'
+import { DEFAULT_OVER_COLORS } from './overColors'
 import { RingColors } from './RingColors'
 import { useAppearanceSettings } from './useAppearanceSettings'
 
@@ -29,6 +31,15 @@ const SAMPLE_PROGRESS = [
   sample('carbs', 150, 230),
   sample('fat', 41, 70),
   sample('fiber', 18, 30),
+]
+
+// a day over the goals: calories and carbs full, fat more than 10 % over
+const SAMPLE_OVER = [
+  sample('kcal', 2250, 2100),
+  sample('protein', 150, 140),
+  sample('carbs', 230, 230),
+  sample('fat', 85, 70),
+  sample('fiber', 32, 30),
 ]
 
 /** Settings › Appearance › Progress: how the goal rings and bars look. */
@@ -93,6 +104,17 @@ export function ProgressAppearancePage() {
         custom={custom}
         onChange={(nextCustom) => save({}, nextCustom)}
       />
+
+      <OverColorsSection
+        over={appearance.overColors ?? DEFAULT_OVER_COLORS}
+        onChange={(over) => change('overColors', over)}
+      />
+      <section
+        aria-label="Preview when over"
+        className="mt-3 rounded-[28px] bg-bg-elevated p-4 shadow-card"
+      >
+        <GoalProgressView progress={SAMPLE_OVER} style={appearance.progressStyle} />
+      </section>
     </AppearanceSubPage>
   )
 }

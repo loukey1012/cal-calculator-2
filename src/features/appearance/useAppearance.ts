@@ -9,6 +9,7 @@ import {
   type Scheme,
 } from './appearance'
 import { applyAppIcon } from './appIcon'
+import { DEFAULT_OVER_COLORS } from './overColors'
 
 const DARK_QUERY = '(prefers-color-scheme: dark)'
 
@@ -52,10 +53,17 @@ export function useAppearance(profile: Pick<Profile, 'appearance' | 'accent_colo
   const { theme, lightStyle, darkStyle, goalPalette, appIcon, glass } = appearance
   // a string, so a new but equal object from the next profile load doesn't repaint
   const customColors = JSON.stringify(appearance.customGoalColors ?? {})
+  const overColors = JSON.stringify(appearance.overColors ?? DEFAULT_OVER_COLORS)
 
   useEffect(() => {
     const root = document.documentElement
-    const variables = appearanceVariables(goalPalette, scheme, accent, JSON.parse(customColors))
+    const variables = appearanceVariables(
+      goalPalette,
+      scheme,
+      accent,
+      JSON.parse(customColors),
+      JSON.parse(overColors),
+    )
     root.dataset.scheme = scheme
     if (glass === 'off') delete root.dataset.glass
     else root.dataset.glass = glass
@@ -67,7 +75,18 @@ export function useAppearance(profile: Pick<Profile, 'appearance' | 'accent_colo
       delete root.dataset.glass
       for (const name of Object.keys(variables)) root.style.removeProperty(name)
     }
-  }, [scheme, accent, theme, lightStyle, darkStyle, goalPalette, appIcon, glass, customColors])
+  }, [
+    scheme,
+    accent,
+    theme,
+    lightStyle,
+    darkStyle,
+    goalPalette,
+    appIcon,
+    glass,
+    customColors,
+    overColors,
+  ])
 
   useEffect(() => {
     applyAppIcon(appIcon)

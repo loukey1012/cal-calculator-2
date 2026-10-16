@@ -27,6 +27,7 @@ import { formatInviteCode } from '../household/inviteCode'
 import { shareInviteCode } from '../household/shareInvite'
 import { goalForDate, type Goal } from '../nutrition/goals'
 import { PATCH_NOTES_PATH, PatchNotesPage } from '../patchNotes/PatchNotesPage'
+import { EXPORT_PATH, ExportPage } from '../export/ExportPage'
 import { useToday } from '../today/useToday'
 import { AccountSection } from './AccountSection'
 
@@ -51,6 +52,7 @@ export function SettingsPage() {
   if (pathname === PARTNER_PATH) return <PartnerPage />
   if (pathname === OWN_LOOK_PATH) return <OwnLookPage />
   if (pathname === PATCH_NOTES_PATH) return <PatchNotesPage />
+  if (pathname === EXPORT_PATH) return <ExportPage />
   return <SettingsOverview />
 }
 
@@ -99,6 +101,9 @@ function SettingsOverview() {
           detail={goalDetail(goals.isPending, goals.data === undefined, currentGoal)}
           onClick={() => setEditingGoal(true)}
         />
+      </GroupedSection>
+      <GroupedSection header="Data">
+        <ListRow title="Export" onClick={() => navigate(EXPORT_PATH, { replace: true })} />
       </GroupedSection>
       <GoalSheet
         open={editingGoal}

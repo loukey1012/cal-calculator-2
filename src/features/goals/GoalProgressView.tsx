@@ -1,4 +1,5 @@
 import type { ProgressStyle } from '../appearance/appearance'
+import { overLevel } from '../appearance/overColors'
 import { formatGrams, formatKcal } from '../nutrition/format'
 import type { GoalProgress, RingKey } from '../nutrition/goals'
 
@@ -42,6 +43,12 @@ function consumedOfTarget(goal: GoalProgress, unit: Unit): string {
   return `${consumedOfTargetNumbers(goal, unit)} ${unit}`
 }
 
+/** A full or over ring or bar takes its over color, if any is set (useAppearance). */
+function meterColor(goal: GoalProgress, color: string): string {
+  const level = overLevel(goal)
+  return level === 'none' ? color : `var(--goal-over-${level}, ${color})`
+}
+
 /** rings and bars are full once a goal is reached */
 function fillOf(goal: GoalProgress): number {
   return Math.min(Math.max(goal.ratio, 0), 1)
@@ -81,7 +88,7 @@ function Ring({ goal, color, size, stroke }: MeterProps & { size: number; stroke
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={`${fill * circumference} ${circumference}`}
-          style={{ stroke: color }}
+          style={{ stroke: meterColor(goal, color) }}
         />
       )}
     </svg>
@@ -99,7 +106,7 @@ function Bar({ goal, color, thin = false }: MeterProps & { thin?: boolean }) {
     >
       <div
         className="h-full rounded-full"
-        style={{ width: `${fill * 100}%`, backgroundColor: color }}
+        style={{ width: `${fill * 100}%`, backgroundColor: meterColor(goal, color) }}
       />
     </div>
   )

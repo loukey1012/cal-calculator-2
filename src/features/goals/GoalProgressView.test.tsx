@@ -89,4 +89,51 @@ describe('GoalProgressView', () => {
     expect(screen.getAllByTestId('bar').map((bar) => bar.dataset.fill)).toEqual(['1'])
     expect(items()[1]).toHaveTextContent('5.0 g over')
   })
+
+  describe('when over', () => {
+    const over = (key: GoalProgress['key'], ratio: number): GoalProgress => ({
+      ...KCAL,
+      key,
+      ratio,
+      consumed: ratio * 100,
+      target: 100,
+      remaining: 100 - ratio * 100,
+      reached: ratio >= 1,
+    })
+    const strokeOf = (ring: Element) =>
+      (ring.querySelectorAll('circle')[1] as SVGCircleElement | undefined)?.style.stroke ?? ''
+
+    test('a full ring takes the first over color, more than 10 % over the second', () => {
+      render(
+        <GoalProgressView
+          progress={[over('kcal', 1.05), over('fat', 1.2), over('protein', 1.5)]}
+          style="rings"
+        />,
+      )
+
+      const [kcal, fat, protein] = screen.getAllByTestId('ring')
+      expect(strokeOf(kcal!)).toBe('var(--goal-over-full, var(--goal-kcal))')
+      expect(strokeOf(fat!)).toBe('var(--goal-over-well, var(--goal-fat))')
+      // more protein is fine: it keeps its color
+      expect(strokeOf(protein!)).toBe('var(--goal-protein)')
+    })
+
+    test('bars change the same way', () => {
+      render(<GoalProgressView progress={[over('kcal', 1.2), over('carbs', 1)]} style="bars" />)
+
+      const [kcal, carbs] = screen.getAllByTestId('bar')
+      expect((kcal!.firstElementChild as HTMLElement).style.backgroundColor).toBe(
+        'var(--goal-over-well, var(--goal-kcal))',
+      )
+      expect((carbs!.firstElementChild as HTMLElement).style.backgroundColor).toBe(
+        'var(--goal-over-full, var(--goal-carbs))',
+      )
+    })
+
+    test('under the goal, nothing changes', () => {
+      render(<GoalProgressView progress={[over('kcal', 0.99)]} style="rings" />)
+
+      expect(strokeOf(screen.getByTestId('ring'))).toBe('var(--goal-kcal)')
+    })
+  })
 })

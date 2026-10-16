@@ -334,3 +334,51 @@ describe('Ring colors', () => {
     expect(saved?.appearance).not.toHaveProperty('customGoalColors')
   })
 })
+
+describe('When over', () => {
+  test('starts with the Signal colors', () => {
+    renderPage(PROGRESS)
+
+    expect(radio('When over', /Signal/)).toHaveAttribute('aria-checked', 'true')
+  })
+
+  test('a preset or Off is saved, keeping the other choices', async () => {
+    const user = userEvent.setup()
+    renderPage(PROGRESS, { goalPalette: 'pastel' })
+
+    await user.click(radio('When over', /Neon/))
+    expect(updateProfile).toHaveBeenLastCalledWith('u1', {
+      appearance: expect.objectContaining({
+        goalPalette: 'pastel',
+        overColors: expect.objectContaining({ mode: 'neon' }),
+      }),
+    })
+
+    await user.click(radio('When over', /Off/))
+    expect(updateProfile).toHaveBeenLastCalledWith('u1', {
+      appearance: expect.objectContaining({ overColors: expect.objectContaining({ mode: 'off' }) }),
+    })
+  })
+
+  test('custom: a color for full and one for more than 10 % over', async () => {
+    const user = userEvent.setup()
+    renderPage(PROGRESS, { overColors: { mode: 'custom' } })
+
+    await user.click(screen.getByRole('button', { name: /More than 10 % over/ }))
+    const sheet = screen.getByRole('dialog', { name: 'More than 10 % over' })
+    await user.click(within(sheet).getByRole('radio', { name: 'Violet' }))
+
+    expect(updateProfile).toHaveBeenLastCalledWith('u1', {
+      appearance: expect.objectContaining({
+        overColors: expect.objectContaining({ mode: 'custom', well: '#8e4ec6' }),
+      }),
+    })
+    expect(screen.getByRole('button', { name: /Full, up to 10 % over/ })).toBeInTheDocument()
+  })
+
+  test('the preview shows rings that are over, too', () => {
+    renderPage(PROGRESS)
+
+    expect(screen.getByRole('region', { name: 'Preview when over' })).toBeInTheDocument()
+  })
+})

@@ -211,6 +211,32 @@ describe('custom goal colors', () => {
     expect(vars['--goal-protein']).toBe('#123456')
     expect(vars['--goal-kcal']).toBe(goalColors('vivid', 'pink', '#d6409f')[0])
   })
+
+  test('the over colors are painted too, unless they are off', () => {
+    const signal = appearanceVariables(
+      'vivid',
+      'light',
+      '#007aff',
+      {},
+      { mode: 'signal', full: '#000000', well: '#000000' },
+    )
+    const off = appearanceVariables(
+      'vivid',
+      'light',
+      '#007aff',
+      {},
+      { mode: 'off', full: '#000000', well: '#000000' },
+    )
+
+    expect(signal['--goal-over-full']).toBe('#f5a524')
+    expect(signal['--goal-over-well']).toBe('#e5484d')
+    expect(off).not.toHaveProperty('--goal-over-full')
+    expect(off).not.toHaveProperty('--goal-over-well')
+  })
+
+  test('without a saved choice, the Signal colors are painted', () => {
+    expect(appearanceVariables('vivid', 'light', '#007aff')['--goal-over-well']).toBe('#e5484d')
+  })
 })
 
 describe('goalColors', () => {

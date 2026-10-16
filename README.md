@@ -20,6 +20,7 @@ Built for a two-person household: both members log their own meals, can see and 
 - Adding an ingredient goes **step by step like the Settings pages**: the search and the amount each slide in as a page of their own. **‹ Back** or a **swipe to the right** goes back one step (amount → search, still showing what you searched for → dish), never to another tab. Back in the dish editor on Today and History goes one step at a time too.
 - With two people, each ingredient is **Shared** (split by the dish's split), **only for one person** (e.g. the tomato on her burger) or has **own amounts** per person (noodles 120 g / 100 g). The split for shared ingredients: **Equal**, **Count** (3 toasts : 2 toasts), **%**, or **Weight** (weigh the cooked dish and each plate). What each portion gets is shown live; a split that can't work (e.g. 110 %) says why.
 - Optional **dish name** and **leftover portions** (each takes its share like a person would).
+- While a dish waits on Cook without being logged, the **Cook tab shows a dot**, wherever you are in the app.
 - **Calories are an estimate:** a switch for food whose calories you only roughly know (eaten out, cooked by someone else; e.g. a custom item "Pizza, 900 kcal"). It applies to the whole dish and can be changed later with Edit dish. Adding an ingredient that is **marked as an estimate** switches it on by itself, with a note naming that ingredient; it can still be switched off for the dish. The calories still count in full, but show as **"~900 kcal"** with an "Estimate" label.
 - **Save meal** logs everything at once (each person's portion into their own meal) and goes back to where you came from.
 - The draft is **kept on the phone** while you put it together, so switching tabs or iOS closing the app loses nothing. **Discard** starts over.
@@ -64,6 +65,10 @@ Built for a two-person household: both members log their own meals, can see and 
 - Your **name** shown to the household is under Settings › Account.
 - **Your partner, your way** (Settings › Members › your partner): give them a **nickname** (default **“baby”**, up to 20 characters) and a **symbol** in place of the initial: a **heart** (default) or one of 65 emojis in three groups: **Hearts** (❤️ 🩷 🧡 💛 💚 🩵 💙 💜 🖤 🤍 ❤️‍🔥 💕 🥰 …), **Cute** (🌸 🐻 🧸 🐰 🐱 🦄 🍓 🌙 …) and **Cool** (🔥 ⚡ 😎 👑 💎 🚀 🦊 🐉 👻 🎧 …), in any color (the shared color list, default Rose, or a custom one). Only you see it, everywhere they appear (person switch, goal card, cooking together, members); their account name stays unchanged and is shown next to the nickname in Settings. Saved to your account in `profiles.appearance` (`partnerLooks`, by member id), so it follows you to every device. Leaving the nickname empty goes back to “baby”; **Reset** goes back to “baby” and the heart.
 - **Your own symbol** (Settings › Account › Symbol): show yourself with a heart or any of the same emojis, in any color, instead of your initial in your accent color. Only you see it (your partner keeps seeing what they picked for you); your name stays your account name. Saved in `profiles.appearance` (`ownLook`). **Reset** goes back to your initial.
+
+### Export (Settings › Export)
+
+- Pick a date range (the last 30 days to start) and get two CSV files of **both of you**: every logged food (person, date, meal, food, brand, amount, unit, kcal and nutrients in label order, estimate) and each day's totals with weight. Semicolons and decimal commas, so Excel and Numbers open them in columns. On the iPhone they go to the share sheet (Save to Files, Mail, …), elsewhere they download.
 
 ### Ingredient database (Ingredients tab)
 
@@ -136,6 +141,7 @@ Everything here is saved **to your account**, never to the device: you get the s
   - **Progress style:** Rings, **Ring + bars** (default: a calorie ring, bars for the macros), Bars or Compact.
   - **Goal colors:** Vivid, Pastel, Accent shades or High contrast.
   - **Ring colors:** give Calories, Protein, Carbs, Fat or Fiber **its own color**; the others keep the palette's. "Use palette color" undoes one, and choosing a palette resets them all. A custom color stays the same in every theme, except that a White ring is darkened just enough to show on light cards.
+  - **When over:** calories, carbs and fat change color once full: one color up to 10 % over, another above (protein and fiber keep theirs). **Signal** (amber, then red; default), **Ember**, **Neon**, your own two colors, or **Off**; a second preview shows a day that's over.
 - **Choosing a color** works the same everywhere (accent, ring colors, your partner's and your own symbol color): **35 preset colors** in one list by hue (every color the separate lists offered before, plus **White**), and **Custom** (the rainbow circle) for any color with the system color picker: moving through the picker only previews the color, **Use this color** saves it (saving every color passed on the way would close the picker on the iPhone).
 - **Category chips** (with a preview): **One line** (default, scrolls sideways), **All on screen** (slimmer chips wrapping into rows) or **Grouped** (broad categories such as Fresh; tapping one filters by it and opens its categories below) for the category filter on the Ingredients page. Wrapped chips are **arranged automatically to fill as few rows as possible** ("All" stays first; alphabetical within each row), measured on the device and re-arranged when the width or fonts change.
 - **Patch notes:** tap the version line at the bottom of Settings to see every change with its day and hour, newest first.
@@ -189,10 +195,10 @@ Noted 2026-10-15.
 
 **Order from 2026-10-16** (small first, big last): 11 (Cook badge) · 15 · 29 · 12 · 13 · 9 · 14 · 10 (with the push of 11).
 
-**29. Rings and bars when over** (to do)
+**29. Rings and bars when over** (done)
 
-- [ ] Calories, carbs and fat change color once full: one color from 100 % up to 110 %, another above 110 % (protein and fiber keep theirs)
-- [ ] One pair of colors for all three in Appearance › Progress › **When over**: signal presets (**Signal**: amber and red, the default; **Ember**: orange and deep red; **Neon**: purple and magenta), your own two colors, or **Off**
+- [x] Calories, carbs and fat change color once full: one color from 100 % up to 110 %, another above 110 % (protein and fiber keep theirs)
+- [x] One pair of colors for all three in Appearance › Progress › **When over**: signal presets (**Signal**: amber and red, the default; **Ember**: orange and deep red; **Neon**: purple and magenta), your own two colors, or **Off**
 
 **9. Reading nutrition labels** (to do)
 
@@ -211,9 +217,9 @@ Noted 2026-10-15.
 - [ ] **Day summary**: kcal and macros vs. your goal, what you ate. Default: the **next morning** about the day before (so evening snacks count); each person can switch to the same day and pick the time (e.g. 23:00)
 - [ ] **Weekly review**: the weekly review (point 20) found something new
 
-**11. Unsaved Cook dishes** (to do)
+**11. Unsaved Cook dishes** (badge: done; the push comes with point 10)
 
-- [ ] A dish on Cook that hasn't been logged yet gets a badge on the Cook tab
+- [x] A dish on Cook that hasn't been logged yet gets a badge on the Cook tab
 - [ ] Combined with the "Unsaved Cook dish" notification from point 10 (this needs the Cook draft to be saved to your account instead of only on the phone)
 
 **12. Quick picks** (to do)
@@ -236,9 +242,9 @@ Noted 2026-10-15.
 - [ ] Recipes use the current values of their ingredients
 - [ ] **Copy a meal** to another day (and meal)
 
-**15. Export** (to do)
+**15. Export** (done)
 
-- [ ] Settings › Export: pick a date range and get CSV files of both of you: every logged food (person, date, meal, food, amount, nutrients) and the daily totals with weight (the "doesn't count" and "eaten out" columns come with point 13)
+- [x] Settings › Export: pick a date range and get CSV files of both of you: every logged food (person, date, meal, food, amount, nutrients) and the daily totals with weight (the "doesn't count" and "eaten out" columns come with point 13)
 
 Noted 2026-10-15 after testing points 1–8 on the iPhone (these come before point 9).
 

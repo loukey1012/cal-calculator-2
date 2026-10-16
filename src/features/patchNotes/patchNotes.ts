@@ -30,6 +30,16 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-16T13:09',
+    kind: 'new',
+    title: 'Ring colors when over, Export, and a dot on Cook for an unsaved dish',
+    items: [
+      'Calories, carbs and fat change color once full: one color up to 10 % over, another above. Appearance › Progress › When over: Signal, Ember, Neon, your own colors or Off',
+      'Settings › Export: both of you, a date range, as two CSV files (foods and days with weight)',
+      'The Cook tab shows a dot while a dish there hasn’t been logged',
+    ],
+  },
+  {
     at: '2026-10-16T12:56',
     kind: 'internal',
     title: 'Planned: ring colors when over, days that don’t count; the remaining items reordered',
