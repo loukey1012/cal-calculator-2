@@ -30,6 +30,11 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-16T09:15',
+    kind: 'fix',
+    title: 'Dragging a slider or a background spot no longer switches tabs or goes back',
+  },
+  {
     at: '2026-10-15T22:17',
     kind: 'internal',
     title: 'Planned: background settings by amount, position and colors; no swiping while dragging',

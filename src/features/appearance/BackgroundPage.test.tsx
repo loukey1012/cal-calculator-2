@@ -74,6 +74,12 @@ describe('Appearance › Background', () => {
     expect(screen.getByRole('slider', { name: 'Strength' })).toHaveValue('50')
   })
 
+  test('dragging inside the preview never swipes tabs or pages', () => {
+    renderPage(BACKGROUND, { glass: 'all', glassField: { mode: 'custom' } })
+
+    expect(screen.getByTestId('field-preview')).toHaveAttribute('data-swipe-lock')
+  })
+
   test('random: saved, with the choice when it changes', async () => {
     const user = userEvent.setup()
     renderPage(BACKGROUND, { glass: 'all', glassField: { mode: 'random' } })

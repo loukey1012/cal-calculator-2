@@ -47,6 +47,8 @@ export function FieldPreview({ spots, strength, onMove }: FieldPreviewProps) {
     <div
       ref={frame}
       data-testid="field-preview"
+      // dragging a spot must not swipe tabs or go back
+      data-swipe-lock=""
       className="relative h-56 touch-none overflow-hidden rounded-3xl shadow-card"
       style={{ background: fieldBackground(shown, strength) }}
     >

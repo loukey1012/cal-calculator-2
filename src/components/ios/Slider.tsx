@@ -44,6 +44,8 @@ export function Slider({ label, min, max, step = 1, value, format, onChange }: S
         onPointerUp={commit}
         onKeyUp={commit}
         onBlur={commit}
+        // sideways drags move the thumb, never the tabs or the page
+        data-swipe-lock=""
         className="w-full accent-(--accent)"
       />
     </div>

@@ -117,7 +117,7 @@ Built for a two-person household: both members log their own meals, can see and 
 ### Look and feel
 
 - Rounded cards on a soft background, the Manrope font, meals as a 2×2 grid of cards, avatars (your initial on your accent color, your partner's symbol on a soft tint of its color) in the person switch and member list. Bottom sheets (drag down to close), segmented controls, switches and swipe actions.
-- **Floating tab bar** (Today · Cook · History · Ingredients · Settings): the active tab shows its label in an accent tint. **Swipe left and right** to switch tabs with an animated settle, and tap the active tab to scroll to the top.
+- **Floating tab bar** (Today · Cook · History · Ingredients · Settings): the active tab shows its label in an accent tint. **Swipe left and right** to switch tabs with an animated settle, and tap the active tab to scroll to the top. Dragging a slider or a draggable spot moves only that control, never the tabs or the page.
 - **Pages inside Settings** (Appearance and its pages, Categories, your partner) behave like an iOS navigation stack: an opened page slides in over the one it came from, Back slides it away, and **swiping right drags it away with your finger** while the page below moves in from the left (let go past a third of the screen, or flick, to go back; otherwise it springs back). Each page keeps its scroll position. With Reduce Motion on, pages switch at once. Pages and sheets scroll without a visible scroll indicator.
 - Installable to the home screen (manifest, icons, safe areas, no zoom on input focus). Headers without buttons (Today, History, Settings) leave extra room at the top so titles stay clear of the fade iOS draws below the status bar.
 
@@ -236,7 +236,7 @@ Noted 2026-10-15.
 
 Noted 2026-10-15 after testing points 1–8 on the iPhone (these come before point 9).
 
-**21. Patch notes** (to do, built first)
+**21. Patch notes** (done)
 
 - [x] A **Patch notes** page, a little hidden: tap the version line at the bottom of Settings
 - [x] Every change with its date and hour and what it does, newest first, in plain words
@@ -244,9 +244,9 @@ Noted 2026-10-15 after testing points 1–8 on the iPhone (these come before poi
 
 Noted 2026-10-15 after testing point 18 (these come next, before point 20).
 
-**23. Dragging without swiping away** (to do)
+**23. Dragging without swiping away** (done)
 
-- [ ] Anywhere something is dragged (sliders, the spots in the Background preview, and any such control later), a sideways drag moves the control and never switches tabs or swipes back
+- [x] Anywhere something is dragged (sliders, the spots in the Background preview, and any such control later), a sideways drag moves the control and never switches tabs or swipes back
 
 **22. Background: amount, position and colors** (to do, changes point 18)
 
@@ -257,18 +257,18 @@ Noted 2026-10-15 after testing point 18 (these come next, before point 20).
 - [ ] Each spot's size can still be set; the Strength slider stays
 - [ ] **Slow drift** is removed (Moving replaces it) and the **Goal** colors are removed
 
-**16. Cook search: + and a custom item button** (to do, changes point 4)
+**16. Cook search: + and a custom item button** (done, changes point 4)
 
 - [x] The **+** above the Cook search works like the one on the Ingredients tab: it opens a new ingredient straight away (named after the search), no menu
 - [x] Next to it a **pencil** button opens a custom item straight away
 
-**17. Liquid Glass: Minimal and Full** (to do, changes point 8)
+**17. Liquid Glass: Minimal and Full** (done, changes point 8)
 
 - [x] **Controls** is renamed **Minimal** and covers every field: search fields, chips and pills (categories, Brand, Sort, Check values, Add weight), input fields, buttons, segmented controls, the meal cards on Today and the rows in lists. Only the big progress card stays solid
 - [x] **Everything** is renamed **Full**: all of Minimal, the progress card too, over the color background
 - [x] Rows you can swipe to delete stay solid in both
 
-**18. The background behind the glass** (to do, new)
+**18. The background behind the glass** (done; reorganized by point 22)
 
 - [x] For Full, a **Background** page in Appearance with these modes:
   - **Style colors** (default): from your style's ring colors
@@ -280,7 +280,7 @@ Noted 2026-10-15 after testing point 18 (these come next, before point 20).
 - [x] **Slow drift**: the spots float slowly, in any mode (off by itself when the phone asks for reduced motion)
 - [x] Saved to your account like every other appearance setting
 
-**19. "Values are correct"** (to do, changes point 1)
+**19. "Values are correct"** (done, changes point 1)
 
 - [x] A flagged ingredient can be marked **Values are correct**; the flag goes away for both of you
 - [x] If someone later changes its values and a warning still applies, it is flagged again

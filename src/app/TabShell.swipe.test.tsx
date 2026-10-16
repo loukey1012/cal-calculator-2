@@ -96,9 +96,8 @@ let stepMs = 50
 let clock = 0
 
 /** Starts a drag and moves the finger in steps; returns whether a move was taken over. */
-function dragTo(from: Point, to: Point): boolean {
+function dragTo(from: Point, to: Point, page: HTMLElement = activePage()): boolean {
   vi.spyOn(performance, 'now').mockImplementation(() => clock)
-  const page = activePage()
   fireEvent.touchStart(page, { touches: [{ clientX: from.x, clientY: from.y }] })
   let notPrevented = true
   for (const step of [0.25, 0.5, 0.75, 1]) {
@@ -290,6 +289,20 @@ describe('TabShell swiping', () => {
       expect(below).toHaveAttribute('inert')
       expect(within(below as HTMLElement).getByText('Appearance', { selector: 'h1' })).toBeTruthy()
       expect(top?.style.transform).toBe('translate3d(100px, 0, 0)')
+      expect(screen.getByTestId('path')).toHaveTextContent('/settings/appearance/colors')
+    })
+
+    test('a drag starting on a slider or other swipe-locked control does not go back', () => {
+      renderShell('/settings/appearance/colors')
+      const locked = document.createElement('div')
+      locked.setAttribute('data-swipe-lock', '')
+      layers().at(-1)?.append(locked)
+
+      const takenOver = dragTo({ x: 30, y: 300 }, { x: 200, y: 320 }, locked)
+      fireEvent.touchEnd(locked, { changedTouches: [{ clientX: 200, clientY: 320 }] })
+
+      expect(takenOver).toBe(false)
+      expect(layers()).toHaveLength(1)
       expect(screen.getByTestId('path')).toHaveTextContent('/settings/appearance/colors')
     })
 
