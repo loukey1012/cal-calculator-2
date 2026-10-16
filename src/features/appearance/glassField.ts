@@ -185,10 +185,12 @@ export function parseGlassField(value: unknown): GlassField {
   return glassFieldSchema.parse(isOldShape ? fromOldShape(saved) : saved)
 }
 
+export type Place = { readonly x: number; readonly y: number }
+
 export type FieldContext = {
   readonly ring: RingColors
-  /** a new number for each change of random places (tab change or app start) */
-  readonly positionSeed: number
+  /** Position › Random: where the spots are now (see nextPlaces); until then, where placed */
+  readonly places?: readonly Place[]
   /** a new number for each change of cycle or random colors (tab change or app start) */
   readonly colorSeed: number
 }
@@ -223,6 +225,17 @@ function hslHex(hue: number, saturation: number, lightness: number): string {
 }
 
 const hundredths = (value: number) => Math.round(value * 100) / 100
+const onScreen = (value: number) => Math.min(1, Math.max(0, value))
+
+/** Position › Random: how far a spot may move per change, as a share of the screen. */
+export const RANDOM_STEP = 0.15
+
+/** Position › Random: every spot moves a little (up to RANDOM_STEP) from where it was. */
+export function nextPlaces(places: readonly Place[], seed: number): Place[] {
+  const random = randomFrom(seed)
+  const step = (value: number) => hundredths(onScreen(value + (random() * 2 - 1) * RANDOM_STEP))
+  return places.map(({ x, y }) => ({ x: step(x), y: step(y) }))
+}
 
 /** `count` colors from a list, starting at `start` and wrapping around. */
 function takeColors(list: readonly string[], start: number, count: number): string[] {
@@ -250,10 +263,10 @@ function spotColors(field: GlassField, context: FieldContext): string[] {
 export function fieldSpots(field: GlassField, context: FieldContext): Spot[] {
   const spots = field.spots.slice(0, field.count)
   const colors = spotColors(field, context)
-  const random = randomFrom(context.positionSeed)
+  const places = field.position.mode === 'random' ? context.places : undefined
   return spots.map((spot, index) => ({
     ...spot,
-    ...(field.position.mode === 'random' && { x: hundredths(random()), y: hundredths(random()) }),
+    ...places?.[index],
     color: colors[index] ?? spot.color,
   }))
 }

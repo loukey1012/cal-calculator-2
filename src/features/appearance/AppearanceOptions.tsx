@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react'
 
-// the readable accent: a white accent's ring would vanish on a light page
-const SELECTED_RING = 'ring-2 ring-accent-ink ring-offset-2 ring-offset-bg'
+// the readable accent: a white accent's frame would vanish on a light page. An outline, not a
+// ring: Liquid Glass replaces a card's box-shadow (where a ring lives) with its glass edge
+const SELECTED_RING = 'outline-2 outline-offset-2 outline-accent-ink'
 
 type OptionCard<T extends string> = {
   readonly value: T

@@ -21,10 +21,12 @@ import {
   MIN_STRENGTH,
   PAINTED_RING,
   fieldSpots,
+  nextPlaces,
   type ColorMode,
   type FieldColors,
   type FieldPosition,
   type GlassField,
+  type Place,
   type PositionMode,
   type Spot,
 } from './glassField'
@@ -32,7 +34,7 @@ import { useAppearanceSettings } from './useAppearanceSettings'
 
 const POSITION_FOOTERS: Record<PositionMode, string> = {
   specified: 'Each spot where you drag it in the preview.',
-  random: 'New places, chosen at random.',
+  random: 'The spots move a little from where they were.',
   moving: 'The spots wander on their own.',
 }
 const REDUCED_MOTION_FOOTER = 'Your iPhone asks for less motion, so the spots stay still.'
@@ -58,6 +60,12 @@ export function BackgroundAppearancePage() {
   const { position, colors } = field
   // "Try another" in the preview of random places and cycle or random colors
   const [previewSeed, setPreviewSeed] = useState(0)
+  const [previewPlaces, setPreviewPlaces] = useState<readonly Place[]>()
+  const tryAnother = () => {
+    const seed = previewSeed + 1
+    setPreviewSeed(seed)
+    setPreviewPlaces(nextPlaces(previewPlaces ?? field.spots, seed))
+  }
   const save = (patch: Partial<GlassField>) => change('glassField', { ...field, ...patch })
   const savePosition = (patch: Partial<FieldPosition>) =>
     save({ position: { ...position, ...patch } })
@@ -69,7 +77,7 @@ export function BackgroundAppearancePage() {
 
   const spots = fieldSpots(field, {
     ring: PAINTED_RING,
-    positionSeed: previewSeed,
+    places: previewPlaces,
     colorSeed: previewSeed,
   })
   const changes = position.mode === 'random' || colors.mode === 'cycle' || colors.mode === 'random'
@@ -97,7 +105,7 @@ export function BackgroundAppearancePage() {
           }
         />
         {changes && (
-          <Button variant="plain" onClick={() => setPreviewSeed((seed) => seed + 1)}>
+          <Button variant="plain" onClick={tryAnother}>
             Try another
           </Button>
         )}

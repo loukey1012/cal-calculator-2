@@ -30,6 +30,16 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-16T10:17',
+    kind: 'fix',
+    title: 'Background presets, random places and the selected style',
+    items: [
+      'The color dots of the Background presets are evenly spaced and fit inside their card',
+      'Position › Random moves each spot only a little from where it was, and carries on from there at the next app start',
+      'With Liquid Glass, the selected choice (e.g. the light and dark style) keeps its frame',
+    ],
+  },
+  {
     at: '2026-10-16T09:25',
     kind: 'new',
     title: 'Background: choose the number of spots, their position and their colors separately',

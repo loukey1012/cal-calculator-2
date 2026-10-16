@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { Appearance } from './appearance'
 import { DEFAULT_GLASS_FIELD, PAINTED_RING, fieldSpots, fieldVariables } from './glassField'
+import { useRandomPlaces } from './useRandomPlaces'
 
 // one number per app start, so random places and colors start somewhere new each time
 const START_SEED = Math.floor(Math.random() * 1_000_000)
@@ -31,8 +32,9 @@ function keepMotionInStep(): () => void {
 
 /**
  * Paints the color background behind Liquid Glass Full (see index.css): the spots as CSS
- * variables on the root, and the speed of moving spots as `data-glass-moving`. Random places and
- * cycle or random colors move on with every tab change, or once per app start, each as chosen.
+ * variables on the root, and the speed of moving spots as `data-glass-moving`. Random places
+ * (useRandomPlaces) and cycle or random colors move on with every tab change, or once per app
+ * start, each as chosen.
  */
 export function useGlassField(appearance: Appearance, activeTab: number): void {
   const field = appearance.glassField ?? DEFAULT_GLASS_FIELD
@@ -47,9 +49,9 @@ export function useGlassField(appearance: Appearance, activeTab: number): void {
   }
 
   const { position, colors } = field
-  const positionSeed = START_SEED + (position.randomOn === 'tab' ? tabChanges : 0)
+  const places = useRandomPlaces(field, tabChanges, START_SEED)
   const colorSeed = START_SEED + (colors.changeOn === 'tab' ? tabChanges : 0)
-  const spots = fieldSpots(field, { ring: PAINTED_RING, positionSeed, colorSeed })
+  const spots = fieldSpots(field, { ring: PAINTED_RING, places, colorSeed })
   // strings, so an equal field from the next profile load doesn't repaint
   const variables = JSON.stringify(fieldVariables(spots, field.strength))
   const moving = position.mode === 'moving' ? position.speed : null

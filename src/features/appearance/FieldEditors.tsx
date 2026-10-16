@@ -111,9 +111,15 @@ export function PresetCards({ value, onChange }: PresetCardsProps) {
         value: preset,
         label: FIELD_PRESET_LABELS[preset],
         preview: (
-          <span className="flex gap-1">
+          // six equal columns: all of a palette's dots fit the card, evenly spaced
+          <span data-testid="preset-dots" className="grid w-full grid-cols-6 gap-1">
             {presetColors(preset, PAINTED_RING).map((color) => (
-              <Swatch key={color} color={color} />
+              <span
+                key={color}
+                aria-hidden="true"
+                className="aspect-square w-full max-w-6 rounded-full shadow-[inset_0_0_0_1px_rgb(0_0_0_/_0.14)]"
+                style={{ backgroundColor: color }}
+              />
             ))}
           </span>
         ),

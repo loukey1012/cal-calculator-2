@@ -159,7 +159,7 @@ test('the accent can be White (with a thin edge on light cards) or any custom co
     .toBe('#123456')
 })
 
-test('Liquid Glass: Minimal for every field, Full for everything, kept across a restart', async ({
+test('Liquid Glass: Minimal for every field, Full for everything with the selection framed, kept across a restart', async ({
   page,
   backend,
 }) => {
@@ -208,6 +208,13 @@ test('Liquid Glass: Minimal for every field, Full for everything, kept across a 
   await settings.getByRole('button', { name: /App colors/ }).click()
   await settings.getByRole('radio', { name: 'Full' }).click()
   await expect(html).toHaveAttribute('data-glass', 'all')
+  // the selected style card keeps its frame on glass
+  const darkStyle = settings
+    .getByRole('radiogroup', { name: 'Dark style' })
+    .getByRole('radio', { checked: true })
+  await expect(darkStyle).toHaveCSS('backdrop-filter', /blur/)
+  await expect(darkStyle).toHaveCSS('outline-style', 'solid')
+  await expect(darkStyle).toHaveCSS('outline-width', '2px')
   await tabs.getByRole('button', { name: 'Today' }).click()
   await expect(progressCard).toHaveCSS('backdrop-filter', /blur/)
   await expect

@@ -112,6 +112,22 @@ describe('Appearance › Background', () => {
     })
   })
 
+  test('position random: Try another moves the preview’s spots a little from where they were', async () => {
+    const user = userEvent.setup()
+    renderPage(BACKGROUND, { glass: 'all', glassField: { position: { mode: 'random' } } })
+    const x1 = () =>
+      parseFloat(screen.getByTestId('field-preview').style.getPropertyValue('--gf-x1'))
+    // spot 1 is placed at 15 %
+    expect(x1()).toBe(15)
+
+    for (let step = 0; step < 4; step += 1) {
+      const before = x1()
+      await user.click(screen.getByRole('button', { name: 'Try another' }))
+      expect(Math.abs(x1() - before)).toBeLessThanOrEqual(15.5)
+    }
+    expect(x1()).not.toBe(15)
+  })
+
   test('position moving: picked from the segmented control, at medium speed', async () => {
     const user = userEvent.setup()
     renderPage(BACKGROUND, { glass: 'all' })
@@ -184,6 +200,18 @@ describe('Appearance › Background', () => {
     await user.click(radio('Preset', /Sunset/))
 
     expect(await savedField()).toMatchObject({ colors: { mode: 'preset', preset: 'sunset' } })
+  })
+
+  test('colors preset: each card’s dots share six equal columns, so they all fit', () => {
+    renderPage(BACKGROUND, { glass: 'all' })
+
+    const sunset = within(radio('Preset', /Sunset/)).getByTestId('preset-dots')
+    const style = within(radio('Preset', /Style/)).getByTestId('preset-dots')
+
+    expect(sunset).toHaveClass('grid', 'grid-cols-6')
+    expect(sunset.children).toHaveLength(6)
+    expect(style).toHaveClass('grid', 'grid-cols-6')
+    expect(style.children).toHaveLength(3)
   })
 
   test('colors cycle: colors can be added, with the choice when they change', async () => {

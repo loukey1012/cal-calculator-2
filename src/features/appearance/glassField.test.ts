@@ -4,7 +4,9 @@ import {
   MAX_SPOTS,
   fieldSpots,
   fieldVariables,
+  nextPlaces,
   parseGlassField,
+  RANDOM_STEP,
   presetColors,
   type FieldContext,
   type GlassField,
@@ -13,7 +15,6 @@ import {
 const RING = { kcal: '#ff375f', fat: '#2f9bd6', fiber: '#8e5bd6' }
 const context = (overrides: Partial<FieldContext> = {}): FieldContext => ({
   ring: RING,
-  positionSeed: 1,
   colorSeed: 1,
   ...overrides,
 })
@@ -134,23 +135,35 @@ describe('fieldSpots', () => {
       )
     })
 
-    test('random: the same seed gives the same places, a new one others; sizes stay', () => {
-      const random = field({ position: { mode: 'random' } })
-      const first = fieldSpots(random, context({ positionSeed: 7 }))
+    test('random: at the current random places, with their sizes', () => {
+      const places = [
+        { x: 0.3, y: 0.4 },
+        { x: 0.6, y: 0.7 },
+      ]
+      const spots = fieldSpots(
+        field({ count: 2, position: { mode: 'random' } }),
+        context({ places }),
+      )
 
-      expect(fieldSpots(random, context({ positionSeed: 7 }))).toEqual(first)
-      expect(placesOf(fieldSpots(random, context({ positionSeed: 8 })))).not.toEqual(
-        placesOf(first),
+      expect(placesOf(spots)).toEqual([
+        [0.3, 0.4],
+        [0.6, 0.7],
+      ])
+      expect(spots.map(({ size }) => size)).toEqual(
+        DEFAULT_GLASS_FIELD.spots.slice(0, 2).map(({ size }) => size),
       )
-      // a new color seed doesn't move them
-      expect(placesOf(fieldSpots(random, context({ positionSeed: 7, colorSeed: 9 })))).toEqual(
-        placesOf(first),
+      // until there are random places: where the spots were placed
+      expect(placesOf(fieldSpots(field({ position: { mode: 'random' } }), context()))).toEqual(
+        placesOf(fieldSpots(field({}), context())),
       )
-      first.forEach((spot, index) => {
-        expect(spot.x).toBeGreaterThanOrEqual(0)
-        expect(spot.x).toBeLessThanOrEqual(1)
-        expect(spot.size).toBe(DEFAULT_GLASS_FIELD.spots[index]?.size)
-      })
+    })
+
+    test('specified ignores random places', () => {
+      const spots = fieldSpots(field({ count: 1 }), context({ places: [{ x: 0.9, y: 0.9 }] }))
+
+      expect(placesOf(spots)).toEqual([
+        [DEFAULT_GLASS_FIELD.spots[0]?.x, DEFAULT_GLASS_FIELD.spots[0]?.y],
+      ])
     })
 
     test('moving: starts from where the spots were placed (the motion is CSS)', () => {
@@ -201,6 +214,41 @@ describe('fieldSpots', () => {
       expect(placesOf(first)).toEqual(placesOf(fieldSpots(field({}), context())))
       for (const spot of first) expect(spot.color).toMatch(/^#[0-9a-f]{6}$/)
     })
+  })
+})
+
+describe('nextPlaces', () => {
+  const places = DEFAULT_GLASS_FIELD.spots.map(({ x, y }) => ({ x, y }))
+
+  test('moves every spot only a little from where it was', () => {
+    for (const seed of [1, 2, 3, 99]) {
+      nextPlaces(places, seed).forEach((place, index) => {
+        expect(Math.abs(place.x - (places[index]?.x ?? 0))).toBeLessThanOrEqual(RANDOM_STEP + 0.005)
+        expect(Math.abs(place.y - (places[index]?.y ?? 0))).toBeLessThanOrEqual(RANDOM_STEP + 0.005)
+      })
+    }
+    expect(RANDOM_STEP).toBe(0.15)
+  })
+
+  test('the same seed gives the same step, a new one another', () => {
+    expect(nextPlaces(places, 5)).toEqual(nextPlaces(places, 5))
+    expect(nextPlaces(places, 5)).not.toEqual(nextPlaces(places, 6))
+  })
+
+  test('never leaves the screen, even after many steps from an edge', () => {
+    let current = [
+      { x: 0, y: 1 },
+      { x: 1, y: 0 },
+    ]
+    for (let seed = 0; seed < 200; seed += 1) {
+      current = nextPlaces(current, seed)
+      for (const { x, y } of current) {
+        expect(x).toBeGreaterThanOrEqual(0)
+        expect(x).toBeLessThanOrEqual(1)
+        expect(y).toBeGreaterThanOrEqual(0)
+        expect(y).toBeLessThanOrEqual(1)
+      }
+    }
   })
 })
 

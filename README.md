@@ -130,7 +130,7 @@ Everything here is saved **to your account**, never to the device: you get the s
   - **Light style:** **Classic** (cool grey and white) or **Pink** (blush page, rose-tinted cards, text and tracks, pink-leaning goal colors). Used whenever the app is light, also with System during the day.
   - **Dark style:** **Soft** (deep grey, rounded) or **Graphite** (near-black, Space Grotesk numbers, uppercase labels; stored as `bento`). Used whenever the app is dark, also with System at night.
   - **Liquid Glass:** **Off**, **Minimal** (the tab bar, sheets and every field turn to translucent, blurred glass: lists, form groups, search fields, chips, pills, buttons, meal cards, segmented controls; only the big progress card stays solid) or **Full** (the progress card too, over a soft color background made from the style's own ring colors). Works on top of every light and dark style; rows you can swipe to delete stay solid.
-  - **Background** (with Liquid Glass Full): the colors behind the glass, as soft spots, set by three independent choices. **Spots**: how many, 1 to 6, each with its own size (in a sheet). **Position**: **Specified** (drag each spot in the preview, or move it with the arrow keys), **Random** (new places on every tab change or once per app start) or **Moving** (the spots wander on their own, up to a quarter of the screen, slow, medium or fast; they stay still when the phone asks for less motion, and the page says so). **Colors**: **Custom** (each spot's own color), **Preset** (the style's ring colors, Sunset, Ocean, Forest, Candy), **Cycle** (through your own list of colors) or **Random** (both on every tab change or once per app start). A Strength slider. Changes fade over; the preview shows the same spots, moving ones included.
+  - **Background** (with Liquid Glass Full): the colors behind the glass, as soft spots, set by three independent choices. **Spots**: how many, 1 to 6, each with its own size (in a sheet). **Position**: **Specified** (drag each spot in the preview, or move it with the arrow keys), **Random** (each spot moves a little from where it was, up to about 15 % of the screen, on every tab change or once per app start; the next app start carries on from there) or **Moving** (the spots wander on their own, up to a quarter of the screen, slow, medium or fast; they stay still when the phone asks for less motion, and the page says so). **Colors**: **Custom** (each spot's own color), **Preset** (the style's ring colors, Sunset, Ocean, Forest, Candy), **Cycle** (through your own list of colors) or **Random** (both on every tab change or once per app start). A Strength slider. Changes fade over; the preview shows the same spots, moving ones included.
   - **Accent color:** any color (buttons, the active tab, your avatar). Text in the accent color is darkened or lightened automatically so it stays readable, e.g. Lime or White on a light background; a White accent gets a thin edge on its buttons, chips and avatar.
 - **Progress** (with a live preview at the top)
   - **Progress style:** Rings, **Ring + bars** (default: a calorie ring, bars for the macros), Bars or Compact.
@@ -256,6 +256,21 @@ Noted 2026-10-15 after testing point 18 (these come next, before point 20).
   - **Colors**: **Custom** (you pick each spot's color), **Preset** (ready-made palettes: your style's ring colors, Sunset, Ocean, Forest, Candy), **Cycle** (moves through your own list of colors) or **Random**; Cycle and Random change **on every tab change** or **once per app start**
 - [x] Each spot's size can still be set; the Strength slider stays
 - [x] **Slow drift** is removed (Moving replaces it) and the **Goal** colors are removed
+
+Noted 2026-10-16 after testing points 22 and 23 (these come next, before point 20).
+
+**24. Preset colors that fit** (done)
+
+- [x] The color dots on the Background presets are evenly spaced and all fit inside their card
+
+**25. Random places nearby** (done, changes point 22)
+
+- [x] With Position › Random, each change moves every spot only a little (up to about 15 % of the screen) from where it was last, never off the screen
+- [x] The next app start carries on from where the spots were; moving a spot in the preview starts over from there
+
+**26. Seeing what's selected with Liquid Glass** (done)
+
+- [x] The selected choice (e.g. the light and dark style cards) keeps its frame with Liquid Glass Minimal and Full
 
 **16. Cook search: + and a custom item button** (done, changes point 4)
 

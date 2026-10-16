@@ -13,6 +13,6 @@ keep its status table and the README checkboxes up to date as items ship.
 date and hour (local time) and what changed in plain, neutral words. The list lives in
 `src/features/patchNotes/patchNotes.ts` once item 21 is built.
 
-**Next up (as of 2026-10-15 evening):** items 23 (no swiping while dragging) and 22 (Background:
-amount, position, colors), then 20, then 9–15; see "Changes after the iPhone test of 18" in the
-plan. Build 2–3 items, push, then stop with a short summary for the user to test.
+**Next up (as of 2026-10-16):** item 20 (ingredient review routine by Claude), then 9–15. Items
+22–26 are shipped and wait for the user's iPhone test. Build 2–3 items, push, then stop with a
+short summary for the user to test.
