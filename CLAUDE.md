@@ -13,6 +13,7 @@ keep its status table and the README checkboxes up to date as items ship.
 date and hour (local time) and what changed in plain, neutral words. The list lives in
 `src/features/patchNotes/patchNotes.ts` once item 21 is built.
 
-**Next up (as of 2026-10-16):** the remaining items, small first: 11 (Cook badge) · 15 · 29 · 12
-· 13 · 9 · 14 · 10; see "New order and item 29" in the plan. Never use the word "cheat" (item 13 is
-"Doesn't count"). Build 2–3 items, push, then stop with a short summary for the user to test.
+**Next up (as of 2026-10-16 evening):** items **12** (quick picks) and **13** ("Doesn't count" 🙈
+and eating out), then 9 · 14 · 10. Read "Handoff (2026-10-16, end of day)" at the end of the plan
+first: it lists what the user still has to test and what 13 must also touch. Never use the word
+"cheat". Build 2–3 items, push, then stop with a short summary for the user to test.
