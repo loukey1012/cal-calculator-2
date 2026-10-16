@@ -300,9 +300,9 @@ Noted 2026-10-16 after testing points 22 and 23 (these come next, before point 2
 - [x] A flagged ingredient can be marked **Values are correct**; the flag goes away for both of you
 - [x] If someone later changes its values and a warning still applies, it is flagged again
 
-**20. Ingredient review by Claude** (in the app: done; the weekly routine is set up with you)
+**20. Ingredient review by Claude** (done)
 
-- [ ] A Claude Code routine reviews the ingredient database **every week** (and whenever you ask): typos in names, brand spellings that don't match (e.g. "Milbona" and "Milbonna"), odd unit names and unit weights, likely duplicates, values that don't fit the product
+- [x] A Claude Code routine reviews the ingredient database **every week** (and whenever you ask): typos in names, brand spellings that don't match (e.g. "Milbona" and "Milbonna"), odd unit names and unit weights, likely duplicates, values that don't fit the product
 - [x] What it finds shows up on a **Review** page on the Ingredients tab: the reason and a suggested fix, with **Apply fix** (changes the ingredient; recent meals follow as in point 3) or **Ignore**. Nothing is changed without you
 
 ## Fixes and improvements, October 11 (done)
@@ -506,7 +506,7 @@ pnpm test:db                    # prove it on dev first
 
 A Claude Code routine (cloud, weekly and on request) follows `scripts/review/ROUTINE.md`: it fetches the household's ingredients with `node scripts/review/review.ts fetch`, looks for typos, brand and unit-name variants, implausible unit weights, duplicates and values that don't fit, and sends findings with `node scripts/review/review.ts submit findings.json` (checked by `scripts/review/findings.ts`, then again by the database). They show up under **Ingredients › Review**.
 
-The routine's environment needs `REVIEW_SUPABASE_URL`, `REVIEW_SUPABASE_ANON_KEY` (the app's public key) and `REVIEW_KEY`, plus network access to the Supabase project. A review key is created once per household; only its hash is stored:
+The routine is **CALculator ingredient review** on claude.ai/code/routines (Sundays 08:00 UTC, Sonnet 5.5, environment "CALculator review"); **Run now** there reviews on request. The routine's environment needs `REVIEW_SUPABASE_URL`, `REVIEW_SUPABASE_ANON_KEY` (the app's public key) and `REVIEW_KEY`, plus network access to the Supabase project. A review key is created once per household; only its hash is stored:
 
 ```bash
 KEY=$(openssl rand -base64 32 | tr -d '=+/')
