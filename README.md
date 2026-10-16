@@ -517,7 +517,7 @@ pnpm test:db                    # prove it on dev first
 
 A Claude Code routine (cloud, weekly and on request) follows `scripts/review/ROUTINE.md`: it fetches the household's ingredients and both members' meals of the last 7 complete days (Vienna time) with `node scripts/review/review.ts fetch`, looks for typos, brand and unit-name variants, implausible unit weights, duplicates and values that don't fit, and in the meals for gaps in a day, days far below the goal and odd entries, and sends findings with `node scripts/review/review.ts submit findings.json` (checked by `scripts/review/findings.ts`, then again by the database). They show up under **Review** in the Ingredients header; a meal finding's **Open day** opens that person's day in History.
 
-The routine is **CALculator ingredient review** on claude.ai/code/routines (Sundays 08:00 UTC, Sonnet 5.5, environment "CALculator review"); **Run now** there reviews on request. The routine's environment needs `REVIEW_SUPABASE_URL`, `REVIEW_SUPABASE_ANON_KEY` (the app's public key) and `REVIEW_KEY`, plus network access to the Supabase project. A review key is created once per household; only its hash is stored:
+The routine is **CALculator weekly review** on claude.ai/code/routines (Sundays 08:00 UTC, Sonnet 5.5, environment "CALculator review"); **Run now** there reviews on request. The routine's environment needs `REVIEW_SUPABASE_URL`, `REVIEW_SUPABASE_ANON_KEY` (the app's public key) and `REVIEW_KEY`, plus network access to the Supabase project. A review key is created once per household; only its hash is stored:
 
 ```bash
 KEY=$(openssl rand -base64 32 | tr -d '=+/')
