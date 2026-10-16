@@ -72,6 +72,53 @@ describe('profiles', () => {
     expect(after.data?.appearance).toEqual(appearance)
   })
 
+  test('a full appearance fits, with a six-spot background and every color customised', async () => {
+    const color = (n: number) => `#${n.toString(16).padStart(6, '0')}`
+    const spot = (n: number) => ({ color: color(n), x: 0.123, y: 0.456, size: 0.55 })
+    const appearance = {
+      theme: 'system',
+      lightStyle: 'classic',
+      darkStyle: 'bento',
+      goalPalette: 'custom',
+      progressStyle: 'rings',
+      categoryLayout: 'groups',
+      appIcon: 'graphite',
+      ingredientSort: 'newest',
+      glass: 'all',
+      glassField: {
+        count: 6,
+        spots: [1, 2, 3, 4, 5, 6].map(spot),
+        position: { mode: 'moving', randomOn: 'start', speed: 'medium' },
+        colors: {
+          mode: 'cycle',
+          preset: 'sunset',
+          palette: [1, 2, 3, 4, 5, 6, 7, 8].map(color),
+          changeOn: 'start',
+        },
+        strength: 0.55,
+      },
+      customGoalColors: {
+        kcal: color(1),
+        protein: color(2),
+        carbs: color(3),
+        fat: color(4),
+        fiber: color(5),
+      },
+      partnerLooks: {
+        '00000000-0000-4000-8000-000000000001': {
+          nickname: 'A longer nickname',
+          symbol: '🌸',
+          color: color(9),
+        },
+      },
+      ownLook: { symbol: '🍀', color: color(10) },
+    }
+
+    const { error } = await alice.client.from('profiles').update({ appearance }).eq('id', alice.id)
+
+    expect(error).toBeNull()
+  })
+
   test('appearance must be a small JSON object', async () => {
     const notObject = await alice.client
       .from('profiles')
@@ -79,7 +126,7 @@ describe('profiles', () => {
       .eq('id', alice.id)
     const tooBig = await alice.client
       .from('profiles')
-      .update({ appearance: { junk: 'x'.repeat(2000) } })
+      .update({ appearance: { junk: 'x'.repeat(5000) } })
       .eq('id', alice.id)
 
     expect(notObject.error?.code).toBe('23514')

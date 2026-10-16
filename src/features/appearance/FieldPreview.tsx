@@ -1,5 +1,5 @@
-import { useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
-import { fieldBackground, type Spot } from './glassField'
+import { useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react'
+import { fieldVariables, type MoveSpeed, type Spot } from './glassField'
 
 const KEY_STEP = 0.05
 const ARROWS: Record<string, readonly [number, number]> = {
@@ -14,12 +14,14 @@ const clampShare = (value: number) => Math.round(Math.min(1, Math.max(0, value))
 type FieldPreviewProps = {
   readonly spots: readonly Spot[]
   readonly strength: number
-  /** custom spots can be moved by dragging them or with the arrow keys */
+  /** the spots wander like the background does (index.css) */
+  readonly moving?: MoveSpeed
+  /** specified spots can be moved by dragging them or with the arrow keys */
   readonly onMove?: (index: number, x: number, y: number) => void
 }
 
 /** A small screen showing the background; with `onMove` each spot has a handle to move it. */
-export function FieldPreview({ spots, strength, onMove }: FieldPreviewProps) {
+export function FieldPreview({ spots, strength, moving, onMove }: FieldPreviewProps) {
   const frame = useRef<HTMLDivElement>(null)
   const [dragging, setDragging] = useState<{ index: number; x: number; y: number } | null>(null)
   const shown = spots.map((spot, index) =>
@@ -49,8 +51,10 @@ export function FieldPreview({ spots, strength, onMove }: FieldPreviewProps) {
       data-testid="field-preview"
       // dragging a spot must not swipe tabs or go back
       data-swipe-lock=""
-      className="relative h-56 touch-none overflow-hidden rounded-3xl shadow-card"
-      style={{ background: fieldBackground(shown, strength) }}
+      data-glass-moving={moving}
+      className="glass-spots relative h-56 touch-none overflow-hidden rounded-3xl shadow-card"
+      // painted by index.css from the same variables as the background itself
+      style={fieldVariables(shown, strength) as CSSProperties}
     >
       {onMove &&
         shown.map((spot, index) => (

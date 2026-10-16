@@ -30,6 +30,19 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-16T09:25',
+    kind: 'new',
+    title: 'Background: choose the number of spots, their position and their colors separately',
+    items: [
+      'Spots: 1 to 6, each with its own size',
+      'Position: Specified (drag them), Random (new places on every tab change or once per app start) or Moving (the spots wander on their own, slow, medium or fast)',
+      'Colors: Custom, Preset (style colors, Sunset, Ocean, Forest, Candy), Cycle or Random',
+      'Slow drift and the Goal colors are removed; a saved background is carried over',
+      'With Reduce Motion on, moving spots stay still and the page says so',
+      'More room for appearance settings in your account, so a full background always saves',
+    ],
+  },
+  {
     at: '2026-10-16T09:15',
     kind: 'fix',
     title: 'Dragging a slider or a background spot no longer switches tabs or goes back',

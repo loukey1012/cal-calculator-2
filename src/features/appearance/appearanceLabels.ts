@@ -8,7 +8,17 @@ import type {
   LightStyle,
   ProgressStyle,
 } from './appearance'
-import { DEFAULT_GLASS_FIELD, type FieldChange, type FieldMode } from './glassField'
+import {
+  DEFAULT_GLASS_FIELD,
+  MAX_SPOTS,
+  MIN_SPOTS,
+  type ColorMode,
+  type FieldChange,
+  type FieldPreset,
+  type GlassField,
+  type MoveSpeed,
+  type PositionMode,
+} from './glassField'
 
 export const APPEARANCE_PATH = '/settings/appearance'
 export const APP_COLORS_PATH = `${APPEARANCE_PATH}/colors`
@@ -23,20 +33,35 @@ export const THEME_OPTIONS = [
   { value: 'dark', label: 'Dark' },
 ] as const
 
-export const FIELD_MODE_OPTIONS: ReadonlyArray<{ value: FieldMode; label: string }> = [
-  { value: 'style', label: 'Style' },
-  { value: 'custom', label: 'Custom' },
+export const SPOT_COUNT_OPTIONS = Array.from({ length: MAX_SPOTS - MIN_SPOTS + 1 }, (_, index) =>
+  String(MIN_SPOTS + index),
+).map((value) => ({ value, label: value }))
+
+export const POSITION_OPTIONS: ReadonlyArray<{ value: PositionMode; label: string }> = [
+  { value: 'specified', label: 'Specified' },
   { value: 'random', label: 'Random' },
-  { value: 'cycle', label: 'Cycle' },
-  { value: 'goal', label: 'Goal' },
+  { value: 'moving', label: 'Moving' },
 ]
 
-const FIELD_MODE_SUMMARIES: Record<FieldMode, string> = {
-  style: 'Style colors',
-  custom: 'Custom',
-  random: 'Random',
-  cycle: 'Cycle',
-  goal: 'Goal-aware',
+export const SPEED_OPTIONS: ReadonlyArray<{ value: MoveSpeed; label: string }> = [
+  { value: 'slow', label: 'Slow' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'fast', label: 'Fast' },
+]
+
+export const COLOR_MODE_OPTIONS: ReadonlyArray<{ value: ColorMode; label: string }> = [
+  { value: 'custom', label: 'Custom' },
+  { value: 'preset', label: 'Preset' },
+  { value: 'cycle', label: 'Cycle' },
+  { value: 'random', label: 'Random' },
+]
+
+export const FIELD_PRESET_LABELS: Record<FieldPreset, string> = {
+  style: 'Style',
+  sunset: 'Sunset',
+  ocean: 'Ocean',
+  forest: 'Forest',
+  candy: 'Candy',
 }
 
 export const FIELD_CHANGE_OPTIONS: ReadonlyArray<{ value: FieldChange; label: string }> = [
@@ -44,11 +69,30 @@ export const FIELD_CHANGE_OPTIONS: ReadonlyArray<{ value: FieldChange; label: st
   { value: 'start', label: 'Once per app start' },
 ]
 
-/** e.g. "Random · drifting" */
+const POSITION_SUMMARIES: Record<PositionMode, string | null> = {
+  specified: null,
+  random: 'Random places',
+  moving: 'Moving',
+}
+
+const COLOR_SUMMARIES: Record<Exclude<ColorMode, 'preset'>, string> = {
+  custom: 'Custom colors',
+  cycle: 'Cycle',
+  random: 'Random colors',
+}
+
+function colorsSummary({ mode, preset }: GlassField['colors']): string {
+  if (mode !== 'preset') return COLOR_SUMMARIES[mode]
+  return preset === 'style' ? 'Style colors' : FIELD_PRESET_LABELS[preset]
+}
+
+/** e.g. "4 spots · Moving · Ocean" */
 export function backgroundSummary(appearance: Appearance): string {
   const field = appearance.glassField ?? DEFAULT_GLASS_FIELD
-  const mode = FIELD_MODE_SUMMARIES[field.mode]
-  return field.drift ? `${mode} · drifting` : mode
+  const spots = field.count === 1 ? '1 spot' : `${field.count} spots`
+  return [spots, POSITION_SUMMARIES[field.position.mode], colorsSummary(field.colors)]
+    .filter(Boolean)
+    .join(' · ')
 }
 
 export const GLASS_OPTIONS: ReadonlyArray<{ value: GlassLevel; label: string }> = [

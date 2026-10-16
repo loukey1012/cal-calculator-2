@@ -1,6 +1,6 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { CurrentUserContext } from '../../app/currentUser'
 import type { Json } from '../../lib/database.types'
 import { renderWithProviders } from '../../test/render'
@@ -11,8 +11,6 @@ vi.mock('../household/householdApi', () => ({
   updateProfile: vi.fn(),
 }))
 vi.mock('../auth/authApi', () => ({ signOut: vi.fn() }))
-vi.mock('../goals/goalsApi', () => ({ fetchGoals: vi.fn(() => new Promise(() => {})) }))
-vi.mock('../meals/mealsApi', () => ({ fetchDay: vi.fn(() => new Promise(() => {})) }))
 
 import { updateProfile } from '../household/householdApi'
 import { SettingsPage } from '../settings/SettingsPage'
@@ -50,111 +48,181 @@ async function savedField() {
   return appearance?.glassField
 }
 
+afterEach(() => vi.restoreAllMocks())
+
 beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(updateProfile).mockResolvedValue()
 })
 
 describe('Appearance › Background', () => {
-  test('is offered in the menu only with Liquid Glass Full', () => {
+  test('is offered in the menu only with Liquid Glass Full, summing up the choices', () => {
     const { unmount } = renderPage(MENU, { glass: 'controls' })
     expect(screen.queryByRole('button', { name: /Background/ })).not.toBeInTheDocument()
     unmount()
 
-    renderPage(MENU, { glass: 'all' })
-    expect(screen.getByRole('button', { name: /Background/ })).toHaveTextContent('Style colors')
+    renderPage(MENU, {
+      glass: 'all',
+      glassField: { count: 4, position: { mode: 'moving' }, colors: { preset: 'ocean' } },
+    })
+    expect(screen.getByRole('button', { name: /Background/ })).toHaveTextContent(
+      '4 spots · Moving · Ocean',
+    )
   })
 
-  test('starts with the style colors, a preview and the strength', () => {
+  test('starts with three spots where they belong, in the style colors', () => {
     renderPage(BACKGROUND, { glass: 'all' })
 
     expect(screen.getByRole('heading', { level: 1, name: 'Background' })).toBeInTheDocument()
-    expect(radio('Colors', 'Style')).toHaveAttribute('aria-checked', 'true')
     expect(screen.getByTestId('field-preview')).toBeInTheDocument()
+    expect(radio('Spots', '3')).toHaveAttribute('aria-checked', 'true')
+    const spotList = screen.getByRole('list', { name: 'Spot list' })
+    expect(within(spotList).getAllByRole('button')).toHaveLength(3)
+    expect(radio('Position', 'Specified')).toHaveAttribute('aria-checked', 'true')
+    expect(radio('Colors', 'Preset')).toHaveAttribute('aria-checked', 'true')
+    expect(radio('Preset', /Style/)).toHaveAttribute('aria-checked', 'true')
     expect(screen.getByRole('slider', { name: 'Strength' })).toHaveValue('50')
+    expect(screen.queryByRole('switch', { name: 'Slow drift' })).not.toBeInTheDocument()
   })
 
   test('dragging inside the preview never swipes tabs or pages', () => {
-    renderPage(BACKGROUND, { glass: 'all', glassField: { mode: 'custom' } })
+    renderPage(BACKGROUND, { glass: 'all' })
 
     expect(screen.getByTestId('field-preview')).toHaveAttribute('data-swipe-lock')
   })
 
-  test('random: saved, with the choice when it changes', async () => {
+  test('the number of spots is saved, keeping the other choices', async () => {
     const user = userEvent.setup()
-    renderPage(BACKGROUND, { glass: 'all', glassField: { mode: 'random' } })
+    renderPage(BACKGROUND, { glass: 'all', glassField: { colors: { mode: 'random' } } })
 
-    await user.click(radio('Changes', 'Once per app start'))
+    await user.click(radio('Spots', '6'))
 
-    expect(await savedField()).toMatchObject({ mode: 'random', changeOn: 'start' })
+    expect(await savedField()).toMatchObject({ count: 6, colors: { mode: 'random' } })
   })
 
-  test('picking a mode saves it, keeping the other choices', async () => {
+  test('position random: saved, with the choice when the places change', async () => {
     const user = userEvent.setup()
-    renderPage(BACKGROUND, { glass: 'all', glassField: { drift: true } })
+    renderPage(BACKGROUND, { glass: 'all', glassField: { position: { mode: 'random' } } })
 
-    await user.click(radio('Colors', 'Cycle'))
+    await user.click(radio('New places', 'Once per app start'))
 
-    expect(await savedField()).toMatchObject({ mode: 'cycle', drift: true })
+    expect(await savedField()).toMatchObject({
+      position: { mode: 'random', randomOn: 'start' },
+      colors: { mode: 'preset' },
+    })
   })
 
-  test('custom: a spot can be added, recolored and removed, never fewer than two', async () => {
+  test('position moving: picked from the segmented control, at medium speed', async () => {
     const user = userEvent.setup()
-    renderPage(BACKGROUND, { glass: 'all', glassField: { mode: 'custom' } })
-    const spots = screen.getByRole('list', { name: 'Spots' })
-    expect(within(spots).getAllByRole('button', { name: /^Spot \d/ })).toHaveLength(3)
+    renderPage(BACKGROUND, { glass: 'all' })
+    expect(screen.getAllByRole('button', { name: /Move spot/ })).toHaveLength(3)
 
-    await user.click(screen.getByRole('button', { name: 'Add spot' }))
-    expect(((await savedField())?.spots as unknown[] | undefined)?.length).toBe(4)
+    await user.click(radio('Position', 'Moving'))
 
-    await user.click(within(spots).getByRole('button', { name: /^Spot 1/ }))
-    const sheet = screen.getByRole('dialog', { name: 'Spot 1' })
-    await user.click(within(sheet).getByRole('radio', { name: 'Green' }))
-    const recolored = (await savedField())?.spots as Array<{ color: string }>
-    expect(recolored[0]?.color).not.toBe(DEFAULT_GLASS_FIELD.spots[0]?.color)
+    expect(await savedField()).toMatchObject({ position: { mode: 'moving', speed: 'medium' } })
   })
 
-  test('custom: the last two spots can’t be removed', async () => {
+  test('position moving: the speed is saved, the preview moves, without spot handles', async () => {
     const user = userEvent.setup()
-    const two = DEFAULT_GLASS_FIELD.spots.slice(0, 2)
-    renderPage(BACKGROUND, { glass: 'all', glassField: { mode: 'custom', spots: two } })
+    renderPage(BACKGROUND, { glass: 'all', glassField: { position: { mode: 'moving' } } })
 
-    await user.click(screen.getByRole('button', { name: /^Spot 1/ }))
+    await user.click(radio('Speed', 'Fast'))
 
-    expect(screen.queryByRole('button', { name: 'Remove spot' })).not.toBeInTheDocument()
+    expect(await savedField()).toMatchObject({ position: { mode: 'moving', speed: 'fast' } })
+    expect(screen.queryByRole('button', { name: /Move spot/ })).not.toBeInTheDocument()
+    expect(screen.getByTestId('field-preview')).toHaveAttribute('data-glass-moving', 'medium')
   })
 
-  test('custom: a spot in the preview moves with the arrow keys', async () => {
-    renderPage(BACKGROUND, { glass: 'all', glassField: { mode: 'custom' } })
+  test('position moving: says why the spots stay still when the phone asks for less motion', () => {
+    vi.spyOn(window, 'matchMedia').mockImplementation(
+      (query: string) =>
+        ({
+          matches: query.includes('reduce'),
+          media: query,
+          addEventListener: () => {},
+          removeEventListener: () => {},
+        }) as unknown as MediaQueryList,
+    )
+    renderPage(BACKGROUND, { glass: 'all', glassField: { position: { mode: 'moving' } } })
 
-    const handle = screen.getByRole('button', { name: /Move spot 1/ })
-    fireEvent.keyDown(handle, { key: 'ArrowRight' })
+    expect(
+      screen.getByText('Your iPhone asks for less motion, so the spots stay still.'),
+    ).toBeInTheDocument()
+  })
+
+  test('a spot in the preview moves with the arrow keys', async () => {
+    renderPage(BACKGROUND, { glass: 'all' })
+
+    fireEvent.keyDown(screen.getByRole('button', { name: /Move spot 1/ }), { key: 'ArrowRight' })
 
     const moved = (await savedField())?.spots as Array<{ x: number }>
     expect(moved[0]?.x).toBeCloseTo((DEFAULT_GLASS_FIELD.spots[0]?.x ?? 0) + 0.05)
   })
 
-  test('cycle: colors can be added to the palette', async () => {
+  test('each spot’s size can be set whatever the colors; its color only with Custom', async () => {
     const user = userEvent.setup()
-    renderPage(BACKGROUND, { glass: 'all', glassField: { mode: 'cycle' } })
+    const { unmount } = renderPage(BACKGROUND, { glass: 'all' })
+    await user.click(screen.getByRole('button', { name: /^Spot 1/ }))
+    const sheet = screen.getByRole('dialog', { name: 'Spot 1' })
+    expect(within(sheet).getByRole('slider', { name: 'Size' })).toBeInTheDocument()
+    expect(within(sheet).queryByRole('radio', { name: 'Green' })).not.toBeInTheDocument()
+    unmount()
 
-    await user.click(screen.getByRole('button', { name: 'Add color' }))
-
-    expect(((await savedField())?.palette as unknown[] | undefined)?.length).toBe(
-      DEFAULT_GLASS_FIELD.palette.length + 1,
+    renderPage(BACKGROUND, { glass: 'all', glassField: { colors: { mode: 'custom' } } })
+    await user.click(screen.getByRole('button', { name: /^Spot 1/ }))
+    await user.click(
+      within(screen.getByRole('dialog', { name: 'Spot 1' })).getByRole('radio', { name: 'Green' }),
     )
+    const recolored = (await savedField())?.spots as Array<{ color: string }>
+    expect(recolored[0]?.color).not.toBe(DEFAULT_GLASS_FIELD.spots[0]?.color)
   })
 
-  test('strength is saved when the slider is let go, drift with its switch', async () => {
+  test('colors preset: picking a palette saves it', async () => {
     const user = userEvent.setup()
+    renderPage(BACKGROUND, { glass: 'all' })
+
+    await user.click(radio('Preset', /Sunset/))
+
+    expect(await savedField()).toMatchObject({ colors: { mode: 'preset', preset: 'sunset' } })
+  })
+
+  test('colors cycle: colors can be added, with the choice when they change', async () => {
+    const user = userEvent.setup()
+    renderPage(BACKGROUND, { glass: 'all', glassField: { colors: { mode: 'cycle' } } })
+
+    await user.click(screen.getByRole('button', { name: 'Add color' }))
+    const colors = (await savedField())?.colors as { palette: unknown[] }
+    expect(colors.palette).toHaveLength(DEFAULT_GLASS_FIELD.colors.palette.length + 1)
+
+    await user.click(radio('New colors', 'Once per app start'))
+    expect(await savedField()).toMatchObject({ colors: { mode: 'cycle', changeOn: 'start' } })
+  })
+
+  test('colors random: saved from the segmented control', async () => {
+    const user = userEvent.setup()
+    renderPage(BACKGROUND, { glass: 'all' })
+
+    await user.click(radio('Colors', 'Random'))
+
+    expect(await savedField()).toMatchObject({ colors: { mode: 'random' } })
+  })
+
+  test('random places or colors can be tried out in the preview', () => {
+    const { unmount } = renderPage(BACKGROUND, { glass: 'all' })
+    expect(screen.queryByRole('button', { name: 'Try another' })).not.toBeInTheDocument()
+    unmount()
+
+    renderPage(BACKGROUND, { glass: 'all', glassField: { colors: { mode: 'random' } } })
+    expect(screen.getByRole('button', { name: 'Try another' })).toBeInTheDocument()
+  })
+
+  test('strength is saved when the slider is let go', async () => {
     renderPage(BACKGROUND, { glass: 'all' })
 
     const strength = screen.getByRole('slider', { name: 'Strength' })
     fireEvent.change(strength, { target: { value: '70' } })
     fireEvent.pointerUp(strength)
-    expect(await savedField()).toMatchObject({ strength: 0.7 })
 
-    await user.click(screen.getByRole('switch', { name: 'Slow drift' }))
-    expect(await savedField()).toMatchObject({ drift: true })
+    expect(await savedField()).toMatchObject({ strength: 0.7 })
   })
 })

@@ -5,9 +5,20 @@ import { ListRow } from '../../components/ios/ListRow'
 import { Sheet } from '../../components/ios/Sheet'
 import { Slider } from '../../components/ios/Slider'
 import { ColorPicker } from './ColorPicker'
-import { DEFAULT_GLASS_FIELD, MAX_SPOTS, MIN_SPOT_SIZE, MIN_SPOTS, type Spot } from './glassField'
+import { FIELD_PRESET_LABELS } from './appearanceLabels'
+import { OptionCards } from './AppearanceOptions'
+import {
+  DEFAULT_GLASS_FIELD,
+  FIELD_PRESETS,
+  MAX_PALETTE,
+  MIN_PALETTE,
+  MIN_SPOT_SIZE,
+  PAINTED_RING,
+  presetColors,
+  type FieldPreset,
+  type Spot,
+} from './glassField'
 
-const MAX_PALETTE = 8
 const percent = (share: number) => `${Math.round(share * 100)}%`
 
 function Swatch({ color }: { readonly color: string }) {
@@ -22,29 +33,32 @@ function Swatch({ color }: { readonly color: string }) {
 
 /** A color for something new: the first default one not used yet. */
 function unusedColor(used: readonly string[]): string {
-  return DEFAULT_GLASS_FIELD.palette.find((color) => !used.includes(color)) ?? '#ffffff'
+  return DEFAULT_GLASS_FIELD.colors.palette.find((color) => !used.includes(color)) ?? '#ffffff'
 }
 
 type SpotListProps = {
+  /** the spots in use, as saved */
   readonly spots: readonly Spot[]
-  readonly onChange: (spots: Spot[]) => void
+  /** the colors they show now (from the chosen colors) */
+  readonly shownColors: readonly string[]
+  /** with Colors › Custom each spot's color is picked here too */
+  readonly customColors: boolean
+  readonly onChange: (index: number, spot: Spot) => void
 }
 
-/** Custom: one row per spot (color and size in a sheet), and adding one, up to four. */
-export function SpotList({ spots, onChange }: SpotListProps) {
+/** One row per spot in use; its sheet sets the size, and the color with Custom colors. */
+export function SpotList({ spots, shownColors, customColors, onChange }: SpotListProps) {
   const [editing, setEditing] = useState<number | null>(null)
   const spot = editing === null ? undefined : spots[editing]
-  const replace = (index: number, next: Spot | null) =>
-    onChange(spots.flatMap((current, at) => (at !== index ? [current] : next ? [next] : [])))
 
   return (
     <>
-      <GroupedSection footer="Drag a spot in the preview to move it (or select it and use the arrow keys).">
-        <ul aria-label="Spots" className="divide-y divide-separator">
+      <GroupedSection>
+        <ul aria-label="Spot list" className="divide-y divide-separator">
           {spots.map((current, index) => (
             <li key={index}>
               <ListRow
-                leading={<Swatch color={current.color} />}
+                leading={<Swatch color={shownColors[index] ?? current.color} />}
                 title={`Spot ${index + 1}`}
                 detail={`Size ${percent(current.size)}`}
                 onClick={() => setEditing(index)}
@@ -52,26 +66,17 @@ export function SpotList({ spots, onChange }: SpotListProps) {
             </li>
           ))}
         </ul>
-        {spots.length < MAX_SPOTS && (
-          <ListRow
-            title="Add spot"
-            onClick={() =>
-              onChange([
-                ...spots,
-                { color: unusedColor(spots.map(({ color }) => color)), x: 0.5, y: 0.5, size: 0.5 },
-              ])
-            }
-          />
-        )}
       </GroupedSection>
       {spot && editing !== null && (
         <Sheet open title={`Spot ${editing + 1}`} onClose={() => setEditing(null)}>
           <div className="flex flex-col gap-5 pb-4">
-            <ColorPicker
-              label="Spot color"
-              value={spot.color}
-              onChange={(color) => replace(editing, { ...spot, color })}
-            />
+            {customColors && (
+              <ColorPicker
+                label="Spot color"
+                value={spot.color}
+                onChange={(color) => onChange(editing, { ...spot, color })}
+              />
+            )}
             <GroupedSection>
               <Slider
                 label="Size"
@@ -80,24 +85,40 @@ export function SpotList({ spots, onChange }: SpotListProps) {
                 step={5}
                 value={Math.round(spot.size * 100)}
                 format={(value) => `${value}%`}
-                onChange={(value) => replace(editing, { ...spot, size: value / 100 })}
+                onChange={(value) => onChange(editing, { ...spot, size: value / 100 })}
               />
             </GroupedSection>
-            {spots.length > MIN_SPOTS && (
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  replace(editing, null)
-                  setEditing(null)
-                }}
-              >
-                Remove spot
-              </Button>
-            )}
           </div>
         </Sheet>
       )}
     </>
+  )
+}
+
+type PresetCardsProps = {
+  readonly value: FieldPreset
+  readonly onChange: (preset: FieldPreset) => void
+}
+
+/** Colors › Preset: each palette as a card with its colors. */
+export function PresetCards({ value, onChange }: PresetCardsProps) {
+  return (
+    <OptionCards
+      label="Preset"
+      value={value}
+      onChange={onChange}
+      options={FIELD_PRESETS.map((preset) => ({
+        value: preset,
+        label: FIELD_PRESET_LABELS[preset],
+        preview: (
+          <span className="flex gap-1">
+            {presetColors(preset, PAINTED_RING).map((color) => (
+              <Swatch key={color} color={color} />
+            ))}
+          </span>
+        ),
+      }))}
+    />
   )
 }
 
@@ -140,7 +161,7 @@ export function PaletteList({ palette, onChange }: PaletteListProps) {
               value={color}
               onChange={(next) => replace(editing, next)}
             />
-            {palette.length > MIN_SPOTS && (
+            {palette.length > MIN_PALETTE && (
               <Button
                 variant="destructive"
                 onClick={() => {

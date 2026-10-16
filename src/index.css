@@ -178,9 +178,10 @@
   backdrop-filter: blur(30px) saturate(190%);
 }
 
-/* The color background behind Full: up to four spots (colors, positions, sizes) set by
-   useGlassField from Settings › Appearance › Background. Registered, so a change fades over and
-   drift can move them. */
+/* The color background behind Full: up to six spots (colors, positions, sizes) set by
+   useGlassField from Settings › Appearance › Background; the Background preview (.glass-spots)
+   paints the same way from its own variables. Registered, so a change fades over and the moving
+   offsets (--gf-dx/dy) can be animated. */
 @property --gf-c1 {
   syntax: '<color>';
   inherits: true;
@@ -301,6 +302,66 @@
   inherits: false;
   initial-value: 0%;
 }
+@property --gf-c5 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --gf-x5 {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 50%;
+}
+@property --gf-y5 {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 50%;
+}
+@property --gf-s5 {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 50%;
+}
+@property --gf-dx5 {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+@property --gf-dy5 {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+@property --gf-c6 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+@property --gf-x6 {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 50%;
+}
+@property --gf-y6 {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 50%;
+}
+@property --gf-s6 {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 50%;
+}
+@property --gf-dx6 {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
+@property --gf-dy6 {
+  syntax: '<percentage>';
+  inherits: false;
+  initial-value: 0%;
+}
 
 :root {
   transition:
@@ -319,10 +380,19 @@
     --gf-c4 1.4s ease,
     --gf-x4 1.4s ease,
     --gf-y4 1.4s ease,
-    --gf-s4 1.4s ease;
+    --gf-s4 1.4s ease,
+    --gf-c5 1.4s ease,
+    --gf-x5 1.4s ease,
+    --gf-y5 1.4s ease,
+    --gf-s5 1.4s ease,
+    --gf-c6 1.4s ease,
+    --gf-x6 1.4s ease,
+    --gf-y6 1.4s ease,
+    --gf-s6 1.4s ease;
 }
 
-:root[data-glass='all'] .glass-field {
+:root[data-glass='all'] .glass-field,
+.glass-spots {
   background:
     radial-gradient(
       var(--gf-s1) calc(var(--gf-s1) * 0.75) at calc(var(--gf-x1) + var(--gf-dx1))
@@ -348,46 +418,95 @@
       color-mix(in srgb, var(--gf-c4) var(--glass-field-strength), transparent),
       transparent 70%
     ),
+    radial-gradient(
+      var(--gf-s5) calc(var(--gf-s5) * 0.75) at calc(var(--gf-x5) + var(--gf-dx5))
+        calc(var(--gf-y5) + var(--gf-dy5)),
+      color-mix(in srgb, var(--gf-c5) var(--glass-field-strength), transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      var(--gf-s6) calc(var(--gf-s6) * 0.75) at calc(var(--gf-x6) + var(--gf-dx6))
+        calc(var(--gf-y6) + var(--gf-dy6)),
+      color-mix(in srgb, var(--gf-c6) var(--glass-field-strength), transparent),
+      transparent 70%
+    ),
     var(--glass-field-base);
 }
 
-/* Slow drift: the spots float a little, unless the phone asks for less motion */
-@keyframes glass-drift {
+/* Position › Moving: each spot wanders its own path, up to a quarter of the screen away. Across
+   and up/down run at different speeds, so the paths curve and the spots never all stop at once.
+   Off when the phone asks for less motion (the Background page says so). useGlassField starts
+   every copy of the animation at the same moment, so all layers stay in step. */
+@keyframes glass-move-x {
   0% {
     --gf-dx1: 0%;
-    --gf-dy1: 0%;
     --gf-dx2: 0%;
-    --gf-dy2: 0%;
     --gf-dx3: 0%;
-    --gf-dy3: 0%;
     --gf-dx4: 0%;
-    --gf-dy4: 0%;
+    --gf-dx5: 0%;
+    --gf-dx6: 0%;
   }
   50% {
-    --gf-dx1: 6%;
-    --gf-dy1: 4%;
-    --gf-dx2: -5%;
-    --gf-dy2: 6%;
-    --gf-dx3: 4%;
-    --gf-dy3: -6%;
-    --gf-dx4: -6%;
-    --gf-dy4: -4%;
+    --gf-dx1: -20%;
+    --gf-dx2: 15%;
+    --gf-dx3: -25%;
+    --gf-dx4: 20%;
+    --gf-dx5: 25%;
+    --gf-dx6: -10%;
   }
   100% {
-    --gf-dx1: -4%;
-    --gf-dy1: 6%;
-    --gf-dx2: -6%;
-    --gf-dy2: -5%;
-    --gf-dx3: 6%;
-    --gf-dy3: 4%;
-    --gf-dx4: 4%;
-    --gf-dy4: -6%;
+    --gf-dx1: 25%;
+    --gf-dx2: -25%;
+    --gf-dx3: 10%;
+    --gf-dx4: -15%;
+    --gf-dx5: -20%;
+    --gf-dx6: 20%;
   }
 }
 
+@keyframes glass-move-y {
+  0% {
+    --gf-dy1: 0%;
+    --gf-dy2: 0%;
+    --gf-dy3: 0%;
+    --gf-dy4: 0%;
+    --gf-dy5: 0%;
+    --gf-dy6: 0%;
+  }
+  50% {
+    --gf-dy1: 15%;
+    --gf-dy2: -25%;
+    --gf-dy3: -20%;
+    --gf-dy4: -15%;
+    --gf-dy5: 20%;
+    --gf-dy6: -20%;
+  }
+  100% {
+    --gf-dy1: -20%;
+    --gf-dy2: 15%;
+    --gf-dy3: 10%;
+    --gf-dy4: 25%;
+    --gf-dy5: -10%;
+    --gf-dy6: 25%;
+  }
+}
+
+[data-glass-moving='slow'] {
+  --gf-move-time: 60s;
+}
+[data-glass-moving='medium'] {
+  --gf-move-time: 30s;
+}
+[data-glass-moving='fast'] {
+  --gf-move-time: 14s;
+}
+
 @media (prefers-reduced-motion: no-preference) {
-  :root[data-glass='all'][data-glass-drift] .glass-field {
-    animation: glass-drift 36s ease-in-out infinite alternate;
+  :root[data-glass='all'][data-glass-moving] .glass-field,
+  .glass-spots[data-glass-moving] {
+    animation:
+      glass-move-x var(--gf-move-time) ease-in-out infinite alternate,
+      glass-move-y calc(var(--gf-move-time) * 1.37) ease-in-out infinite alternate;
   }
 }
 

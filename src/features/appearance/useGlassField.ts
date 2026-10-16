@@ -1,27 +1,40 @@
 import { useEffect, useState } from 'react'
 import type { Appearance } from './appearance'
-import { DEFAULT_GLASS_FIELD, fieldSpots, fieldVariables } from './glassField'
+import { DEFAULT_GLASS_FIELD, PAINTED_RING, fieldSpots, fieldVariables } from './glassField'
 
-// one number per app start, so random and cycle start somewhere new each time
+// one number per app start, so random places and colors start somewhere new each time
 const START_SEED = Math.floor(Math.random() * 1_000_000)
 
-// the style mode follows the ring colors painted by useAppearance
-const RING_VARIABLES = {
-  kcal: 'var(--goal-kcal)',
-  fat: 'var(--goal-fat)',
-  fiber: 'var(--goal-fiber)',
-} as const
+// the keyframes in index.css that move the spots
+const MOVE_ANIMATION_PREFIX = 'glass-move-'
 
 /**
- * Paints the color background behind Liquid Glass Full (see index.css): the spots of the chosen
- * mode as CSS variables on the root. Random and cycle move on with every tab change, or once per
- * app start. `progress` is today's calories as a share of the goal (goal-aware), or null.
+ * Every element painting the field (the tab shell, each sliding page layer, the preview) runs the
+ * moving animation on its own. Pinning each one's start to time zero of the page keeps them in
+ * step, so a page sliding over another shows the spots where the page below has them.
  */
-export function useGlassField(
-  appearance: Appearance,
-  activeTab: number,
-  progress: number | null,
-): void {
+function keepMotionInStep(): () => void {
+  const onStart = (event: Event) => {
+    const { animationName } = event as AnimationEvent
+    const target = event.target
+    if (!animationName?.startsWith(MOVE_ANIMATION_PREFIX)) return
+    if (!(target instanceof Element) || typeof target.getAnimations !== 'function') return
+    for (const animation of target.getAnimations()) {
+      if ((animation as Partial<CSSAnimation>).animationName === animationName) {
+        animation.startTime = 0
+      }
+    }
+  }
+  document.addEventListener('animationstart', onStart)
+  return () => document.removeEventListener('animationstart', onStart)
+}
+
+/**
+ * Paints the color background behind Liquid Glass Full (see index.css): the spots as CSS
+ * variables on the root, and the speed of moving spots as `data-glass-moving`. Random places and
+ * cycle or random colors move on with every tab change, or once per app start, each as chosen.
+ */
+export function useGlassField(appearance: Appearance, activeTab: number): void {
   const field = appearance.glassField ?? DEFAULT_GLASS_FIELD
   const enabled = appearance.glass === 'all'
 
@@ -33,21 +46,28 @@ export function useGlassField(
     setTabChanges((changes) => changes + 1)
   }
 
-  const seed = START_SEED + (field.changeOn === 'tab' ? tabChanges : 0)
-  const spots = fieldSpots(field, { ring: RING_VARIABLES, seed, progress })
+  const { position, colors } = field
+  const positionSeed = START_SEED + (position.randomOn === 'tab' ? tabChanges : 0)
+  const colorSeed = START_SEED + (colors.changeOn === 'tab' ? tabChanges : 0)
+  const spots = fieldSpots(field, { ring: PAINTED_RING, positionSeed, colorSeed })
   // strings, so an equal field from the next profile load doesn't repaint
   const variables = JSON.stringify(fieldVariables(spots, field.strength))
-  const drift = field.drift
+  const moving = position.mode === 'moving' ? position.speed : null
 
   useEffect(() => {
     if (!enabled) return
     const root = document.documentElement
     const painted: Record<string, string> = JSON.parse(variables)
     for (const [name, value] of Object.entries(painted)) root.style.setProperty(name, value)
-    if (drift) root.dataset.glassDrift = 'on'
+    if (moving) root.dataset.glassMoving = moving
     return () => {
       for (const name of Object.keys(painted)) root.style.removeProperty(name)
-      delete root.dataset.glassDrift
+      delete root.dataset.glassMoving
     }
-  }, [enabled, variables, drift])
+  }, [enabled, variables, moving])
+
+  useEffect(() => {
+    if (!enabled || !moving) return
+    return keepMotionInStep()
+  }, [enabled, moving])
 }

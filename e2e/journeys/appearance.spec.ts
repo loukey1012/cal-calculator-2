@@ -225,7 +225,7 @@ test('Liquid Glass: Minimal for every field, Full for everything, kept across a 
   await expect(html).toHaveAttribute('data-glass', 'all')
 })
 
-test('the background behind Full: random colors change with the tab, saved to the account', async ({
+test('the background behind Full: random colors change with the tab, spots move, saved to the account', async ({
   page,
   backend,
 }) => {
@@ -246,8 +246,11 @@ test('the background behind Full: random colors change with the tab, saved to th
   const settings = activePage(page)
   await settings.getByRole('button', { name: /Appearance/ }).click()
   await settings.getByRole('button', { name: /Background/ }).click()
-  await settings.getByRole('radio', { name: 'Random' }).click()
+  const group = (name: string) => settings.getByRole('radiogroup', { name })
+  await group('Colors').getByRole('radio', { name: 'Random' }).click()
   await expect.poll(firstSpot).toMatch(/^#[0-9a-f]{6}$/)
+  await group('Position').getByRole('radio', { name: 'Moving' }).click()
+  await expect(html).toHaveAttribute('data-glass-moving', 'medium')
 
   const before = await firstSpot()
   await tabs.getByRole('button', { name: 'Today' }).click()
@@ -261,5 +264,11 @@ test('the background behind Full: random colors change with the tab, saved to th
         .single()
       return data?.appearance
     })
-    .toMatchObject({ glass: 'all', glassField: { mode: 'random', changeOn: 'tab' } })
+    .toMatchObject({
+      glass: 'all',
+      glassField: {
+        position: { mode: 'moving', speed: 'medium' },
+        colors: { mode: 'random', changeOn: 'tab' },
+      },
+    })
 })
