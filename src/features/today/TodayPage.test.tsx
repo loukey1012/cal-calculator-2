@@ -18,6 +18,9 @@ vi.mock('../meals/mealsApi', () => ({
   addMealItem: vi.fn(),
   updateMealItem: vi.fn(),
   deleteMealItem: vi.fn(),
+  fetchCheatDay: vi.fn().mockResolvedValue(false),
+  setCheatMeal: vi.fn(),
+  setCheatDay: vi.fn(),
 }))
 vi.mock('../goals/goalsApi', () => ({ fetchGoals: vi.fn(), saveGoal: vi.fn() }))
 vi.mock('../weight/weightApi', () => ({
@@ -33,7 +36,7 @@ vi.mock('../ingredients/ingredientsApi', () => ({
 
 import { fetchGoals } from '../goals/goalsApi'
 import { fetchMembers } from '../household/householdApi'
-import { fetchDay, updateMealItem } from '../meals/mealsApi'
+import { fetchDay, fetchCheatDay, setCheatDay, updateMealItem } from '../meals/mealsApi'
 import { fetchWeights, saveWeight } from '../weight/weightApi'
 import { TodayPage } from './TodayPage'
 
@@ -98,6 +101,7 @@ beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date(2026, 9, 1, 12, 0, 0))
   vi.mocked(fetchDay).mockResolvedValue([LUNCH])
+  vi.mocked(fetchCheatDay).mockResolvedValue(false)
   vi.mocked(fetchGoals).mockResolvedValue([GOAL])
   vi.mocked(fetchMembers).mockResolvedValue([PROFILE])
   vi.mocked(fetchWeights).mockResolvedValue([{ date: '2026-09-28', weightKg: 72.4 }])
@@ -177,6 +181,59 @@ describe('TodayPage', () => {
     expect(within(sheet).getByRole('button', { name: /Pizza out/ })).toHaveTextContent(
       /Estimate · 1 ingredient.*~900 kcal/,
     )
+  })
+
+  test('a cheat day says so, and its rings show no over colors', async () => {
+    // Arrange: 2,538 kcal against a goal of 2,000
+    vi.mocked(fetchCheatDay).mockResolvedValue(true)
+    vi.mocked(fetchDay).mockResolvedValue([
+      LUNCH,
+      dayMeal('m2', 'dinner', [mealItem({ id: 'cake', kcal: 2000 })]),
+    ])
+
+    // Act
+    renderPage()
+
+    // Assert
+    const total = screen.getByTestId('day-total')
+    await waitFor(() => expect(total).toHaveTextContent('Cheat day'))
+    expect(total).toHaveTextContent('2,538 kcal')
+    const goals = await screen.findByRole('list', { name: 'Goals' })
+    const ring = within(goals).getAllByTestId('ring')[0]
+    expect(ring?.querySelectorAll('circle')[1]?.style.stroke).toBe('var(--goal-kcal)')
+  })
+
+  test('a cheat meal: its card and the day say so, its food counts, no over colors', async () => {
+    vi.mocked(fetchDay).mockResolvedValue([
+      LUNCH,
+      { ...dayMeal('m2', 'dinner', [mealItem({ id: 'burger', kcal: 1900 })]), cheat_meal: true },
+    ])
+
+    renderPage()
+
+    const dinner = screen.getByRole('button', { name: /Dinner/ })
+    await waitFor(() => expect(dinner).toHaveTextContent('Cheat meal · 1,900 kcal'))
+    const total = screen.getByTestId('day-total')
+    expect(total).toHaveTextContent('2,438 kcal')
+    expect(total).toHaveTextContent('Cheat meal')
+    const goals = await screen.findByRole('list', { name: 'Goals' })
+    expect(goals).toHaveTextContent('2,438 / 2,000 kcal')
+    const ring = within(goals).getAllByTestId('ring')[0]
+    expect(ring?.querySelectorAll('circle')[1]?.style.stroke).toBe('var(--goal-kcal)')
+  })
+
+  test('Day options marks the day, also for the partner', async () => {
+    vi.mocked(fetchMembers).mockResolvedValue([PROFILE, PARTNER])
+    vi.mocked(setCheatDay).mockResolvedValue()
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    renderPage()
+
+    await user.click(await screen.findByRole('radio', { name: /baby/ }))
+    await user.click(screen.getByRole('button', { name: 'Day options' }))
+    const sheet = screen.getByRole('dialog', { name: 'Day' })
+    await user.click(within(sheet).getByRole('switch', { name: 'Cheat day' }))
+
+    await waitFor(() => expect(setCheatDay).toHaveBeenCalledWith('u2', '2026-10-01', true))
   })
 
   test('the current weight sits next to the title; tapping it enters today’s', async () => {

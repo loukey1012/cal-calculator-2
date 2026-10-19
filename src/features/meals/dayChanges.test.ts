@@ -5,6 +5,8 @@ vi.mock('./mealsApi', () => ({
   addMealItem: vi.fn(),
   updateMealItem: vi.fn(),
   deleteMealItem: vi.fn(),
+  setCheatMeal: vi.fn(),
+  setCheatDay: vi.fn(),
 }))
 
 import { createQueryClient } from '../../lib/queryClient'
@@ -19,7 +21,7 @@ import {
   retryNetworkErrors,
   type DayChange,
 } from './dayChanges'
-import { addMealItem, deleteMealItem, updateMealItem } from './mealsApi'
+import { addMealItem, deleteMealItem, setCheatMeal, setCheatDay, updateMealItem } from './mealsApi'
 import { dayMeal, mealItem } from './testData'
 
 const DRAFT = {
@@ -70,6 +72,14 @@ describe('applyDayChange', () => {
       patch: { entered_amount: 200, basis_multiplier: 2 },
     })
     await applyDayChange({ kind: 'delete', userId: 'u1', date: '2026-10-01', id: 'item-1' })
+    await applyDayChange({
+      kind: 'cheatMeal',
+      userId: 'u1',
+      date: '2026-10-01',
+      mealType: 'dinner',
+      cheatMeal: true,
+    })
+    await applyDayChange({ kind: 'cheatDay', userId: 'u1', date: '2026-10-01', cheatDay: true })
 
     expect(addMealItem).toHaveBeenCalledWith({
       id: 'item-1',
@@ -83,6 +93,13 @@ describe('applyDayChange', () => {
       basis_multiplier: 2,
     })
     expect(deleteMealItem).toHaveBeenCalledWith('item-1')
+    expect(setCheatMeal).toHaveBeenCalledWith({
+      userId: 'u1',
+      date: '2026-10-01',
+      mealType: 'dinner',
+      cheatMeal: true,
+    })
+    expect(setCheatDay).toHaveBeenCalledWith('u1', '2026-10-01', true)
   })
 })
 
@@ -125,6 +142,33 @@ describe('applyDayChangeLocally', () => {
       id: 'existing',
     })
     expect(removed[0]?.meal_items).toEqual([])
+  })
+
+  test('marks a meal as a cheat meal, also one with nothing logged yet', () => {
+    const cheatMeal = { kind: 'cheatMeal', userId: 'u1', date: '2026-10-01' } as const
+
+    const lunch = applyDayChangeLocally(DAY, { ...cheatMeal, mealType: 'lunch', cheatMeal: true })
+    const dinner = applyDayChangeLocally(DAY, { ...cheatMeal, mealType: 'dinner', cheatMeal: true })
+    const back = applyDayChangeLocally(lunch, { ...cheatMeal, mealType: 'lunch', cheatMeal: false })
+
+    expect(lunch[0]).toMatchObject({ meal_type: 'lunch', cheat_meal: true })
+    expect(lunch[0]?.meal_items).toHaveLength(1)
+    expect(dinner.map((meal) => [meal.meal_type, meal.cheat_meal ?? false])).toEqual([
+      ['lunch', false],
+      ['dinner', true],
+    ])
+    expect(back[0]).toMatchObject({ cheat_meal: false })
+  })
+
+  test('a cheat day leaves the meals as they are', () => {
+    const change = {
+      kind: 'cheatDay',
+      userId: 'u1',
+      date: '2026-10-01',
+      cheatDay: true,
+    } as const
+
+    expect(applyDayChangeLocally(DAY, change)).toEqual(DAY)
   })
 })
 

@@ -15,12 +15,21 @@ type GoalCardProps = {
   readonly name: string
   readonly date: string
   readonly totals: NutritionTotals
+  /** false on days that are left out of averages: no over colors */
+  readonly showOver?: boolean
 }
 
 const MESSAGE = 'py-2 text-center text-[15px] text-label-secondary'
 
 /** The day's progress against the goal that was valid on that day. */
-export function GoalCard({ userId, isOwnGoal, name, date, totals }: GoalCardProps) {
+export function GoalCard({
+  userId,
+  isOwnGoal,
+  name,
+  date,
+  totals,
+  showOver = true,
+}: GoalCardProps) {
   const goals = useGoals(userId)
   const { progressStyle } = useMyAppearance()
   const [editing, setEditing] = useState(false)
@@ -44,7 +53,13 @@ export function GoalCard({ userId, isOwnGoal, name, date, totals }: GoalCardProp
       )
     }
     if (goal)
-      return <GoalProgressView progress={goalProgress(totals, goal)} style={progressStyle} />
+      return (
+        <GoalProgressView
+          progress={goalProgress(totals, goal)}
+          style={progressStyle}
+          showOver={showOver}
+        />
+      )
     if (!isOwnGoal) return <p className={MESSAGE}>{name} hasn’t set a daily goal yet.</p>
     return (
       <div className="py-2 text-center">

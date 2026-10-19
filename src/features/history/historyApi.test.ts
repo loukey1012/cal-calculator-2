@@ -13,7 +13,16 @@ describe('fetchDailyTotals', () => {
   test('reads the daily totals of one person in a date range', async () => {
     const query = fakeQuery({
       data: [
-        { date: '2026-10-01', kcal: 1850.5, protein: 98.2, meal_count: 3, kcal_estimated: true },
+        {
+          date: '2026-10-01',
+          kcal: 1850.5,
+          protein: 98.2,
+          meal_count: 3,
+          kcal_estimated: true,
+          cheat_day: true,
+          cheat_meal: false,
+        },
+        // a row without the marks reads as neither
         { date: '2026-10-02', kcal: 900, protein: 40, meal_count: 1, kcal_estimated: null },
       ],
       error: null,
@@ -22,11 +31,29 @@ describe('fetchDailyTotals', () => {
     supabaseMock.from.mockReturnValueOnce(query)
 
     await expect(fetchDailyTotals('u1', '2026-10-01', '2026-10-31')).resolves.toEqual([
-      { date: '2026-10-01', kcal: 1850.5, protein: 98.2, mealCount: 3, kcalEstimated: true },
-      { date: '2026-10-02', kcal: 900, protein: 40, mealCount: 1, kcalEstimated: false },
+      {
+        date: '2026-10-01',
+        kcal: 1850.5,
+        protein: 98.2,
+        mealCount: 3,
+        kcalEstimated: true,
+        cheatDay: true,
+        cheatMeal: false,
+      },
+      {
+        date: '2026-10-02',
+        kcal: 900,
+        protein: 40,
+        mealCount: 1,
+        kcalEstimated: false,
+        cheatDay: false,
+        cheatMeal: false,
+      },
     ])
     expect(supabaseMock.from).toHaveBeenCalledWith('daily_totals')
-    expect(query.select).toHaveBeenCalledWith('date, kcal, protein, meal_count, kcal_estimated')
+    expect(query.select).toHaveBeenCalledWith(
+      'date, kcal, protein, meal_count, kcal_estimated, cheat_day, cheat_meal',
+    )
     expect(query.eq).toHaveBeenCalledWith('user_id', 'u1')
   })
 

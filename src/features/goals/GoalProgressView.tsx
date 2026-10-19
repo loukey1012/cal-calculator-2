@@ -44,8 +44,8 @@ function consumedOfTarget(goal: GoalProgress, unit: Unit): string {
 }
 
 /** A full or over ring or bar takes its over color, if any is set (useAppearance). */
-function meterColor(goal: GoalProgress, color: string): string {
-  const level = overLevel(goal)
+function meterColor(goal: GoalProgress, color: string, showOver: boolean): string {
+  const level = showOver ? overLevel(goal) : 'none'
   return level === 'none' ? color : `var(--goal-over-${level}, ${color})`
 }
 
@@ -54,9 +54,19 @@ function fillOf(goal: GoalProgress): number {
   return Math.min(Math.max(goal.ratio, 0), 1)
 }
 
-type MeterProps = { readonly goal: GoalProgress; readonly color: string }
+type MeterProps = {
+  readonly goal: GoalProgress
+  readonly color: string
+  readonly showOver: boolean
+}
 
-function Ring({ goal, color, size, stroke }: MeterProps & { size: number; stroke: number }) {
+function Ring({
+  goal,
+  color,
+  showOver,
+  size,
+  stroke,
+}: MeterProps & { size: number; stroke: number }) {
   const radius = (size - stroke) / 2
   const circumference = 2 * Math.PI * radius
   const fill = fillOf(goal)
@@ -88,14 +98,14 @@ function Ring({ goal, color, size, stroke }: MeterProps & { size: number; stroke
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={`${fill * circumference} ${circumference}`}
-          style={{ stroke: meterColor(goal, color) }}
+          style={{ stroke: meterColor(goal, color, showOver) }}
         />
       )}
     </svg>
   )
 }
 
-function Bar({ goal, color, thin = false }: MeterProps & { thin?: boolean }) {
+function Bar({ goal, color, showOver, thin = false }: MeterProps & { thin?: boolean }) {
   const fill = fillOf(goal)
   return (
     <div
@@ -106,7 +116,7 @@ function Bar({ goal, color, thin = false }: MeterProps & { thin?: boolean }) {
     >
       <div
         className="h-full rounded-full"
-        style={{ width: `${fill * 100}%`, backgroundColor: meterColor(goal, color) }}
+        style={{ width: `${fill * 100}%`, backgroundColor: meterColor(goal, color, showOver) }}
       />
     </div>
   )
@@ -127,7 +137,13 @@ const KCAL_RING_STROKE = 12
 const MACRO_RING_SIZE = 52
 const MACRO_RING_STROKE = 7
 
-function KcalHero({ goal, style }: { goal: GoalProgress; style: ProgressStyle }) {
+type ItemProps = {
+  readonly goal: GoalProgress
+  readonly style: ProgressStyle
+  readonly showOver: boolean
+}
+
+function KcalHero({ goal, style, showOver }: ItemProps) {
   const { label, color, unit } = GOAL_STYLES.kcal
   const over = goal.remaining < 0
   const remaining = `${goal.estimated ? '~' : ''}${amount(Math.abs(goal.remaining), unit)}`
@@ -137,7 +153,13 @@ function KcalHero({ goal, style }: { goal: GoalProgress; style: ProgressStyle })
     return (
       <li className="col-span-full flex items-center gap-5">
         <div className="relative">
-          <Ring goal={goal} color={color} size={KCAL_RING_SIZE} stroke={KCAL_RING_STROKE} />
+          <Ring
+            goal={goal}
+            color={color}
+            showOver={showOver}
+            size={KCAL_RING_SIZE}
+            stroke={KCAL_RING_STROKE}
+          />
           <p className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="font-display text-[26px] leading-none font-bold tracking-tight">
               {remaining}
@@ -169,12 +191,12 @@ function KcalHero({ goal, style }: { goal: GoalProgress; style: ProgressStyle })
           {consumedOfTarget(goal, unit)}
         </span>
       </div>
-      <Bar goal={goal} color={color} thin={style === 'compact'} />
+      <Bar goal={goal} color={color} showOver={showOver} thin={style === 'compact'} />
     </li>
   )
 }
 
-function MacroItem({ goal, style }: { goal: GoalProgress; style: ProgressStyle }) {
+function MacroItem({ goal, style, showOver }: ItemProps) {
   const { label, color, unit } = GOAL_STYLES[goal.key]
   const text = (
     <div className="min-w-0">
@@ -198,7 +220,13 @@ function MacroItem({ goal, style }: { goal: GoalProgress; style: ProgressStyle }
   if (macrosAsRings(style)) {
     return (
       <li className="flex flex-col items-center gap-2 text-center">
-        <Ring goal={goal} color={color} size={MACRO_RING_SIZE} stroke={MACRO_RING_STROKE} />
+        <Ring
+          goal={goal}
+          color={color}
+          showOver={showOver}
+          size={MACRO_RING_SIZE}
+          stroke={MACRO_RING_STROKE}
+        />
         {text}
       </li>
     )
@@ -206,7 +234,7 @@ function MacroItem({ goal, style }: { goal: GoalProgress; style: ProgressStyle }
   return (
     <li className="space-y-1.5">
       {text}
-      <Bar goal={goal} color={color} thin={style === 'compact'} />
+      <Bar goal={goal} color={color} showOver={showOver} thin={style === 'compact'} />
     </li>
   )
 }
@@ -215,10 +243,12 @@ type GoalProgressViewProps = {
   readonly progress: readonly GoalProgress[]
   /** the viewer's own choice, also when looking at someone else's day */
   readonly style: ProgressStyle
+  /** false on cheat days and days with a cheat meal: no over colors */
+  readonly showOver?: boolean
 }
 
 /** Calories as the headline, then one item per macro goal that is set. */
-export function GoalProgressView({ progress, style }: GoalProgressViewProps) {
+export function GoalProgressView({ progress, style, showOver = true }: GoalProgressViewProps) {
   const kcal = progress.find((goal) => goal.key === 'kcal')
   const macros = progress.filter((goal) => goal.key !== 'kcal')
   return (
@@ -227,9 +257,9 @@ export function GoalProgressView({ progress, style }: GoalProgressViewProps) {
       className={`grid gap-x-3 ${style === 'compact' ? 'gap-y-3' : 'gap-y-4'}`}
       style={{ gridTemplateColumns: `repeat(${Math.max(macros.length, 1)}, minmax(0, 1fr))` }}
     >
-      {kcal && <KcalHero goal={kcal} style={style} />}
+      {kcal && <KcalHero goal={kcal} style={style} showOver={showOver} />}
       {macros.map((goal) => (
-        <MacroItem key={goal.key} goal={goal} style={style} />
+        <MacroItem key={goal.key} goal={goal} style={style} showOver={showOver} />
       ))}
     </ul>
   )

@@ -13,7 +13,7 @@ keep its status table and the README checkboxes up to date as items ship.
 date and hour (local time) and what changed in plain, neutral words. The list lives in
 `src/features/patchNotes/patchNotes.ts` once item 21 is built.
 
-**Next up (as of 2026-10-19):** items **12** (recent ingredients on top; no favorites) and **13** ("Doesn't count", no emoji,
-and eating out), then 9 · 14 · 10. Read "Handoff (2026-10-16, end of day)" at the end of the plan
-first: it lists what 13 must also touch. Never use the word
-"cheat". Build 2–3 items, push, then stop with a short summary for the user to test.
+**Next up (as of 2026-10-19):** item 13 (cheat days and cheat meals) is built; the user tests it.
+Then 9 · 14 · 10 (12 was dropped). Read "Handoff (updated 2026-10-19)" at the end of the plan
+first. Build 2–3 items, push, then stop with a short summary for the user to test. Docs-only
+changes are never committed alone: they go with the next functional commit.

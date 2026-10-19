@@ -3,6 +3,7 @@ import {
   useMutationState,
   useQuery,
   useQueryClient,
+  type QueryKey,
   type UseMutationResult,
   type UseQueryResult,
 } from '@tanstack/react-query'
@@ -16,18 +17,28 @@ import {
   dayChangeKey,
   type DayChange,
 } from './dayChanges'
-import type { AmountPatch, DayMeal } from './dayModel'
-import { fetchDay } from './mealsApi'
+import type { AmountPatch, DayMeal, MealType } from './dayModel'
+import { fetchDay, fetchCheatDay } from './mealsApi'
 
 const dayKeys = {
   day: (userId: string, date: string) => ['day', userId, date] as const,
+  // under the day's key, so everything that refreshes the day refreshes the mark too
+  cheatDay: (userId: string, date: string) => ['day', userId, date, 'cheatDay'] as const,
 }
 
 export function useDay(userId: string, date: string): UseQueryResult<DayMeal[]> {
   return useQuery({ queryKey: dayKeys.day(userId, date), queryFn: () => fetchDay(userId, date) })
 }
 
-type Rollback = { readonly previous: DayMeal[] | undefined }
+/** Whether the day is a cheat day. */
+export function useCheatDay(userId: string, date: string): UseQueryResult<boolean> {
+  return useQuery({
+    queryKey: dayKeys.cheatDay(userId, date),
+    queryFn: () => fetchCheatDay(userId, date),
+  })
+}
+
+type Rollback = { readonly previous: unknown }
 type DayChangeMutation = UseMutationResult<void, Error, DayChange, Rollback>
 
 /**
@@ -41,8 +52,19 @@ type DayChangeMutation = UseMutationResult<void, Error, DayChange, Rollback>
  * - The server's version (and partner edits) win via a re-fetch once the last change is done.
  */
 function useDayChange(userId: string, date: string): DayChangeMutation {
+  return useCachedDayChange<DayMeal[]>(userId, date, dayKeys.day(userId, date), (meals, change) =>
+    applyDayChangeLocally(meals ?? [], change),
+  )
+}
+
+/** Like useDayChange, for a change shown in another cached query of the day. */
+function useCachedDayChange<TCached>(
+  userId: string,
+  date: string,
+  queryKey: QueryKey,
+  applyLocally: (cached: TCached | undefined, change: DayChange) => TCached,
+): DayChangeMutation {
   const queryClient = useQueryClient()
-  const queryKey = dayKeys.day(userId, date)
   const mutationKey = dayChangeKey(userId, date)
   const isOnlyPendingChange = () =>
     queryClient.isMutating({
@@ -55,8 +77,8 @@ function useDayChange(userId: string, date: string): DayChangeMutation {
     mutationFn: (change: DayChange) => applyDayChange(change),
     onMutate: async (change) => {
       await queryClient.cancelQueries({ queryKey })
-      const previous = queryClient.getQueryData<DayMeal[]>(queryKey)
-      queryClient.setQueryData<DayMeal[]>(queryKey, applyDayChangeLocally(previous ?? [], change))
+      const previous = queryClient.getQueryData<TCached>(queryKey)
+      queryClient.setQueryData<TCached>(queryKey, applyLocally(previous, change))
       return { previous }
     },
     onError: (_error, _change, rollback) => {
@@ -103,4 +125,29 @@ export function useUpdateMealItem(
 export function useDeleteMealItem(userId: string, date: string): DayChangeActions<string> {
   const change = useDayChange(userId, date)
   return { ...change, mutate: (id) => change.mutate({ kind: 'delete', userId, date, id }) }
+}
+
+export type CheatMealChange = { readonly mealType: MealType; readonly cheatMeal: boolean }
+
+/** Marks a meal of the day as a cheat meal, or takes the mark back. */
+export function useSetCheatMeal(userId: string, date: string): DayChangeActions<CheatMealChange> {
+  const change = useDayChange(userId, date)
+  return {
+    ...change,
+    mutate: (input) => change.mutate({ kind: 'cheatMeal', userId, date, ...input }),
+  }
+}
+
+/** Marks the day as a cheat day, or takes the mark back. */
+export function useSetCheatDay(userId: string, date: string): DayChangeActions<boolean> {
+  const change = useCachedDayChange<boolean>(
+    userId,
+    date,
+    dayKeys.cheatDay(userId, date),
+    (cached, next) => (next.kind === 'cheatDay' ? next.cheatDay : (cached ?? false)),
+  )
+  return {
+    ...change,
+    mutate: (cheatDay) => change.mutate({ kind: 'cheatDay', userId, date, cheatDay }),
+  }
 }

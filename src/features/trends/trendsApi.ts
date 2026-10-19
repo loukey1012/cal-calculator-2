@@ -10,7 +10,9 @@ export async function fetchNutritionDays(
 ): Promise<NutritionDay[]> {
   const { data, error } = await supabase
     .from('daily_totals')
-    .select('date, kcal, protein, carbs, fat, fiber, kcal_estimated, meal_count')
+    .select(
+      'date, kcal, protein, carbs, fat, fiber, kcal_estimated, meal_count, cheat_day, cheat_meal',
+    )
     .eq('user_id', userId)
     .gte('date', first)
     .lte('date', last)
@@ -25,5 +27,7 @@ export async function fetchNutritionDays(
     fiber: row.fiber ?? 0,
     estimated: row.kcal_estimated ?? false,
     mealCount: row.meal_count ?? 0,
+    cheatDay: row.cheat_day ?? false,
+    cheatMeal: row.cheat_meal ?? false,
   }))
 }

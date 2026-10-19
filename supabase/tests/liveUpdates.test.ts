@@ -119,6 +119,19 @@ describe('live updates', () => {
     expect(hint).toMatchObject({ table: 'weight_entries', user_id: alice.id, actor: alice.id })
   })
 
+  test("a cheat day is announced as that person's day", async () => {
+    expect(await bobListens.status).toBe('SUBSCRIBED')
+    const otherDay = '2026-10-04'
+
+    const { error } = await alice.client
+      .from('cheat_days')
+      .insert({ user_id: alice.id, date: otherDay })
+
+    expect(error).toBeNull()
+    const hint = await waitFor(bobListens.hints, (h) => h.table === 'meals' && h.date === otherDay)
+    expect(hint).toMatchObject({ table: 'meals', user_id: alice.id, date: otherDay })
+  })
+
   test("someone from another household can't listen in", async () => {
     // Act
     const carolListens = await listen(carol, householdId)

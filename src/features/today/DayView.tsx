@@ -2,19 +2,26 @@ import { useState, type ComponentType, type SVGProps } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import { Button } from '../../components/ios/Button'
 import { ErrorBanner } from '../../components/ios/ErrorBanner'
-import { BreakfastIcon, DinnerIcon, LunchIcon, SnackIcon } from '../../components/ios/icons'
+import {
+  BreakfastIcon,
+  DinnerIcon,
+  EllipsisIcon,
+  LunchIcon,
+  SnackIcon,
+} from '../../components/ios/icons'
 import { toUserMessage } from '../../lib/errors'
 import { cookLink } from '../cook/cookLink'
 import { useLatestDishChangeError } from '../dishes/hooks'
 import { LeftoversPill } from '../dishes/LeftoversPill'
 import type { Profile } from '../household/householdApi'
 import { useLookOf } from '../household/usePersonLook'
-import { itemsByMeal, mealEntries, MEAL_TYPES, type MealType } from '../meals/dayModel'
-import { useDay, useLatestDayChangeError } from '../meals/hooks'
+import { cheatMeals, itemsByMeal, mealEntries, MEAL_TYPES, type MealType } from '../meals/dayModel'
+import { useDay, useLatestDayChangeError, useCheatDay } from '../meals/hooks'
 import { MealSheet } from '../meals/MealSheet'
 import { formatKcalTotal, macroSummary } from '../nutrition/format'
 import type { NutritionTotals } from '../nutrition/types'
 import { mealTotals, sumTotals } from '../nutrition/totals'
+import { DayOptionsSheet } from './DayOptionsSheet'
 import { GoalCard } from './GoalCard'
 
 const MEAL_ICONS: Record<MealType, ComponentType<SVGProps<SVGSVGElement>>> = {
@@ -28,15 +35,30 @@ function itemCount(count: number): string {
   return count === 1 ? '1 item' : `${count} items`
 }
 
+type MealSummary = {
+  readonly count: number
+  readonly totals: NutritionTotals
+  readonly cheatMeal: boolean
+}
+
 function mealSubtitle(
   loading: boolean,
   offline: boolean,
-  count: number,
-  totals: NutritionTotals,
+  { count, totals, cheatMeal }: MealSummary,
 ): string {
   if (loading) return offline ? 'Offline – not loaded yet' : 'Loading…'
+  if (cheatMeal) return count === 0 ? 'Cheat meal' : `Cheat meal · ${formatKcalTotal(totals)} kcal`
   if (count === 0) return 'Nothing logged'
   return `${formatKcalTotal(totals)} kcal · ${itemCount(count)}`
+}
+
+/** A small neutral label beside the day's macros, e.g. "Cheat day". */
+function DayBadge({ label }: { readonly label: string }) {
+  return (
+    <span className="shrink-0 rounded-full bg-fill px-2 py-0.5 text-[12px] font-bold text-label-secondary">
+      {label}
+    </span>
+  )
 }
 
 type MealCardProps = {
@@ -81,7 +103,9 @@ type DayViewProps = {
  */
 export function DayView({ person, isOwnDay, date }: DayViewProps) {
   const day = useDay(person.id, date)
+  const cheatDay = useCheatDay(person.id, date).data === true
   const lookOf = useLookOf()
+  const [optionsOpen, setOptionsOpen] = useState(false)
   // the sheet belongs to the day it was opened on, so it closes when the day rolls over
   const [openMeal, setOpenMeal] = useState<{ type: MealType; date: string } | null>(null)
   const openMealType = openMeal?.date === date ? openMeal.type : null
@@ -96,14 +120,17 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
     void navigate(cookLink({ userId: person.id, date, mealType }, pathname), { replace: true })
 
   const byMeal = itemsByMeal(day.data ?? [])
+  const cheatMealTypes = cheatMeals(day.data ?? [])
   const meals = MEAL_TYPES.map(({ type, label }) => ({
     type,
     label,
     // a cooked dish is one item, like it is one block in the meal
     count: mealEntries(byMeal[type]).length,
     totals: mealTotals(byMeal[type]),
+    cheatMeal: cheatMealTypes.has(type),
   }))
   const dayTotals = sumTotals(meals.map((meal) => meal.totals))
+  const hasCheatMeal = cheatMealTypes.size > 0
 
   return (
     <>
@@ -128,6 +155,8 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
             name={lookOf(person).name}
             date={date}
             totals={dayTotals}
+            // over colors would judge a day that is left out
+            showOver={!cheatDay && !hasCheatMeal}
           />
           <section className="mt-4">
             <div data-testid="day-total" className="mb-3 px-1">
@@ -140,25 +169,35 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
                 {!day.isPending && (
                   <span className="text-[15px] font-bold">{formatKcalTotal(dayTotals)} kcal</span>
                 )}
+                <button
+                  type="button"
+                  aria-label="Day options"
+                  onClick={() => setOptionsOpen(true)}
+                  // a 44 pt tap target around the small icon
+                  className="-my-2.5 -mr-2.5 self-center p-2.5 text-accent-ink active:opacity-60"
+                >
+                  <EllipsisIcon className="h-5 w-5" />
+                </button>
               </div>
-              <p className="text-[13px] font-semibold text-label-secondary">
-                {day.isPending ? 'Loading…' : macroSummary(dayTotals)}
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="min-w-0 flex-1 truncate text-[13px] font-semibold text-label-secondary">
+                  {day.isPending ? 'Loading…' : macroSummary(dayTotals)}
+                </p>
+                {cheatDay && <DayBadge label="Cheat day" />}
+                {hasCheatMeal && <DayBadge label="Cheat meal" />}
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              {meals.map(({ type, label, count, totals }) => (
+              {meals.map(({ type, label, ...summary }) => (
                 <MealCard
                   key={type}
                   type={type}
                   label={label}
-                  subtitle={mealSubtitle(
-                    day.isPending,
-                    day.fetchStatus === 'paused',
-                    count,
-                    totals,
-                  )}
+                  subtitle={mealSubtitle(day.isPending, day.fetchStatus === 'paused', summary)}
                   onOpen={() =>
-                    !day.isPending && count === 0 ? openCook(type) : setOpenMeal({ type, date })
+                    !day.isPending && summary.count === 0
+                      ? openCook(type)
+                      : setOpenMeal({ type, date })
                   }
                 />
               ))}
@@ -166,6 +205,12 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
           </section>
         </>
       )}
+      <DayOptionsSheet
+        open={optionsOpen}
+        userId={person.id}
+        date={date}
+        onClose={() => setOptionsOpen(false)}
+      />
       <MealSheet
         open={openMealType !== null}
         mealType={openMealType ?? 'breakfast'}

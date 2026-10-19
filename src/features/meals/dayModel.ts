@@ -25,6 +25,8 @@ export type DayMeal = {
   readonly id: string
   readonly meal_type: MealType
   readonly meal_items: readonly MealItem[]
+  /** its calories are unknown (missing in data cached by older versions) */
+  readonly cheat_meal?: boolean
 }
 
 export type AmountPatch = { readonly entered_amount: number; readonly basis_multiplier: number }
@@ -153,6 +155,28 @@ export function withItemUpdated(
     ...meal,
     meal_items: meal.meal_items.map((item) => (item.id === itemId ? { ...item, ...patch } : item)),
   }))
+}
+
+/** A meal marked as a cheat meal or not; marking an empty meal that isn't there yet adds it. */
+export function withCheatMeal(
+  meals: readonly DayMeal[],
+  mealType: MealType,
+  cheatMeal: boolean,
+): DayMeal[] {
+  const existing = meals.find((meal) => meal.meal_type === mealType)
+  if (existing) {
+    return meals.map((meal) => (meal === existing ? { ...meal, cheat_meal: cheatMeal } : meal))
+  }
+  if (!cheatMeal) return [...meals]
+  return [
+    ...meals,
+    { id: `pending-${mealType}`, meal_type: mealType, meal_items: [], cheat_meal: true },
+  ]
+}
+
+/** The day's cheat meals. */
+export function cheatMeals(meals: readonly DayMeal[]): ReadonlySet<MealType> {
+  return new Set(meals.filter((meal) => meal.cheat_meal === true).map((meal) => meal.meal_type))
 }
 
 export function withItemRemoved(meals: readonly DayMeal[], itemId: string): DayMeal[] {

@@ -1,5 +1,6 @@
 import { fromLocalDateString, toLocalDateString } from '../../lib/dates'
 import { roundTo } from '../../lib/numbers'
+import { isLeftOut } from '../history/calendar'
 import { goalForDate, type Goal } from '../nutrition/goals'
 import { weightOn, type WeightEntry } from '../weight/weight'
 
@@ -40,6 +41,10 @@ export type NutritionDay = {
   /** some food that day had estimated calories */
   readonly estimated: boolean
   readonly mealCount: number
+  /** a cheat day (missing in data cached by older versions) */
+  readonly cheatDay?: boolean
+  /** a meal that day was a cheat meal */
+  readonly cheatMeal?: boolean
 }
 
 export function addDays(date: string, count: number): string {
@@ -96,7 +101,9 @@ function atGoal(metric: NutritionMetric, value: number, goal: number | null): bo
   return metric === 'kcal' ? value <= goal : value >= goal
 }
 
-const logged = (days: readonly NutritionDay[]) => days.filter((day) => day.mealCount > 0)
+// cheat days and days with a cheat meal are left out, like unlogged ones
+const logged = (days: readonly NutritionDay[]) =>
+  days.filter((day) => day.mealCount > 0 && !isLeftOut(day))
 const average = (values: readonly number[]) =>
   values.length === 0 ? null : values.reduce((sum, value) => sum + value, 0) / values.length
 

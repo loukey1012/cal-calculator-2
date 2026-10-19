@@ -92,6 +92,17 @@ export function PlusIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
+/** Three dots, like iOS "more": a menu of options */
+export function EllipsisIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon {...props}>
+      <circle cx="5.5" cy="12" r="1.6" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none" />
+      <circle cx="18.5" cy="12" r="1.6" fill="currentColor" stroke="none" />
+    </Icon>
+  )
+}
+
 /** A pencil on a square, like iOS compose: write something of your own */
 export function ComposeIcon(props: SVGProps<SVGSVGElement>) {
   return (

@@ -40,6 +40,8 @@ export type ExportData = {
       readonly date: string
       readonly kcal: number | null
       readonly kcal_estimated: boolean | null
+      readonly cheat_day?: boolean | null
+      readonly cheat_meal?: boolean | null
     }
   >
   readonly weights: ReadonlyArray<{
@@ -79,6 +81,8 @@ export const DAY_HEADER = [
   ...NUTRIENT_COLUMNS.map(([, title]) => title),
   'Weight (kg)',
   'Estimate',
+  'Cheat day',
+  'Cheat meal',
 ]
 
 const UNIT_NAMES: Record<Enums<'amount_unit'>, string> = { g: 'g', ml: 'ml', unit: 'pieces' }
@@ -137,6 +141,8 @@ export function dayRows(data: ExportData): CsvValue[][] {
       ...NUTRIENT_COLUMNS.map(([key]) => oneDecimal(total?.[key] ?? null)),
       weights.get(keyOf(day)) ?? null,
       total?.kcal_estimated ?? false,
+      total?.cheat_day ?? false,
+      total?.cheat_meal ?? false,
     ]
   })
 }

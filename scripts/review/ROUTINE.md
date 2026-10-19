@@ -30,8 +30,10 @@ This writes `review-data.json`:
   - `meals`: per person, day and `meal_type` (`breakfast`, `lunch`, `dinner`, `snack`), the
     `items` as logged: `amount` in `unit` (`g`, `ml` or `unit` = pieces), and the item's totals
     `kcal`, `protein`, `carbs`, `fat`. `from_dish`: part of a cooked dish (shared portions).
+    `cheat_meal`: the person marked the meal as a cheat meal (its food may be missing).
   - `days`: each person's total `kcal` per logged day; `kcal_estimated` means a dish's calories
-    were only roughly known.
+    were only roughly known. `cheat_day`: the person marked the day as a cheat day (it can have no
+    meals at all). `cheat_meal`: a meal that day was a cheat meal.
   - `findings`: meal findings from before, with their `status`.
 
 ## 2. Look for real problems only
@@ -64,6 +66,10 @@ a different one.
 | `odd_amount`   | an amount that can't be meant (2000 g butter, 1 g pasta, 40 pieces of bread); give `meal_type` and `meal_item_id`                                                     |
 | `double_entry` | the same food twice in one meal, probably logged twice; give `meal_type` and the `meal_item_id` of the second one                                                     |
 | `zero_kcal`    | an item with 0 kcal that should have some; never for water, coffee, tea, diet or zero drinks, spices and the like                                                     |
+
+**Skip cheat days and days with a cheat meal completely** (`cheat_day` or `cheat_meal` in
+`days`): no finding of any kind for that person and day. They also don't count as
+a person's usual pattern.
 
 Never flag a missing snack, a day that only has snacks because that's how the person eats, or a
 day already flagged with the same kind (same person, day and meal) in `findings`. If the past days

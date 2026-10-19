@@ -30,9 +30,19 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-19T15:08',
+    kind: 'new',
+    title: 'Cheat days and cheat meals',
+    items: [
+      'The … next to the day total (Today and any day in History) marks the day as a cheat day, or single meals as cheat meals',
+      'Either leaves the whole day out of the History averages and Trends, without over colors on the rings; the weekly review skips it',
+      'The day shows a label, the calendar marks it, and the export has a column for each',
+    ],
+  },
+  {
     at: '2026-10-19T14:30',
     kind: 'internal',
-    title: 'Plan: recent ingredients on top, no favorites',
+    title: 'Plan: quick picks dropped',
   },
   { at: '2026-10-16T13:15', kind: 'internal', title: 'Notes for the next session' },
   {

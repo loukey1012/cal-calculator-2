@@ -82,6 +82,32 @@ export type Database = {
           },
         ]
       }
+      cheat_days: {
+        Row: {
+          created_at: string
+          date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cheat_days_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dish_line_amounts: {
         Row: {
           amount: number
@@ -609,6 +635,7 @@ export type Database = {
       }
       meals: {
         Row: {
+          cheat_meal: boolean
           created_at: string
           date: string
           id: string
@@ -617,6 +644,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          cheat_meal?: boolean
           created_at?: string
           date: string
           id?: string
@@ -625,6 +653,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          cheat_meal?: boolean
           created_at?: string
           date?: string
           id?: string
@@ -837,6 +866,8 @@ export type Database = {
         Row: {
           carbs: number | null
           carbs_missing: boolean | null
+          cheat_day: boolean | null
+          cheat_meal: boolean | null
           date: string | null
           fat: number | null
           fat_missing: boolean | null
@@ -855,20 +886,13 @@ export type Database = {
           sugar_missing: boolean | null
           user_id: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "meals_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       meal_totals: {
         Row: {
           carbs: number | null
           carbs_missing: boolean | null
+          cheat_meal: boolean | null
           date: string | null
           fat: number | null
           fat_missing: boolean | null
@@ -958,6 +982,15 @@ export type Database = {
           p_base_revision?: string
           p_dish: Json
           p_replace_item_ids?: string[]
+        }
+        Returns: undefined
+      }
+      set_cheat_meal: {
+        Args: {
+          p_cheat_meal: boolean
+          p_date: string
+          p_meal_type: Database["public"]["Enums"]["meal_type"]
+          p_user_id: string
         }
         Returns: undefined
       }

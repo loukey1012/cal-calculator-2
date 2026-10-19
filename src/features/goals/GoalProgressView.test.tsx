@@ -135,5 +135,19 @@ describe('GoalProgressView', () => {
 
       expect(strokeOf(screen.getByTestId('ring'))).toBe('var(--goal-kcal)')
     })
+
+    test('a cheat day shows no over colors', () => {
+      render(
+        <GoalProgressView
+          progress={[over('kcal', 1.2), over('fat', 1.05)]}
+          style="rings"
+          showOver={false}
+        />,
+      )
+
+      const [kcal, fat] = screen.getAllByTestId('ring')
+      expect(strokeOf(kcal!)).toBe('var(--goal-kcal)')
+      expect(strokeOf(fat!)).toBe('var(--goal-fat)')
+    })
   })
 })

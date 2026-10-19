@@ -379,6 +379,34 @@ describe('the review routine and meals', () => {
     expect(removed.error).toBeNull()
     expect(count).toBe(0)
   })
+
+  test('tells which days are cheat days and which meals cheat meals, so it skips them', async () => {
+    const cheatMeal = await alice.client.rpc('set_cheat_meal', {
+      p_user_id: alice.id,
+      p_date: '2026-10-10',
+      p_meal_type: 'dinner',
+      p_cheat_meal: true,
+    })
+    const cheatDay = await alice.client
+      .from('cheat_days')
+      .insert({ user_id: alice.id, date: '2026-10-08' })
+
+    const { data } = await routine.rpc('review_meals', { p_key: reviewKey, ...RANGE })
+
+    expect(cheatMeal.error).toBeNull()
+    expect(cheatDay.error).toBeNull()
+    const meals = data.meals as Array<{ date: string; meal_type: string; cheat_meal: boolean }>
+    expect(meals.find((meal) => meal.meal_type === 'dinner')).toMatchObject({ cheat_meal: true })
+    expect(meals.find((meal) => meal.meal_type === 'breakfast')).toMatchObject({
+      cheat_meal: false,
+    })
+    expect(data.days).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ date: '2026-10-08', cheat_day: true, cheat_meal: false }),
+        expect.objectContaining({ date: '2026-10-10', cheat_day: false, cheat_meal: true }),
+      ]),
+    )
+  })
 })
 
 describe('members and findings', () => {

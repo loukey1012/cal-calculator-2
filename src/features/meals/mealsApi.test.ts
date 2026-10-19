@@ -5,7 +5,15 @@ const { supabaseMock } = vi.hoisted(() => ({ supabaseMock: { from: vi.fn(), rpc:
 vi.mock('../../lib/supabase', () => ({ supabase: supabaseMock }))
 
 import { ApiError } from '../../lib/errors'
-import { addMealItem, deleteMealItem, fetchDay, updateMealItem } from './mealsApi'
+import {
+  addMealItem,
+  deleteMealItem,
+  fetchDay,
+  fetchCheatDay,
+  setCheatMeal,
+  setCheatDay,
+  updateMealItem,
+} from './mealsApi'
 import { dayMeal, mealItem } from './testData'
 
 const DRAFT = {
@@ -67,11 +75,67 @@ describe('mealsApi', () => {
     ])
     expect(supabaseMock.from).toHaveBeenCalledWith('meals')
     expect(query.select).toHaveBeenCalledWith(
-      'id, meal_type, meal_items(*, dish_portions(dish_id, dishes(name, kcal_estimated, dish_portions(user_id))))',
+      'id, meal_type, cheat_meal, meal_items(*, dish_portions(dish_id, dishes(name, kcal_estimated, dish_portions(user_id))))',
     )
     expect(query.eq).toHaveBeenCalledWith('user_id', 'u1')
     expect(query.eq).toHaveBeenCalledWith('date', '2026-10-01')
     expect(query.order).toHaveBeenCalledWith('created_at', { referencedTable: 'meal_items' })
+  })
+
+  test('setCheatMeal marks a meal of a day, or takes the mark back', async () => {
+    supabaseMock.rpc.mockResolvedValueOnce({ data: null, error: null })
+    supabaseMock.rpc.mockResolvedValueOnce({ data: null, error: DB_ERROR })
+
+    await setCheatMeal({ userId: 'u1', date: '2026-10-01', mealType: 'dinner', cheatMeal: true })
+    const refused = setCheatMeal({
+      userId: 'u1',
+      date: '2026-10-01',
+      mealType: 'dinner',
+      cheatMeal: false,
+    })
+
+    expect(supabaseMock.rpc).toHaveBeenCalledWith('set_cheat_meal', {
+      p_user_id: 'u1',
+      p_date: '2026-10-01',
+      p_meal_type: 'dinner',
+      p_cheat_meal: true,
+    })
+    await expect(refused).rejects.toBeInstanceOf(ApiError)
+  })
+
+  test('fetchCheatDay tells whether a day is marked as not counting', async () => {
+    const marked = fakeQuery({ data: { date: '2026-10-01' }, error: null })
+    const unmarked = fakeQuery({ data: null, error: null })
+    supabaseMock.from.mockReturnValueOnce(marked).mockReturnValueOnce(unmarked)
+
+    await expect(fetchCheatDay('u1', '2026-10-01')).resolves.toBe(true)
+    await expect(fetchCheatDay('u1', '2026-10-02')).resolves.toBe(false)
+    expect(supabaseMock.from).toHaveBeenCalledWith('cheat_days')
+    expect(marked.eq).toHaveBeenCalledWith('user_id', 'u1')
+    expect(marked.eq).toHaveBeenCalledWith('date', '2026-10-01')
+    expect(marked.maybeSingle).toHaveBeenCalled()
+  })
+
+  test('setCheatDay marks a day (again is fine) or removes the mark', async () => {
+    const mark = fakeQuery({ data: null, error: null })
+    const unmark = fakeQuery({ data: null, error: null })
+    const refused = fakeQuery({ data: null, error: DB_ERROR })
+    supabaseMock.from
+      .mockReturnValueOnce(mark)
+      .mockReturnValueOnce(unmark)
+      .mockReturnValueOnce(refused)
+
+    await setCheatDay('u1', '2026-10-01', true)
+    await setCheatDay('u1', '2026-10-01', false)
+
+    expect(mark.upsert).toHaveBeenCalledWith(
+      { user_id: 'u1', date: '2026-10-01' },
+      { onConflict: 'user_id,date', ignoreDuplicates: true },
+    )
+    expect(unmark.delete).toHaveBeenCalled()
+    expect(unmark.eq).toHaveBeenCalledWith('user_id', 'u1')
+    expect(unmark.eq).toHaveBeenCalledWith('date', '2026-10-01')
+    await expect(setCheatDay('u1', '2026-10-01', true)).rejects.toBeInstanceOf(ApiError)
   })
 
   test('addMealItem makes sure the meal exists, then inserts the item under its client id', async () => {

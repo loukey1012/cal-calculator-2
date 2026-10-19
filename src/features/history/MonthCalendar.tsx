@@ -18,6 +18,8 @@ const STATUS_TEXT: Record<DayStatus, string> = {
   logged: ', logged',
   onTarget: ', within goal',
   over: ', over goal',
+  cheatDay: ', cheat day',
+  cheatMeal: ', cheat meal',
 }
 
 const STATUS_CLASSES: Record<DayStatus, string> = {
@@ -25,6 +27,9 @@ const STATUS_CLASSES: Record<DayStatus, string> = {
   logged: 'bg-fill text-label',
   onTarget: 'bg-success/25 text-label',
   over: 'bg-destructive/25 text-label',
+  // left out of the averages: an outline instead of a fill
+  cheatDay: 'border-2 border-dashed border-label-secondary/60 text-label-secondary',
+  cheatMeal: 'bg-fill text-label',
 }
 
 type MonthCalendarProps = {
@@ -123,12 +128,19 @@ function DayButton({ date, today, selected, status, onSelect }: DayButtonProps) 
       aria-label={`${isToday ? 'Today, ' : ''}${label}${STATUS_TEXT[status]}`}
       disabled={date > today}
       onClick={() => onSelect(date)}
-      className={`mx-auto flex h-10 w-10 items-center justify-center rounded-full text-[15px] font-semibold disabled:opacity-30 ${
+      className={`relative mx-auto flex h-10 w-10 items-center justify-center rounded-full text-[15px] font-semibold disabled:opacity-30 ${
         // the selected day is filled with the accent color
         selected ? 'accent-edge bg-accent font-extrabold text-on-accent' : STATUS_CLASSES[status]
       } ${isToday ? 'ring-2 ring-accent-ink' : ''}`}
     >
       {Number(date.slice(8))}
+      {/* a cheat meal: logged, plus a dot for that meal */}
+      {status === 'cheatMeal' && (
+        <span
+          aria-hidden="true"
+          className={`absolute bottom-1 h-1 w-1 rounded-full ${selected ? 'bg-on-accent' : 'bg-label-secondary'}`}
+        />
+      )}
     </button>
   )
 }

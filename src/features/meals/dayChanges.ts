@@ -3,6 +3,7 @@ import { isNetworkError } from '../../lib/errors'
 import { monthKeys } from '../history/hooks'
 import type { MealItemDraft } from '../nutrition/fromIngredient'
 import {
+  withCheatMeal,
   withItemAdded,
   withItemRemoved,
   withItemUpdated,
@@ -11,7 +12,7 @@ import {
   type MealItem,
   type MealType,
 } from './dayModel'
-import { addMealItem, deleteMealItem, updateMealItem } from './mealsApi'
+import { addMealItem, deleteMealItem, setCheatMeal, setCheatDay, updateMealItem } from './mealsApi'
 
 /**
  * One change to a user's day. It carries everything needed to send it, so a change queued
@@ -35,6 +36,19 @@ export type DayChange =
       readonly patch: AmountPatch
     }
   | { readonly kind: 'delete'; readonly userId: string; readonly date: string; readonly id: string }
+  | {
+      readonly kind: 'cheatMeal'
+      readonly userId: string
+      readonly date: string
+      readonly mealType: MealType
+      readonly cheatMeal: boolean
+    }
+  | {
+      readonly kind: 'cheatDay'
+      readonly userId: string
+      readonly date: string
+      readonly cheatDay: boolean
+    }
 
 /** Prefix of every day change's mutation key. */
 export const DAY_CHANGES_KEY = ['day'] as const
@@ -60,6 +74,15 @@ export async function applyDayChange(change: DayChange): Promise<void> {
       return updateMealItem(change.id, change.patch)
     case 'delete':
       return deleteMealItem(change.id)
+    case 'cheatMeal':
+      return setCheatMeal({
+        userId: change.userId,
+        date: change.date,
+        mealType: change.mealType,
+        cheatMeal: change.cheatMeal,
+      })
+    case 'cheatDay':
+      return setCheatDay(change.userId, change.date, change.cheatDay)
   }
 }
 
@@ -85,6 +108,11 @@ export function applyDayChangeLocally(meals: readonly DayMeal[], change: DayChan
       return withItemUpdated(meals, change.id, change.patch)
     case 'delete':
       return withItemRemoved(meals, change.id)
+    case 'cheatMeal':
+      return withCheatMeal(meals, change.mealType, change.cheatMeal)
+    // a mark on the whole day, cached apart from the meals (see useCheatDay)
+    case 'cheatDay':
+      return [...meals]
   }
 }
 

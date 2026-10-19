@@ -37,6 +37,7 @@ Built for a two-person household: both members log their own meals, can see and 
 - Either of you can change or delete a dish; all portions follow. Deleting a dish that has other portions **asks first**. If both of you changed it at the same time, the later save is refused instead of overwriting the other.
 - On the Today cards a dish counts as **one item**. The whole page (person switch, goal card and all four meals) **fits an iPhone screen without scrolling**.
 - "Today" moves on at midnight, and when the app comes back to the foreground on a later day.
+- **Cheat days and cheat meals** (the **…** next to the day total, on Today and on any day in History): mark the whole day as a **cheat day**, or single meals as **cheat meals** (also an empty one). Either leaves the whole day out of the History averages and Trends, the rings show no over colors that day and the weekly review skips it. The food still counts in the day's totals. The day shows a "Cheat day" or "Cheat meal" label, a cheat meal's card says "Cheat meal". Either of you can set or remove them on any day; they work offline like meals.
 
 ### Daily goals and progress
 
@@ -48,13 +49,13 @@ Built for a two-person household: both members log their own meals, can see and 
 
 ### History
 
-- **Month calendar** (Monday first): every logged day is marked green (within that day's calorie goal), red (over) or neutral (logged, no goal yet).
-- Month summary: days logged, average calories and protein. The average shows "~" when a day in it had estimated calories.
+- **Month calendar** (Monday first): every logged day is marked green (within that day's calorie goal), red (over) or neutral (logged, no goal yet). A cheat day has a dashed outline instead, a day with a cheat meal is neutral with a small dot.
+- Month summary: days logged, average calories and protein, and how many days were left out (cheat days and days with a cheat meal). The average shows "~" when a day in it had estimated calories.
 - **Tap any past day** to show its rings, totals and meals **right beneath the calendar**, and **edit it like today**. A forgotten dinner: tap the empty Dinner, which opens Cook for that day and comes back here after saving. Tap another day to switch, or the same day again to close it. The selected day is kept in the address (`/history/YYYY-MM-DD`), so reopening the app keeps it. Also for your partner's days.
 - Under the day's meals, its **weight**: the latest entry up to that day ("72.4 kg, since Mon, Oct 5"). Tap it to set that day's weight (also for past days) or delete the day's entry. Your partner's weight is shown, but only you change yours.
 - **Calendar | Trends** at the top switches to the trends:
   - **Range:** **Week** (the current calendar week, Monday to Sunday, with weekday labels and compared with last week; the default), 4 weeks, 3 months, 6 months or 1 year. **Chips** for what has a goal: Calories always, each nutrient with a target (protein, carbs, fat, fiber), and **Weight** once there is a target weight or an entry.
-  - **Calories and nutrients:** one bar per logged day (per week, as the average of its logged days, for 6 months and 1 year) in the ring color, the goal as a dashed line that follows the goal history, unlogged days left out. Tap a bar for its value; days with estimated calories are lighter and read "~". Below: Ø per logged day, days within the goal (calories) or reaching it (nutrients), and the change against the range before.
+  - **Calories and nutrients:** one bar per logged day (per week, as the average of its logged days, for 6 months and 1 year) in the ring color, the goal as a dashed line that follows the goal history, unlogged days, cheat days and days with a cheat meal left out. Tap a bar for its value; days with estimated calories are lighter and read "~". Below: Ø per logged day, days within the goal (calories) or reaching it (nutrients), and the change against the range before.
   - **Weight:** a line through the entries (the weight from before the range starts it, hollow), the **target weight** as a dashed line, and Current, Change over the range and **To goal** (to lose or gain, or Reached). **Add weight** for any day up to today, and the latest entries to change or delete.
   - The charts are drawn by the app itself (no chart library), with a hidden table of the values for VoiceOver.
 
@@ -68,7 +69,7 @@ Built for a two-person household: both members log their own meals, can see and 
 
 ### Export (Settings › Export)
 
-- Pick a date range (the last 30 days to start) and get two CSV files of **both of you**: every logged food (person, date, meal, food, brand, amount, unit, kcal and nutrients in label order, estimate) and each day's totals with weight. Semicolons and decimal commas, so Excel and Numbers open them in columns. On the iPhone they go to the share sheet (Save to Files, Mail, …), elsewhere they download.
+- Pick a date range (the last 30 days to start) and get two CSV files of **both of you**: every logged food (person, date, meal, food, brand, amount, unit, kcal and nutrients in label order, estimate) and each day's totals with weight, cheat day and cheat meal. Semicolons and decimal commas, so Excel and Numbers open them in columns. On the iPhone they go to the share sheet (Save to Files, Mail, …), elsewhere they download.
 
 ### Ingredient database (Ingredients tab)
 
@@ -222,16 +223,14 @@ Noted 2026-10-15.
 - [x] A dish on Cook that hasn't been logged yet gets a badge on the Cook tab
 - [ ] Combined with the "Unsaved Cook dish" notification from point 10 (this needs the Cook draft to be saved to your account instead of only on the phone)
 
-**12. Recent ingredients on top** (to do)
+**12. Quick picks** (dropped: the "Most used" sort already covers it)
 
-- [ ] The ingredients you used last are always at the top of both ingredient lists (Cook and Ingredients), also while searching, whatever the sort
+**13. Cheat days and cheat meals** (done; first planned as "doesn't count" and "eaten out")
 
-**13. Days that don't count, and eating out** (to do)
-
-- [ ] **Doesn't count**: mark a day of yours as not counting
-- [ ] **Eaten out**: mark a meal as eaten out (empty, or with the food you do know, e.g. a drink); its day then counts as unknown and shows e.g. "≥ 900 kcal · eaten out" instead of an exact total
-- [ ] Both: a badge on the day in History and on Today, the day is left out of the Trends averages, the rings don't show the over colors that day (point 29) and the weekly review skips it
-- [ ] Both can be set, changed and removed on any day, also past ones, by either of you (like meals)
+- [x] **Cheat day**: mark a whole day
+- [x] **Cheat meal**: mark single meals (also an empty one); this leaves the whole day out too
+- [x] Both: a label on Today and in History, the day is left out of the averages and Trends, the rings show no over colors that day (point 29), the weekly review skips it, and the export has a column for each
+- [x] Both can be set, changed and removed on any day, also past ones, by either of you (like meals)
 
 **14. Recipes** (to do)
 
@@ -242,7 +241,7 @@ Noted 2026-10-15.
 
 **15. Export** (done)
 
-- [x] Settings › Export: pick a date range and get CSV files of both of you: every logged food (person, date, meal, food, amount, nutrients) and the daily totals with weight (the "doesn't count" and "eaten out" columns come with point 13)
+- [x] Settings › Export: pick a date range and get CSV files of both of you: every logged food (person, date, meal, food, amount, nutrients) and the daily totals with weight (with "Cheat day" and "Cheat meal" columns since point 13)
 
 Noted 2026-10-15 after testing points 1–8 on the iPhone (these come before point 9).
 
@@ -440,10 +439,10 @@ scripts/
 - `households`, `profiles` (one per auth user, created by a trigger; holds the name, accent color and `appearance` JSON, up to 4 KB)
 - `goal_history` (goal valid from a date; calories, and optionally protein, carbs, fat, fiber and a target weight), `weight_entries` (one weight per person and day, counting until the next; the household reads them, only you write yours)
 - `category_groups` (the household's broad categories), `categories` (optionally in a group; deleting a group leaves its categories ungrouped), `ingredients` (per-100 g and/or per-unit columns; `measure` `g` or `ml`: for ml the `_100` columns are per 100 ml and `unit_weight_g` is the ml per unit, and the at-most-100-g-per-100-g check doesn't apply; at least one calorie value required; optional `barcode`, 8–14 digits, unique per household; `kcal_estimated` for guessed values)
-- `meals` (unique per user, local date and meal type), `meal_items` (nutrition snapshot plus a basis multiplier; amounts in `g`, `ml` or `unit`, where `per_100g` means per 100 ml for an amount in ml)
+- `meals` (unique per user, local date and meal type; `cheat_meal`), `cheat_days` (a person's cheat days; the household manages them like meals), `meal_items` (nutrition snapshot plus a basis multiplier; amounts in `g`, `ml` or `unit`, where `per_100g` means per 100 ml for an amount in ml)
 - `meal_items` of a cooked dish point to their `dish_portions` row and `dish_lines` row; plain items leave both empty
 - `dishes` (a cooking; split mode equal / count / percent / weight, cooked weight, `kcal_estimated` when its calories are only roughly known, a revision changed by every save), `dish_portions` (who ate it on which day and meal, or nobody yet = a leftover; split value; `discarded` for a thrown-away leftover, which keeps its share), `dish_lines` (ingredient snapshot like `meal_items`, either `shared` or `per_portion`), `dish_line_amounts` (own amount of a `per_portion` line per portion)
-- Views `meal_totals` and `daily_totals` (with `kcal_estimated`: some food came from a dish marked as an estimate). RPCs `create_household`, `join_household`, `ensure_meal`, `save_dish` and `delete_dish`; `ingredient_use_counts` (how often each ingredient was used, for sorting by Most used; runs with the caller's rights, so RLS keeps it to the household). `keep_alive` returns `true` to anyone, for the keep-alive workflow.
+- Views `meal_totals` and `daily_totals` (with `kcal_estimated`: some food came from a dish marked as an estimate; `cheat_meal` and `cheat_day`; a cheat day without any meal still has a row). RPCs `create_household`, `join_household`, `ensure_meal`, `set_cheat_meal` (marks a meal, creating an empty one), `save_dish` and `delete_dish`; `ingredient_use_counts` (how often each ingredient was used, for sorting by Most used; runs with the caller's rights, so RLS keeps it to the household). `keep_alive` returns `true` to anyone, for the keep-alive workflow.
 - `review_findings` (what the weekly review routine found: about an ingredient, with a suggested fix as `column → value`, or about a person's day, optionally one meal and item; `open` / `applied` / `ignored`, who decided when). Members read them and only change the decision; the routine reads through `review_ingredients` and `review_meals` (members, goals, meals with item totals and day totals for up to 31 days) and adds findings through `submit_review_findings`, all authorized by the household's review key (`review_keys`, stored as a SHA-256 hash, readable by nobody). A finding is never added twice (same ingredient, kind and fix; or same person, day, kind, meal and item).
 - **Live updates:** triggers on the household's tables send a small hint over Supabase Realtime Broadcast to the private channel `household:<id>` (what changed: a person's day, a dish, the ingredient database, …). Hints carry no data: the app marks the matching queries out of date, and what's on screen re-fetches through the normal RLS-checked queries. A failed hint never fails a save.
 - `save_dish` stores a whole dish at once and re-logs every eaten portion as meal items in its eater's meal (shared lines × the portion's share, own amounts as entered), so the totals views count dishes like any other food. Resending the same save does nothing; a save based on an outdated revision is rejected ("changed meanwhile"). It can also take over plain items of a meal ("share this meal").
@@ -501,7 +500,7 @@ pnpm icons          # regenerate the icon PNGs: the default set from public/icon
 
 To add an app icon choice: put its SVG in `public/icons/<name>/icon.svg`, add `<name>` to `APP_ICONS` (`src/features/appearance/appearance.ts`) and a label to `APP_ICON_OPTIONS`, then run `pnpm icons`.
 
-**End-to-end journeys** (log a meal on Cook, Back and the back swipe going one step at a time on Cook, category chips and creating a missing ingredient from the Cook search, the new-version toast on the first start only, a White and a custom accent color, your own symbol, a single food changed in place, a meal eaten out logged as an estimate, a saved brand picked from the suggestions, a package scanned from a photo and filled in from Open Food Facts, a scanned portion of 3 biscuits split into single units with a wrong value cleared, values of a similar product found by name, an unknown package on Cook added to the saved ingredient it is plus an estimated ingredient marking the dish, a live camera scan on Cook, weight for today and an earlier day with calorie and weight trends, cooking together for two, sharing a meal afterwards, leftovers, goals and partner, partner nickname and symbol, Today fitting the screen, history, ingredients, category management, offline, a partner's change showing up live and after the app was in the background, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color, a drink saved and logged in ml, the newest ingredient on top with a brand filter and a saved sort order, Liquid Glass Minimal for every field and Full for everything, kept across a restart, random background colors changing with the tab and moving spots, an edited ingredient reaching both people's meals of the last two weeks but not older ones, weekly review findings applied, ignored and a meal finding opening its day) run the real app against the dev project. Build it against dev and pass the test credentials:
+**End-to-end journeys** (log a meal on Cook, Back and the back swipe going one step at a time on Cook, category chips and creating a missing ingredient from the Cook search, the new-version toast on the first start only, a White and a custom accent color, your own symbol, a single food changed in place, a meal eaten out logged as an estimate, a saved brand picked from the suggestions, a package scanned from a photo and filled in from Open Food Facts, a scanned portion of 3 biscuits split into single units with a wrong value cleared, values of a similar product found by name, an unknown package on Cook added to the saved ingredient it is plus an estimated ingredient marking the dish, a live camera scan on Cook, weight for today and an earlier day with calorie and weight trends, cooking together for two, sharing a meal afterwards, leftovers, goals and partner, partner nickname and symbol, Today fitting the screen, history, ingredients, category management, offline, a partner's change showing up live and after the app was in the background, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color, a drink saved and logged in ml, the newest ingredient on top with a brand filter and a saved sort order, Liquid Glass Minimal for every field and Full for everything, kept across a restart, random background colors changing with the tab and moving spots, an edited ingredient reaching both people's meals of the last two weeks but not older ones, weekly review findings applied, ignored and a meal finding opening its day, a cheat meal today and a past cheat day in History) run the real app against the dev project. Build it against dev and pass the test credentials:
 
 ```bash
 set -a; . ./.env.test.local; set +a
@@ -521,7 +520,7 @@ set -a; . ./.env.secrets.local; set +a
 pnpm exec supabase link --project-ref <dev-ref> -p "$DEV_DB_PASSWORD"
 pnpm exec supabase db push --linked -p "$DEV_DB_PASSWORD"
 pnpm test:db                    # prove it on dev first
-# then link production, push the same migration, and link dev again
+bash scripts/db-push-prod.sh    # then production: links it, lists and pushes, links dev again
 ```
 
 ### Ingredient review routine

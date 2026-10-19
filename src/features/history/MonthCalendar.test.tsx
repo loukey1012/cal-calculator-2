@@ -1,7 +1,15 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, test, vi } from 'vitest'
+import type { DayStatus } from './calendar'
 import { MonthCalendar } from './MonthCalendar'
+
+const STATUS_OF: Record<string, DayStatus> = {
+  '2026-10-01': 'onTarget',
+  '2026-10-02': 'over',
+  '2026-10-03': 'cheatDay',
+  '2026-10-04': 'cheatMeal',
+}
 
 function renderCalendar() {
   const onSelectDay = vi.fn()
@@ -11,9 +19,7 @@ function renderCalendar() {
       month="2026-10-01"
       today="2026-10-15"
       selectedDay="2026-10-02"
-      statusOf={(date) =>
-        date === '2026-10-01' ? 'onTarget' : date === '2026-10-02' ? 'over' : 'none'
-      }
+      statusOf={(date) => STATUS_OF[date] ?? 'none'}
       onSelectDay={onSelectDay}
       onChangeMonth={onChangeMonth}
     />,
@@ -52,6 +58,14 @@ describe('MonthCalendar', () => {
     expect(screen.getByRole('button', { name: /October 2.*over goal/ })).toHaveAttribute(
       'data-status',
       'over',
+    )
+    expect(screen.getByRole('button', { name: /October 3.*cheat day/ })).toHaveAttribute(
+      'data-status',
+      'cheatDay',
+    )
+    expect(screen.getByRole('button', { name: /October 4.*cheat meal/ })).toHaveAttribute(
+      'data-status',
+      'cheatMeal',
     )
     expect(screen.getByRole('button', { name: 'Today, October 15' })).toHaveAttribute(
       'aria-current',

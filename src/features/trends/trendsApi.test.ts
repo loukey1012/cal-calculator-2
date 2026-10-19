@@ -27,6 +27,8 @@ describe('fetchNutritionDays', () => {
           fiber: null,
           kcal_estimated: true,
           meal_count: 3,
+          cheat_day: null,
+          cheat_meal: true,
         },
       ],
       error: null,
@@ -43,6 +45,8 @@ describe('fetchNutritionDays', () => {
         fiber: 0,
         estimated: true,
         mealCount: 3,
+        cheatDay: false,
+        cheatMeal: true,
       },
     ])
     expect(supabaseMock.from).toHaveBeenCalledWith('daily_totals')

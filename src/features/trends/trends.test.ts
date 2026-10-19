@@ -25,6 +25,27 @@ function day(date: string, kcal: number, protein = 100, estimated = false): Nutr
   return { date, kcal, protein, carbs: 0, fat: 0, fiber: 20, estimated, mealCount: 3 }
 }
 
+describe('cheat days and days with a cheat meal', () => {
+  test('get no bar and are left out of the averages and goal days', () => {
+    const days = [
+      day('2026-10-05', 1800),
+      { ...day('2026-10-06', 3500), cheatDay: true },
+      { ...day('2026-10-07', 600), cheatMeal: true },
+    ]
+
+    const bars = nutritionBars(days, 'kcal', '4w', [GOAL])
+    const summary = nutritionSummary(
+      days,
+      [{ ...day('2026-09-30', 500), cheatMeal: true }],
+      'kcal',
+      [GOAL],
+    )
+
+    expect(bars.map((bar) => bar.start)).toEqual(['2026-10-05'])
+    expect(summary).toEqual({ average: 1800, loggedDays: 1, goalDays: 1, previousAverage: null })
+  })
+})
+
 describe('ranges', () => {
   test('a range ends today; the one before it ends the day before it starts', () => {
     expect(rangeBounds('4w', '2026-10-08')).toEqual({

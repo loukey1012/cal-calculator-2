@@ -25,6 +25,9 @@ vi.mock('../meals/mealsApi', () => ({
   addMealItem: vi.fn(),
   updateMealItem: vi.fn(),
   deleteMealItem: vi.fn(),
+  fetchCheatDay: vi.fn().mockResolvedValue(false),
+  setCheatMeal: vi.fn(),
+  setCheatDay: vi.fn(),
 }))
 vi.mock('../ingredients/ingredientsApi', () => ({
   fetchIngredients: vi.fn().mockResolvedValue([]),
@@ -161,6 +164,36 @@ describe('HistoryPage', () => {
     const summary = await screen.findByTestId('month-summary')
     await waitFor(() => expect(summary).toHaveTextContent('1 day logged · Ø 1,850 kcal'))
     expect(summary).not.toHaveTextContent('protein')
+  })
+
+  test('cheat days and days with a cheat meal are marked and left out of the average', async () => {
+    vi.mocked(fetchDailyTotals).mockResolvedValue([
+      { date: '2026-10-01', kcal: 1850, protein: 0, mealCount: 1, kcalEstimated: false },
+      {
+        date: '2026-10-02',
+        kcal: 4000,
+        protein: 0,
+        mealCount: 3,
+        kcalEstimated: false,
+        cheatDay: true,
+      },
+      {
+        date: '2026-10-03',
+        kcal: 300,
+        protein: 0,
+        mealCount: 1,
+        kcalEstimated: false,
+        cheatMeal: true,
+      },
+    ])
+    renderPage()
+
+    const summary = await screen.findByTestId('month-summary')
+    await waitFor(() =>
+      expect(summary).toHaveTextContent('1 day logged · Ø 1,850 kcal · 2 days left out'),
+    )
+    expect(screen.getByRole('button', { name: /October 2.*cheat day/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /October 3.*cheat meal/ })).toBeInTheDocument()
   })
 
   test('the average is marked as approximate when a day had estimated calories', async () => {

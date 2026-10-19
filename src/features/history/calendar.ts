@@ -12,12 +12,19 @@ export type DayTotal = {
   readonly mealCount: number
   /** some food that day came from a dish whose calories are an estimate */
   readonly kcalEstimated: boolean
+  /** a cheat day (missing in data cached by older versions) */
+  readonly cheatDay?: boolean
+  /** a meal that day was a cheat meal */
+  readonly cheatMeal?: boolean
 }
 
-export type DayStatus = 'none' | 'logged' | 'onTarget' | 'over'
+export type DayStatus = 'none' | 'logged' | 'onTarget' | 'over' | 'cheatDay' | 'cheatMeal'
 
 export type MonthSummary = {
+  /** days with something logged that count */
   readonly loggedDays: number
+  /** cheat days and days with a cheat meal */
+  readonly leftOutDays: number
   readonly averageKcal: number
   readonly averageProtein: number
   /** a logged day had estimated calories, so the average is approximate too */
@@ -56,8 +63,15 @@ export function monthGrid(month: string): ReadonlyArray<ReadonlyArray<string | n
   )
 }
 
+/** Cheat days and days with a cheat meal are left out of averages and never "over". */
+export function isLeftOut(day: Pick<DayTotal, 'cheatDay' | 'cheatMeal'>): boolean {
+  return day.cheatDay === true || day.cheatMeal === true
+}
+
 /** Judged against the goal that was valid on that day, with calories rounded up like everywhere. */
 export function dayStatus(total: DayTotal | undefined, goals: readonly Goal[]): DayStatus {
+  if (total?.cheatDay) return 'cheatDay'
+  if (total?.cheatMeal) return 'cheatMeal'
   if (!total || total.mealCount === 0) return 'none'
   const goal = goalForDate(goals, total.date)
   if (!goal) return 'logged'
@@ -65,14 +79,16 @@ export function dayStatus(total: DayTotal | undefined, goals: readonly Goal[]): 
 }
 
 export function monthSummary(totals: readonly DayTotal[]): MonthSummary {
-  const logged = totals.filter((day) => day.mealCount > 0)
+  const logged = totals.filter((day) => day.mealCount > 0 && !isLeftOut(day))
+  const leftOutDays = totals.filter(isLeftOut).length
   if (logged.length === 0) {
-    return { loggedDays: 0, averageKcal: 0, averageProtein: 0, estimated: false }
+    return { loggedDays: 0, leftOutDays, averageKcal: 0, averageProtein: 0, estimated: false }
   }
   const sum = (pick: (day: DayTotal) => number) =>
     logged.reduce((total, day) => total + pick(day), 0)
   return {
     loggedDays: logged.length,
+    leftOutDays,
     averageKcal: sum((day) => day.kcal) / logged.length,
     averageProtein: sum((day) => day.protein) / logged.length,
     estimated: logged.some((day) => day.kcalEstimated),

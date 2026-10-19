@@ -71,6 +71,17 @@ describe('dayStatus', () => {
     ).toBe('none')
     expect(dayStatus(undefined, [GOAL])).toBe('none')
   })
+
+  test('a cheat day or a day with a cheat meal is never over, logged or not', () => {
+    const over = { date: '2026-10-01', kcal: 3000, protein: 0, mealCount: 3, kcalEstimated: false }
+
+    expect(dayStatus({ ...over, cheatDay: true }, [GOAL])).toBe('cheatDay')
+    expect(dayStatus({ ...over, mealCount: 0, kcal: 0, cheatDay: true }, [GOAL])).toBe('cheatDay')
+    expect(dayStatus({ ...over, cheatMeal: true }, [GOAL])).toBe('cheatMeal')
+    expect(dayStatus({ ...over, mealCount: 0, kcal: 0, cheatMeal: true }, [GOAL])).toBe('cheatMeal')
+    // both: not counting says more
+    expect(dayStatus({ ...over, cheatMeal: true, cheatDay: true }, [GOAL])).toBe('cheatDay')
+  })
 })
 
 describe('monthSummary', () => {
@@ -81,11 +92,56 @@ describe('monthSummary', () => {
         { date: '2026-10-02', kcal: 1000, protein: 50, mealCount: 1, kcalEstimated: false },
         { date: '2026-10-03', kcal: 0, protein: 0, mealCount: 0, kcalEstimated: false },
       ]),
-    ).toEqual({ loggedDays: 2, averageKcal: 1500, averageProtein: 75, estimated: false })
+    ).toEqual({
+      loggedDays: 2,
+      leftOutDays: 0,
+      averageKcal: 1500,
+      averageProtein: 75,
+      estimated: false,
+    })
     expect(monthSummary([])).toEqual({
       loggedDays: 0,
+      leftOutDays: 0,
       averageKcal: 0,
       averageProtein: 0,
+      estimated: false,
+    })
+  })
+
+  test('cheat days and days with a cheat meal are left out of the averages', () => {
+    const summary = monthSummary([
+      { date: '2026-10-01', kcal: 2000, protein: 100, mealCount: 3, kcalEstimated: false },
+      {
+        date: '2026-10-02',
+        kcal: 4000,
+        protein: 10,
+        mealCount: 3,
+        kcalEstimated: true,
+        cheatDay: true,
+      },
+      {
+        date: '2026-10-03',
+        kcal: 300,
+        protein: 5,
+        mealCount: 1,
+        kcalEstimated: false,
+        cheatMeal: true,
+      },
+      {
+        date: '2026-10-04',
+        kcal: 0,
+        protein: 0,
+        mealCount: 0,
+        kcalEstimated: false,
+        cheatDay: true,
+      },
+    ])
+
+    expect(summary).toEqual({
+      loggedDays: 1,
+      leftOutDays: 3,
+      averageKcal: 2000,
+      averageProtein: 100,
       estimated: false,
     })
   })

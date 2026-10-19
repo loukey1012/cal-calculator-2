@@ -26,12 +26,28 @@ function isRealDay(day: string): boolean {
   return toLocalDateString(fromLocalDateString(day)) === day
 }
 
-function summaryText({ loggedDays, averageKcal, averageProtein, estimated }: MonthSummary): string {
-  if (loggedDays === 0) return 'Nothing logged this month.'
-  const days = loggedDays === 1 ? '1 day logged' : `${loggedDays} days logged`
-  const kcal = `${days} · Ø ${formatKcalTotal({ kcal: averageKcal, estimated })} kcal`
+const dayCount = (count: number) => (count === 1 ? '1 day' : `${count} days`)
+
+function averagesText({
+  loggedDays,
+  averageKcal,
+  averageProtein,
+  estimated,
+}: MonthSummary): string {
+  const kcal = `${dayCount(loggedDays)} logged · Ø ${formatKcalTotal({ kcal: averageKcal, estimated })} kcal`
   // no protein data at all would read as a misleading "0.0 g"
   return averageProtein > 0 ? `${kcal} · Ø ${formatGrams(averageProtein)} g protein` : kcal
+}
+
+function summaryText(summary: MonthSummary): string {
+  const { loggedDays, leftOutDays } = summary
+  if (loggedDays === 0 && leftOutDays === 0) return 'Nothing logged this month.'
+  // cheat days and days with a cheat meal aren't in the averages
+  const parts = [
+    loggedDays > 0 ? averagesText(summary) : null,
+    leftOutDays > 0 ? `${dayCount(leftOutDays)} left out` : null,
+  ]
+  return parts.filter((part) => part !== null).join(' · ')
 }
 
 type HistoryView = 'calendar' | 'trends'

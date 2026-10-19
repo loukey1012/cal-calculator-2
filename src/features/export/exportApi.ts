@@ -7,7 +7,7 @@ type Person = ExportData['people'][number]
 const ITEM_COLUMNS =
   'name, brand, entered_amount, entered_unit, basis_multiplier, kcal, protein, carbs, sugar, fat, sat_fat, fiber, salt, dish_portions(dishes(kcal_estimated))'
 const TOTAL_COLUMNS =
-  'user_id, date, kcal, protein, carbs, sugar, fat, sat_fat, fiber, salt, kcal_estimated'
+  'user_id, date, kcal, protein, carbs, sugar, fat, sat_fat, fiber, salt, kcal_estimated, cheat_day, cheat_meal'
 
 type ItemRow = Omit<ExportData['meals'][number]['meal_items'][number], 'estimated'> & {
   readonly dish_portions: { readonly dishes: { readonly kcal_estimated: boolean } | null } | null
