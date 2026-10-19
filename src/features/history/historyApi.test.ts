@@ -21,6 +21,8 @@ describe('fetchDailyTotals', () => {
           kcal_estimated: true,
           cheat_day: true,
           cheat_meal: false,
+          lunch_logged: true,
+          dinner_logged: false,
         },
         // a row without the marks reads as neither
         { date: '2026-10-02', kcal: 900, protein: 40, meal_count: 1, kcal_estimated: null },
@@ -39,6 +41,8 @@ describe('fetchDailyTotals', () => {
         kcalEstimated: true,
         cheatDay: true,
         cheatMeal: false,
+        lunchLogged: true,
+        dinnerLogged: false,
       },
       {
         date: '2026-10-02',
@@ -48,11 +52,13 @@ describe('fetchDailyTotals', () => {
         kcalEstimated: false,
         cheatDay: false,
         cheatMeal: false,
+        lunchLogged: false,
+        dinnerLogged: false,
       },
     ])
     expect(supabaseMock.from).toHaveBeenCalledWith('daily_totals')
     expect(query.select).toHaveBeenCalledWith(
-      'date, kcal, protein, meal_count, kcal_estimated, cheat_day, cheat_meal',
+      'date, kcal, protein, meal_count, kcal_estimated, cheat_day, cheat_meal, lunch_logged, dinner_logged',
     )
     expect(query.eq).toHaveBeenCalledWith('user_id', 'u1')
   })

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, test, vi } from 'vitest'
 import type { DayStatus } from './calendar'
@@ -9,6 +9,7 @@ const STATUS_OF: Record<string, DayStatus> = {
   '2026-10-02': 'over',
   '2026-10-03': 'cheatDay',
   '2026-10-04': 'cheatMeal',
+  '2026-10-05': 'missing',
 }
 
 function renderCalendar() {
@@ -67,6 +68,9 @@ describe('MonthCalendar', () => {
       'data-status',
       'cheatMeal',
     )
+    const missing = screen.getByRole('button', { name: /October 5.*lunch or dinner missing/ })
+    expect(missing).toHaveAttribute('data-status', 'missing')
+    expect(within(missing).getByTestId('missing-dot')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Today, October 15' })).toHaveAttribute(
       'aria-current',
       'date',

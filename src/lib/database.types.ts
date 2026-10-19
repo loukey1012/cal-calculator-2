@@ -869,12 +869,14 @@ export type Database = {
           cheat_day: boolean | null
           cheat_meal: boolean | null
           date: string | null
+          dinner_logged: boolean | null
           fat: number | null
           fat_missing: boolean | null
           fiber: number | null
           fiber_missing: boolean | null
           kcal: number | null
           kcal_estimated: boolean | null
+          lunch_logged: boolean | null
           meal_count: number | null
           protein: number | null
           protein_missing: boolean | null

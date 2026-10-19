@@ -20,6 +20,7 @@ const STATUS_TEXT: Record<DayStatus, string> = {
   over: ', over goal',
   cheatDay: ', cheat day',
   cheatMeal: ', cheat meal',
+  missing: ', lunch or dinner missing',
 }
 
 const STATUS_CLASSES: Record<DayStatus, string> = {
@@ -30,6 +31,8 @@ const STATUS_CLASSES: Record<DayStatus, string> = {
   // left out of the averages: an outline instead of a fill
   cheatDay: 'border-2 border-dashed border-label-secondary/60 text-label-secondary',
   cheatMeal: 'bg-fill text-label',
+  // not judged against the goal: it doesn't count until lunch and dinner are logged
+  missing: 'bg-fill text-label',
 }
 
 type MonthCalendarProps = {
@@ -139,6 +142,14 @@ function DayButton({ date, today, selected, status, onSelect }: DayButtonProps) 
         <span
           aria-hidden="true"
           className={`absolute bottom-1 h-1 w-1 rounded-full ${selected ? 'bg-on-accent' : 'bg-label-secondary'}`}
+        />
+      )}
+      {/* a meal missing: an amber dot at the top right, visible at a glance */}
+      {status === 'missing' && (
+        <span
+          aria-hidden="true"
+          data-testid="missing-dot"
+          className="absolute top-0.5 right-0.5 h-2.5 w-2.5 rounded-full bg-amber-500 ring-2 ring-bg-elevated"
         />
       )}
     </button>

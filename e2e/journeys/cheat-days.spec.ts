@@ -1,4 +1,4 @@
-import { activePage, expect, localDay, logIn, test } from './backend.ts'
+import { activePage, dayLabel, expect, localDay, logIn, test } from './backend.ts'
 
 test('a cheat meal today, and a past cheat day in History', async ({ page, backend }) => {
   const me = await backend.user('Hanna')
@@ -46,7 +46,7 @@ test('a cheat meal today, and a past cheat day in History', async ({ page, backe
     })
     .toEqual([{ meal_type: 'dinner', cheat_meal: true }])
 
-  // yesterday was over the goal, but it was a cheat day
+  // yesterday had only a lunch (flagged), and it was a cheat day
   await page
     .getByRole('navigation', { name: 'Tabs' })
     .getByRole('button', { name: 'History' })
@@ -55,7 +55,9 @@ test('a cheat meal today, and a past cheat day in History', async ({ page, backe
   if (yesterday.slice(0, 7) !== localDay().slice(0, 7)) {
     await history.getByRole('button', { name: 'Previous month' }).click()
   }
-  await history.getByRole('button', { name: /over goal/ }).click()
+  await history
+    .getByRole('button', { name: dayLabel(yesterday, 'lunch or dinner missing') })
+    .click()
   const day = history.getByRole('region')
   await day.getByRole('button', { name: 'Day options' }).click()
   await page.getByRole('dialog', { name: 'Day' }).getByRole('switch', { name: 'Cheat day' }).click()

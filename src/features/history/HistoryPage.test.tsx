@@ -50,6 +50,19 @@ const PROFILE = {
   updated_at: '',
 }
 const PARTNER = { ...PROFILE, id: 'u2', display_name: 'baby' }
+
+/** a day with lunch and dinner logged */
+function complete(date: string) {
+  return {
+    date,
+    kcal: 1800,
+    protein: 0,
+    mealCount: 3,
+    kcalEstimated: false,
+    lunchLogged: true,
+    dinnerLogged: true,
+  }
+}
 const GOAL = {
   validFrom: '2026-09-01',
   kcal: 2000,
@@ -194,6 +207,42 @@ describe('HistoryPage', () => {
     )
     expect(screen.getByRole('button', { name: /October 2.*cheat day/ })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /October 3.*cheat meal/ })).toBeInTheDocument()
+  })
+
+  test('days since tracking started without lunch or dinner are flagged and left out', async () => {
+    vi.mocked(fetchDailyTotals).mockResolvedValue([
+      { ...complete('2026-10-01'), kcal: 1800 },
+      { ...complete('2026-10-11'), kcal: 900, dinnerLogged: false },
+      // today: dinner isn't eaten yet, so it's neither flagged nor counted
+      { ...complete('2026-10-15'), kcal: 500, dinnerLogged: false },
+    ])
+    renderPage()
+
+    const summary = await screen.findByTestId('month-summary')
+    await waitFor(() =>
+      expect(summary).toHaveTextContent('1 day logged · Ø 1,800 kcal · 1 day left out'),
+    )
+    expect(
+      screen.getByRole('button', { name: /October 11.*lunch or dinner missing/ }),
+    ).toBeVisible()
+    // nothing logged at all since tracking started is flagged too, earlier days aren't
+    expect(
+      screen.getByRole('button', { name: /October 12.*lunch or dinner missing/ }),
+    ).toBeVisible()
+    expect(screen.getByRole('button', { name: 'October 9' })).toBeVisible()
+    expect(screen.getByRole('button', { name: /Today, October 15/ })).not.toHaveAccessibleName(
+      /missing/,
+    )
+  })
+
+  test('an opened past day says which main meal is missing', async () => {
+    vi.mocked(fetchDay).mockResolvedValue([dayMeal('m1', 'lunch', [mealItem({ id: 'soup' })])])
+    renderPage('/history/2026-10-12')
+
+    const day = screen.getByRole('region', { name: /October 12/ })
+    await waitFor(() =>
+      expect(within(day).getByTestId('day-total')).toHaveTextContent('Dinner missing'),
+    )
   })
 
   test('the average is marked as approximate when a day had estimated calories', async () => {

@@ -144,3 +144,52 @@ describe('cheat days', () => {
     expect(await dayOf(alice, alice.id, CHEAT_DAY)).toEqual([])
   })
 })
+
+describe('main meals in the day totals', () => {
+  test('tell whether lunch and dinner have food; an empty meal or a breakfast is not enough', async () => {
+    const day = '2026-10-05'
+    const meal = async (meal_type: string) => {
+      const { data, error } = await alice.client.rpc('ensure_meal', {
+        p_user_id: alice.id,
+        p_date: day,
+        p_meal_type: meal_type,
+      })
+      if (error) throw new Error(error.message)
+      return data as string
+    }
+    const lunch = await meal('lunch')
+    await meal('dinner') // empty
+    const breakfast = await meal('breakfast')
+    const item = (meal_id: string) => ({
+      meal_id,
+      name: 'Bread',
+      entered_amount: 1,
+      entered_unit: 'unit',
+      basis: 'per_unit',
+      basis_multiplier: 1,
+      kcal: 200,
+    })
+    const added = await alice.client.from('meal_items').insert([item(lunch), item(breakfast)])
+
+    const { data } = await alice.client
+      .from('daily_totals')
+      .select('lunch_logged, dinner_logged')
+      .eq('user_id', alice.id)
+      .eq('date', day)
+
+    expect(added.error).toBeNull()
+    expect(data).toEqual([{ lunch_logged: true, dinner_logged: false }])
+  })
+
+  test('a cheat day without meals has neither', async () => {
+    await alice.client.from('cheat_days').insert({ user_id: alice.id, date: '2026-10-06' })
+
+    const { data } = await alice.client
+      .from('daily_totals')
+      .select('lunch_logged, dinner_logged')
+      .eq('user_id', alice.id)
+      .eq('date', '2026-10-06')
+
+    expect(data).toEqual([{ lunch_logged: false, dinner_logged: false }])
+  })
+})

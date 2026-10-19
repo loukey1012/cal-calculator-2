@@ -21,28 +21,60 @@ const GOAL: Goal = {
   weightGoalKg: 68,
 }
 
+const TODAY = '2026-10-19'
+
+/** a complete day: lunch and dinner logged */
 function day(date: string, kcal: number, protein = 100, estimated = false): NutritionDay {
-  return { date, kcal, protein, carbs: 0, fat: 0, fiber: 20, estimated, mealCount: 3 }
+  return {
+    date,
+    kcal,
+    protein,
+    carbs: 0,
+    fat: 0,
+    fiber: 20,
+    estimated,
+    mealCount: 3,
+    lunchLogged: true,
+    dinnerLogged: true,
+  }
 }
 
-describe('cheat days and days with a cheat meal', () => {
-  test('get no bar and are left out of the averages and goal days', () => {
-    const days = [
-      day('2026-10-05', 1800),
-      { ...day('2026-10-06', 3500), cheatDay: true },
-      { ...day('2026-10-07', 600), cheatMeal: true },
-    ]
+describe("days that don't count", () => {
+  const days = [
+    day('2026-10-05', 1800),
+    { ...day('2026-10-06', 3500), cheatDay: true },
+    { ...day('2026-10-07', 600), cheatMeal: true },
+    { ...day('2026-10-08', 700), dinnerLogged: false },
+    { ...day(TODAY, 400), dinnerLogged: false },
+  ]
 
-    const bars = nutritionBars(days, 'kcal', '4w', [GOAL])
-    const summary = nutritionSummary(
-      days,
-      [{ ...day('2026-09-30', 500), cheatMeal: true }],
-      'kcal',
-      [GOAL],
-    )
+  test('still get a bar, marked by why they are left out', () => {
+    const bars = nutritionBars(days, 'kcal', '4w', [GOAL], TODAY)
 
-    expect(bars.map((bar) => bar.start)).toEqual(['2026-10-05'])
-    expect(summary).toEqual({ average: 1800, loggedDays: 1, goalDays: 1, previousAverage: null })
+    expect(bars.map((bar) => [bar.start, bar.kind, bar.value, bar.days])).toEqual([
+      ['2026-10-05', 'counted', 1800, 1],
+      ['2026-10-06', 'cheatDay', 3500, 0],
+      ['2026-10-07', 'cheatMeal', 600, 0],
+      ['2026-10-08', 'missing', 700, 0],
+      [TODAY, 'today', 400, 0],
+    ])
+  })
+
+  test('are left out of the averages, goal days and the range before', () => {
+    const before = [{ ...day('2026-09-30', 500), cheatMeal: true }, day('2026-10-01', 2100)]
+
+    expect(nutritionSummary(days, before, 'kcal', [GOAL], TODAY)).toEqual({
+      average: 1800,
+      loggedDays: 1,
+      goalDays: 1,
+      previousAverage: 2100,
+    })
+  })
+
+  test('weekly bars average only the counted days', () => {
+    const bars = nutritionBars(days, 'kcal', '6m', [GOAL], TODAY)
+
+    expect(bars).toEqual([expect.objectContaining({ start: '2026-10-05', value: 1800, days: 1 })])
   })
 })
 
@@ -85,14 +117,14 @@ describe('availableMetrics', () => {
 })
 
 describe('nutritionBars', () => {
-  test('short ranges: one bar per logged day with that day’s goal; empty days are left out', () => {
+  test('short ranges: one bar per logged day with that day’s goal; empty days have none', () => {
     const days = [
       day('2026-10-01', 1800),
       { ...day('2026-10-02', 0), mealCount: 0 },
       day('2026-10-03', 2100, 90, true),
     ]
 
-    expect(nutritionBars(days, 'kcal', '4w', [GOAL])).toEqual([
+    expect(nutritionBars(days, 'kcal', '4w', [GOAL], TODAY)).toEqual([
       {
         start: '2026-10-01',
         end: '2026-10-01',
@@ -100,15 +132,24 @@ describe('nutritionBars', () => {
         goal: 2000,
         estimated: false,
         days: 1,
+        kind: 'counted',
       },
-      { start: '2026-10-03', end: '2026-10-03', value: 2100, goal: 2000, estimated: true, days: 1 },
+      {
+        start: '2026-10-03',
+        end: '2026-10-03',
+        value: 2100,
+        goal: 2000,
+        estimated: true,
+        days: 1,
+        kind: 'counted',
+      },
     ])
   })
 
   test('long ranges: one bar per week (Monday to Sunday), the average of its logged days', () => {
     const days = [day('2026-09-28', 1800), day('2026-09-30', 2200), day('2026-10-05', 2000)]
 
-    expect(nutritionBars(days, 'kcal', '6m', [GOAL])).toEqual([
+    expect(nutritionBars(days, 'kcal', '6m', [GOAL], TODAY)).toEqual([
       {
         start: '2026-09-28',
         end: '2026-10-04',
@@ -116,6 +157,7 @@ describe('nutritionBars', () => {
         goal: 2000,
         estimated: false,
         days: 2,
+        kind: 'counted',
       },
       {
         start: '2026-10-05',
@@ -124,6 +166,7 @@ describe('nutritionBars', () => {
         goal: 2000,
         estimated: false,
         days: 1,
+        kind: 'counted',
       },
     ])
   })
@@ -131,10 +174,13 @@ describe('nutritionBars', () => {
   test('the goal follows the goal history', () => {
     const october = { ...GOAL, validFrom: '2026-10-02', kcal: 1800 }
 
-    const bars = nutritionBars([day('2026-10-01', 1900), day('2026-10-02', 1900)], 'kcal', '4w', [
-      GOAL,
-      october,
-    ])
+    const bars = nutritionBars(
+      [day('2026-10-01', 1900), day('2026-10-02', 1900)],
+      'kcal',
+      '4w',
+      [GOAL, october],
+      TODAY,
+    )
 
     expect(bars.map((bar) => bar.goal)).toEqual([2000, 1800])
   })
@@ -145,14 +191,14 @@ describe('nutritionSummary', () => {
     const days = [day('2026-10-01', 1800, 130), day('2026-10-02', 2200, 100)]
     const before = [day('2026-09-01', 2100)]
 
-    expect(nutritionSummary(days, before, 'kcal', [GOAL])).toEqual({
+    expect(nutritionSummary(days, before, 'kcal', [GOAL], TODAY)).toEqual({
       average: 2000,
       loggedDays: 2,
       goalDays: 1,
       previousAverage: 2100,
     })
     // protein counts as reached at or above the target
-    expect(nutritionSummary(days, [], 'protein', [GOAL])).toMatchObject({
+    expect(nutritionSummary(days, [], 'protein', [GOAL], TODAY)).toMatchObject({
       average: 115,
       goalDays: 1,
       previousAverage: null,
@@ -160,7 +206,7 @@ describe('nutritionSummary', () => {
   })
 
   test('nothing logged', () => {
-    expect(nutritionSummary([], [], 'kcal', [GOAL])).toEqual({
+    expect(nutritionSummary([], [], 'kcal', [GOAL], TODAY)).toEqual({
       average: null,
       loggedDays: 0,
       goalDays: 0,

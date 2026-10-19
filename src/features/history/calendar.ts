@@ -1,29 +1,32 @@
 import { fromLocalDateString, toLocalDateString } from '../../lib/dates'
 import { toWholeKcal } from '../nutrition/format'
 import { goalForDate, type Goal } from '../nutrition/goals'
+import { countsInAverages, isCheat, isMissingMeals, type CountedDay } from './dayCounting'
 
 const DAYS_PER_WEEK = 7
 
 /** One person's totals for a day (from the daily_totals view). */
-export type DayTotal = {
-  readonly date: string
+export type DayTotal = CountedDay & {
   readonly kcal: number
   readonly protein: number
-  readonly mealCount: number
   /** some food that day came from a dish whose calories are an estimate */
   readonly kcalEstimated: boolean
-  /** a cheat day (missing in data cached by older versions) */
-  readonly cheatDay?: boolean
-  /** a meal that day was a cheat meal */
-  readonly cheatMeal?: boolean
 }
 
-export type DayStatus = 'none' | 'logged' | 'onTarget' | 'over' | 'cheatDay' | 'cheatMeal'
+export type DayStatus =
+  | 'none'
+  | 'logged'
+  | 'onTarget'
+  | 'over'
+  | 'cheatDay'
+  | 'cheatMeal'
+  /** a past day without food at lunch or dinner (see dayCounting) */
+  | 'missing'
 
 export type MonthSummary = {
-  /** days with something logged that count */
+  /** days with something logged that count (see dayCounting) */
   readonly loggedDays: number
-  /** cheat days and days with a cheat meal */
+  /** past days with something logged that don't count: cheat days, a meal missing */
   readonly leftOutDays: number
   readonly averageKcal: number
   readonly averageProtein: number
@@ -63,24 +66,31 @@ export function monthGrid(month: string): ReadonlyArray<ReadonlyArray<string | n
   )
 }
 
-/** Cheat days and days with a cheat meal are left out of averages and never "over". */
-export function isLeftOut(day: Pick<DayTotal, 'cheatDay' | 'cheatMeal'>): boolean {
-  return day.cheatDay === true || day.cheatMeal === true
-}
-
-/** Judged against the goal that was valid on that day, with calories rounded up like everywhere. */
-export function dayStatus(total: DayTotal | undefined, goals: readonly Goal[]): DayStatus {
+/**
+ * Judged against the goal that was valid on that day, with calories rounded up like everywhere.
+ * Cheat days and days missing a main meal are never judged: they don't count.
+ */
+export function dayStatus(
+  date: string,
+  total: DayTotal | undefined,
+  goals: readonly Goal[],
+  today: string,
+): DayStatus {
   if (total?.cheatDay) return 'cheatDay'
   if (total?.cheatMeal) return 'cheatMeal'
+  if (isMissingMeals(date, total, today)) return 'missing'
   if (!total || total.mealCount === 0) return 'none'
   const goal = goalForDate(goals, total.date)
   if (!goal) return 'logged'
   return toWholeKcal(total.kcal) <= goal.kcal ? 'onTarget' : 'over'
 }
 
-export function monthSummary(totals: readonly DayTotal[]): MonthSummary {
-  const logged = totals.filter((day) => day.mealCount > 0 && !isLeftOut(day))
-  const leftOutDays = totals.filter(isLeftOut).length
+export function monthSummary(totals: readonly DayTotal[], today: string): MonthSummary {
+  const logged = totals.filter((day) => countsInAverages(day, today))
+  const leftOutDays = totals.filter(
+    (day) =>
+      day.date < today && (day.mealCount > 0 || isCheat(day)) && !countsInAverages(day, today),
+  ).length
   if (logged.length === 0) {
     return { loggedDays: 0, leftOutDays, averageKcal: 0, averageProtein: 0, estimated: false }
   }

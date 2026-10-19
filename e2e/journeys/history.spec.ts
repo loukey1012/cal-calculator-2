@@ -1,4 +1,4 @@
-import { activePage, expect, localDay, logIn, test } from './backend.ts'
+import { activePage, dayLabel, expect, localDay, logIn, test } from './backend.ts'
 import { cookFor } from './cook.ts'
 
 test('select a past day in History and add a forgotten dinner beneath the calendar', async ({
@@ -36,7 +36,11 @@ test('select a past day in History and add a forgotten dinner beneath the calend
     await history.getByRole('button', { name: 'Previous month' }).click()
   }
 
-  await history.getByRole('button', { name: /within goal/ }).click()
+  // only a lunch: the day is flagged until dinner is logged
+  await history
+    .getByRole('button', { name: dayLabel(yesterday, 'lunch or dinner missing') })
+    .click()
+  await expect(history.getByRole('region').getByTestId('day-total')).toContainText('Dinner missing')
   await expect(page).toHaveURL(new RegExp(`/history/${yesterday}$`))
   // reopening the app keeps the day selected, without sliding half of a neighbour into view
   await page.reload()

@@ -91,6 +91,7 @@ export function TrendsView({ userId, isOwn, today }: TrendsViewProps) {
           range={range}
           bounds={bounds}
           goals={goalList}
+          today={today}
         />
       )}
     </section>

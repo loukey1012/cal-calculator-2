@@ -21,8 +21,10 @@ import { MealSheet } from '../meals/MealSheet'
 import { formatKcalTotal, macroSummary } from '../nutrition/format'
 import type { NutritionTotals } from '../nutrition/types'
 import { mealTotals, sumTotals } from '../nutrition/totals'
+import { isMissingMeals, missingMainMeals, type MainMeal } from '../history/dayCounting'
 import { DayOptionsSheet } from './DayOptionsSheet'
 import { GoalCard } from './GoalCard'
+import { useToday } from './useToday'
 
 const MEAL_ICONS: Record<MealType, ComponentType<SVGProps<SVGSVGElement>>> = {
   breakfast: BreakfastIcon,
@@ -50,6 +52,16 @@ function mealSubtitle(
   if (cheatMeal) return count === 0 ? 'Cheat meal' : `Cheat meal · ${formatKcalTotal(totals)} kcal`
   if (count === 0) return 'Nothing logged'
   return `${formatKcalTotal(totals)} kcal · ${itemCount(count)}`
+}
+
+const MISSING_LABELS: Record<string, string> = {
+  lunch: 'Lunch missing',
+  dinner: 'Dinner missing',
+  'lunch,dinner': 'Lunch and dinner missing',
+}
+
+function missingLabel(missing: readonly MainMeal[]): string {
+  return MISSING_LABELS[missing.join(',')] ?? ''
 }
 
 /** A small neutral label beside the day's macros, e.g. "Cheat day". */
@@ -104,6 +116,7 @@ type DayViewProps = {
 export function DayView({ person, isOwnDay, date }: DayViewProps) {
   const day = useDay(person.id, date)
   const cheatDay = useCheatDay(person.id, date).data === true
+  const today = useToday()
   const lookOf = useLookOf()
   const [optionsOpen, setOptionsOpen] = useState(false)
   // the sheet belongs to the day it was opened on, so it closes when the day rolls over
@@ -131,6 +144,17 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
   }))
   const dayTotals = sumTotals(meals.map((meal) => meal.totals))
   const hasCheatMeal = cheatMealTypes.size > 0
+  // a past day without lunch or dinner doesn't count (History flags it too)
+  const counted = {
+    date,
+    mealCount: meals.filter((meal) => meal.count > 0).length,
+    cheatDay,
+    cheatMeal: hasCheatMeal,
+    lunchLogged: byMeal.lunch.length > 0,
+    dinnerLogged: byMeal.dinner.length > 0,
+  }
+  const missing =
+    !day.isPending && isMissingMeals(date, counted, today) ? missingMainMeals(counted) : []
 
   return (
     <>
@@ -185,6 +209,7 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
                 </p>
                 {cheatDay && <DayBadge label="Cheat day" />}
                 {hasCheatMeal && <DayBadge label="Cheat meal" />}
+                {missing.length > 0 && <DayBadge label={missingLabel(missing)} />}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">

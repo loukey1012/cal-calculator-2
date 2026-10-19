@@ -30,6 +30,16 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-19T15:55',
+    kind: 'new',
+    title: 'Only complete days count; missing meals are flagged',
+    items: [
+      'Averages and Trends only count past days with lunch and dinner logged, no cheat day and no cheat meal; today never counts',
+      'History marks every day since October 10 without lunch or dinner with an amber dot, and the day says which one is missing',
+      'Trends: a cheat day is a dashed grey bar as high as the goal, a day missing a meal and today are grey; tap one to see why',
+    ],
+  },
+  {
     at: '2026-10-19T15:08',
     kind: 'new',
     title: 'Cheat days and cheat meals',

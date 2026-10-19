@@ -192,7 +192,7 @@ function MonthOverview({
         month={month}
         today={today}
         selectedDay={selectedDay}
-        statusOf={(day) => dayStatus(byDate.get(day), goals.data ?? [])}
+        statusOf={(day) => dayStatus(day, byDate.get(day), goals.data ?? [], today)}
         onSelectDay={onSelectDay}
         onChangeMonth={onChangeMonth}
       />
@@ -203,7 +203,7 @@ function MonthOverview({
           data-testid="month-summary"
           className="mt-3 px-1 text-[14px] font-medium text-label-secondary"
         >
-          {totals.isPending ? 'Loading…' : summaryText(monthSummary(totals.data ?? []))}
+          {totals.isPending ? 'Loading…' : summaryText(monthSummary(totals.data ?? [], today))}
         </p>
       )}
     </>

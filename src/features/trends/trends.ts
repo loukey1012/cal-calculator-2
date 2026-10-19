@@ -1,6 +1,6 @@
 import { fromLocalDateString, toLocalDateString } from '../../lib/dates'
 import { roundTo } from '../../lib/numbers'
-import { isLeftOut } from '../history/calendar'
+import { countsInAverages, type CountedDay } from '../history/dayCounting'
 import { goalForDate, type Goal } from '../nutrition/goals'
 import { weightOn, type WeightEntry } from '../weight/weight'
 
@@ -31,8 +31,7 @@ const GOAL_FIELDS: Readonly<Record<Exclude<NutritionMetric, 'kcal'>, keyof Goal>
 }
 
 /** One logged day's totals (from the daily_totals view). */
-export type NutritionDay = {
-  readonly date: string
+export type NutritionDay = CountedDay & {
   readonly kcal: number
   readonly protein: number
   readonly carbs: number
@@ -40,11 +39,6 @@ export type NutritionDay = {
   readonly fiber: number
   /** some food that day had estimated calories */
   readonly estimated: boolean
-  readonly mealCount: number
-  /** a cheat day (missing in data cached by older versions) */
-  readonly cheatDay?: boolean
-  /** a meal that day was a cheat meal */
-  readonly cheatMeal?: boolean
 }
 
 export function addDays(date: string, count: number): string {
@@ -101,21 +95,30 @@ function atGoal(metric: NutritionMetric, value: number, goal: number | null): bo
   return metric === 'kcal' ? value <= goal : value >= goal
 }
 
-// cheat days and days with a cheat meal are left out, like unlogged ones
-const logged = (days: readonly NutritionDay[]) =>
-  days.filter((day) => day.mealCount > 0 && !isLeftOut(day))
+// only complete past days count (see dayCounting)
+const counted = (days: readonly NutritionDay[], today: string) =>
+  days.filter((day) => countsInAverages(day, today))
 const average = (values: readonly number[]) =>
   values.length === 0 ? null : values.reduce((sum, value) => sum + value, 0) / values.length
+
+/**
+ * How a bar is drawn: counted days in the metric's color; days that don't count stand out
+ * instead of leaving a gap. A cheat day or a day with a cheat meal is a ghost bar as high as
+ * its goal (its numbers don't matter), a past day missing lunch or dinner shows what was
+ * logged in grey, and today shows what's logged so far in grey.
+ */
+export type TrendBarKind = 'counted' | 'cheatDay' | 'cheatMeal' | 'missing' | 'today'
 
 export type TrendBar = {
   readonly start: string
   readonly end: string
-  /** the day's value, or the average of the week's logged days */
+  /** the day's value, or the average of the week's counted days */
   readonly value: number
   readonly goal: number | null
   readonly estimated: boolean
-  /** logged days in it */
+  /** counted days in it */
   readonly days: number
+  readonly kind: TrendBarKind
 }
 
 function mondayOf(date: string): string {
@@ -129,6 +132,7 @@ function barOf(
   days: readonly NutritionDay[],
   metric: NutritionMetric,
   goals: readonly Goal[],
+  kind: TrendBarKind,
 ): TrendBar {
   const last = days.at(-1)?.date ?? end
   return {
@@ -137,35 +141,52 @@ function barOf(
     value: average(days.map((day) => day[metric])) ?? 0,
     goal: goalOf(goalForDate(goals, last), metric),
     estimated: days.some((day) => day.estimated),
-    days: days.length,
+    days: kind === 'counted' ? days.length : 0,
+    kind,
   }
 }
 
-/** Bars over the range: per logged day, or per week for long ranges. Unlogged days have none. */
+function kindOf(day: NutritionDay, today: string): TrendBarKind {
+  if (day.date >= today) return 'today'
+  if (day.cheatDay) return 'cheatDay'
+  if (day.cheatMeal) return 'cheatMeal'
+  return countsInAverages(day, today) ? 'counted' : 'missing'
+}
+
+const byDate = (a: NutritionDay, b: NutritionDay) => a.date.localeCompare(b.date)
+
+/**
+ * Bars over the range: per logged day (also those that don't count, see TrendBarKind), or per
+ * week for long ranges, from its counted days only. Days with nothing logged have none.
+ */
 export function nutritionBars(
   days: readonly NutritionDay[],
   metric: NutritionMetric,
   range: TrendRange,
   goals: readonly Goal[],
+  today: string,
 ): TrendBar[] {
-  const sorted = logged(days).toSorted((a, b) => a.date.localeCompare(b.date))
   if (!WEEKLY_RANGES.has(range)) {
-    return sorted.map((day) => barOf(day.date, day.date, [day], metric, goals))
+    return days
+      .filter((day) => day.mealCount > 0 || day.cheatDay === true || day.cheatMeal === true)
+      .toSorted(byDate)
+      .map((day) => barOf(day.date, day.date, [day], metric, goals, kindOf(day, today)))
   }
   const weeks = new Map<string, NutritionDay[]>()
-  for (const day of sorted) {
+  for (const day of counted(days, today).toSorted(byDate)) {
     const monday = mondayOf(day.date)
     weeks.set(monday, [...(weeks.get(monday) ?? []), day])
   }
   return [...weeks].map(([monday, week]) =>
-    barOf(monday, addDays(monday, DAYS_PER_WEEK - 1), week, metric, goals),
+    barOf(monday, addDays(monday, DAYS_PER_WEEK - 1), week, metric, goals, 'counted'),
   )
 }
 
 export type NutritionSummary = {
   readonly average: number | null
+  /** counted days (see dayCounting) */
   readonly loggedDays: number
-  /** logged days within (calories) or reaching (nutrients) that day's goal */
+  /** counted days within (calories) or reaching (nutrients) that day's goal */
   readonly goalDays: number
   readonly previousAverage: number | null
 }
@@ -175,15 +196,16 @@ export function nutritionSummary(
   previousDays: readonly NutritionDay[],
   metric: NutritionMetric,
   goals: readonly Goal[],
+  today: string,
 ): NutritionSummary {
-  const shown = logged(days)
+  const shown = counted(days, today)
   return {
     average: average(shown.map((day) => day[metric])),
     loggedDays: shown.length,
     goalDays: shown.filter((day) =>
       atGoal(metric, day[metric], goalOf(goalForDate(goals, day.date), metric)),
     ).length,
-    previousAverage: average(logged(previousDays).map((day) => day[metric])),
+    previousAverage: average(counted(previousDays, today).map((day) => day[metric])),
   }
 }
 

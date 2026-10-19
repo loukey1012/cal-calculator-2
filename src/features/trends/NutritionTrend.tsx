@@ -30,14 +30,27 @@ type NutritionTrendProps = {
   readonly range: TrendRange
   readonly bounds: RangeBounds
   readonly goals: readonly Goal[]
+  readonly today: string
+}
+
+/** why a day doesn't count, after its date in the readout */
+const NOT_COUNTED: Partial<Record<TrendBar['kind'], string>> = {
+  cheatDay: 'cheat day · not counted',
+  cheatMeal: 'cheat meal · not counted',
 }
 
 function readout(metric: NutritionMetric, bar: TrendBar | undefined): string {
   if (!bar) return 'Tap a bar to see its value.'
+  const span = formatSpan(bar.start, bar.end)
+  const notCounted = NOT_COUNTED[bar.kind]
+  // a cheat day's numbers don't matter
+  if (notCounted) return `${span}: ${notCounted}`
   const value = `${bar.estimated ? '~' : ''}${formatMetric(metric, bar.value)}`
   const goal = bar.goal === null ? '' : ` · goal ${formatMetric(metric, bar.goal)}`
   const average = bar.start === bar.end ? '' : ' a day'
-  return `${formatSpan(bar.start, bar.end)}: ${value}${average}${goal}`
+  if (bar.kind === 'missing') return `${span}: ${value} · lunch or dinner missing · not counted`
+  if (bar.kind === 'today') return `${span}: ${value} so far${goal}`
+  return `${span}: ${value}${average}${goal}`
 }
 
 function tiles(
@@ -64,7 +77,14 @@ function tiles(
 }
 
 /** Calories or one nutrient: bars with the goal, a readout, and a few figures. */
-export function NutritionTrend({ userId, metric, range, bounds, goals }: NutritionTrendProps) {
+export function NutritionTrend({
+  userId,
+  metric,
+  range,
+  bounds,
+  goals,
+  today,
+}: NutritionTrendProps) {
   // one request for this range and the one before it
   const days = useNutritionDays(userId, bounds.previousFirst, bounds.last)
   const [selected, setSelected] = useState<number | null>(null)
@@ -73,8 +93,8 @@ export function NutritionTrend({ userId, metric, range, bounds, goals }: Nutriti
 
   const current = days.data.filter((day) => day.date >= bounds.first)
   const previous = days.data.filter((day) => day.date < bounds.first)
-  const bars = nutritionBars(current, metric, range, goals)
-  const summary = nutritionSummary(current, previous, metric, goals)
+  const bars = nutritionBars(current, metric, range, goals, today)
+  const summary = nutritionSummary(current, previous, metric, goals, today)
   const label = METRIC_LABELS[metric]
 
   return (
@@ -114,7 +134,7 @@ export function NutritionTrend({ userId, metric, range, bounds, goals }: Nutriti
             {bars.map((bar) => (
               <tr key={bar.start}>
                 <th scope="row">{formatSpan(bar.start, bar.end)}</th>
-                <td>{formatMetric(metric, bar.value)}</td>
+                <td>{NOT_COUNTED[bar.kind] ?? formatMetric(metric, bar.value)}</td>
                 <td>{bar.goal === null ? '' : `goal ${formatMetric(metric, bar.goal)}`}</td>
               </tr>
             ))}

@@ -91,6 +91,15 @@ export function activePage(page: Page) {
   return page.locator('[data-testid="tab-page"]:not([inert])')
 }
 
+/** A History calendar day's accessible name, e.g. "October 18, lunch or dinner missing". */
+export function dayLabel(date: string, status: string): RegExp {
+  const [year, month, day] = date.split('-').map(Number)
+  const name = new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric' }).format(
+    new Date(year ?? 0, (month ?? 1) - 1, day),
+  )
+  return new RegExp(`^${name}, ${status}$`)
+}
+
 export function localDay(daysAgo = 0): string {
   const date = new Date()
   date.setDate(date.getDate() - daysAgo)

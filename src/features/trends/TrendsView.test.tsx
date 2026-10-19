@@ -105,6 +105,52 @@ describe('TrendsView', () => {
     expect(screen.getByTestId('trend-stats')).toHaveTextContent('vs. previous−500 kcalweek')
   })
 
+  test("days that don't count: a ghost bar for a cheat day, grey for a missing meal and today", async () => {
+    vi.mocked(fetchNutritionDays).mockResolvedValue([
+      day('2026-10-05', 1800),
+      { ...day('2026-10-06', 3500), cheatDay: true },
+      { ...day('2026-10-07', 700), dinnerLogged: false },
+      { ...day(TODAY, 400), dinnerLogged: false },
+    ])
+    renderTrends()
+
+    const chart = await screen.findByRole('region', { name: 'Calories chart' })
+    const bars = within(chart).getAllByTestId('trend-bar')
+    expect(bars.map((bar) => bar.getAttribute('data-kind'))).toEqual([
+      'counted',
+      'cheatDay',
+      'missing',
+      'today',
+    ])
+    // the cheat day stands as high as its goal, not its 3,500 kcal
+    const yIn = (pattern: RegExp, element: Element) =>
+      Number(pattern.exec(element.getAttribute('d') ?? '')?.[1])
+    const goalY = yIn(/M[\d.]+,([\d.]+)/, within(chart).getByTestId('goal-line'))
+    expect(yIn(/Q[\d.]+,([\d.]+)/, bars[1]!)).toBeCloseTo(goalY, 1)
+    expect(screen.getByTestId('trend-stats')).toHaveTextContent('Ø per day1,800 kcal')
+    expect(screen.getByTestId('trend-stats')).toHaveTextContent('Within goal1 of 1')
+    const table = within(chart).getByRole('table')
+    expect(table).toHaveTextContent('cheat day · not counted')
+  })
+
+  test('tapping a day that does not count says why', async () => {
+    vi.mocked(fetchNutritionDays).mockResolvedValue([
+      { ...day('2026-10-06', 3500), cheatMeal: true },
+      { ...day('2026-10-07', 700), lunchLogged: false },
+    ])
+    renderTrends()
+    const chart = await screen.findByRole('region', { name: 'Calories chart' })
+    const targets = () =>
+      within(chart)
+        .getAllByTestId('trend-bar')
+        .map((bar) => bar.nextElementSibling as Element)
+
+    fireEvent.click(targets()[0]!)
+    expect(chart).toHaveTextContent('cheat meal · not counted')
+    fireEvent.click(targets()[1]!)
+    expect(chart).toHaveTextContent('700 kcal · lunch or dinner missing · not counted')
+  })
+
   test('a longer range asks for more days', async () => {
     const user = userEvent.setup()
     renderTrends()

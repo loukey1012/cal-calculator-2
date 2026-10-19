@@ -13,25 +13,28 @@ test('weight entered for today and an earlier day; Trends show calories and weig
     protein_g: 120,
     weight_goal_kg: 68,
   })
+  // complete days (lunch and dinner), so they count in the averages
   for (const [daysAgo, kcal] of [
     [3, 1800],
     [1, 2200],
   ] as const) {
-    const { data: meal } = await backend.admin
-      .from('meals')
-      .insert({ user_id: me.id, date: localDay(daysAgo), meal_type: 'lunch' })
-      .select('id')
-      .single()
-    await backend.admin.from('meal_items').insert({
-      meal_id: meal?.id,
-      name: 'Seeded lunch',
-      entered_amount: 1,
-      entered_unit: 'unit',
-      basis: 'per_unit',
-      basis_multiplier: 1,
-      kcal,
-      protein: 100,
-    })
+    for (const meal_type of ['lunch', 'dinner'] as const) {
+      const { data: meal } = await backend.admin
+        .from('meals')
+        .insert({ user_id: me.id, date: localDay(daysAgo), meal_type })
+        .select('id')
+        .single()
+      await backend.admin.from('meal_items').insert({
+        meal_id: meal?.id,
+        name: `Seeded ${meal_type}`,
+        entered_amount: 1,
+        entered_unit: 'unit',
+        basis: 'per_unit',
+        basis_multiplier: 1,
+        kcal: kcal / 2,
+        protein: 50,
+      })
+    }
   }
   await logIn(page, me)
   await page
