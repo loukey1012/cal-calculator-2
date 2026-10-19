@@ -1,4 +1,4 @@
-import { ApiError } from '../../lib/errors'
+import { allRows } from '../../lib/allRows'
 import { supabase } from '../../lib/supabase'
 import type { ExportData } from './exportRows'
 
@@ -11,23 +11,6 @@ const TOTAL_COLUMNS =
 
 type ItemRow = Omit<ExportData['meals'][number]['meal_items'][number], 'estimated'> & {
   readonly dish_portions: { readonly dishes: { readonly kcal_estimated: boolean } | null } | null
-}
-
-// the API returns at most this many rows per request (supabase/config.toml max_rows)
-const PAGE_SIZE = 1000
-
-type Page<T> = PromiseLike<{
-  data: T[] | null
-  error: Parameters<typeof ApiError.from>[0] | null
-}>
-
-/** Every row of a query, page by page, so a long range is never cut off at the row limit. */
-async function allRows<T>(page: (from: number, to: number) => Page<T>, start = 0): Promise<T[]> {
-  const { data, error } = await page(start, start + PAGE_SIZE - 1)
-  if (error) throw ApiError.from(error)
-  const rows = data ?? []
-  if (rows.length < PAGE_SIZE) return rows
-  return [...rows, ...(await allRows(page, start + PAGE_SIZE))]
 }
 
 /** Everything the export files need for these people and days (from and to included). */

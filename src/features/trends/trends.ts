@@ -54,9 +54,10 @@ export type RangeBounds = {
   readonly previousLast: string
 }
 
-export function rangeBounds(range: TrendRange, today: string): RangeBounds {
+/** `weekOf`: any day of the calendar week to show (default: this week); only for 'week'. */
+export function rangeBounds(range: TrendRange, today: string, weekOf = today): RangeBounds {
   if (range === 'week') {
-    const monday = mondayOf(today)
+    const monday = mondayOf(weekOf)
     return {
       first: monday,
       // the days still to come stay empty
@@ -121,7 +122,7 @@ export type TrendBar = {
   readonly kind: TrendBarKind
 }
 
-function mondayOf(date: string): string {
+export function mondayOf(date: string): string {
   const weekday = (fromLocalDateString(date).getDay() + DAYS_PER_WEEK - 1) % DAYS_PER_WEEK
   return addDays(date, -weekday)
 }

@@ -13,7 +13,7 @@ keep its status table and the README checkboxes up to date as items ship.
 date and hour (local time) and what changed in plain, neutral words. The list lives in
 `src/features/patchNotes/patchNotes.ts` once item 21 is built.
 
-**Next up (as of 2026-10-19):** item 13 (cheat days and cheat meals) is built; the user tests it.
-Then 9 · 14 · 10 (12 was dropped). Read "Handoff (updated 2026-10-19)" at the end of the plan
+**Next up (as of 2026-10-19):** 13 and 30 are confirmed; 31 (every past week in Trends) is built
+and waits for the user's test. Then 9 · 14 · 10 (12 was dropped). Read "Handoff (updated 2026-10-19)" at the end of the plan
 first. Build 2–3 items, push, then stop with a short summary for the user to test. Docs-only
 changes are never committed alone: they go with the next functional commit.

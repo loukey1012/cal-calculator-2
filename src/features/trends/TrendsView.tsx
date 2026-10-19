@@ -10,11 +10,13 @@ import { NutritionTrend } from './NutritionTrend'
 import { METRIC_LABELS } from './trendFormat'
 import {
   availableMetrics,
+  mondayOf,
   rangeBounds,
   TREND_RANGES,
   type TrendMetric,
   type TrendRange,
 } from './trends'
+import { WeekPicker } from './WeekPicker'
 import { WeightTrend } from './WeightTrend'
 
 // short, so all five fit one line on an iPhone
@@ -44,6 +46,8 @@ export function TrendsView({ userId, isOwn, today }: TrendsViewProps) {
   // the current calendar week first: what most days are about
   const [range, setRange] = useState<TrendRange>('week')
   const [chosen, setChosen] = useState<TrendMetric>('kcal')
+  // the Week view's week; null follows the current one, also when a new week starts
+  const [chosenWeek, setChosenWeek] = useState<string | null>(null)
   if (goals.isError) return <ErrorBanner message={toUserMessage(goals.error)} />
 
   const goalList = goals.data ?? []
@@ -51,11 +55,31 @@ export function TrendsView({ userId, isOwn, today }: TrendsViewProps) {
   const metrics = availableMetrics(currentGoal, (weights.data ?? []).length > 0)
   // a goal removed meanwhile: back to calories
   const metric = metrics.includes(chosen) ? chosen : 'kcal'
-  const bounds = rangeBounds(range, today)
+  const currentWeek = mondayOf(today)
+  const week = chosenWeek ?? currentWeek
+  const bounds = rangeBounds(range, today, week)
+  const changeRange = (next: TrendRange) => {
+    setRange(next)
+    // another range starts again from this week
+    setChosenWeek(null)
+  }
 
   return (
     <section aria-label="Trends" className="mt-4">
-      <SegmentedControl label="Range" options={RANGE_OPTIONS} value={range} onChange={setRange} />
+      <SegmentedControl
+        label="Range"
+        options={RANGE_OPTIONS}
+        value={range}
+        onChange={changeRange}
+      />
+      {range === 'week' && (
+        <WeekPicker
+          userId={userId}
+          today={today}
+          monday={week}
+          onChange={(monday) => setChosenWeek(monday === currentWeek ? null : monday)}
+        />
+      )}
       <div
         role="group"
         aria-label="Show"
@@ -75,7 +99,7 @@ export function TrendsView({ userId, isOwn, today }: TrendsViewProps) {
       </div>
       {metric === 'weight' ? (
         <WeightTrend
-          key={range}
+          key={`${range}:${bounds.first}`}
           userId={userId}
           isOwn={isOwn}
           range={range}
@@ -85,7 +109,7 @@ export function TrendsView({ userId, isOwn, today }: TrendsViewProps) {
         />
       ) : (
         <NutritionTrend
-          key={`${metric}:${range}`}
+          key={`${metric}:${range}:${bounds.first}`}
           userId={userId}
           metric={metric}
           range={range}

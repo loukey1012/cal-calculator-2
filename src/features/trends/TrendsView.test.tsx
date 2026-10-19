@@ -151,6 +151,28 @@ describe('TrendsView', () => {
     expect(chart).toHaveTextContent('700 kcal · lunch or dinner missing · not counted')
   })
 
+  test('the Week view steps back to an earlier week with an entry, compared with the one before', async () => {
+    const user = userEvent.setup()
+    // TODAY is Thursday, October 8: this week is October 5 – 11
+    vi.mocked(fetchNutritionDays).mockResolvedValue([day('2026-09-16', 1900)])
+    renderTrends()
+
+    const earlier = await screen.findByRole('button', { name: 'Earlier week' })
+    await waitFor(() => expect(earlier).toBeEnabled())
+    await user.click(earlier)
+
+    // the empty weeks in between are skipped
+    expect(screen.getByRole('button', { name: /Week 38/ })).toBeInTheDocument()
+    expect(fetchNutritionDays).toHaveBeenCalledWith('u1', '2026-09-07', '2026-09-20')
+    const chart = await screen.findByRole('region', { name: 'Calories chart' })
+    await waitFor(() => expect(within(chart).getAllByTestId('trend-bar')).toHaveLength(1))
+
+    // another range starts again from this week
+    await user.click(screen.getByRole('radio', { name: '4 wks' }))
+    await user.click(screen.getByRole('radio', { name: 'Week' }))
+    expect(screen.getByRole('button', { name: /Week 41/ })).toHaveTextContent('This week')
+  })
+
   test('a longer range asks for more days', async () => {
     const user = userEvent.setup()
     renderTrends()

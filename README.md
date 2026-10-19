@@ -55,7 +55,7 @@ Built for a two-person household: both members log their own meals, can see and 
 - **Tap any past day** to show its rings, totals and meals **right beneath the calendar**, and **edit it like today**. A forgotten dinner: tap the empty Dinner, which opens Cook for that day and comes back here after saving. Tap another day to switch, or the same day again to close it. The selected day is kept in the address (`/history/YYYY-MM-DD`), so reopening the app keeps it. Also for your partner's days.
 - Under the day's meals, its **weight**: the latest entry up to that day ("72.4 kg, since Mon, Oct 5"). Tap it to set that day's weight (also for past days) or delete the day's entry. Your partner's weight is shown, but only you change yours.
 - **Calendar | Trends** at the top switches to the trends:
-  - **Range:** **Week** (the current calendar week, Monday to Sunday, with weekday labels and compared with last week; the default), 4 weeks, 3 months, 6 months or 1 year. **Chips** for what has a goal: Calories always, each nutrient with a target (protein, carbs, fat, fiber), and **Weight** once there is a target weight or an entry.
+  - **Range:** **Week** (a calendar week, Monday to Sunday, with weekday labels and compared with the week before; the default is the current one). **‹ ›** step to the previous or next week with at least one entry, and tapping **Week 43** lists every such week, newest first, with its Ø calories, to jump to one; 4 weeks, 3 months, 6 months or 1 year. **Chips** for what has a goal: Calories always, each nutrient with a target (protein, carbs, fat, fiber), and **Weight** once there is a target weight or an entry.
   - **Calories and nutrients:** one bar per logged day in the ring color (per week, as the average of its counted days, for 6 months and 1 year), the goal as a dashed line that follows the goal history. Days that don't count still show, so nothing looks like a gap: a cheat day or a day with a cheat meal is a **dashed grey bar exactly as high as the goal** (its numbers don't matter and never stretch the chart), a day missing lunch or dinner shows what was logged **in grey**, and today shows what's logged **so far in grey**. Tapping one says why ("cheat day · not counted", "700 kcal · lunch or dinner missing · not counted"). The figures below only use counted days. Tap a bar for its value; days with estimated calories are lighter and read "~". Below: Ø per logged day, days within the goal (calories) or reaching it (nutrients), and the change against the range before.
   - **Weight:** a line through the entries (the weight from before the range starts it, hollow), the **target weight** as a dashed line, and Current, Change over the range and **To goal** (to lose or gain, or Reached). **Add weight** for any day up to today, and the latest entries to change or delete.
   - The charts are drawn by the app itself (no chart library), with a hidden table of the values for VoiceOver.
@@ -201,6 +201,18 @@ Noted 2026-10-15.
 
 - [x] Calories, carbs and fat change color once full: one color from 100 % up to 110 %, another above 110 % (protein and fiber keep theirs)
 - [x] One pair of colors for all three in Appearance › Progress › **When over**: signal presets (**Signal**: amber and red, the default; **Ember**: orange and deep red; **Neon**: purple and magenta), your own two colors, or **Off**
+
+**30. Only complete days count** (done)
+
+- [x] Averages in History and Trends count only past days with lunch and dinner logged, no cheat day and no cheat meal; today never counts
+- [x] History marks every day since October 10 without lunch or dinner (also empty ones) with an amber dot; the day says which one is missing
+- [x] Trends: a cheat day is a dashed grey bar as high as the goal, a day missing a meal and today are grey
+
+**31. Every past calendar week in Trends** (done)
+
+- [x] Besides 4 weeks, 3 and 6 months and 1 year, the **Week** view can show **any past calendar week** (Monday to Sunday) that has at least one entry, plus the current one
+- [x] Step back and forth with arrows (weeks without any entry are skipped), or tap the week to pick one from a list of all of them, newest first, with each week's Ø calories
+- [x] Everything else works as for the current week: bars per day, the figures, and "vs. previous" against the week before it
 
 **9. Reading nutrition labels** (to do)
 

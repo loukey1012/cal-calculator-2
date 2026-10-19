@@ -17,6 +17,8 @@ test('weight entered for today and an earlier day; Trends show calories and weig
   for (const [daysAgo, kcal] of [
     [3, 1800],
     [1, 2200],
+    // a few weeks back, for the Week view's earlier weeks
+    [20, 2000],
   ] as const) {
     for (const meal_type of ['lunch', 'dinner'] as const) {
       const { data: meal } = await backend.admin
@@ -49,8 +51,21 @@ test('weight entered for today and an earlier day; Trends show calories and weig
   const chips = history.getByRole('group', { name: 'Show' }).getByRole('button')
   await expect(chips).toHaveText(['Calories', 'Protein', 'Weight'])
   const calories = history.getByRole('region', { name: 'Calories chart' })
-  await expect(calories.getByTestId('trend-bar')).toHaveCount(2)
+  await expect(calories.getByTestId('trend-bar')).toHaveCount(3)
   await expect(history.getByTestId('trend-stats')).toContainText('2,000 kcal')
+
+  // the Week view reaches every earlier week with an entry: the oldest one has that one day
+  await history.getByRole('radio', { name: 'Week' }).click()
+  await history.getByRole('button', { name: /^Week \d+/ }).click()
+  const weeks = page.getByRole('dialog', { name: 'Weeks' })
+  await weeks
+    .getByRole('button', { name: /^Week \d+/ })
+    .last()
+    .click()
+  await expect(weeks).toBeHidden()
+  await expect(calories.getByTestId('trend-bar')).toHaveCount(1)
+  await expect(history.getByRole('button', { name: 'Earlier week' })).toBeDisabled()
+  await history.getByRole('radio', { name: '4 wks' }).click()
 
   // weight: an earlier day first, then today
   await history.getByRole('button', { name: 'Weight' }).click()

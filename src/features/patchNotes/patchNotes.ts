@@ -30,6 +30,15 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-19T16:14',
+    kind: 'new',
+    title: 'Every past week in Trends',
+    items: [
+      'The Week view now goes back to any earlier calendar week with an entry: ‹ and › skip the empty ones',
+      'Tap the week to pick one from a list of all of them, with each week’s average calories',
+    ],
+  },
+  {
     at: '2026-10-19T15:55',
     kind: 'new',
     title: 'Only complete days count; missing meals are flagged',

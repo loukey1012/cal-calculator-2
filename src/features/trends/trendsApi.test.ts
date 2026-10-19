@@ -57,6 +57,9 @@ describe('fetchNutritionDays', () => {
     expect(query.eq).toHaveBeenCalledWith('user_id', 'u1')
     expect(query.gte).toHaveBeenCalledWith('date', '2026-09-11')
     expect(query.lte).toHaveBeenCalledWith('date', '2026-10-08')
+    // page by page, in a stable order
+    expect(query.order).toHaveBeenCalledWith('date')
+    expect(query.range).toHaveBeenCalledWith(0, 999)
   })
 
   test('database errors become ApiErrors', async () => {
