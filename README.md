@@ -222,15 +222,13 @@ Noted 2026-10-15.
 - [x] A dish on Cook that hasn't been logged yet gets a badge on the Cook tab
 - [ ] Combined with the "Unsaved Cook dish" notification from point 10 (this needs the Cook draft to be saved to your account instead of only on the phone)
 
-**12. Quick picks** (to do)
+**12. Recent ingredients on top** (to do)
 
-- [ ] **Favorites**: star an ingredient; each of you has your own favorites
-- [ ] **Recent**: the ingredients you used last
-- [ ] Both show at the top of the Cook ingredient search before you type, and as filters in both ingredient lists
+- [ ] The ingredients you used last are always at the top of both ingredient lists (Cook and Ingredients), also while searching, whatever the sort
 
 **13. Days that don't count, and eating out** (to do)
 
-- [ ] **Doesn't count** 🙈: mark a day of yours as not counting
+- [ ] **Doesn't count**: mark a day of yours as not counting
 - [ ] **Eaten out**: mark a meal as eaten out (empty, or with the food you do know, e.g. a drink); its day then counts as unknown and shows e.g. "≥ 900 kcal · eaten out" instead of an exact total
 - [ ] Both: a badge on the day in History and on Today, the day is left out of the Trends averages, the rings don't show the over colors that day (point 29) and the weekly review skips it
 - [ ] Both can be set, changed and removed on any day, also past ones, by either of you (like meals)
