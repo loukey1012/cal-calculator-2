@@ -140,9 +140,9 @@ describe('clearing values', () => {
   })
 
   test('a photo of the nutrition label fills in the values per 100 g; Undo takes them back', async () => {
-    vi.mocked(recognizeText).mockResolvedValue(
+    vi.mocked(recognizeText).mockResolvedValue([
       'Energie 1520 kJ / 363 kcal\nFett 9,8 g\ndavon gesättigte Fettsäuren 1,2 g\nEiweiß 8,4 g',
-    )
+    ])
     const user = userEvent.setup()
     renderSheet({ editing: SKYR })
 

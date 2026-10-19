@@ -1,16 +1,17 @@
 import { useId, useRef, useState, type ChangeEvent } from 'react'
-import { parseNutritionLabel, type LabelReading } from './labelParser'
+import { bestReading, type LabelReading } from './labelParser'
 import type { RecognizeStep } from './recognize'
 
 const STEP_TEXT: Readonly<Record<RecognizeStep, string>> = {
   preparing: 'Preparing the photo…',
   // the first time, the text recognition is downloaded (about 8 MB)
   loading: 'Loading text recognition… (takes a moment the first time)',
-  reading: 'Reading the label…',
+  finding: 'Finding the nutrition table…',
+  reading: 'Reading the table…',
 }
 
 const NOTHING_FOUND =
-  'No nutrition table found. Take the photo straight on, with the table filling most of it.'
+  'No nutrition table found. Take the photo straight on and a bit closer to the table.'
 const FAILED = 'Couldn’t read the photo. Try again.'
 
 type Status =
@@ -41,8 +42,8 @@ export function ReadLabelRow({ onRead }: ReadLabelRowProps) {
     try {
       // loaded only now: the text recognition is large
       const { recognizeText } = await import('./recognize')
-      const text = await recognizeText(photo, (step) => setStatus({ kind: 'working', step }))
-      const reading = parseNutritionLabel(text)
+      const texts = await recognizeText(photo, (step) => setStatus({ kind: 'working', step }))
+      const reading = bestReading(texts)
       if (reading.found === 0) {
         setStatus({ kind: 'error', message: NOTHING_FOUND })
         return

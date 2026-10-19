@@ -20,7 +20,7 @@ function renderRow() {
 
 describe('ReadLabelRow', () => {
   test('the photo is read and its values handed over', async () => {
-    vi.mocked(recognizeText).mockResolvedValue(LABEL)
+    vi.mocked(recognizeText).mockResolvedValue([LABEL])
     const user = userEvent.setup()
     const { onRead, input } = renderRow()
 
@@ -33,6 +33,17 @@ describe('ReadLabelRow', () => {
       values: { kcal: 363, fat: 9.8, protein: 8.4 },
       found: 3,
     })
+  })
+
+  test('of the cut-out table and the whole photo, the reading with more values wins', async () => {
+    vi.mocked(recognizeText).mockResolvedValue(['Fett 9 g', LABEL])
+    const user = userEvent.setup()
+    const { onRead, input } = renderRow()
+
+    await user.upload(input, PHOTO)
+
+    await waitFor(() => expect(onRead).toHaveBeenCalled())
+    expect(onRead.mock.calls[0]?.[0]).toMatchObject({ found: 3 })
   })
 
   test('says what it is doing while reading', async () => {
@@ -50,7 +61,7 @@ describe('ReadLabelRow', () => {
   })
 
   test('a photo without a nutrition table, or a failed read, says so', async () => {
-    vi.mocked(recognizeText).mockResolvedValueOnce('Zutaten: Mehl, Wasser')
+    vi.mocked(recognizeText).mockResolvedValueOnce(['Zutaten: Mehl, Wasser'])
     vi.mocked(recognizeText).mockRejectedValueOnce(new Error('out of memory'))
     const user = userEvent.setup()
     const { onRead, input } = renderRow()

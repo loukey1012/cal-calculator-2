@@ -44,6 +44,11 @@ const NUMBER = String.raw`(\d+(?:[.,]\d+)?)`
 const FIRST_AMOUNT = new RegExp(String.raw`${NUMBER}\s*(mg|g)?\b`)
 const KCAL = new RegExp(String.raw`${NUMBER}\s*kcal`)
 const KJ = new RegExp(String.raw`${NUMBER}\s*kj`)
+// a comma that isn't a decimal comma: an ingredients list has several on a line
+const LIST_COMMA = /(?<!\d),|,(?!\d)/g
+const MAX_LIST_COMMAS = 1
+// the table's header ("pro 100 g", "per 100 ml"): its 100 is no value
+const PER_100 = /\b(pro|per|je|for)\s*100\b/
 // "1.520 kJ": a dot or comma before exactly three digits separates thousands
 const THOUSANDS = /^\d{1,3}[.,]\d{3}$/
 
@@ -56,6 +61,15 @@ function normalize(line: string): string {
     .toLowerCase()
     .replace(/\s+/g, ' ')
     .trim()
+}
+
+// letters text recognition reads in place of digits, next to numbers (lowercase by now)
+const ONE_AS_LETTER = /(?<=\d)[li|](?=[\d.,]|\s*m?g\b)/g
+const ZERO_AS_LETTER = /(?<![a-z])o(?=[.,]\d)|(?<=\d)o(?=\d)/g
+
+/** "6lg" → "61g", "2i g" → "21 g", "o,3 g" → "0,3 g" */
+function withDigits(line: string): string {
+  return line.replace(ONE_AS_LETTER, '1').replace(ZERO_AS_LETTER, '0')
 }
 
 const decimal = (text: string) => Number(text.replace(',', '.'))
@@ -95,22 +109,26 @@ function gramsIn(line: string): number | null {
   return roundTo(unit === 'mg' ? value / MG_PER_G : value, GRAM_DECIMALS)
 }
 
+/** A line of an ingredients list ("Weizenflocken, Zucker, Rosinen 9 %, …"), not a table row. */
+const isListLine = (line: string) => (line.match(LIST_COMMA) ?? []).length > MAX_LIST_COMMAS
+
 function fieldOf(line: string, found: ReadonlySet<Field>): Field | null {
+  if (isListLine(line)) return null
   return ROWS.find(([field, pattern]) => !found.has(field) && pattern.test(line))?.[0] ?? null
 }
 
 /** The row's line and up to two lines after it, until the next row (a name alone on its line). */
 function rowLines(lines: readonly string[], index: number): string[] {
   const after = lines.slice(index + 1, index + 3)
-  const nextRow = after.findIndex((line) => ROWS.some(([, pattern]) => pattern.test(line)))
+  const nextRow = after.findIndex(
+    (line) => ROWS.some(([, pattern]) => pattern.test(line)) || PER_100.test(line),
+  )
   return [lines[index] ?? '', ...(nextRow === -1 ? after : after.slice(0, nextRow))]
 }
 
 /** The row's value, also from the lines after its name. */
 function readRow(field: Field, lines: readonly string[], index: number): number | null {
-  const own = rowLines(lines, index)
-  if (field === 'kcal') return energyIn(own)
-  return own.map(gramsIn).find((value) => value !== null) ?? null
+  return valueOf(field, rowLines(lines, index))
 }
 
 const EMPTY: LabelValues = {
@@ -124,17 +142,80 @@ const EMPTY: LabelValues = {
   salt: null,
 }
 
-export function parseNutritionLabel(text: string): LabelReading {
-  const lines = text.split(/\r?\n/).map(normalize).filter(Boolean)
-  const values = lines.reduce<Partial<Record<Field, number>>>((read, line, index) => {
+type Values = Partial<Record<Field, number>>
+
+const valueOf = (field: Field, lines: readonly string[]) =>
+  field === 'kcal' ? energyIn(lines) : (lines.map(gramsIn).find((value) => value !== null) ?? null)
+
+/** Row by row: each row's value on its line, or on the lines right after its name. */
+function rowValues(lines: readonly string[]): Values {
+  return lines.reduce<Values>((read, line, index) => {
     const field = fieldOf(line, new Set(Object.keys(read) as Field[]))
     if (field === null) return read
     const value = readRow(field, lines, index)
     return value === null ? read : { ...read, [field]: value }
   }, {})
+}
+
+const hasDigit = (line: string) => /\d/.test(line)
+const rowFieldOf = (line: string) => ROWS.find(([, pattern]) => pattern.test(line))?.[0] ?? null
+/** a line with only values: no row name, not the header, not an ingredients list */
+const isValueLine = (line: string) =>
+  hasDigit(line) && rowFieldOf(line) === null && !PER_100.test(line) && !isListLine(line)
+
+/**
+ * Column by column, as text recognition reads a table with wide gaps: the row names first
+ * (without numbers), then a line of values for each of them, in the same order.
+ */
+function columnValues(lines: readonly string[]): Values {
+  const names = lines
+    .filter((line) => !hasDigit(line) && !isListLine(line))
+    .map(rowFieldOf)
+    .filter((field): field is Field => field !== null)
+  const values = lines.filter(isValueLine)
+  if (names.length < 2 || values.length < names.length) return {}
+  return names.reduce<Values>((read, field, index) => {
+    const value = field in read ? null : valueOf(field, [values[index] ?? ''])
+    return value === null ? read : { ...read, [field]: value }
+  }, {})
+}
+
+const count = (values: Values) => Object.keys(values).length
+
+export function parseNutritionLabel(text: string): LabelReading {
+  const lines = text
+    .split(/\r?\n/)
+    .map((line) => withDigits(normalize(line)))
+    .filter(Boolean)
+  const rows = rowValues(lines)
+  const columns = columnValues(lines)
+  // the layout that gave more values, its gaps filled from the other
+  const values = count(columns) > count(rows) ? { ...rows, ...columns } : { ...columns, ...rows }
   return {
     measure: /100\s*ml/.test(lines.join(' ')) ? 'ml' : 'g',
     values: { ...EMPTY, ...values },
-    found: Object.keys(values).length,
+    found: count(values),
   }
+}
+
+/**
+ * Several readings of the same label (the cut-out table first) as one: the one with the most
+ * values, its gaps filled from the others in order.
+ */
+export function bestReading(texts: readonly string[]): LabelReading {
+  const readings = texts.map(parseNutritionLabel)
+  const best = readings.reduce<LabelReading>(
+    (most, next) => (next.found > most.found ? next : most),
+    parseNutritionLabel(''),
+  )
+  const values = Object.fromEntries(
+    Object.entries(best.values).map(([field, value]) => [
+      field,
+      value ??
+        readings.map((reading) => reading.values[field as Field]).find((other) => other !== null) ??
+        null,
+    ]),
+  ) as LabelValues
+  const found = Object.values(values).filter((value) => value !== null).length
+  return { measure: best.measure, values, found }
 }

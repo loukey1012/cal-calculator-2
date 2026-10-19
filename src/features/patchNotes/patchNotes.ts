@@ -30,6 +30,15 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-19T17:19',
+    kind: 'fix',
+    title: 'Small nutrition tables are found by themselves',
+    items: [
+      'A photo of the whole package is enough: the table is found, cut out, enlarged and read at full detail',
+      'Tables read column by column, ingredient lists and common misreads (g as 9, l as 1) are handled',
+    ],
+  },
+  {
     at: '2026-10-19T16:34',
     kind: 'new',
     title: 'Read nutrition labels',

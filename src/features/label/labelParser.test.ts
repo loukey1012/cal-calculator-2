@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { parseNutritionLabel } from './labelParser'
+import { bestReading, parseNutritionLabel } from './labelParser'
 
 const GERMAN = `
 Nährwerte pro 100 g pro Portion (30 g) %RM*
@@ -118,6 +118,60 @@ describe('parseNutritionLabel', () => {
     expect(parseNutritionLabel('Salz 0,49 g').values.salt).toBe(0.49)
   })
 
+  test('an ingredients list and the "pro 100 g" header are never read as values', () => {
+    // the whole package as read: ingredients mention sugar and salt, the table is garbled
+    const text = [
+      'Zutaten: Haferflocken 58 %, Weizenflocken, Zucker, Rosinen 9 %, Haselnüsse,',
+      'Sonnenblumenöl, Honig, Salz. Kann Spuren von Erdnüssen enthalten.',
+      'lagern.',
+      '[Nährwerte | pro 100g]',
+      '[Energie [16801 400 kcal',
+    ].join('\n')
+
+    expect(parseNutritionLabel(text).values).toMatchObject({ kcal: 400, sugar: null, salt: null })
+  })
+
+  test('letters read in place of digits next to numbers: l, I or | for 1, O for 0', () => {
+    const text = 'Kohlenhydrate 6lg\nZucker 2I g\nSalz O,3 g\nEiweiB 1|,5 g'
+
+    expect(parseNutritionLabel(text).values).toMatchObject({
+      carbs: 61,
+      sugar: 21,
+      salt: 0.3,
+      protein: 11.5,
+    })
+  })
+
+  test('a table read column by column: the names first, then their values in the same order', () => {
+    const text = [
+      'Nährwerte',
+      'Energie',
+      'Fett',
+      'davon gesättigte Fettsäuren',
+      'Kohlenhydrate',
+      'Eiweiß',
+      'Salz',
+      'pro 100 g',
+      '1520 kJ / 363 kcal',
+      '9,8 g',
+      '1,2 g',
+      '58 g',
+      '8,4 g',
+      '0,48 g',
+    ].join('\n')
+
+    expect(parseNutritionLabel(text)).toMatchObject({
+      values: { kcal: 363, fat: 9.8, sat_fat: 1.2, carbs: 58, protein: 8.4, salt: 0.48 },
+      found: 6,
+    })
+  })
+
+  test('a name and its value on the next line is not mistaken for columns', () => {
+    const text = 'Energie\n1520 kJ / 363 kcal\nFett\n9,8 g\nSalz\n0,48 g'
+
+    expect(parseNutritionLabel(text).values).toMatchObject({ kcal: 363, fat: 9.8, salt: 0.48 })
+  })
+
   test('text without a nutrition table finds nothing', () => {
     expect(parseNutritionLabel('Zutaten: Weizenmehl, Wasser, Hefe')).toEqual({
       measure: 'g',
@@ -132,6 +186,28 @@ describe('parseNutritionLabel', () => {
         salt: null,
       },
       found: 0,
+    })
+  })
+})
+
+describe('bestReading', () => {
+  test('the reading with the most values; on a tie the first (the cut-out table)', () => {
+    const table = 'Fett 9,8 g\nEiweiß 8,4 g'
+    const wholePhoto = 'Fett 98 g\nEiweiß 84 g'
+    const blurry = 'Fett 9 g'
+
+    expect(bestReading([table, wholePhoto]).values).toMatchObject({ fat: 9.8, protein: 8.4 })
+    expect(bestReading([blurry, wholePhoto]).values).toMatchObject({ fat: 98, protein: 84 })
+    expect(bestReading([]).found).toBe(0)
+  })
+
+  test('values the best reading missed are taken from the other', () => {
+    const table = 'Fett 9,8 g\nEiweiß 8,4 g'
+    const wholePhoto = 'Fett 98 g\nSalz 0,48 g'
+
+    expect(bestReading([table, wholePhoto])).toMatchObject({
+      values: { fat: 9.8, protein: 8.4, salt: 0.48 },
+      found: 3,
     })
   })
 })
