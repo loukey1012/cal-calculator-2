@@ -2,6 +2,8 @@ import { useState, type ReactNode } from 'react'
 import { GroupedSection } from '../../components/ios/GroupedSection'
 import { ProductSearchPanel } from '../barcode/ProductSearchPanel'
 import type { ProductHit } from '../barcode/openFoodFacts'
+import type { LabelReading } from '../label/labelParser'
+import { ReadLabelRow } from '../label/ReadLabelRow'
 import { IngredientPickList } from './IngredientPickList'
 import { toFormValues, type IngredientFormValues } from './ingredientForm'
 import type { Ingredient } from './ingredientsApi'
@@ -22,6 +24,8 @@ type ValueSourcesProps = {
   readonly name: string
   readonly savedIngredients: readonly Ingredient[]
   readonly onFill: (filled: FilledValues) => void
+  /** a photo of the nutrition table was read */
+  readonly onReadLabel: (reading: LabelReading) => void
   /** shown right after filling in */
   readonly undo?: ReactNode
 }
@@ -48,10 +52,16 @@ function SourceRow({
 }
 
 /**
- * For food without values on it (or an unknown package): copy them from a saved ingredient, or
- * from a similar product on Open Food Facts.
+ * Values from somewhere else: read from a photo of the nutrition table, or (for food without
+ * values on it) copied from a saved ingredient or a similar product on Open Food Facts.
  */
-export function ValueSources({ name, savedIngredients, onFill, undo }: ValueSourcesProps) {
+export function ValueSources({
+  name,
+  savedIngredients,
+  onFill,
+  onReadLabel,
+  undo,
+}: ValueSourcesProps) {
   const [mode, setMode] = useState<Mode>('closed')
   const toggle = (next: Mode) => setMode((current) => (current === next ? 'closed' : next))
 
@@ -64,8 +74,14 @@ export function ValueSources({ name, savedIngredients, onFill, undo }: ValueSour
     <section>
       <GroupedSection
         header="Fill in values"
-        footer="No values on the package? Take them from a similar ingredient or product."
+        footer="Read them from a photo of the nutrition table, or take them from a similar ingredient or product when the package has none."
       >
+        <ReadLabelRow
+          onRead={(reading) => {
+            setMode('closed')
+            onReadLabel(reading)
+          }}
+        />
         {savedIngredients.length > 0 && (
           <SourceRow
             label="Copy from an ingredient"

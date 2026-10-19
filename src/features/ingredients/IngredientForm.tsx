@@ -7,6 +7,7 @@ import { normalizeBarcode } from '../barcode/barcode'
 import { BarcodeFillRow } from '../barcode/BarcodeFillRow'
 import type { Measure } from '../nutrition/types'
 import { measureName, per100Name, unitChoiceLabel } from '../nutrition/unitNames'
+import { withLabelValues } from '../label/labelForm'
 import { BasisSection } from './BasisSection'
 import { CalculateRow } from './CalculateRow'
 import { IdentitySection } from './IdentitySection'
@@ -97,6 +98,13 @@ export function IngredientForm({
         name={values.name}
         savedIngredients={savedIngredients}
         onFill={form.fill}
+        onReadLabel={(reading) =>
+          form.fill({
+            values: withLabelValues(values, reading),
+            message: `Read ${reading.found === 1 ? '1 value' : `${reading.found} values`} from the label. Check them against the package.`,
+            packagePortion: form.packagePortion,
+          })
+        }
         undo={undoAt('fill')}
       />
       <ValueWarnings warnings={warnings} />

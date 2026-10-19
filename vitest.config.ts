@@ -6,6 +6,7 @@ export default defineConfig({
   // a fixed version for the tests (the real one is set by vite.config.ts at build time)
   define: {
     __APP_VERSION__: JSON.stringify({ id: 'test123abc', builtAt: '2026-10-08T06:40:00.000Z' }),
+    __OCR_BASE__: JSON.stringify('/ocr/test'),
   },
   test: {
     environment: 'jsdom',

@@ -15,8 +15,10 @@ vi.mock('./ingredientsApi', () => ({
   setIngredientBarcode: vi.fn(),
 }))
 vi.mock('../barcode/openFoodFacts', () => ({ lookupProduct: vi.fn(), searchProducts: vi.fn() }))
+vi.mock('../label/recognize', () => ({ recognizeText: vi.fn() }))
 
 import { lookupProduct, searchProducts } from '../barcode/openFoodFacts'
+import { recognizeText } from '../label/recognize'
 import { EMPTY_INGREDIENT_FORM, type IngredientFormValues } from './ingredientForm'
 import {
   createIngredient,
@@ -135,6 +137,32 @@ describe('clearing values', () => {
 
     expect(screen.getByLabelText('Calories per 100 g')).toHaveValue('62')
     expect(screen.getByLabelText('Protein per 100 g')).toHaveValue('11')
+  })
+
+  test('a photo of the nutrition label fills in the values per 100 g; Undo takes them back', async () => {
+    vi.mocked(recognizeText).mockResolvedValue(
+      'Energie 1520 kJ / 363 kcal\nFett 9,8 g\ndavon gesättigte Fettsäuren 1,2 g\nEiweiß 8,4 g',
+    )
+    const user = userEvent.setup()
+    renderSheet({ editing: SKYR })
+
+    await user.upload(
+      screen.getByLabelText('Photo of the nutrition label'),
+      new File(['photo'], 'label.jpg', { type: 'image/jpeg' }),
+    )
+
+    await waitFor(() => expect(screen.getByLabelText('Calories per 100 g')).toHaveValue('363'))
+    expect(screen.getByLabelText('Fat per 100 g')).toHaveValue('9.8')
+    expect(screen.getByLabelText('Saturated fat per 100 g')).toHaveValue('1.2')
+    expect(screen.getByLabelText('Protein per 100 g')).toHaveValue('8.4')
+    expect(
+      screen.getByText('Read 4 values from the label. Check them against the package.'),
+    ).toBeInTheDocument()
+    // the unit stays
+    expect(screen.getByLabelText('Unit name')).toHaveValue('cup')
+
+    await user.click(screen.getByRole('button', { name: 'Undo' }))
+    expect(screen.getByLabelText('Calories per 100 g')).toHaveValue('62')
   })
 
   test('the unit name and grams per unit have clear buttons too', async () => {

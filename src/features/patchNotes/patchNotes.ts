@@ -30,6 +30,16 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-19T16:34',
+    kind: 'new',
+    title: 'Read nutrition labels',
+    items: [
+      'In an ingredient, Fill in values › Read nutrition label: take a photo of the nutrition table (or pick one) and the values per 100 g or ml are filled in',
+      'The text is read on the phone, German or English; the first time it loads about 8 MB, after that it also works offline',
+      'Check the values before saving; Undo takes them back',
+    ],
+  },
+  {
     at: '2026-10-19T16:14',
     kind: 'new',
     title: 'Every past week in Trends',
