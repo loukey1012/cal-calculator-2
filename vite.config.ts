@@ -156,21 +156,15 @@ export default defineConfig({
           },
         ],
       },
-      workbox: {
+      // our own service worker (src/sw/sw.ts): precache, offline pages and push notifications
+      strategies: 'injectManifest',
+      srcDir: 'src/sw',
+      filename: 'sw.ts',
+      injectManifest: {
         // wasm: the barcode scanner's engine, so scanning works offline too
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,wasm}'],
-        // the label reader's ~8 MB stay out of every install: kept once first used (below)
+        // the label reader's ~8 MB stay out of every install: kept once first used (see sw.ts)
         globIgnores: ['ocr/**'],
-        runtimeCaching: [
-          {
-            urlPattern: ({ url }) => url.pathname.startsWith('/ocr/'),
-            handler: 'CacheFirst',
-            options: { cacheName: 'ocr', cacheableResponse: { statuses: [200] } },
-          },
-        ],
-        navigateFallback: '/index.html',
-        // the search proxy is never the app page
-        navigateFallbackDenylist: [/^\/off\//],
       },
     }),
   ],

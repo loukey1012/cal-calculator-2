@@ -13,7 +13,12 @@ export default defineConfig({
     // the raw stylesheet, so tests can check its color tokens against the code
     css: { include: [/index\.css/] },
     setupFiles: ['./src/test/setup.ts'],
-    include: ['src/**/*.test.{ts,tsx}', 'scripts/**/*.test.ts'],
+    include: [
+      'src/**/*.test.{ts,tsx}',
+      'scripts/**/*.test.ts',
+      // the plain-TypeScript parts of the Edge Functions
+      'supabase/functions/_shared/**/*.test.ts',
+    ],
     coverage: {
       provider: 'v8',
       include: ['src/**/*.{ts,tsx}'],

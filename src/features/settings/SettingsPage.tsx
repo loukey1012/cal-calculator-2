@@ -26,6 +26,7 @@ import { useLookOf } from '../household/usePersonLook'
 import { formatInviteCode } from '../household/inviteCode'
 import { shareInviteCode } from '../household/shareInvite'
 import { goalForDate, type Goal } from '../nutrition/goals'
+import { NOTIFICATIONS_PATH, NotificationsPage } from '../notifications/NotificationsPage'
 import { PATCH_NOTES_PATH, PatchNotesPage } from '../patchNotes/PatchNotesPage'
 import { EXPORT_PATH, ExportPage } from '../export/ExportPage'
 import { useToday } from '../today/useToday'
@@ -53,6 +54,7 @@ export function SettingsPage() {
   if (pathname === OWN_LOOK_PATH) return <OwnLookPage />
   if (pathname === PATCH_NOTES_PATH) return <PatchNotesPage />
   if (pathname === EXPORT_PATH) return <ExportPage />
+  if (pathname === NOTIFICATIONS_PATH) return <NotificationsPage />
   return <SettingsOverview />
 }
 
@@ -90,6 +92,12 @@ function SettingsOverview() {
           title="Appearance"
           detail={appColorsSummary(parseAppearance(profile.appearance))}
           onClick={() => navigate(APPEARANCE_PATH, { replace: true })}
+        />
+      </GroupedSection>
+      <GroupedSection header="Notifications">
+        <ListRow
+          title="Notifications"
+          onClick={() => navigate(NOTIFICATIONS_PATH, { replace: true })}
         />
       </GroupedSection>
       <GroupedSection header="Ingredients">

@@ -9,6 +9,9 @@
     },
     {
       "path": "./tsconfig.db-tests.json"
+    },
+    {
+      "path": "./tsconfig.sw.json"
     }
   ]
 }

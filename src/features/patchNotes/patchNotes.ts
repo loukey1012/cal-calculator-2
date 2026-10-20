@@ -30,6 +30,16 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-20T16:04',
+    kind: 'new',
+    title: 'Notifications, first part',
+    items: [
+      'Settings › Notifications switches push notifications on or off for this iPhone (the app opened from the Home Screen)',
+      'Send test notification checks that they arrive; tapping a notification opens the app',
+      'Signing out turns them off on that phone',
+    ],
+  },
+  {
     at: '2026-10-20T15:20',
     kind: 'new',
     title: 'Recipes, and copying a meal',
