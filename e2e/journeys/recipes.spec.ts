@@ -122,3 +122,82 @@ test('a logged meal is copied to another meal and saved as a recipe', async ({ p
     })
     .toEqual([['Jam toast', 2]])
 })
+
+test('a recipe learns a swapped product and offers both next time', async ({ page, backend }) => {
+  const me = await backend.user('Lukas')
+  const household = await backend.household([me])
+  const { data: dairy } = await backend.admin
+    .from('categories')
+    .insert({ household_id: household, name: 'Cheese' })
+    .select('id')
+    .single()
+  await backend.admin.from('ingredients').insert([
+    { household_id: household, name: 'Toastbrot', kcal_100: 260 },
+    {
+      household_id: household,
+      name: 'Gouda',
+      brand: 'Billa',
+      kcal_100: 350,
+      category_id: dairy?.id,
+    },
+    {
+      household_id: household,
+      name: 'Edamer',
+      brand: 'Spar',
+      kcal_100: 330,
+      category_id: dairy?.id,
+    },
+  ])
+  await logIn(page, me)
+
+  // toast with Gouda, kept as a recipe and logged
+  await openTab(page, 'Cook')
+  const cook = activePage(page)
+  await addIngredient(page, 'Toastbrot', '60')
+  await addIngredient(page, 'Gouda', '30')
+  await cook.getByRole('button', { name: 'Save as recipe' }).click()
+  const sheet = page.getByRole('dialog', { name: 'Save as recipe' })
+  await sheet.getByLabel('Recipe name').fill('Toast')
+  await sheet.getByRole('button', { name: 'Save recipe' }).click()
+  await expect(sheet).toBeHidden()
+  await cook.getByRole('button', { name: 'Save meal' }).click()
+
+  // next time with Edamer: swapped on Cook, then logged
+  await openTab(page, 'Cook')
+  await activePage(page)
+    .getByRole('button', { name: /Recipes/ })
+    .click()
+  await activePage(page).getByRole('button', { name: /Toast/ }).click()
+  await activePage(page).getByRole('button', { name: 'Cook this' }).click()
+  const again = activePage(page)
+  await again.getByRole('button', { name: /^Gouda/ }).click()
+  await again.getByRole('button', { name: 'Swap ingredient' }).click()
+  await activePage(page)
+    .getByRole('button', { name: /Edamer/ })
+    .click()
+  await expect(activePage(page).getByRole('button', { name: /Edamer/ })).toContainText('30 g')
+  await activePage(page).getByRole('button', { name: 'Save meal' }).click()
+
+  await expect
+    .poll(async () => {
+      const { data } = await backend.admin
+        .from('recipe_lines')
+        .select('name, picked, recipes!inner(household_id)')
+        .eq('recipes.household_id', household)
+        .order('position')
+      return data?.map((line) => `${line.name}${line.picked ? ' (last time)' : ''}`)
+    })
+    .toEqual(['Toastbrot (last time)', 'Gouda', 'Edamer (last time)'])
+
+  // the third time Cook offers both cheeses, Edamer first
+  await openTab(page, 'Cook')
+  await activePage(page)
+    .getByRole('button', { name: /Recipes/ })
+    .click()
+  await activePage(page).getByRole('button', { name: /Toast/ }).click()
+  await activePage(page).getByRole('button', { name: 'Cook this' }).click()
+  const third = activePage(page).getByRole('radiogroup', { name: 'Edamer: product' })
+  await expect(third.getByRole('radio', { name: 'Edamer (Spar)' })).toBeChecked()
+  await third.getByRole('radio', { name: 'Gouda (Billa)' }).click()
+  await expect(activePage(page).getByRole('button', { name: /^Gouda/ })).toBeVisible()
+})

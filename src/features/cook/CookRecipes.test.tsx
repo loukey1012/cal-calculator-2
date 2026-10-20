@@ -35,10 +35,12 @@ vi.mock('../recipes/recipesApi', () => ({
 }))
 
 import { fetchMembers } from '../household/householdApi'
+import { saveDish } from '../dishes/dishesApi'
 import { fetchIngredients } from '../ingredients/ingredientsApi'
 import { gramsItem } from '../dishes/testData'
 import { deleteRecipe, fetchRecipes, saveRecipe } from '../recipes/recipesApi'
-import type { Recipe } from '../recipes/recipeModel'
+import { pickedChoice, type Recipe } from '../recipes/recipeModel'
+import { productLine, slot } from '../recipes/testData'
 import { CookPage } from './CookPage'
 import { CookSession } from './CookSession'
 
@@ -69,13 +71,38 @@ const BURGERS: Recipe = {
     { id: 'rp-me', userId: 'u1', splitValue: null },
     { id: 'rp-her', userId: 'u2', splitValue: null },
   ],
-  lines: [
-    {
-      id: 'rl-patty',
-      allocation: 'shared',
-      item: { ...gramsItem('Patty', 300, 240), ingredient_id: 'patty' },
-      amounts: {},
-    },
+  slots: [
+    slot('s-patty', [
+      {
+        id: 'rl-patty',
+        allocation: 'shared',
+        item: { ...gramsItem('Patty', 300, 240), ingredient_id: 'patty' },
+        amounts: {},
+      },
+    ]),
+  ],
+}
+
+const TOAST: Recipe = {
+  id: 'r-toast',
+  name: 'Toast',
+  splitMode: 'equal',
+  cookedWeightG: null,
+  kcalEstimated: false,
+  portions: [{ id: 'rp-me', userId: 'u1', splitValue: null }],
+  slots: [
+    slot(
+      's-bread',
+      [
+        productLine('c-clever', 'clever', 'Toastbrot Clever', 60, 260),
+        productLine('c-spar', 'spar', 'Toastbrot Spar', 60, 250),
+      ],
+      { pickedId: 'c-spar' },
+    ),
+    slot('s-frisch', [productLine('c-frisch', 'frisch', 'Frischkäse', 20, 200)], {
+      optional: true,
+      leftOut: true,
+    }),
   ],
 }
 
@@ -140,9 +167,9 @@ describe('recipes on Cook', () => {
     const recipe = savedRecipe()
     expect(recipe.name).toBe('Patty plate')
     expect(recipe.portions).toEqual([{ id: expect.any(String), userId: 'u1', splitValue: null }])
-    expect(recipe.lines.map((line) => [line.item.name, line.item.entered_amount])).toEqual([
-      ['Patty', 250],
-    ])
+    expect(
+      recipe.slots.map(pickedChoice).map((line) => [line.item.name, line.item.entered_amount]),
+    ).toEqual([['Patty', 250]])
     expect(await screen.findByRole('button', { name: 'Save meal' })).toBeInTheDocument()
     expect(screen.queryByLabelText('Recipe name')).not.toBeInTheDocument()
   })
@@ -182,7 +209,34 @@ describe('recipes on Cook', () => {
     // Assert
     const recipe = savedRecipe()
     expect(recipe.id).toBe('r-burgers')
-    expect(recipe.lines).toHaveLength(2)
+    // the patty added on Cook joins as an optional line
+    expect(recipe.slots).toHaveLength(2)
+    expect(recipe.slots[1]).toMatchObject({ optional: true, leftOut: false })
+  })
+
+  test('choices of last time are offered on Cook, and logging teaches the recipe', async () => {
+    // Arrange
+    vi.mocked(fetchRecipes).mockResolvedValue([TOAST])
+    const user = userEvent.setup()
+    renderCook('/cook/recipes/r-toast')
+    await user.click(await screen.findByRole('button', { name: 'Cook this' }))
+
+    // Act: Clever toast today, with Frischkäse
+    const bread = await screen.findByRole('radiogroup', { name: 'Toastbrot Spar: product' })
+    expect(within(bread).getByRole('radio', { name: 'Toastbrot Spar' })).toBeChecked()
+    await user.click(within(bread).getByRole('radio', { name: 'Toastbrot Clever' }))
+    const frisch = screen.getByRole('switch', { name: 'Frischkäse' })
+    expect(frisch).toHaveAttribute('aria-checked', 'false')
+    await user.click(frisch)
+    await user.click(screen.getByRole('button', { name: 'Save meal' }))
+
+    // Assert
+    const logged = vi.mocked(saveDish).mock.calls.at(-1)?.[0].dish
+    expect(logged?.lines.map((line) => line.item.name)).toEqual(['Toastbrot Clever', 'Frischkäse'])
+    const learned = savedRecipe()
+    expect(learned.id).toBe('r-toast')
+    expect(learned.slots[0]?.pickedId).toBe('c-clever')
+    expect(learned.slots[1]).toMatchObject({ optional: true, leftOut: false })
   })
 
   test('cooking a recipe asks before replacing a started dish', async () => {
@@ -232,6 +286,26 @@ describe('recipes on Cook', () => {
     expect(savedRecipe()).toMatchObject({ id: 'r-burgers', name: 'Smash burgers' })
     expect(vi.mocked(deleteRecipe).mock.calls.at(-1)?.[0]).toBe('r-burgers')
     await vi.waitFor(() => expect(currentPath()).toBe('/cook/recipes'))
+  })
+
+  test('on the recipe’s page a product is removed from a line, and a line made optional', async () => {
+    // Arrange
+    vi.mocked(fetchRecipes).mockResolvedValue([TOAST])
+    const user = userEvent.setup()
+    renderCook('/cook/recipes/r-toast')
+
+    // Act
+    await user.click(
+      await screen.findByRole('button', { name: /Toastbrot Clever or Toastbrot Spar/ }),
+    )
+    await user.click(screen.getByRole('button', { name: 'Remove Toastbrot Clever' }))
+
+    // Assert
+    await vi.waitFor(() =>
+      expect(savedRecipe().slots[0]?.choices.map((choice) => choice.id)).toEqual(['c-spar']),
+    )
+    await user.click(screen.getByRole('switch', { name: 'Optional' }))
+    await vi.waitFor(() => expect(savedRecipe().slots[0]?.optional).toBe(true))
   })
 
   test('without recipes the list says how to make one', async () => {

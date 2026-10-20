@@ -17,6 +17,7 @@ import {
   type CookDraft,
 } from './cookDraft'
 import type { Recipe } from '../recipes/recipeModel'
+import { slot } from '../recipes/testData'
 
 const TODAY = '2026-10-06'
 
@@ -225,14 +226,18 @@ describe('withRecipe', () => {
         { id: 'rp-me', userId: 'me', splitValue: null },
         { id: 'rp-her', userId: 'her', splitValue: null },
       ],
-      lines: [sharedLine('l-mince', 'Mince', 400, 250)],
+      slots: [slot('s-mince', [sharedLine('l-mince', 'Mince', 400, 250)])],
     }
 
     // Act
     const filled = withRecipe(draft, recipe, [])
 
     // Assert
-    expect(filled).toMatchObject({ date: '2026-10-05', mealType: 'dinner', recipeId: 'r-chili' })
+    expect(filled).toMatchObject({ date: '2026-10-05', mealType: 'dinner' })
+    expect(filled.recipe).toMatchObject({
+      recipeId: 'r-chili',
+      slots: { 's-mince': filled.dish.lines[0]?.id },
+    })
     expect(filled.dish.name).toBe('Chili')
     expect(draftEaterIds(filled)).toEqual(['me', 'her'])
     expect(filled.dish.lines.map((line) => line.item.name)).toEqual(['Mince'])

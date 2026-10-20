@@ -926,12 +926,16 @@ export type Database = {
           id: string
           ingredient_id: string | null
           kcal: number
+          left_out: boolean
           name: string
+          optional: boolean
+          picked: boolean
           position: number
           protein: number | null
           recipe_id: string
           salt: number | null
           sat_fat: number | null
+          slot_id: string
           sugar: number | null
         }
         Insert: {
@@ -947,12 +951,16 @@ export type Database = {
           id: string
           ingredient_id?: string | null
           kcal: number
+          left_out?: boolean
           name: string
+          optional?: boolean
+          picked?: boolean
           position: number
           protein?: number | null
           recipe_id: string
           salt?: number | null
           sat_fat?: number | null
+          slot_id: string
           sugar?: number | null
         }
         Update: {
@@ -968,12 +976,16 @@ export type Database = {
           id?: string
           ingredient_id?: string | null
           kcal?: number
+          left_out?: boolean
           name?: string
+          optional?: boolean
+          picked?: boolean
           position?: number
           protein?: number | null
           recipe_id?: string
           salt?: number | null
           sat_fat?: number | null
+          slot_id?: string
           sugar?: number | null
         }
         Relationships: [

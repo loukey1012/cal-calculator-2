@@ -1,21 +1,14 @@
 import { newId } from '../dishes/dishDraft'
-import type { Dish, DishLine, Eater, SplitMode } from '../dishes/portions'
-import type { Ingredient } from '../ingredients/ingredientsApi'
+import type { Dish, DishLine, SplitMode } from '../dishes/portions'
 import type { MealItem } from '../meals/dayModel'
-import { availableUnits } from '../nutrition/amounts'
-import {
-  buildMealItem,
-  ingredientNutrition,
-  ingredientSource,
-  itemDraftOf,
-  type MealItemDraft,
-} from '../nutrition/fromIngredient'
-import { itemTotals } from '../nutrition/totals'
+import { itemDraftOf } from '../nutrition/fromIngredient'
 
 /**
- * A recipe is a dish saved by name to cook again: its lines (shared or own amounts), split and
- * who eats, without day and meal. A whole meal is saved merged into one dish, since Cook holds
- * one dish at a time. Cooking it uses the ingredients' current values.
+ * A recipe is a dish saved by name to cook again: who eats, the split and its lines, without day
+ * and meal. Each line can hold several products ("choices", each with its own amount: toast
+ * bread from Clever or from Spar) and can be optional (Frischkäse sometimes). It remembers the
+ * choice used last time and whether an optional line was left out. A whole meal is saved merged
+ * into one dish, since Cook holds one dish at a time.
  */
 
 export type RecipePortion = {
@@ -25,6 +18,17 @@ export type RecipePortion = {
   readonly splitValue: number | null
 }
 
+/** One line of the recipe; each choice is a line of its own (own amounts keyed by portion). */
+export type RecipeSlot = {
+  readonly id: string
+  readonly optional: boolean
+  /** an optional line left out last time */
+  readonly leftOut: boolean
+  /** the choice used last time */
+  readonly pickedId: string
+  readonly choices: readonly DishLine[]
+}
+
 export type Recipe = {
   readonly id: string
   readonly name: string
@@ -32,9 +36,19 @@ export type Recipe = {
   readonly cookedWeightG: number | null
   readonly kcalEstimated: boolean
   readonly portions: readonly RecipePortion[]
-  /** nutrition snapshots; own amounts are keyed by the recipe's portion ids */
-  readonly lines: readonly DishLine[]
+  readonly slots: readonly RecipeSlot[]
 }
+
+/** Which recipe a Cook dish came from, and what of it went where. */
+export type RecipeLink = {
+  readonly recipeId: string
+  /** recipe portion id → dish portion id */
+  readonly portions: Readonly<Record<string, string>>
+  /** recipe line (slot) id → the dish line it became; null: an optional line left out */
+  readonly slots: Readonly<Record<string, string | null>>
+}
+
+export type LinkedRecipe = { readonly recipe: Recipe; readonly link: RecipeLink }
 
 // matches recipes.name
 export const RECIPE_NAME_MAX = 60
@@ -52,27 +66,90 @@ export function withRecipeName(recipe: Recipe, name: string): Recipe {
   return { ...recipe, name: checkedName(name) }
 }
 
+export function pickedChoice(slot: RecipeSlot): DishLine {
+  const picked = slot.choices.find((choice) => choice.id === slot.pickedId) ?? slot.choices[0]
+  if (!picked) throw new RangeError('A recipe line needs at least one choice')
+  return picked
+}
+
+/** The same product: the same ingredient, or for a custom item the same name and brand. */
+export function isSameProduct(a: DishLine, b: DishLine): boolean {
+  if (a.item.ingredient_id !== null || b.item.ingredient_id !== null) {
+    return a.item.ingredient_id === b.item.ingredient_id
+  }
+  return a.item.name === b.item.name && a.item.brand === b.item.brand
+}
+
+/** The line's own amounts under other portion ids; portions without an id are dropped. */
+export function withAmountsFor(
+  line: DishLine,
+  portionId: (id: string) => string | undefined,
+): DishLine {
+  const amounts = Object.entries(line.amounts).flatMap(([id, amount]) => {
+    const mapped = portionId(id)
+    return mapped === undefined ? [] : [[mapped, amount] as const]
+  })
+  return { ...line, amounts: Object.fromEntries(amounts) }
+}
+
+/** A required line with a single choice. */
+export function singleSlot(line: DishLine): RecipeSlot {
+  const choiceId = newId()
+  return {
+    id: newId(),
+    optional: false,
+    leftOut: false,
+    pickedId: choiceId,
+    choices: [{ ...line, id: choiceId }],
+  }
+}
+
 /**
- * Each person eats once in a recipe: a second portion of the same person (a leftover they took
- * later) and a thrown-away one become leftovers, so the shares stay as cooked.
+ * Who eats, as a recipe remembers it: each person once (a second portion of the same person,
+ * e.g. a leftover they took later, and a thrown-away one become leftovers, so the shares stay).
  */
-export function recipeFromDish(dish: Dish, name: string, id: string): Recipe {
-  const portions = dish.portions.map((portion, index): RecipePortion => {
+export function recipePortionsOf(
+  dish: Dish,
+  idOf: (dishPortionId: string) => string,
+): RecipePortion[] {
+  return dish.portions.map((portion, index): RecipePortion => {
     const userId = portion.eater?.userId ?? null
     const isFirst =
       userId !== null &&
       dish.portions.findIndex((other) => other.eater?.userId === userId) === index
-    return { id: portion.id, userId: isFirst ? userId : null, splitValue: portion.splitValue }
+    return { id: idOf(portion.id), userId: isFirst ? userId : null, splitValue: portion.splitValue }
   })
-  return {
+}
+
+/**
+ * A new recipe from a dish (every line required, with one choice), and how the dish relates to
+ * it, so cooking it on can teach the recipe.
+ */
+export function linkedRecipeFromDish(dish: Dish, name: string, id: string): LinkedRecipe {
+  const portionIds = new Map(dish.portions.map((portion) => [portion.id, newId()]))
+  const slots = dish.lines.map((line) => ({
+    lineId: line.id,
+    slot: singleSlot(withAmountsFor(line, (portionId) => portionIds.get(portionId))),
+  }))
+  const recipe: Recipe = {
     id,
     name: checkedName(name),
     splitMode: dish.splitMode,
     cookedWeightG: dish.cookedWeightG,
     kcalEstimated: dish.kcalEstimated ?? false,
-    portions,
-    lines: dish.lines,
+    portions: recipePortionsOf(dish, (portionId) => portionIds.get(portionId) ?? newId()),
+    slots: slots.map(({ slot }) => slot),
   }
+  const link: RecipeLink = {
+    recipeId: id,
+    portions: Object.fromEntries([...portionIds].map(([dishId, recipeId]) => [recipeId, dishId])),
+    slots: Object.fromEntries(slots.map(({ lineId, slot }) => [slot.id, lineId])),
+  }
+  return { recipe, link }
+}
+
+export function recipeFromDish(dish: Dish, name: string, id: string): Recipe {
+  return linkedRecipeFromDish(dish, name, id).recipe
 }
 
 /** What one person ate in a meal, every food a shared line of one dish for them. */
@@ -90,65 +167,43 @@ export function recipeFromMeal(
     cookedWeightG: null,
     kcalEstimated: items.some((item) => item.dish?.kcalEstimated === true),
     portions: [{ id: newId(), userId, splitValue: null }],
-    lines: items.map((item) => ({
-      id: newId(),
-      allocation: 'shared',
-      item: itemDraftOf(item),
-      amounts: {},
-    })),
+    slots: items.map((item) =>
+      singleSlot({ id: newId(), allocation: 'shared', item: itemDraftOf(item), amounts: {} }),
+    ),
   }
 }
 
-/**
- * The line's food at the ingredient's current values, at the saved amount. Custom items, deleted
- * ingredients and ingredients that lost the saved unit keep the saved snapshot.
- */
-function currentItem(item: MealItemDraft, ingredients: readonly Ingredient[]): MealItemDraft {
-  const found = ingredients.find((candidate) => candidate.id === item.ingredient_id)
-  if (!found) return item
-  if (!availableUnits(ingredientNutrition(found)).includes(item.entered_unit)) return item
-  return buildMealItem(ingredientSource(found), item.entered_amount, item.entered_unit)
+/** e.g. "Gouda (Billa)" */
+export function choiceLabel(choice: DishLine): string {
+  return choice.item.brand ? `${choice.item.name} (${choice.item.brand})` : choice.item.name
 }
 
-/** A fresh dish to cook from the recipe; `eaterOf` places each person (day and meal). */
-export function dishFromRecipe(
-  recipe: Recipe,
-  ingredients: readonly Ingredient[],
-  eaterOf: (userId: string) => Eater,
-): Dish {
-  const portionIds = new Map(recipe.portions.map((portion) => [portion.id, newId()]))
-  const newPortionId = (id: string) => portionIds.get(id) ?? id
+function withSlot(recipe: Recipe, slotId: string, change: (slot: RecipeSlot) => RecipeSlot) {
   return {
-    id: newId(),
-    name: recipe.name,
-    splitMode: recipe.splitMode,
-    cookedWeightG: recipe.cookedWeightG,
-    kcalEstimated: recipe.kcalEstimated,
-    // set when saved
-    revision: '',
-    portions: recipe.portions.map((portion) => ({
-      id: newPortionId(portion.id),
-      eater: portion.userId === null ? null : eaterOf(portion.userId),
-      splitValue: portion.splitValue,
-    })),
-    lines: recipe.lines.map((line) => ({
-      id: newId(),
-      allocation: line.allocation,
-      item: currentItem(line.item, ingredients),
-      amounts: Object.fromEntries(
-        Object.entries(line.amounts).map(([portionId, amount]) => [
-          newPortionId(portionId),
-          amount,
-        ]),
-      ),
-    })),
+    ...recipe,
+    slots: recipe.slots.map((slot) => (slot.id === slotId ? change(slot) : slot)),
   }
 }
 
-/** Calories of the whole recipe at current values. */
-export function recipeKcal(recipe: Recipe, ingredients: readonly Ingredient[]): number {
-  return recipe.lines.reduce(
-    (sum, line) => sum + itemTotals(currentItem(line.item, ingredients)).kcal,
-    0,
-  )
+/** Drops a product from a line; the last one stays (remove the line by cooking without it). */
+export function withoutChoice(recipe: Recipe, slotId: string, choiceId: string): Recipe {
+  return withSlot(recipe, slotId, (slot) => {
+    const choices = slot.choices.filter((choice) => choice.id !== choiceId)
+    const [first] = choices
+    if (!first) return slot
+    return {
+      ...slot,
+      choices,
+      pickedId: slot.pickedId === choiceId ? first.id : slot.pickedId,
+    }
+  })
+}
+
+/** A required line is always cooked; an optional one as last time. */
+export function withSlotOptional(recipe: Recipe, slotId: string, optional: boolean): Recipe {
+  return withSlot(recipe, slotId, (slot) => ({
+    ...slot,
+    optional,
+    leftOut: optional && slot.leftOut,
+  }))
 }

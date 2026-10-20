@@ -9,7 +9,7 @@ import { toUserMessage } from '../../lib/errors'
 import { useIngredients } from '../ingredients/hooks'
 import { formatKcal } from '../nutrition/format'
 import { useRecipes } from './hooks'
-import { recipeKcal } from './recipeModel'
+import { recipeKcal } from './recipeCooking'
 
 function ingredientCount(count: number): string {
   return count === 1 ? '1 ingredient' : `${count} ingredients`
@@ -46,7 +46,7 @@ export function RecipesList({ leading, onOpen }: RecipesListProps) {
             <ListRow
               key={recipe.id}
               title={recipe.name}
-              subtitle={ingredientCount(recipe.lines.length)}
+              subtitle={ingredientCount(recipe.slots.length)}
               detail={`${formatKcal(recipeKcal(recipe, ingredients.data ?? []))} kcal`}
               onClick={() => onOpen(recipe.id)}
             />

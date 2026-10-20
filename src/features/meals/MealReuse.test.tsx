@@ -34,7 +34,7 @@ import type { Dish } from '../dishes/portions'
 import { gramsItem } from '../dishes/testData'
 import { fetchMembers } from '../household/householdApi'
 import { saveRecipe } from '../recipes/recipesApi'
-import type { Recipe } from '../recipes/recipeModel'
+import { pickedChoice, type Recipe } from '../recipes/recipeModel'
 import { fetchDay } from './mealsApi'
 import { MealSheet } from './MealSheet'
 
@@ -160,10 +160,12 @@ describe('saving a meal as a recipe', () => {
     const recipe = savedRecipe()
     expect(recipe.name).toBe('Jam toast')
     expect(recipe.portions).toEqual([{ id: expect.any(String), userId: 'u1', splitValue: null }])
-    expect(recipe.lines.map((line) => [line.allocation, line.item.name])).toEqual([
-      ['shared', 'Toast'],
-      ['shared', 'Jam'],
-    ])
+    expect(recipe.slots.map(pickedChoice).map((line) => [line.allocation, line.item.name])).toEqual(
+      [
+        ['shared', 'Toast'],
+        ['shared', 'Jam'],
+      ],
+    )
     expect(await sheet.findByRole('status')).toHaveTextContent('Saved as a recipe')
   })
 
@@ -181,7 +183,7 @@ describe('saving a meal as a recipe', () => {
     // Assert
     const recipe = savedRecipe()
     expect(recipe.portions.map((portion) => portion.userId)).toEqual(['u1', 'u2'])
-    expect(recipe.lines).toEqual(CHILI.lines)
+    expect(recipe.slots.map((s) => pickedChoice(s).item)).toEqual(CHILI.lines.map((l) => l.item))
   })
 
   test('a recipe needs a name', async () => {

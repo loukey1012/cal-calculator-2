@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useCurrentUser } from '../../app/currentUser'
 import { usePagePath } from '../../app/pagePath'
@@ -12,14 +12,21 @@ import { portionName } from '../dishes/portionName'
 import { saveError } from '../dishes/saveError'
 import { useMembers, usePeople } from '../household/hooks'
 import { useLookOf } from '../household/usePersonLook'
-import { useRecipes } from '../recipes/hooks'
-import { recipeFromDish } from '../recipes/recipeModel'
+import { useRecipes, useSaveRecipe } from '../recipes/hooks'
+import { learnedRecipe } from '../recipes/recipeLearning'
+import {
+  linkedRecipeFromDish,
+  withRecipeName,
+  type Recipe,
+  type RecipeLink,
+} from '../recipes/recipeModel'
 import { SaveRecipeForm } from '../recipes/SaveRecipeForm'
 import { useToday } from '../today/useToday'
 import { hasContent, keepEaters, resolvedDish, withDish, type CookDraft } from './cookDraft'
 import { COOK_HOME, useCookSession } from './cookSessionContext'
 import { CookRecipePages, RecipesRow } from './CookRecipePages'
 import { CookWhoWhen } from './CookWhoWhen'
+import { RecipeChoices } from './RecipeChoices'
 import { LeftoversCard } from './LeftoversCard'
 import { useCookSteps } from './useCookSteps'
 import { recipePageOf } from './recipePages'
@@ -49,8 +56,11 @@ function CookDish() {
   const { draft: storedDraft, setDraft, reset, returnTo, setReturnTo } = useCookSession()
   const steps = useCookSteps()
   const recipes = useRecipes(householdId)
+  const saveRecipe = useSaveRecipe(householdId)
   const [error, setError] = useState<string | null>(null)
   const [isSavingRecipe, setIsSavingRecipe] = useState(false)
+  // the link of the recipe just saved from this dish, so cooking on keeps teaching it
+  const savedLink = useRef<RecipeLink | null>(null)
 
   // someone who left the household can't eat along any more
   const memberIds = members.data && [profile.id, ...members.data.map((member) => member.id)]
@@ -63,6 +73,18 @@ function CookDish() {
   const nameOf = (portionId: string) =>
     portionName(draft.dish, people, (person) => lookOf(person).name, portionId)
 
+  const fromRecipe = recipes.data?.find((recipe) => recipe.id === draft.recipe?.recipeId) ?? null
+
+  /** Updating the recipe it came from teaches it this dish; anything else is a new recipe. */
+  function recipeToSave(name: string, id: string): Recipe {
+    const linked =
+      fromRecipe && draft.recipe && id === fromRecipe.id
+        ? learnedRecipe(fromRecipe, draft.recipe, draft.dish)
+        : linkedRecipeFromDish(draft.dish, name, id)
+    savedLink.current = linked.link
+    return withRecipeName(linked.recipe, name)
+  }
+
   function save() {
     const dish = resolvedDish(draft, today, mealOfDay)
     const problem = saveError(dish)
@@ -71,6 +93,10 @@ function CookDish() {
       saveDish.save({ dish })
     } catch (failure) {
       return setError(failure instanceof Error ? failure.message : 'This meal can’t be saved.')
+    }
+    // the recipe learns what was cooked (best effort: offline it learns next time)
+    if (fromRecipe && draft.recipe) {
+      saveRecipe.mutate(learnedRecipe(fromRecipe, draft.recipe, dish).recipe)
     }
     reset()
     setError(null)
@@ -85,7 +111,6 @@ function CookDish() {
   }
 
   const onDish = steps.step.kind === 'main'
-  const fromRecipe = recipes.data?.find((recipe) => recipe.id === draft.recipeId) ?? null
   return (
     <>
       {onDish ? (
@@ -108,13 +133,16 @@ function CookDish() {
         error={error}
         steps={steps}
         header={
-          <CookWhoWhen
-            draft={draft}
-            people={people}
-            today={today}
-            mealOfDay={mealOfDay}
-            onChange={change}
-          />
+          <>
+            <CookWhoWhen
+              draft={draft}
+              people={people}
+              today={today}
+              mealOfDay={mealOfDay}
+              onChange={change}
+            />
+            <RecipeChoices draft={draft} onChange={change} />
+          </>
         }
         actions={
           <>
@@ -136,11 +164,11 @@ function CookDish() {
         <SaveRecipeForm
           initialName={fromRecipe?.name ?? draft.dish.name ?? ''}
           existing={fromRecipe}
-          build={(name, id) => recipeFromDish(draft.dish, name, id)}
-          onSaved={(recipe) => {
+          build={recipeToSave}
+          onSaved={() => {
             setIsSavingRecipe(false)
-            // a later change can update this recipe
-            setDraft((current) => ({ ...current, recipeId: recipe.id }))
+            // cooking on (and logging it) keeps teaching this recipe
+            setDraft((current) => ({ ...current, recipe: savedLink.current }))
           }}
         />
       </Sheet>

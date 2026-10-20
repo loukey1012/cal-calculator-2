@@ -30,6 +30,17 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-20T17:15',
+    kind: 'new',
+    title: 'Recipes with choices that learn',
+    items: [
+      'A recipe line can hold several products, each with its own amount (e.g. toast bread from Clever or Spar), and can be optional (e.g. Frischkäse)',
+      'Cook shows the products as chips and optional lines as switches, set as last time',
+      'Logging a meal from a recipe teaches it: a swapped-in product becomes a new choice, a left-out ingredient becomes optional, an added one joins as optional',
+      'On a recipe’s page, tap a line to remove a product or make it optional or required',
+    ],
+  },
+  {
     at: '2026-10-20T17:02',
     kind: 'new',
     title: 'Swap an ingredient',

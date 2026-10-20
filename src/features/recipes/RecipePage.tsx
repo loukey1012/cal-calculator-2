@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { useCurrentUser } from '../../app/currentUser'
+import { BackButton } from '../../components/ios/BackButton'
 import { Button } from '../../components/ios/Button'
 import { ErrorBanner } from '../../components/ios/ErrorBanner'
 import { GroupedSection } from '../../components/ios/GroupedSection'
@@ -8,17 +9,27 @@ import { PageHeader } from '../../components/ios/PageHeader'
 import { TextField } from '../../components/ios/TextField'
 import { toUserMessage } from '../../lib/errors'
 import { describeLine } from '../dishes/dishDraft'
-import { portionName } from '../dishes/portionName'
 import { usePeople } from '../household/hooks'
 import { useLookOf } from '../household/usePersonLook'
 import { useIngredients } from '../ingredients/hooks'
 import { formatKcal } from '../nutrition/format'
 import { itemTotals } from '../nutrition/totals'
 import { useDeleteRecipe, useRecipes, useSaveRecipe } from './hooks'
-import { dishFromRecipe, RECIPE_NAME_MAX, withRecipeName, type Recipe } from './recipeModel'
+import { currentItem } from './recipeCooking'
+import {
+  choiceLabel,
+  pickedChoice,
+  RECIPE_NAME_MAX,
+  withRecipeName,
+  type Recipe,
+  type RecipeSlot,
+} from './recipeModel'
+import { RecipeSlotEditor } from './RecipeSlotEditor'
 
-// day and meal don't matter for showing a recipe
-const anyEater = (userId: string) => ({ userId, date: '', mealType: 'snack' as const })
+/** e.g. "Toastbrot (Clever) or Toastbrot (Spar)" */
+function slotTitle(slot: RecipeSlot): string {
+  return slot.choices.map(choiceLabel).join(' or ')
+}
 
 type RecipePageProps = {
   readonly recipeId: string
@@ -71,10 +82,19 @@ function RecipeView({ recipe, leading, onCook, onDeleted }: RecipeViewProps) {
   const deleteRecipe = useDeleteRecipe(householdId)
   const [name, setName] = useState(recipe.name)
   const [error, setError] = useState<string | null>(null)
-  const dish = dishFromRecipe(recipe, ingredients.data ?? [], anyEater)
-  const nameOf = (portionId: string) =>
-    portionName(dish, people, (person) => lookOf(person).name, portionId)
+  const [editingSlotId, setEditingSlotId] = useState<string | null>(null)
+  const editingSlot = recipe.slots.find((slot) => slot.id === editingSlotId)
+  const nameOf = (portionId: string) => {
+    const userId = recipe.portions.find((portion) => portion.id === portionId)?.userId
+    const person = people.find((candidate) => candidate.id === userId)
+    return person ? lookOf(person).name : 'Leftover'
+  }
   const isRenamed = name.trim() !== recipe.name
+
+  function save(changed: Recipe) {
+    setError(null)
+    saveRecipe.mutate(changed, { onError: (failure) => setError(toUserMessage(failure)) })
+  }
 
   function rename() {
     let renamed: Recipe
@@ -83,8 +103,7 @@ function RecipeView({ recipe, leading, onCook, onDeleted }: RecipeViewProps) {
     } catch (failure) {
       return setError(failure instanceof RangeError ? failure.message : toUserMessage(failure))
     }
-    setError(null)
-    saveRecipe.mutate(renamed, { onError: (failure) => setError(toUserMessage(failure)) })
+    save(renamed)
   }
 
   function remove() {
@@ -98,24 +117,48 @@ function RecipeView({ recipe, leading, onCook, onDeleted }: RecipeViewProps) {
     })
   }
 
+  if (editingSlot) {
+    return (
+      <>
+        <PageHeader
+          title={pickedChoice(editingSlot).item.name}
+          leading={<BackButton onClick={() => setEditingSlotId(null)} />}
+        />
+        <RecipeSlotEditor
+          recipe={recipe}
+          slot={editingSlot}
+          ingredients={ingredients.data ?? []}
+          nameOf={nameOf}
+          onChange={save}
+        />
+        {error && <ErrorBanner message={error} />}
+      </>
+    )
+  }
+
   return (
     <>
       <PageHeader title={recipe.name} leading={leading} />
       <GroupedSection header="Ingredients">
-        {dish.lines.map((line) => (
-          <ListRow
-            key={line.id}
-            title={line.item.name}
-            subtitle={describeLine(line, nameOf)}
-            detail={`${formatKcal(itemTotals(line.item).kcal)} kcal`}
-          />
-        ))}
+        {recipe.slots.map((slot) => {
+          const picked = pickedChoice(slot)
+          return (
+            <ListRow
+              key={slot.id}
+              title={slotTitle(slot)}
+              subtitle={`${describeLine(picked, nameOf)}${slot.optional ? ' · optional' : ''}`}
+              detail={`${formatKcal(itemTotals(currentItem(picked.item, ingredients.data ?? [])).kcal)} kcal`}
+              onClick={() => setEditingSlotId(slot.id)}
+            />
+          )
+        })}
       </GroupedSection>
       <div className="mt-6">
         <Button onClick={() => onCook(recipe)}>Cook this</Button>
       </div>
       <p className="px-4 pt-2 text-[13px] text-label-secondary">
-        To change what’s in it, cook it, change it on Cook and update the recipe from there.
+        Cooking it learns: products you swap in become choices, ingredients you leave out become
+        optional.
       </p>
       <GroupedSection header="Name">
         <TextField

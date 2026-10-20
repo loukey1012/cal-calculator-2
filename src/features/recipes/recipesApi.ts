@@ -3,7 +3,7 @@ import { ApiError } from '../../lib/errors'
 import { supabase } from '../../lib/supabase'
 import type { DishLine } from '../dishes/portions'
 import { itemDraftOf } from '../nutrition/fromIngredient'
-import type { Recipe } from './recipeModel'
+import type { Recipe, RecipeSlot } from './recipeModel'
 
 type PortionRow = Tables<'recipe_portions'>
 type AmountRow = Tables<'recipe_line_amounts'>
@@ -24,6 +24,25 @@ function lineFromRow(row: LineRow): DishLine {
   return { id: row.id, allocation: row.allocation, item: itemDraftOf(row), amounts }
 }
 
+/** The rows of one line (slot) are its choices; the picked row says what the slot remembers. */
+function slotsFromRows(rows: readonly LineRow[]): RecipeSlot[] {
+  const slotIds = [...new Set(rows.map((row) => row.slot_id))]
+  return slotIds.flatMap((slotId) => {
+    const choices = rows.filter((row) => row.slot_id === slotId)
+    const picked = choices.find((row) => row.picked) ?? choices[0]
+    if (!picked) return []
+    return [
+      {
+        id: slotId,
+        optional: picked.optional,
+        leftOut: picked.left_out,
+        pickedId: picked.id,
+        choices: choices.map(lineFromRow),
+      },
+    ]
+  })
+}
+
 function recipeFromRow(row: RecipeRow): Recipe {
   return {
     id: row.id,
@@ -36,7 +55,7 @@ function recipeFromRow(row: RecipeRow): Recipe {
       userId: portion.user_id,
       splitValue: portion.split_value,
     })),
-    lines: row.recipe_lines.toSorted(byPosition).map(lineFromRow),
+    slots: slotsFromRows(row.recipe_lines.toSorted(byPosition)),
   }
 }
 
@@ -53,12 +72,22 @@ function recipePayload(recipe: Recipe) {
       user_id: portion.userId,
       split_value: portion.splitValue,
     })),
-    lines: recipe.lines.map((line) => ({
-      ...line.item,
-      id: line.id,
-      allocation: line.allocation,
-      amounts: Object.entries(line.amounts).map(([portion_id, amount]) => ({ portion_id, amount })),
-    })),
+    // every choice is a line; the slot's flags go on each of them
+    lines: recipe.slots.flatMap((slot) =>
+      slot.choices.map((choice) => ({
+        ...choice.item,
+        id: choice.id,
+        slot_id: slot.id,
+        optional: slot.optional,
+        picked: choice.id === slot.pickedId,
+        left_out: slot.leftOut,
+        allocation: choice.allocation,
+        amounts: Object.entries(choice.amounts).map(([portion_id, amount]) => ({
+          portion_id,
+          amount,
+        })),
+      })),
+    ),
   }
 }
 

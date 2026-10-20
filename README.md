@@ -28,7 +28,11 @@ Built for a two-person household: both members log their own meals, can see and 
 - **Leftovers** of the last 7 days are listed at the top of Cook: eat one in any meal (for you or your partner), or **throw it away** (it keeps its share, so the eaten portions never change). While food is left, a **"Chili left"** pill sits next to "Meals" on Today and opens Cook.
 - Every logged food keeps a **snapshot of its nutrition values**. Editing an ingredient updates the food logged with it in the **last 14 days** (today and the 13 days before, for both of you, plain food and dishes alike) and says how many meals changed; older meals keep the values they were logged with.
 - Works offline like every change (queued on the phone, sent in order once back online).
-- **Recipes:** **Save as recipe** keeps the dish on Cook by name (its ingredients, who eats, the split, own amounts and leftover portions), shared by both of you. **Cook › Recipes** lists them with their calories; on a recipe's page, **Cook this** fills Cook as saved (asking first if a dish is already there), using the ingredients' **current values** (custom items and deleted ingredients keep the values they were saved with). There is no scaling. A dish cooked from a recipe can **update that recipe** or be saved as a new one, which is also how a recipe's ingredients are changed. Rename and delete on the recipe's page. Saving a recipe needs a connection.
+- **Recipes** for what you cook often, even with changing products (toast with Clever or Spar bread, Gouda or Edamer, Frischkäse only sometimes):
+  - **Save as recipe** keeps the dish on Cook by name (who eats, the split, own amounts, leftover portions), shared by both of you. **Cook › Recipes** lists them with their calories; **Cook this** fills Cook (asking first if a dish is already there) with the **current values** of the ingredients (custom items and deleted ingredients keep the values they were saved with). No scaling.
+  - A recipe line can hold **several products**, each with its own amount, and can be **optional**. On Cook, "From “Toast”" shows the products as chips and optional lines as switches, set as **last time**.
+  - **It learns when the meal is logged:** a product swapped in (Swap ingredient) becomes a new choice and next time's pick, an ingredient removed becomes optional and stays off next time, one added joins as an optional line, amounts follow what was used. Offline it learns the next time.
+  - On a recipe's page: tap a line to remove a product from it or switch it between optional and required; rename and delete the recipe. **Save as recipe** on a dish cooked from a recipe offers **Update** (the same learning) or **Save as new recipe**. Saving and renaming need a connection.
 
 ### Today
 
@@ -168,7 +172,7 @@ Everything here is saved **to your account**, never to the device: you get the s
 
 ---
 
-## Fixes and improvements (planned)
+## Fixes and improvements, October 11–20 (done)
 
 Noted 2026-10-11.
 
@@ -262,12 +266,14 @@ Noted 2026-10-15.
 - [x] Both: a label on Today and in History, the day is left out of the averages and Trends, the rings show no over colors that day (point 29), the weekly review skips it, and the export has a column for each
 - [x] Both can be set, changed and removed on any day, also past ones, by either of you (like meals)
 
-**14. Recipes** (done)
+**14. Recipes** (done; reworked 2026-10-20 for changing products, being tried in daily use)
 
 - [x] Save a dish or a whole meal by name as a **recipe**: its ingredient lines, split and own amounts; shared by both of you (a meal of several foods is merged into one dish)
 - [x] A **Recipes** list on Cook: tap one and Cook is filled in as saved; change anything, then log. Rename, change and delete recipes
 - [x] Recipes use the current values of their ingredients
 - [x] **Copy a meal** to another day, meal or person, with the values as logged
+- [x] **Swap ingredient** on Cook (same category, keeps amount and who has it)
+- [x] Recipe lines with **several products** and **optional** lines, picked as last time; the recipe **learns** from every logged meal
 
 **15. Export** (done)
 
@@ -411,7 +417,7 @@ Planned 2026-10-07, all five groups shipped 2026-10-08, one group at a time.
 
 ## Coming next
 
-Everything planned is listed under **Fixes and improvements (planned)** above (meal reminders are part of point 10, meal reuse is part of point 14). A step-by-step build plan with all decisions is in [`docs/plan-2026-10-15.md`](docs/plan-2026-10-15.md).
+Everything planned is built (see the lists above). Recipes with choices, the notifications and the label reader are being tried in daily use.
 
 **Ideas for later (not planned yet, need discussing first):**
 
@@ -462,7 +468,6 @@ src/
     today/ history/ settings/   tab pages
   lib/            supabase client, env validation, errors, persistence, dates, numbers
   sw/             the service worker: precache and offline pages (Workbox), push notifications
-docs/            build plans with the decisions behind them (current: plan-2026-10-15.md)
 e2e/
   smoke.spec.ts   no-backend checks (shell loads, installable)
   journeys/       real user journeys against the dev project, throwaway users per test
@@ -484,7 +489,7 @@ scripts/
 - `meals` (unique per user, local date and meal type; `cheat_meal`), `cheat_days` (a person's cheat days; the household manages them like meals), `meal_items` (nutrition snapshot plus a basis multiplier; amounts in `g`, `ml` or `unit`, where `per_100g` means per 100 ml for an amount in ml)
 - `meal_items` of a cooked dish point to their `dish_portions` row and `dish_lines` row; plain items leave both empty
 - `dishes` (a cooking; split mode equal / count / percent / weight, cooked weight, `kcal_estimated` when its calories are only roughly known, a revision changed by every save), `dish_portions` (who ate it on which day and meal, or nobody yet = a leftover; split value; `discarded` for a thrown-away leftover, which keeps its share), `dish_lines` (ingredient snapshot like `meal_items`, either `shared` or `per_portion`), `dish_line_amounts` (own amount of a `per_portion` line per portion)
-- `recipes` (name, split, cooked weight, estimate flag; shared by the household), `recipe_portions` (who eats, or nobody = a leftover; split value), `recipe_lines` (ingredient link plus a snapshot like `dish_lines`, used for custom items and deleted ingredients), `recipe_line_amounts` (own amounts per portion). Written only through `save_recipe` (create or replace, the last save wins) and `delete_recipe`
+- `recipes` (name, split, cooked weight, estimate flag; shared by the household), `recipe_portions` (who eats, or nobody = a leftover; split value), `recipe_lines` (one row per product of a line: ingredient link plus a snapshot like `dish_lines`, used for custom items and deleted ingredients; rows of one line share `slot_id`, with `optional`, `picked` = used last time, `left_out` = an optional line left out last time), `recipe_line_amounts` (own amounts per portion). Written only through `save_recipe` (create or replace, the last save wins) and `delete_recipe`
 - Views `meal_totals` and `daily_totals` (with `kcal_estimated`: some food came from a dish marked as an estimate; `cheat_meal` and `cheat_day`; a cheat day without any meal still has a row). RPCs `create_household`, `join_household`, `ensure_meal`, `set_cheat_meal` (marks a meal, creating an empty one), `save_dish` and `delete_dish`; `ingredient_use_counts` (how often each ingredient was used, for sorting by Most used; runs with the caller's rights, so RLS keeps it to the household). `keep_alive` returns `true` to anyone, for the keep-alive workflow.
 - `push_subscriptions` (each phone that allowed notifications: its push address and keys, whose it is, when a push last arrived). Members only see their own phones and never the keys; `save_push_subscription` (also takes a phone over from the other account) and `delete_push_subscription` write them; only the Edge Functions (service role) read the keys to send.
 - `notification_preferences` (per person, only they see it: which notifications and when, as JSON read with defaults by `supabase/functions/_shared/notificationSettings.ts`, and the phone's time zone), `push_sent` (each notification sent once: kind + key, e.g. a reminder per day and meal), `partner_changes` (filled by triggers on `meals` / `meal_items` when someone changes another person's meal; cleared once told). Members can't read the last two. `cook_drafts` (per person, own row only: the label and ingredient count of a dish waiting on Cook, `updated_at` set by the database on every change).

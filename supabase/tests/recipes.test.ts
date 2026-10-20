@@ -28,6 +28,11 @@ type LinePayload = {
   readonly fiber: null
   readonly salt: null
   readonly amounts: ReadonlyArray<{ readonly portion_id: string; readonly amount: number }>
+  /** left out by older app versions: the line is its own slot, required and picked */
+  readonly slot_id?: string
+  readonly optional?: boolean
+  readonly picked?: boolean
+  readonly left_out?: boolean
 }
 
 type RecipePayload = {
@@ -241,6 +246,68 @@ describe('saving a recipe', () => {
 
     expect(toStranger.error?.code).toBe('42501')
     expect(withForeign.error?.code).toBe('42501')
+  })
+})
+
+describe('choices and optional lines', () => {
+  test('a slot keeps several products, the one picked last time and whether it was left out', async () => {
+    // Arrange
+    const bread = uuid()
+    const cheese = uuid()
+    const toast = recipe({
+      name: 'Toast',
+      lines: [
+        { ...grams('Toastbrot Clever', 60, 260), slot_id: bread, picked: false },
+        { ...grams('Toastbrot Spar', 60, 250), slot_id: bread, picked: true },
+        { ...grams('Frischkäse', 30, 200), slot_id: cheese, optional: true, left_out: true },
+      ],
+    })
+
+    // Act
+    const { error } = await saveRecipe(alice.client, toast)
+
+    // Assert
+    expect(error).toBeNull()
+    const { data } = await alice.client
+      .from('recipe_lines')
+      .select('name, slot_id, optional, picked, left_out')
+      .eq('recipe_id', toast.id)
+      .order('position')
+    expect(data).toEqual([
+      { name: 'Toastbrot Clever', slot_id: bread, optional: false, picked: false, left_out: false },
+      { name: 'Toastbrot Spar', slot_id: bread, optional: false, picked: true, left_out: false },
+      { name: 'Frischkäse', slot_id: cheese, optional: true, picked: true, left_out: true },
+    ])
+  })
+
+  test('each slot needs exactly one picked choice', async () => {
+    const bread = uuid()
+    const nonePicked = recipe({
+      lines: [
+        { ...grams('A', 60, 260), slot_id: bread, picked: false },
+        { ...grams('B', 60, 250), slot_id: bread, picked: false },
+      ],
+    })
+    const twoPicked = recipe({
+      lines: [
+        { ...grams('A', 60, 260), slot_id: bread },
+        { ...grams('B', 60, 250), slot_id: bread },
+      ],
+    })
+
+    expect((await saveRecipe(alice.client, nonePicked)).error?.code).toBe('22023')
+    expect((await saveRecipe(alice.client, twoPicked)).error?.code).toBe('22023')
+  })
+
+  test('lines from older app versions each become their own slot', async () => {
+    const plain = recipe({ lines: [grams('Rice', 100, 130), grams('Beans', 50, 100)] })
+
+    expect((await saveRecipe(alice.client, plain)).error).toBeNull()
+    const { data } = await alice.client
+      .from('recipe_lines')
+      .select('id, slot_id, picked')
+      .eq('recipe_id', plain.id)
+    expect(data?.every((line) => line.slot_id === line.id && line.picked)).toBe(true)
   })
 })
 
