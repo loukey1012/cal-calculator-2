@@ -64,7 +64,12 @@ const dishSchema = z.object({
 
 const storedSchema = z.object({
   version: z.literal(VERSION),
-  draft: z.object({ dish: dishSchema, date: day.nullable(), mealType: mealType.nullable() }),
+  draft: z.object({
+    dish: dishSchema,
+    date: day.nullable(),
+    mealType: mealType.nullable(),
+    recipeId: z.string().nullable().optional(),
+  }),
 })
 
 function keyFor(userId: string): string {

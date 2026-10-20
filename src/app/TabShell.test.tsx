@@ -5,6 +5,11 @@ import { useLocation } from 'react-router'
 import { renderWithProviders } from '../test/render'
 import { CurrentUserContext } from './currentUser'
 
+vi.mock('../features/recipes/recipesApi', () => ({
+  fetchRecipes: vi.fn().mockResolvedValue([]),
+  saveRecipe: vi.fn(),
+  deleteRecipe: vi.fn(),
+}))
 vi.mock('../features/review/reviewApi', () => ({
   fetchOpenFindings: vi.fn().mockResolvedValue([]),
   decideFinding: vi.fn(),

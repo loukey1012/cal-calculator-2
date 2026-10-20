@@ -30,6 +30,17 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-20T15:20',
+    kind: 'new',
+    title: 'Recipes, and copying a meal',
+    items: [
+      'Save as recipe on Cook keeps the dish by name: its ingredients, who eats, the split and own amounts. Shared with your household',
+      'Cook › Recipes lists them; Cook this fills Cook with the ingredients’ current values. Rename or delete a recipe on its page',
+      'A dish cooked from a recipe can update that recipe, or be saved as a new one',
+      'In a meal: Save as recipe (a meal of several foods becomes one dish) and Copy to… another day, meal or person, with the values as logged',
+    ],
+  },
+  {
     at: '2026-10-19T17:19',
     kind: 'fix',
     title: 'Small nutrition tables are found by themselves',

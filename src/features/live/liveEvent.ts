@@ -5,6 +5,7 @@ import { goalKeys } from '../goals/hooks'
 import { monthKeys } from '../history/hooks'
 import { householdKeys } from '../household/queryKeys'
 import { ingredientKeys } from '../ingredients/hooks'
+import { recipeKeys } from '../recipes/hooks'
 import { reviewKeys } from '../review/hooks'
 import { dayChangeKey } from '../meals/dayChanges'
 import { weightKeys } from '../weight/weightChanges'
@@ -27,6 +28,7 @@ const hintSchema = z.discriminatedUnion('table', [
       'category_groups',
       'households',
       'review_findings',
+      'recipes',
     ]),
     actor,
   }),
@@ -61,6 +63,8 @@ export function keysForHint(hint: LiveHint, householdId: string): readonly Query
       ]
     case 'review_findings':
       return [reviewKeys.findings(householdId)]
+    case 'recipes':
+      return [recipeKeys.recipes(householdId)]
     case 'goal_history':
       return [goalKeys.goals(hint.user_id)]
     case 'weight_entries':

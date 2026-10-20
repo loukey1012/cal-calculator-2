@@ -29,6 +29,27 @@ export type MealItemDraft = {
   readonly kcal: number
 } & NutrientValues
 
+/** Just the snapshot columns of a stored line or item (e.g. a meal_items or dish_lines row). */
+export function itemDraftOf(row: MealItemDraft): MealItemDraft {
+  return {
+    ingredient_id: row.ingredient_id,
+    name: row.name,
+    brand: row.brand,
+    entered_amount: row.entered_amount,
+    entered_unit: row.entered_unit,
+    basis: row.basis,
+    basis_multiplier: row.basis_multiplier,
+    kcal: row.kcal,
+    protein: row.protein,
+    carbs: row.carbs,
+    sugar: row.sugar,
+    fat: row.fat,
+    sat_fat: row.sat_fat,
+    fiber: row.fiber,
+    salt: row.salt,
+  }
+}
+
 export type MealItemSource = {
   /** null for a custom one-off item that isn't in the ingredient database */
   readonly ingredientId: string | null

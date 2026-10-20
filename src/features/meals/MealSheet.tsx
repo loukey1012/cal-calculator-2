@@ -9,7 +9,9 @@ import { lineWho, rescaledLine } from '../dishes/dishDraft'
 import { DishEditor } from '../dishes/DishEditor'
 import { useDeleteDish, useDish, useLatestDishChangeError, useSaveDish } from '../dishes/hooks'
 import type { Dish } from '../dishes/portions'
+import { MealRecipeForm } from '../recipes/MealRecipeForm'
 import { AmountEditor } from './AmountEditor'
+import { CopyMealForm } from './CopyMealForm'
 import { itemsByMeal, mealLabel, scaleItemAmount, type MealItem, type MealType } from './dayModel'
 import { useDay, useDeleteMealItem, useLatestDayChangeError, useUpdateMealItem } from './hooks'
 import { MealItemsView } from './MealItemsView'
@@ -23,6 +25,8 @@ type View =
   /** a single food logged alone: its amount, changed through its dish */
   | { readonly kind: 'food'; readonly itemId: string; readonly dishId: string }
   | { readonly kind: 'dish'; readonly dishId: string }
+  | { readonly kind: 'saveRecipe' }
+  | { readonly kind: 'copy' }
 
 type MealSheetProps = {
   readonly open: boolean
@@ -62,6 +66,8 @@ function MealSheetContent({
   onCook,
 }: Omit<MealSheetProps, 'open' | 'onClose'>) {
   const [requestedView, setView] = useState<View>({ kind: 'items' })
+  // e.g. "Copied to Lunch, …", shown above the list after going back to it
+  const [notice, setNotice] = useState<string | null>(null)
   const day = useDay(userId, date)
   const update = useUpdateMealItem(userId, date)
   const remove = useDeleteMealItem(userId, date)
@@ -77,6 +83,14 @@ function MealSheetContent({
       : requestedView
   const label = mealLabel(mealType)
   const showItems = () => setView({ kind: 'items' })
+  const showItemsWith = (message: string) => {
+    setNotice(message)
+    showItems()
+  }
+  const open = (next: View) => {
+    setNotice(null)
+    setView(next)
+  }
 
   function removeDish(dishId: string, portionCount: number | undefined) {
     if (!confirmDeleteDish(portionCount)) return
@@ -88,6 +102,7 @@ function MealSheetContent({
     case 'items':
       return (
         <MealItemsView
+          notice={notice}
           items={items}
           loading={day.isPending}
           error={latestChangeError ?? latestDishError ?? day.error}
@@ -97,7 +112,32 @@ function MealSheetContent({
           onEditDish={(dishId) => setView({ kind: 'dish', dishId })}
           onDeleteDish={removeDish}
           onCook={onCook}
+          onSaveRecipe={() => open({ kind: 'saveRecipe' })}
+          onCopy={() => open({ kind: 'copy' })}
         />
+      )
+    case 'saveRecipe':
+      return (
+        <>
+          <BackButton onClick={showItems} />
+          <MealRecipeForm
+            items={items}
+            userId={userId}
+            onSaved={() => showItemsWith('Saved as a recipe. Find it on Cook › Recipes.')}
+          />
+        </>
+      )
+    case 'copy':
+      return (
+        <>
+          <BackButton onClick={showItems} />
+          <CopyMealForm
+            items={items}
+            userId={userId}
+            mealType={mealType}
+            onCopied={showItemsWith}
+          />
+        </>
       )
     case 'dish':
       return (

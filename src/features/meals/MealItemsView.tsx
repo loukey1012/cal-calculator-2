@@ -9,6 +9,8 @@ import { itemTotals, mealTotals } from '../nutrition/totals'
 import { describeAmount, ESTIMATE_LABEL, mealEntries, type MealItem } from './dayModel'
 
 type MealItemsViewProps = {
+  /** a short note after an action, e.g. "Copied to Lunch, …" */
+  readonly notice?: string | null
   readonly items: readonly MealItem[]
   readonly loading: boolean
   readonly error: Error | null
@@ -22,6 +24,9 @@ type MealItemsViewProps = {
   readonly onDeleteDish: (dishId: string, portionCount: number | undefined) => void
   /** opens Cook for this meal */
   readonly onCook: () => void
+  readonly onSaveRecipe: () => void
+  /** to another day, meal or person */
+  readonly onCopy: () => void
 }
 
 function FoodRow({ item, onClick }: { readonly item: MealItem; readonly onClick: () => void }) {
@@ -40,6 +45,7 @@ function FoodRow({ item, onClick }: { readonly item: MealItem; readonly onClick:
 }
 
 export function MealItemsView({
+  notice,
   items,
   loading,
   error,
@@ -49,6 +55,8 @@ export function MealItemsView({
   onEditDish,
   onDeleteDish,
   onCook,
+  onSaveRecipe,
+  onCopy,
 }: MealItemsViewProps) {
   const totals = mealTotals(items)
 
@@ -59,6 +67,11 @@ export function MealItemsView({
         {' · '}
         {macroSummary(totals)}
       </p>
+      {notice && (
+        <p role="status" className="mt-2 text-[15px] font-semibold text-label">
+          {notice}
+        </p>
+      )}
       {error && <ErrorBanner message={toUserMessage(error)} />}
       {items.length === 0 && !loading && (
         <div className="mt-6 text-center text-[15px] text-label-secondary">
@@ -110,6 +123,16 @@ export function MealItemsView({
               }
             }
           })}
+        </div>
+      )}
+      {items.length > 0 && (
+        <div className="mt-6 flex flex-col gap-3">
+          <Button variant="secondary" onClick={onCopy}>
+            Copy to…
+          </Button>
+          <Button variant="secondary" onClick={onSaveRecipe}>
+            Save as recipe
+          </Button>
         </div>
       )}
     </>

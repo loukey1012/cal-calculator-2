@@ -27,6 +27,7 @@ Built for a two-person household: both members log their own meals, can see and 
 - **Leftovers** of the last 7 days are listed at the top of Cook: eat one in any meal (for you or your partner), or **throw it away** (it keeps its share, so the eaten portions never change). While food is left, a **"Chili left"** pill sits next to "Meals" on Today and opens Cook.
 - Every logged food keeps a **snapshot of its nutrition values**. Editing an ingredient updates the food logged with it in the **last 14 days** (today and the 13 days before, for both of you, plain food and dishes alike) and says how many meals changed; older meals keep the values they were logged with.
 - Works offline like every change (queued on the phone, sent in order once back online).
+- **Recipes:** **Save as recipe** keeps the dish on Cook by name (its ingredients, who eats, the split, own amounts and leftover portions), shared by both of you. **Cook › Recipes** lists them with their calories; on a recipe's page, **Cook this** fills Cook as saved (asking first if a dish is already there), using the ingredients' **current values** (custom items and deleted ingredients keep the values they were saved with). There is no scaling. A dish cooked from a recipe can **update that recipe** or be saved as a new one, which is also how a recipe's ingredients are changed. Rename and delete on the recipe's page. Saving a recipe needs a connection.
 
 ### Today
 
@@ -34,6 +35,7 @@ Built for a two-person household: both members log their own meals, can see and 
 - **Weight** next to the "Today" title (it costs no height): your current weight; tap to enter today's. On your partner's day it shows their weight.
 - Tapping an **empty meal opens Cook** already set to that person, day and meal.
 - In a meal, a food logged alone shows as a **plain row**: tap to change its amount, swipe to delete. Anything else is **one block** (its name, or "Pasta, Pesto +2"; "Shared" when you both ate it) with your share, opening to its ingredients and **Edit dish** (who eats, amounts, split, name, leftovers). Sharing a meal afterwards is simply adding your partner there.
+- Below a meal: **Copy to…** copies it to another day, meal or person (e.g. the same breakfast for your partner), each dish with exactly the logged amounts and values; **Save as recipe** keeps a meal of one dish as that whole dish (everyone who ate it), and merges a meal of several foods into one dish of what that person ate.
 - Either of you can change or delete a dish; all portions follow. Deleting a dish that has other portions **asks first**. If both of you changed it at the same time, the later save is refused instead of overwriting the other.
 - On the Today cards a dish counts as **one item**. The whole page (person switch, goal card and all four meals) **fits an iPhone screen without scrolling**.
 - "Today" moves on at midnight, and when the app comes back to the foreground on a later day.
@@ -111,7 +113,7 @@ Built for a two-person household: both members log their own meals, can see and 
 
 ### Live updates
 
-- **Your partner's changes appear on your phone within about a second**, without reloading: food they log or change (also in your meals, e.g. a shared dish), leftovers, ingredients and categories, goals, and their name. The same works for your own changes made on another phone. Nothing pops up; the numbers just change in place.
+- **Your partner's changes appear on your phone within about a second**, without reloading: food they log or change (also in your meals, e.g. a shared dish), leftovers, recipes, ingredients and categories, goals, and their name. The same works for your own changes made on another phone. Nothing pops up; the numbers just change in place.
 - **While you edit a dish your partner saves the same dish**: your draft stays as it is, and a line _Updated on another phone · Load changes_ lets you load their version. Saving over it is held back with a short explanation (your draft stays), so neither edit is lost silently.
 - While your own changes are still being saved, a partner's change waits until yours are through, so your change never briefly flickers back.
 - iOS cuts the connection when the app goes to the background; when it comes back, it reconnects and catches up on everything that changed meanwhile.
@@ -246,12 +248,12 @@ Noted 2026-10-15.
 - [x] Both: a label on Today and in History, the day is left out of the averages and Trends, the rings show no over colors that day (point 29), the weekly review skips it, and the export has a column for each
 - [x] Both can be set, changed and removed on any day, also past ones, by either of you (like meals)
 
-**14. Recipes** (to do)
+**14. Recipes** (done)
 
-- [ ] Save a dish or a whole meal by name as a **recipe**: its ingredient lines, split and own amounts; shared by both of you
-- [ ] A **Recipes** list on Cook: tap one and Cook is filled in as saved; change anything, then log. Rename, change and delete recipes
-- [ ] Recipes use the current values of their ingredients
-- [ ] **Copy a meal** to another day (and meal)
+- [x] Save a dish or a whole meal by name as a **recipe**: its ingredient lines, split and own amounts; shared by both of you (a meal of several foods is merged into one dish)
+- [x] A **Recipes** list on Cook: tap one and Cook is filled in as saved; change anything, then log. Rename, change and delete recipes
+- [x] Recipes use the current values of their ingredients
+- [x] **Copy a meal** to another day, meal or person, with the values as logged
 
 **15. Export** (done)
 
@@ -433,7 +435,8 @@ src/
     household/    profile, household, invite codes, onboarding
     ingredients/  ingredient database: API, form parsing, listing, category chips, screens
     categories/   Settings › Categories: broad categories and categories (create, rename, move, delete)
-    cook/         Cook tab: draft (kept on the phone), who/when, leftovers, links from an empty meal
+    cook/         Cook tab: draft (kept on the phone), who/when, leftovers, links from an empty meal, recipe pages
+    recipes/      recipes: model (from a dish or meal, back to a dish at current values), API, list, page, save form
     meals/        day model, meal sheet (show, change, delete), offline-capable day changes
     dishes/       dishes: share maths (portions.ts), composer and editor, dish API, offline dish changes (same queue as meal changes)
     goals/        goal history, goal form, progress card (rings / ring + bars / bars / compact)
@@ -461,6 +464,7 @@ scripts/
 - `meals` (unique per user, local date and meal type; `cheat_meal`), `cheat_days` (a person's cheat days; the household manages them like meals), `meal_items` (nutrition snapshot plus a basis multiplier; amounts in `g`, `ml` or `unit`, where `per_100g` means per 100 ml for an amount in ml)
 - `meal_items` of a cooked dish point to their `dish_portions` row and `dish_lines` row; plain items leave both empty
 - `dishes` (a cooking; split mode equal / count / percent / weight, cooked weight, `kcal_estimated` when its calories are only roughly known, a revision changed by every save), `dish_portions` (who ate it on which day and meal, or nobody yet = a leftover; split value; `discarded` for a thrown-away leftover, which keeps its share), `dish_lines` (ingredient snapshot like `meal_items`, either `shared` or `per_portion`), `dish_line_amounts` (own amount of a `per_portion` line per portion)
+- `recipes` (name, split, cooked weight, estimate flag; shared by the household), `recipe_portions` (who eats, or nobody = a leftover; split value), `recipe_lines` (ingredient link plus a snapshot like `dish_lines`, used for custom items and deleted ingredients), `recipe_line_amounts` (own amounts per portion). Written only through `save_recipe` (create or replace, the last save wins) and `delete_recipe`
 - Views `meal_totals` and `daily_totals` (with `kcal_estimated`: some food came from a dish marked as an estimate; `cheat_meal` and `cheat_day`; a cheat day without any meal still has a row). RPCs `create_household`, `join_household`, `ensure_meal`, `set_cheat_meal` (marks a meal, creating an empty one), `save_dish` and `delete_dish`; `ingredient_use_counts` (how often each ingredient was used, for sorting by Most used; runs with the caller's rights, so RLS keeps it to the household). `keep_alive` returns `true` to anyone, for the keep-alive workflow.
 - `review_findings` (what the weekly review routine found: about an ingredient, with a suggested fix as `column → value`, or about a person's day, optionally one meal and item; `open` / `applied` / `ignored`, who decided when). Members read them and only change the decision; the routine reads through `review_ingredients` and `review_meals` (members, goals, meals with item totals and day totals for up to 31 days) and adds findings through `submit_review_findings`, all authorized by the household's review key (`review_keys`, stored as a SHA-256 hash, readable by nobody). A finding is never added twice (same ingredient, kind and fix; or same person, day, kind, meal and item).
 - **Live updates:** triggers on the household's tables send a small hint over Supabase Realtime Broadcast to the private channel `household:<id>` (what changed: a person's day, a dish, the ingredient database, …). Hints carry no data: the app marks the matching queries out of date, and what's on screen re-fetches through the normal RLS-checked queries. A failed hint never fails a save.
@@ -469,7 +473,7 @@ scripts/
 ### Security
 
 - **Row Level Security on every table.** Household members can read each other's data and edit each other's meals. Goals and profiles can only be changed by their owner. Other households and signed-out visitors see nothing.
-- Dishes and their meal items are only written through `save_dish` / `delete_dish`, which check that every portion goes to a household member and every ingredient belongs to the household.
+- Dishes and their meal items are only written through `save_dish` / `delete_dish`, which check that every portion goes to a household member and every ingredient belongs to the household. Recipes likewise, through `save_recipe` / `delete_recipe`.
 - Only household members can listen to their household's live channel (a policy on `realtime.messages`), and nobody can send on it from a phone: hints come from the database alone.
 - Joining a household only works through an invite code. Profiles can't be moved between households directly.
 - The anon key in the app is public by design; RLS is the protection. The service-role key is only used in local scripts and CI (dev project), never in the app.
@@ -519,7 +523,7 @@ pnpm icons          # regenerate the icon PNGs: the default set from public/icon
 
 To add an app icon choice: put its SVG in `public/icons/<name>/icon.svg`, add `<name>` to `APP_ICONS` (`src/features/appearance/appearance.ts`) and a label to `APP_ICON_OPTIONS`, then run `pnpm icons`.
 
-**End-to-end journeys** (log a meal on Cook, Back and the back swipe going one step at a time on Cook, category chips and creating a missing ingredient from the Cook search, the new-version toast on the first start only, a White and a custom accent color, your own symbol, a single food changed in place, a meal eaten out logged as an estimate, a saved brand picked from the suggestions, a package scanned from a photo and filled in from Open Food Facts, a scanned portion of 3 biscuits split into single units with a wrong value cleared, values of a similar product found by name, an unknown package on Cook added to the saved ingredient it is plus an estimated ingredient marking the dish, a live camera scan on Cook, weight for today and an earlier day with calorie and weight trends, cooking together for two, sharing a meal afterwards, leftovers, goals and partner, partner nickname and symbol, Today fitting the screen, history, ingredients, category management, offline, a partner's change showing up live and after the app was in the background, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color, a drink saved and logged in ml, the newest ingredient on top with a brand filter and a saved sort order, Liquid Glass Minimal for every field and Full for everything, kept across a restart, random background colors changing with the tab and moving spots, an edited ingredient reaching both people's meals of the last two weeks but not older ones, weekly review findings applied, ignored and a meal finding opening its day, a cheat meal today and a past cheat day in History, a day with only a lunch flagged until its dinner is added, a photo of a nutrition table read by the real text recognition) run the real app against the dev project. Build it against dev and pass the test credentials:
+**End-to-end journeys** (log a meal on Cook, Back and the back swipe going one step at a time on Cook, category chips and creating a missing ingredient from the Cook search, the new-version toast on the first start only, a White and a custom accent color, your own symbol, a single food changed in place, a meal eaten out logged as an estimate, a saved brand picked from the suggestions, a package scanned from a photo and filled in from Open Food Facts, a scanned portion of 3 biscuits split into single units with a wrong value cleared, values of a similar product found by name, an unknown package on Cook added to the saved ingredient it is plus an estimated ingredient marking the dish, a live camera scan on Cook, weight for today and an earlier day with calorie and weight trends, cooking together for two, sharing a meal afterwards, leftovers, goals and partner, partner nickname and symbol, Today fitting the screen, history, ingredients, category management, offline, a partner's change showing up live and after the app was in the background, appearance following the account to a new device, the Pink style surviving a restart, a custom ring color, a drink saved and logged in ml, the newest ingredient on top with a brand filter and a saved sort order, Liquid Glass Minimal for every field and Full for everything, kept across a restart, random background colors changing with the tab and moving spots, an edited ingredient reaching both people's meals of the last two weeks but not older ones, weekly review findings applied, ignored and a meal finding opening its day, a cheat meal today and a past cheat day in History, a day with only a lunch flagged until its dinner is added, a photo of a nutrition table read by the real text recognition, a dish saved as a recipe and cooked again at an ingredient's new values, a meal copied to the partner's snacks and saved as a recipe) run the real app against the dev project. Build it against dev and pass the test credentials:
 
 ```bash
 set -a; . ./.env.test.local; set +a

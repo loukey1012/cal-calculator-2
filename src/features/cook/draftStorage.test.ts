@@ -35,6 +35,14 @@ describe('cook draft storage', () => {
     expect(loadCookDraft('her')).toBeNull()
   })
 
+  test('remembers the recipe the draft was filled from', () => {
+    const draft = { ...started(), recipeId: 'r-1' }
+
+    saveCookDraft('me', draft)
+
+    expect(loadCookDraft('me')?.recipeId).toBe('r-1')
+  })
+
   test('a cleared draft is gone', () => {
     saveCookDraft('me', started())
     clearCookDraft('me')

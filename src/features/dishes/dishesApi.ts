@@ -1,7 +1,7 @@
 import type { Tables } from '../../lib/database.types'
 import { ApiError } from '../../lib/errors'
 import { supabase } from '../../lib/supabase'
-import type { MealItemDraft } from '../nutrition/fromIngredient'
+import { itemDraftOf } from '../nutrition/fromIngredient'
 import type { Dish, DishLine, DishPortion } from './portions'
 
 type PortionRow = Tables<'dish_portions'>
@@ -37,27 +37,10 @@ function portionFromRow(row: PortionRow): DishPortion {
 }
 
 function lineFromRow(row: LineRow): DishLine {
-  const item: MealItemDraft = {
-    ingredient_id: row.ingredient_id,
-    name: row.name,
-    brand: row.brand,
-    entered_amount: row.entered_amount,
-    entered_unit: row.entered_unit,
-    basis: row.basis,
-    basis_multiplier: row.basis_multiplier,
-    kcal: row.kcal,
-    protein: row.protein,
-    carbs: row.carbs,
-    sugar: row.sugar,
-    fat: row.fat,
-    sat_fat: row.sat_fat,
-    fiber: row.fiber,
-    salt: row.salt,
-  }
   const amounts = Object.fromEntries(
     row.dish_line_amounts.map((entry) => [entry.portion_id, entry.amount]),
   )
-  return { id: row.id, allocation: row.allocation, item, amounts }
+  return { id: row.id, allocation: row.allocation, item: itemDraftOf(row), amounts }
 }
 
 function dishFromRow(row: DishRow): Dish {

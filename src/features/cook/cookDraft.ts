@@ -1,6 +1,8 @@
 import { newDish, withoutPortion, withPortion } from '../dishes/dishDraft'
 import type { Dish, DishLine } from '../dishes/portions'
+import type { Ingredient } from '../ingredients/ingredientsApi'
 import type { MealType } from '../meals/dayModel'
+import { dishFromRecipe, type Recipe } from '../recipes/recipeModel'
 
 /**
  * What the Cook tab is putting together: a dish plus when it is eaten. Day and meal follow
@@ -13,6 +15,8 @@ export type CookDraft = {
   readonly date: string | null
   /** null follows the time of day */
   readonly mealType: MealType | null
+  /** the recipe Cook was filled from, so it can be updated; missing in older drafts */
+  readonly recipeId?: string | null
 }
 
 /** Who to pre-select when the Cook tab is opened from an empty meal. */
@@ -84,6 +88,16 @@ export function withMealType(draft: CookDraft, mealType: MealType): CookDraft {
 
 export function withDish(draft: CookDraft, dish: Dish): CookDraft {
   return { ...draft, dish }
+}
+
+/** Cook filled from a recipe: its dish replaces the draft's; day and meal stay. */
+export function withRecipe(
+  draft: CookDraft,
+  recipe: Recipe,
+  ingredients: readonly Ingredient[],
+): CookDraft {
+  const dish = dishFromRecipe(recipe, ingredients, (userId) => ({ userId, ...UNRESOLVED }))
+  return { dish, date: draft.date, mealType: draft.mealType, recipeId: recipe.id }
 }
 
 export function hasContent(draft: CookDraft): boolean {

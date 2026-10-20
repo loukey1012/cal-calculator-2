@@ -21,6 +21,11 @@ const embla = vi.hoisted(() => {
   return { handlers, state, api }
 })
 
+vi.mock('../features/recipes/recipesApi', () => ({
+  fetchRecipes: vi.fn().mockResolvedValue([]),
+  saveRecipe: vi.fn(),
+  deleteRecipe: vi.fn(),
+}))
 vi.mock('../features/review/reviewApi', () => ({
   fetchOpenFindings: vi.fn().mockResolvedValue([]),
   decideFinding: vi.fn(),

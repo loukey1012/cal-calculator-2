@@ -35,6 +35,11 @@ vi.mock('../barcode/BarcodeScanner', () => ({
     </button>
   ),
 }))
+vi.mock('../recipes/recipesApi', () => ({
+  fetchRecipes: vi.fn().mockResolvedValue([]),
+  saveRecipe: vi.fn(),
+  deleteRecipe: vi.fn(),
+}))
 vi.mock('../dishes/dishesApi', () => ({
   fetchDish: vi.fn(),
   saveDish: vi.fn(),

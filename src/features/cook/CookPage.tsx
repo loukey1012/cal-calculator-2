@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useCurrentUser } from '../../app/currentUser'
+import { usePagePath } from '../../app/pagePath'
 import { Button } from '../../components/ios/Button'
 import { PageHeader } from '../../components/ios/PageHeader'
+import { Sheet } from '../../components/ios/Sheet'
 import { ComposerBar } from '../dishes/ComposerBar'
 import { DishComposer } from '../dishes/DishComposer'
 import { useSaveDish } from '../dishes/hooks'
@@ -10,21 +12,32 @@ import { portionName } from '../dishes/portionName'
 import { saveError } from '../dishes/saveError'
 import { useMembers, usePeople } from '../household/hooks'
 import { useLookOf } from '../household/usePersonLook'
+import { useRecipes } from '../recipes/hooks'
+import { recipeFromDish } from '../recipes/recipeModel'
+import { SaveRecipeForm } from '../recipes/SaveRecipeForm'
 import { useToday } from '../today/useToday'
 import { hasContent, keepEaters, resolvedDish, withDish, type CookDraft } from './cookDraft'
 import { COOK_HOME, useCookSession } from './cookSessionContext'
+import { CookRecipePages, RecipesRow } from './CookRecipePages'
 import { CookWhoWhen } from './CookWhoWhen'
 import { LeftoversCard } from './LeftoversCard'
 import { useCookSteps } from './useCookSteps'
+import { recipePageOf } from './recipePages'
 import { useMealOfDay } from './useMealOfDay'
 
 const DISCARD_QUESTION = 'Discard this meal? Everything entered so far is removed.'
 
 /**
  * The one place food is logged: alone or together, cooked or a single food. Each step of adding
- * an ingredient (search, amount) is a page of its own inside the Cook tab.
+ * an ingredient (search, amount) is a page of its own inside the Cook tab, and so are the
+ * recipes.
  */
 export function CookPage() {
+  const recipePage = recipePageOf(usePagePath())
+  return recipePage ? <CookRecipePages page={recipePage} /> : <CookDish />
+}
+
+function CookDish() {
   const { profile, householdId } = useCurrentUser()
   const members = useMembers(householdId)
   const people = usePeople(profile, householdId)
@@ -35,7 +48,9 @@ export function CookPage() {
   const saveDish = useSaveDish()
   const { draft: storedDraft, setDraft, reset, returnTo, setReturnTo } = useCookSession()
   const steps = useCookSteps()
+  const recipes = useRecipes(householdId)
   const [error, setError] = useState<string | null>(null)
+  const [isSavingRecipe, setIsSavingRecipe] = useState(false)
 
   // someone who left the household can't eat along any more
   const memberIds = members.data && [profile.id, ...members.data.map((member) => member.id)]
@@ -70,12 +85,14 @@ export function CookPage() {
   }
 
   const onDish = steps.step.kind === 'main'
+  const fromRecipe = recipes.data?.find((recipe) => recipe.id === draft.recipeId) ?? null
   return (
     <>
       {onDish ? (
         <>
           <PageHeader title="Cook" />
           <LeftoversCard today={today} mealOfDay={mealOfDay} />
+          <RecipesRow />
         </>
       ) : (
         <div className="pt-3 pb-2">
@@ -102,6 +119,11 @@ export function CookPage() {
         actions={
           <>
             <Button onClick={save}>Save meal</Button>
+            {draft.dish.lines.length > 0 && (
+              <Button variant="secondary" onClick={() => setIsSavingRecipe(true)}>
+                Save as recipe
+              </Button>
+            )}
             {hasContent(draft) && (
               <Button variant="destructive" onClick={discard}>
                 Discard
@@ -110,6 +132,18 @@ export function CookPage() {
           </>
         }
       />
+      <Sheet open={isSavingRecipe} onClose={() => setIsSavingRecipe(false)} title="Save as recipe">
+        <SaveRecipeForm
+          initialName={fromRecipe?.name ?? draft.dish.name ?? ''}
+          existing={fromRecipe}
+          build={(name, id) => recipeFromDish(draft.dish, name, id)}
+          onSaved={(recipe) => {
+            setIsSavingRecipe(false)
+            // a later change can update this recipe
+            setDraft((current) => ({ ...current, recipeId: recipe.id }))
+          }}
+        />
+      </Sheet>
     </>
   )
 }
