@@ -30,6 +30,16 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-20T16:26',
+    kind: 'new',
+    title: 'A dish not logged yet, and the weekly review',
+    items: [
+      'A notification when a dish has waited on Cook for 30 minutes without being logged (15 min, 1 h or 2 h instead); it opens Cook',
+      'A notification when the weekly review found something new; it opens Ingredients',
+      'Both can be switched off in Settings › Notifications',
+    ],
+  },
+  {
     at: '2026-10-20T16:16',
     kind: 'new',
     title: 'Meal reminders, day summary and partner changes',

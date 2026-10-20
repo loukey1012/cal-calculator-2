@@ -7,6 +7,7 @@ import { SegmentedControl } from '../../components/ios/SegmentedControl'
 import { toUserMessage } from '../../lib/errors'
 import {
   REMINDER_MEALS,
+  UNSAVED_DISH_MINUTES,
   type NotificationSettings,
   type ReminderMeal,
   type SummaryDay,
@@ -25,6 +26,11 @@ const SUMMARY_DAY_OPTIONS: ReadonlyArray<{ readonly value: SummaryDay; readonly 
   { value: 'previous', label: 'Next morning' },
   { value: 'same', label: 'Same day' },
 ]
+
+const UNSAVED_OPTIONS = UNSAVED_DISH_MINUTES.map((minutes) => ({
+  value: String(minutes),
+  label: minutes < 60 ? `${minutes} min` : `${minutes / 60} h`,
+}))
 
 const TIME_INPUT_CLASS = 'w-28 bg-transparent text-right text-[17px] text-label outline-none'
 
@@ -133,6 +139,35 @@ export function NotificationKinds() {
           />
         </div>
       )}
+      <GroupedSection header="Cook" footer="When a dish waits on Cook without being logged.">
+        <ToggleRow
+          label="Dish not logged yet"
+          checked={settings.unsavedDish.on}
+          onChange={(on) => change({ ...settings, unsavedDish: { ...settings.unsavedDish, on } })}
+        />
+      </GroupedSection>
+      {settings.unsavedDish.on && (
+        <div className="mt-3">
+          <SegmentedControl
+            label="Unsaved dish after"
+            options={UNSAVED_OPTIONS}
+            value={String(settings.unsavedDish.afterMinutes)}
+            onChange={(minutes) =>
+              change({
+                ...settings,
+                unsavedDish: { ...settings.unsavedDish, afterMinutes: Number(minutes) },
+              })
+            }
+          />
+        </div>
+      )}
+      <GroupedSection header="Ingredients">
+        <ToggleRow
+          label="Weekly review found something"
+          checked={settings.weeklyReview}
+          onChange={(weeklyReview) => change({ ...settings, weeklyReview })}
+        />
+      </GroupedSection>
       {save.error && <ErrorBanner message={toUserMessage(save.error)} />}
     </>
   )

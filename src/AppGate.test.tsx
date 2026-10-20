@@ -4,6 +4,10 @@ import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { renderWithProviders } from './test/render'
 
 // no real Realtime connection in tests (it would reach the backend from .env.local)
+vi.mock('./features/cook/draftNotice', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./features/cook/draftNotice')>()),
+  sendDraftNotice: vi.fn().mockResolvedValue(undefined),
+}))
 vi.mock('./features/recipes/recipesApi', () => ({
   fetchRecipes: vi.fn().mockResolvedValue([]),
   saveRecipe: vi.fn(),

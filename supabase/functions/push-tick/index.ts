@@ -3,12 +3,16 @@ import { json } from '../_shared/http.ts'
 import { parseNotificationSettings } from '../_shared/notificationSettings.ts'
 import {
   isQuiet,
+  isRecentFinding,
+  isUnsavedDue,
   localNow,
   partnerChangeMessage,
   partnerName,
   plannedByClock,
   reminderMessage,
+  reviewMessage,
   summaryMessage,
+  unsavedDishMessage,
   type MealType,
   type Planned,
   type PushMessage,
@@ -18,7 +22,8 @@ import { sendToAll, type Subscription } from '../_shared/sendPush.ts'
 /**
  * Runs every 5 minutes (pg_cron → pg_net, see the notification_schedule migration) and sends
  * what is due for everyone with a phone that has notifications on: meal reminders, the day
- * summary and the partner's changes. Only callable with the shared tick secret.
+ * summary, the partner's changes, a dish left on Cook and new weekly review findings. Only
+ * callable with the shared tick secret.
  */
 
 // the sent-log only needs to outlive the due windows
@@ -28,6 +33,7 @@ const PARTNER_CHANGES_MAX_HOURS = 24
 
 type Profile = {
   readonly id: string
+  readonly household_id: string | null
   readonly appearance: unknown
   readonly notification_settings: unknown
   readonly time_zone: string | null
@@ -167,6 +173,47 @@ async function partnerMessages(
   }))
 }
 
+/** A dish left on Cook, once per change of it, after the person's delay. */
+async function unsavedMessages(
+  admin: SupabaseClient,
+  profile: Profile,
+  now: Date,
+): Promise<Outgoing[]> {
+  const { unsavedDish } = parseNotificationSettings(profile.notification_settings)
+  if (!unsavedDish.on) return []
+  const { data, error } = await admin
+    .from('cook_drafts')
+    .select('label, line_count, updated_at')
+    .eq('user_id', profile.id)
+    .maybeSingle()
+  if (error) throw new Error(`cook_drafts: ${error.message}`)
+  if (!data || data.line_count === 0) return []
+  if (!isUnsavedDue(data.updated_at, unsavedDish.afterMinutes, now)) return []
+  return [{ kind: 'unsaved', key: data.updated_at, message: unsavedDishMessage(data.label) }]
+}
+
+/** New open findings of the weekly review, once per review run. */
+async function reviewMessages(
+  admin: SupabaseClient,
+  profile: Profile,
+  now: Date,
+): Promise<Outgoing[]> {
+  const { weeklyReview } = parseNotificationSettings(profile.notification_settings)
+  if (!weeklyReview || !profile.household_id) return []
+  const { data, error } = await admin
+    .from('review_findings')
+    .select('created_at')
+    .eq('household_id', profile.household_id)
+    .eq('status', 'open')
+  if (error) throw new Error(`review_findings: ${error.message}`)
+  const newest = data
+    .map((row) => row.created_at)
+    .toSorted()
+    .at(-1)
+  if (!newest || !isRecentFinding(newest, now)) return []
+  return [{ kind: 'review', key: newest, message: reviewMessage(data.length) }]
+}
+
 /** Notes it in the sent-log first: only a tick that adds the entry sends (never twice). */
 async function claim(admin: SupabaseClient, userId: string, outgoing: Outgoing): Promise<boolean> {
   const { data, error } = await admin
@@ -191,6 +238,8 @@ async function tickFor(
   const outgoing = [
     ...(await timedMessages(admin, profile, plannedByClock(settings, local))),
     ...(await partnerMessages(admin, profile, local.date, now)),
+    ...(await unsavedMessages(admin, profile, now)),
+    ...(await reviewMessages(admin, profile, now)),
   ]
   let sent = 0
   for (const item of outgoing) {
@@ -238,7 +287,7 @@ Deno.serve(async (request) => {
       ? { data: [], error: null }
       : await admin
           .from('profiles')
-          .select('id, appearance, notification_preferences(settings, time_zone)')
+          .select('id, household_id, appearance, notification_preferences(settings, time_zone)')
           .in('id', userIds)
   if (loaded.error) {
     console.error('could not load profiles', loaded.error.message)
@@ -252,6 +301,7 @@ Deno.serve(async (request) => {
     } | null
     return {
       id: row.id,
+      household_id: row.household_id,
       appearance: row.appearance,
       notification_settings: preferences?.settings ?? {},
       time_zone: preferences?.time_zone ?? null,

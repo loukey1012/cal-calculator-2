@@ -13,9 +13,10 @@ keep its status table and the README checkboxes up to date as items ship.
 date and hour (local time) and what changed in plain, neutral words. The list lives in
 `src/features/patchNotes/patchNotes.ts` once item 21 is built.
 
-**Next up (as of 2026-10-20):** 14 (recipes + copy a meal) is built and pushed; ask the user how
-it and **9** (Read nutrition label, still in their testing) went, and fix what they report first.
-Then 10 (12 was dropped). Read "Handoff (2026-10-20)" at the end of the plan first. Build 2–3
-items, push, then stop with a short summary for the user to test. Docs-only changes are never
-committed alone: they go with the next functional commit. Production migrations:
-`bash scripts/db-push-prod.sh` (allowed), after proving them on dev.
+**Next up (as of 2026-10-20, evening):** 14 (recipes + copy a meal) and 10 (push notifications,
+with 11's push) are built and pushed; ask the user how they and **9** (Read nutrition label,
+still in their testing) went, and fix what they report first. Read "Handoff (2026-10-20,
+evening)" at the end of the plan first. Build 2–3 items, push, then stop with a short summary for
+the user to test. Docs-only changes are never committed alone: they go with the next functional
+commit. Production: migrations with `bash scripts/db-push-prod.sh`, Edge Functions with
+`bash scripts/deploy-functions.sh prod` (both allowed), after proving them on dev.

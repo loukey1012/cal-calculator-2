@@ -6,6 +6,10 @@ import { CurrentUserContext } from '../../app/currentUser'
 import { renderWithProviders } from '../../test/render'
 import { ingredient } from '../ingredients/testData'
 
+vi.mock('./draftNotice', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./draftNotice')>()),
+  sendDraftNotice: vi.fn().mockResolvedValue(undefined),
+}))
 vi.mock('../meals/mealsApi', () => ({
   fetchDay: vi.fn().mockResolvedValue([]),
   addMealItem: vi.fn(),

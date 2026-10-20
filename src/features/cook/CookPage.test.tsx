@@ -7,6 +7,10 @@ import { toLocalDateString } from '../../lib/dates'
 import { renderWithProviders } from '../../test/render'
 import { category, categoryGroup, ingredient } from '../ingredients/testData'
 
+vi.mock('./draftNotice', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./draftNotice')>()),
+  sendDraftNotice: vi.fn().mockResolvedValue(undefined),
+}))
 vi.mock('../meals/mealsApi', () => ({
   fetchDay: vi.fn(),
   addMealItem: vi.fn(),
@@ -61,6 +65,7 @@ import { fetchLeftoverDishes, saveDish } from '../dishes/dishesApi'
 import type { Dish } from '../dishes/portions'
 import { gramsItem } from '../dishes/testData'
 import { CookPage } from './CookPage'
+import { sendDraftNotice } from './draftNotice'
 import { CookSession } from './CookSession'
 
 function profile(id: string, name: string) {
@@ -168,6 +173,35 @@ beforeEach(() => {
 })
 
 afterEach(() => vi.restoreAllMocks())
+
+describe('the dish waiting on Cook', () => {
+  test('is noted for the "not logged yet" reminder, and forgotten once logged', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    renderCook()
+    await screen.findByRole('button', { name: 'Lukas', pressed: true })
+
+    // Act
+    await addIngredient(user, 'Tomato', '150')
+
+    // Assert
+    await vi.waitFor(
+      () =>
+        expect(sendDraftNotice).toHaveBeenLastCalledWith('u1', { label: 'Tomato', lineCount: 1 }),
+      { timeout: 5000 },
+    )
+    await user.click(screen.getByRole('button', { name: 'Save meal' }))
+    await vi.waitFor(() => expect(sendDraftNotice).toHaveBeenLastCalledWith('u1', null))
+  })
+
+  test('opening Cook with a waiting dish sends nothing (its clock keeps running)', async () => {
+    renderCook()
+
+    await screen.findByRole('button', { name: 'Lukas', pressed: true })
+
+    expect(sendDraftNotice).not.toHaveBeenCalled()
+  })
+})
 
 describe('cooking alone', () => {
   test('one food for me, saved as a dish into the chosen meal of today', async () => {

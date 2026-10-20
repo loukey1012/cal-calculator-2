@@ -5,6 +5,10 @@ import { useLocation } from 'react-router'
 import { renderWithProviders } from '../test/render'
 import { CurrentUserContext } from './currentUser'
 
+vi.mock('../features/cook/draftNotice', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../features/cook/draftNotice')>()),
+  sendDraftNotice: vi.fn().mockResolvedValue(undefined),
+}))
 vi.mock('../features/recipes/recipesApi', () => ({
   fetchRecipes: vi.fn().mockResolvedValue([]),
   saveRecipe: vi.fn(),

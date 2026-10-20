@@ -209,3 +209,33 @@ export function isQuiet(changedAt: readonly string[], now: Date): boolean {
   const latest = Math.max(...changedAt.map((time) => Date.parse(time)))
   return changedAt.length > 0 && now.getTime() - latest >= PARTNER_QUIET_MINUTES * 60_000
 }
+
+/** A dish left on Cook is told once it hasn't changed for the person's delay. */
+export function isUnsavedDue(updatedAt: string, afterMinutes: number, now: Date): boolean {
+  return now.getTime() - Date.parse(updatedAt) >= afterMinutes * 60_000
+}
+
+export function unsavedDishMessage(label: string): PushMessage {
+  return {
+    title: 'Not logged yet',
+    body: `${label} is still waiting on Cook.`,
+    url: '/cook',
+    tag: 'unsaved',
+  }
+}
+
+// findings older than this were seen in the app already, or are left on purpose
+export const REVIEW_NOTICE_MAX_DAYS = 3
+
+export function isRecentFinding(createdAt: string, now: Date): boolean {
+  return now.getTime() - Date.parse(createdAt) <= REVIEW_NOTICE_MAX_DAYS * 86_400_000
+}
+
+export function reviewMessage(openCount: number): PushMessage {
+  return {
+    title: 'Weekly review',
+    body: openCount === 1 ? '1 thing to check.' : `${openCount} things to check.`,
+    url: '/ingredients',
+    tag: 'review',
+  }
+}

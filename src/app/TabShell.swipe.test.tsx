@@ -21,6 +21,10 @@ const embla = vi.hoisted(() => {
   return { handlers, state, api }
 })
 
+vi.mock('../features/cook/draftNotice', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../features/cook/draftNotice')>()),
+  sendDraftNotice: vi.fn().mockResolvedValue(undefined),
+}))
 vi.mock('../features/recipes/recipesApi', () => ({
   fetchRecipes: vi.fn().mockResolvedValue([]),
   saveRecipe: vi.fn(),

@@ -114,7 +114,8 @@ Built for a two-person household: both members log their own meals, can see and 
   - **Meal reminders** for breakfast, lunch and dinner (10:00, 14:00, 20:00; each on or off, any time): only if that meal is still empty (or not marked as a cheat meal). It opens Cook for that meal.
   - **Day summary**: calories and macros against your goal. By default the **next morning at 08:00 about the day before** (so late snacks count); it can be the **same day** at any time instead (e.g. 23:00). Days with nothing logged get none. It opens that day.
   - The times follow the time zone of the phone that last opened this page. A notification is sent at most once and up to 2 hours late (e.g. if the server was busy), never later.
-- An unsaved Cook dish and the weekly review's findings follow in the last step of point 10.
+  - **A dish not logged yet**: a dish has waited on Cook without changes for 30 minutes (15 min, 1 h or 2 h instead); told once per change of the dish. It opens Cook. Only its name (or first ingredients) and when it last changed leave the phone; logging or discarding it forgets that at once.
+  - **Weekly review found something**: new open findings of the weekly review (point 20), once per review. It opens Ingredients.
 
 ### Works offline
 
@@ -173,7 +174,7 @@ Noted 2026-10-11.
 **1. Checking the data automatically** (replaced by the weekly review, point 20; the push comes with point 10)
 
 - [x] ~~Ingredients whose values look wrong say **Check values** in both lists, with a **Check values · N** filter~~ (removed 2026-10-16: the weekly review covers it, under **Review** in the Ingredients header)
-- [ ] A push notification when the weekly review finds something new (see point 10)
+- [x] A push notification when the weekly review finds something new (see point 10)
 
 **2. Keeping the Supabase projects awake** (done)
 
@@ -235,21 +236,21 @@ Noted 2026-10-15.
 - [x] Text recognition runs on the phone (no online service, works offline); it loads only the first time you use it
 - [x] Reads German and English labels and takes the per-100 g / per-100 ml column; you always check the values before saving
 
-**10. Notifications** (in progress: all but the unsaved Cook dish and the weekly review are done)
+**10. Notifications** (done)
 
 - [x] Push notifications on the iPhone (home-screen app), switched on once in Settings
 - [x] **Everything is set per person**, saved to your account: each kind on or off, and every time below can be changed
 - [x] A **Send test notification** button
 - [x] **Partner changes your day**: your partner logs, edits or deletes a meal for you, or shares a dish with you
-- [ ] **Unsaved Cook dish**: a dish has been sitting on Cook without being logged for a while (default 30 minutes, adjustable)
+- [x] **Unsaved Cook dish**: a dish has been sitting on Cook without being logged for a while (default 30 minutes, adjustable)
 - [x] **Meal reminders**: nothing logged for breakfast, lunch or dinner by a time you set (defaults 10:00, 14:00, 20:00; each one on or off)
 - [x] **Day summary**: kcal and macros vs. your goal. Default: the **next morning** about the day before (so evening snacks count); each person can switch to the same day and pick the time (e.g. 23:00)
-- [ ] **Weekly review**: the weekly review (point 20) found something new
+- [x] **Weekly review**: the weekly review (point 20) found something new
 
-**11. Unsaved Cook dishes** (badge: done; the push comes with point 10)
+**11. Unsaved Cook dishes** (done)
 
 - [x] A dish on Cook that hasn't been logged yet gets a badge on the Cook tab
-- [ ] Combined with the "Unsaved Cook dish" notification from point 10 (this needs the Cook draft to be saved to your account instead of only on the phone)
+- [x] Combined with the "Unsaved Cook dish" notification from point 10 (the phone tells the server only the dish's name and when it last changed; the draft itself stays on the phone)
 
 **12. Quick picks** (dropped: the "Most used" sort already covers it)
 
@@ -485,7 +486,7 @@ scripts/
 - `recipes` (name, split, cooked weight, estimate flag; shared by the household), `recipe_portions` (who eats, or nobody = a leftover; split value), `recipe_lines` (ingredient link plus a snapshot like `dish_lines`, used for custom items and deleted ingredients), `recipe_line_amounts` (own amounts per portion). Written only through `save_recipe` (create or replace, the last save wins) and `delete_recipe`
 - Views `meal_totals` and `daily_totals` (with `kcal_estimated`: some food came from a dish marked as an estimate; `cheat_meal` and `cheat_day`; a cheat day without any meal still has a row). RPCs `create_household`, `join_household`, `ensure_meal`, `set_cheat_meal` (marks a meal, creating an empty one), `save_dish` and `delete_dish`; `ingredient_use_counts` (how often each ingredient was used, for sorting by Most used; runs with the caller's rights, so RLS keeps it to the household). `keep_alive` returns `true` to anyone, for the keep-alive workflow.
 - `push_subscriptions` (each phone that allowed notifications: its push address and keys, whose it is, when a push last arrived). Members only see their own phones and never the keys; `save_push_subscription` (also takes a phone over from the other account) and `delete_push_subscription` write them; only the Edge Functions (service role) read the keys to send.
-- `notification_preferences` (per person, only they see it: which notifications and when, as JSON read with defaults by `supabase/functions/_shared/notificationSettings.ts`, and the phone's time zone), `push_sent` (each notification sent once: kind + key, e.g. a reminder per day and meal), `partner_changes` (filled by triggers on `meals` / `meal_items` when someone changes another person's meal; cleared once told). Members can't read the last two.
+- `notification_preferences` (per person, only they see it: which notifications and when, as JSON read with defaults by `supabase/functions/_shared/notificationSettings.ts`, and the phone's time zone), `push_sent` (each notification sent once: kind + key, e.g. a reminder per day and meal), `partner_changes` (filled by triggers on `meals` / `meal_items` when someone changes another person's meal; cleared once told). Members can't read the last two. `cook_drafts` (per person, own row only: the label and ingredient count of a dish waiting on Cook, `updated_at` set by the database on every change).
 - **Timed notifications:** pg_cron runs `push-tick` every 5 minutes through pg_net; its address and shared secret are in Vault (`push_tick_url`, `push_tick_secret`), never in a migration. Without them the job does nothing.
 - `review_findings` (what the weekly review routine found: about an ingredient, with a suggested fix as `column → value`, or about a person's day, optionally one meal and item; `open` / `applied` / `ignored`, who decided when). Members read them and only change the decision; the routine reads through `review_ingredients` and `review_meals` (members, goals, meals with item totals and day totals for up to 31 days) and adds findings through `submit_review_findings`, all authorized by the household's review key (`review_keys`, stored as a SHA-256 hash, readable by nobody). A finding is never added twice (same ingredient, kind and fix; or same person, day, kind, meal and item).
 - **Live updates:** triggers on the household's tables send a small hint over Supabase Realtime Broadcast to the private channel `household:<id>` (what changed: a person's day, a dish, the ingredient database, …). Hints carry no data: the app marks the matching queries out of date, and what's on screen re-fetches through the normal RLS-checked queries. A failed hint never fails a save.

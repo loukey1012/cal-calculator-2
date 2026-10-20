@@ -4,12 +4,16 @@ import {
   addDays,
   isDue,
   isQuiet,
+  isRecentFinding,
+  isUnsavedDue,
   localNow,
   partnerChangeMessage,
   partnerName,
   plannedByClock,
   reminderMessage,
+  reviewMessage,
   summaryMessage,
+  unsavedDishMessage,
   type DaySummary,
 } from './schedule'
 
@@ -183,5 +187,42 @@ describe('isQuiet', () => {
     expect(isQuiet(['2026-10-20T12:00:00Z', '2026-10-20T12:07:00Z'], now)).toBe(true)
     expect(isQuiet(['2026-10-20T12:00:00Z', '2026-10-20T12:08:00Z'], now)).toBe(false)
     expect(isQuiet([], now)).toBe(false)
+  })
+})
+
+describe('unsaved dish', () => {
+  const now = new Date('2026-10-20T12:30:00Z')
+
+  test('due once it waited the chosen minutes', () => {
+    expect(isUnsavedDue('2026-10-20T12:00:00Z', 30, now)).toBe(true)
+    expect(isUnsavedDue('2026-10-20T12:01:00Z', 30, now)).toBe(false)
+  })
+
+  test('the notice names the dish and opens Cook', () => {
+    expect(unsavedDishMessage('Chili')).toEqual({
+      title: 'Not logged yet',
+      body: 'Chili is still waiting on Cook.',
+      url: '/cook',
+      tag: 'unsaved',
+    })
+  })
+})
+
+describe('weekly review', () => {
+  test('only findings of the last 3 days are told', () => {
+    const now = new Date('2026-10-20T12:00:00Z')
+
+    expect(isRecentFinding('2026-10-18T08:00:00Z', now)).toBe(true)
+    expect(isRecentFinding('2026-10-17T11:00:00Z', now)).toBe(false)
+  })
+
+  test('says how many things to check', () => {
+    expect(reviewMessage(1).body).toBe('1 thing to check.')
+    expect(reviewMessage(4)).toEqual({
+      title: 'Weekly review',
+      body: '4 things to check.',
+      url: '/ingredients',
+      tag: 'review',
+    })
   })
 })

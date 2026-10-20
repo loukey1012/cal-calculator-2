@@ -1,6 +1,10 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, test, vi } from 'vitest'
 
+vi.mock('./features/cook/draftNotice', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./features/cook/draftNotice')>()),
+  sendDraftNotice: vi.fn().mockResolvedValue(undefined),
+}))
 vi.mock('./features/auth/authApi', () => ({
   getSession: vi.fn().mockResolvedValue(null),
   onSessionChange: vi.fn(() => () => {}),

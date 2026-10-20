@@ -120,6 +120,24 @@ describe('what to be notified about', () => {
     expect(screen.getByText('About the same day, at the time you choose.')).toBeVisible()
   })
 
+  test('the unsaved dish waits an hour instead; the weekly review is switched off', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    renderPage()
+
+    // Act
+    await user.click(await screen.findByRole('radio', { name: '1 h' }))
+    await user.click(screen.getByRole('switch', { name: 'Weekly review found something' }))
+
+    // Assert
+    await vi.waitFor(() =>
+      expect(lastSaved().settings).toMatchObject({
+        unsavedDish: { on: true, afterMinutes: 60 },
+        weeklyReview: false,
+      }),
+    )
+  })
+
   test('partner changes can be switched off', async () => {
     const user = userEvent.setup()
     renderPage()

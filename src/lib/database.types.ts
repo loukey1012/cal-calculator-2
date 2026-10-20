@@ -108,6 +108,35 @@ export type Database = {
           },
         ]
       }
+      cook_drafts: {
+        Row: {
+          label: string
+          line_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          label: string
+          line_count: number
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          label?: string
+          line_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cook_drafts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dish_line_amounts: {
         Row: {
           amount: number
