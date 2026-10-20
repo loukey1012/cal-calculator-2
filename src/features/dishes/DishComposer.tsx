@@ -21,16 +21,18 @@ import {
   lineWho,
   newId,
   rescaledLine,
+  swappedLine,
   withAddedLine,
   withKcalEstimated,
   withName,
   withoutLine,
+  withSwappedLine,
 } from './dishDraft'
 import { DishLineEditor, type PortionOption } from './DishLineEditor'
 import { DishSplitSection } from './DishSplitSection'
 import { DishTotals } from './DishTotals'
 import { LeftoverStepper } from './LeftoverStepper'
-import { stepKey, type ComposerStep, type ComposerSteps } from './composerSteps'
+import { NO_FILTER, stepKey, type ComposerStep, type ComposerSteps } from './composerSteps'
 import { buildDishLine, type Dish, type DishLine } from './portions'
 
 type DishComposerProps = {
@@ -134,6 +136,7 @@ export function DishComposer({
           steps={steps}
           dish={dish}
           portions={portions}
+          estimatedIds={estimatedIds}
           onAdd={(line) => {
             onChange(withAddedLine(dish, line, estimatedIds))
             steps.finish()
@@ -159,12 +162,14 @@ type StepViewProps = {
   readonly steps: ComposerSteps
   readonly dish: Dish
   readonly portions: readonly PortionOption[]
+  /** ingredients marked as an estimate: one swapped in marks the dish */
+  readonly estimatedIds: ReadonlySet<string>
   readonly onAdd: (line: DishLine) => void
   /** a change that ends the step, e.g. removing the line */
   readonly onChange: (dish: Dish) => void
 }
 
-function StepView({ step, steps, dish, portions, onAdd, onChange }: StepViewProps) {
+function StepView({ step, steps, dish, portions, estimatedIds, onAdd, onChange }: StepViewProps) {
   switch (step.kind) {
     case 'pick':
       return (
@@ -203,8 +208,20 @@ function StepView({ step, steps, dish, portions, onAdd, onChange }: StepViewProp
           lineId={step.lineId}
           dish={dish}
           portions={portions}
+          steps={steps}
           onSave={onAdd}
           onChange={onChange}
+        />
+      )
+    case 'swap':
+    case 'swapLine':
+      return (
+        <SwapStep
+          step={step}
+          steps={steps}
+          dish={dish}
+          portions={portions}
+          onSwap={(line) => onChange(withSwappedLine(dish, line, estimatedIds))}
         />
       )
   }
@@ -249,12 +266,15 @@ type EditLineStepProps = {
   readonly lineId: string
   readonly dish: Dish
   readonly portions: readonly PortionOption[]
+  readonly steps: ComposerSteps
   readonly onSave: (line: DishLine) => void
   readonly onChange: (dish: Dish) => void
 }
 
-/** One line of the dish: its amounts, or removing it. */
-function EditLineStep({ lineId, dish, portions, onSave, onChange }: EditLineStepProps) {
+/** One line of the dish: its amounts, another product, or removing it. */
+function EditLineStep({ lineId, dish, portions, steps, onSave, onChange }: EditLineStepProps) {
+  const { householdId } = useCurrentUser()
+  const ingredients = useIngredients(householdId)
   const current = dish.lines.find((candidate) => candidate.id === lineId)
   // a removed line stays on screen while its page slides away
   const [opened] = useState(current)
@@ -273,10 +293,84 @@ function EditLineStep({ lineId, dish, portions, onSave, onChange }: EditLineStep
       build={(input) => rescaledLine(line, input)}
       onConfirm={onSave}
       secondaryAction={
-        <Button variant="destructive" onClick={() => onChange(withoutLine(dish, line.id))}>
-          Remove from dish
-        </Button>
+        <div className="flex flex-col gap-3">
+          <Button
+            variant="secondary"
+            onClick={() => {
+              // the search starts in the product's category, e.g. Cheese
+              const categoryId = ingredients.data?.find(
+                (candidate) => candidate.id === line.item.ingredient_id,
+              )?.category_id
+              steps.onFilter(
+                categoryId
+                  ? { ...NO_FILTER, category: { kind: 'category', id: categoryId } }
+                  : NO_FILTER,
+              )
+              steps.open({ kind: 'swap', lineId: line.id })
+            }}
+          >
+            Swap ingredient
+          </Button>
+          <Button variant="destructive" onClick={() => onChange(withoutLine(dish, line.id))}>
+            Remove from dish
+          </Button>
+        </div>
       }
+    />
+  )
+}
+
+type SwapStepProps = {
+  readonly step: Extract<ComposerStep, { kind: 'swap' | 'swapLine' }>
+  readonly steps: ComposerSteps
+  readonly dish: Dish
+  readonly portions: readonly PortionOption[]
+  readonly onSwap: (line: DishLine) => void
+}
+
+/**
+ * Another product for a line: picked in the search, it takes the line's place with the same
+ * amounts and people; if it can't be measured that way, its amount is asked for first.
+ */
+function SwapStep({ step, steps, dish, portions, onSwap }: SwapStepProps) {
+  const { householdId } = useCurrentUser()
+  const ingredients = useIngredients(householdId)
+  const current = dish.lines.find((candidate) => candidate.id === step.lineId)
+  // a swapped line stays on screen while its page slides away
+  const [opened] = useState(current)
+  const line = current ?? opened
+  if (!line) return <Message text="This ingredient is no longer in the dish." />
+
+  if (step.kind === 'swap') {
+    return (
+      <FoodPicker
+        filter={steps.filter}
+        onFilterChange={steps.onFilter}
+        onPick={(ingredient) => {
+          const swapped = swappedLine(line, ingredientSource(ingredient))
+          if (swapped) onSwap(swapped)
+          else steps.open({ kind: 'swapLine', lineId: line.id, ingredientId: ingredient.id })
+        }}
+      />
+    )
+  }
+  if (ingredients.isError) return <ErrorBanner message={toUserMessage(ingredients.error)} />
+  if (ingredients.isPending) return <Message text="Loading…" />
+  const ingredient = ingredients.data.find((candidate) => candidate.id === step.ingredientId)
+  if (!ingredient) return <Message text="This ingredient is no longer available." />
+  const who = lineWho(line)
+  return (
+    <DishLineEditor
+      title={ingredient.name}
+      units={availableUnits(ingredientNutrition(ingredient))}
+      unitLabel={ingredient.unit_label}
+      portions={portions}
+      initialWho={who}
+      confirmLabel={`Use instead of ${line.item.name}`}
+      build={(input) =>
+        buildDishLine({ ...input, id: line.id, source: ingredientSource(ingredient) })
+      }
+      onConfirm={onSwap}
     />
   )
 }

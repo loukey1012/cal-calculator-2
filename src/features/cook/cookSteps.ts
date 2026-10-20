@@ -8,6 +8,7 @@ const NEW_INGREDIENT_SEGMENT = 'new'
 // a new ingredient for a scanned barcode, e.g. new-4014500513102 (ingredient ids are UUIDs)
 const BARCODE_PREFIX = 'new-'
 const LINE_PREFIX = 'line-'
+const SWAP_SEGMENT = 'swap'
 
 /**
  * The address of a Cook step. Each step is one level below the step Back leads to, so the page
@@ -29,6 +30,10 @@ export function cookStepPath(step: ComposerStep): string {
       return `${COOK_PATH}/${ADD_SEGMENT}/${encodeURIComponent(step.ingredientId)}`
     case 'editLine':
       return `${COOK_PATH}/${LINE_PREFIX}${encodeURIComponent(step.lineId)}`
+    case 'swap':
+      return `${cookStepPath({ kind: 'editLine', lineId: step.lineId })}/${SWAP_SEGMENT}`
+    case 'swapLine':
+      return `${cookStepPath({ kind: 'swap', lineId: step.lineId })}/${encodeURIComponent(step.ingredientId)}`
   }
 }
 
@@ -40,9 +45,22 @@ function decoded(segment: string): string | null {
   }
 }
 
+/** line-<id>, line-<id>/swap, line-<id>/swap/<ingredient id> */
+function lineStepOf(segments: readonly string[]): ComposerStep | null {
+  const [first = '', second, third, ...rest] = segments
+  const lineId = decoded(first.slice(LINE_PREFIX.length))
+  if (!lineId || rest.length > 0) return null
+  if (second === undefined) return { kind: 'editLine', lineId }
+  if (second !== SWAP_SEGMENT) return null
+  if (third === undefined) return { kind: 'swap', lineId }
+  const ingredientId = decoded(third)
+  return ingredientId ? { kind: 'swapLine', lineId, ingredientId } : null
+}
+
 function stepOfSegments(segments: readonly string[]): ComposerStep | null {
   const [first, second, ...rest] = segments
   if (first === undefined) return { kind: 'main' }
+  if (first.startsWith(LINE_PREFIX)) return lineStepOf(segments)
   if (rest.length > 0) return null
   if (first === ADD_SEGMENT) {
     if (second === undefined) return { kind: 'pick' }
@@ -55,9 +73,7 @@ function stepOfSegments(segments: readonly string[]): ComposerStep | null {
     const ingredientId = decoded(second)
     return ingredientId ? { kind: 'newLine', ingredientId } : null
   }
-  if (second !== undefined || !first.startsWith(LINE_PREFIX)) return null
-  const lineId = decoded(first.slice(LINE_PREFIX.length))
-  return lineId ? { kind: 'editLine', lineId } : null
+  return null
 }
 
 /** The step an address under Cook shows; anything unknown shows the dish. */
@@ -76,6 +92,10 @@ export function parentStep(step: ComposerStep): ComposerStep {
     case 'newIngredient':
     case 'newLine':
       return { kind: 'pick' }
+    case 'swap':
+      return { kind: 'editLine', lineId: step.lineId }
+    case 'swapLine':
+      return { kind: 'swap', lineId: step.lineId }
     default:
       return { kind: 'main' }
   }

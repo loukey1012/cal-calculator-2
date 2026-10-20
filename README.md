@@ -19,6 +19,7 @@ Built for a two-person household: both members log their own meals, can see and 
 - Not in the database yet? **New ingredient** in the search creates it right there (the name you searched for already filled in, same form as on the Ingredients page). It is saved to the shared ingredients and goes straight to its amount; Back from there leads to the search. Also in the dish editor on Today and History.
 - Adding an ingredient goes **step by step like the Settings pages**: the search and the amount each slide in as a page of their own. **‹ Back** or a **swipe to the right** goes back one step (amount → search, still showing what you searched for → dish), never to another tab. Back in the dish editor on Today and History goes one step at a time too.
 - With two people, each ingredient is **Shared** (split by the dish's split), **only for one person** (e.g. the tomato on her burger) or has **own amounts** per person (noodles 120 g / 100 g). The split for shared ingredients: **Equal**, **Count** (3 toasts : 2 toasts), **%**, or **Weight** (weigh the cooked dish and each plate). What each portion gets is shown live; a split that can't work (e.g. 110 %) says why.
+- **Swap ingredient** (tap an ingredient of the dish): another product for it, e.g. Edamer from Spar instead of Gouda from Billa. The search starts in its category; the new product keeps the amount and who has it. If it can't be measured that way (e.g. slices, but no slice size), its amount is asked for first. Also in the dish editor on Today and History.
 - Optional **dish name** and **leftover portions** (each takes its share like a person would).
 - While a dish waits on Cook without being logged, the **Cook tab shows a dot**, wherever you are in the app.
 - **Calories are an estimate:** a switch for food whose calories you only roughly know (eaten out, cooked by someone else; e.g. a custom item "Pizza, 900 kcal"). It applies to the whole dish and can be changed later with Edit dish. Adding an ingredient that is **marked as an estimate** switches it on by itself, with a note naming that ingredient; it can still be switched off for the dish. The calories still count in full, but show as **"~900 kcal"** with an "Estimate" label.
@@ -230,13 +231,13 @@ Noted 2026-10-15.
 - [x] Step back and forth with arrows (weeks without any entry are skipped), or tap the week to pick one from a list of all of them, newest first, with each week's Ø calories
 - [x] Everything else works as for the current week: bars per day, the figures, and "vs. previous" against the week before it
 
-**9. Reading nutrition labels** (done)
+**9. Reading nutrition labels** (done; being tried on real packages over the next days, as of 2026-10-20)
 
 - [x] For products without a barcode: take a photo of the nutrition table (or pick one from your photos) and the ingredient form gets filled in
 - [x] Text recognition runs on the phone (no online service, works offline); it loads only the first time you use it
 - [x] Reads German and English labels and takes the per-100 g / per-100 ml column; you always check the values before saving
 
-**10. Notifications** (done)
+**10. Notifications** (done; the test notification arrives on the iPhone, confirmed 2026-10-20; the timed ones are being watched over the next days)
 
 - [x] Push notifications on the iPhone (home-screen app), switched on once in Settings
 - [x] **Everything is set per person**, saved to your account: each kind on or off, and every time below can be changed

@@ -1,6 +1,9 @@
 import { roundTo } from '../../lib/numbers'
 import { describeAmount, scaleItemAmount, type MealType } from '../meals/dayModel'
+import { availableUnits } from '../nutrition/amounts'
+import type { MealItemSource } from '../nutrition/fromIngredient'
 import {
+  buildDishLine,
   isLeftover,
   type Dish,
   type DishLine,
@@ -203,6 +206,35 @@ export function rescaledLine(line: DishLine, input: LineAmounts): DishLine {
     item: { ...line.item, ...scaleItemAmount(line.item, total) },
     amounts,
   }
+}
+
+/**
+ * The line with another product (Edamer instead of Gouda): same id, amounts and who has it, the
+ * new product's values. null when the product can't be measured the way the line is (e.g. in
+ * slices, but it has no slice size): then it needs a new amount.
+ */
+export function swappedLine(line: DishLine, source: MealItemSource): DishLine | null {
+  const unit = line.item.entered_unit
+  if (!availableUnits(source.nutrition).includes(unit)) return null
+  return line.allocation === 'shared'
+    ? buildDishLine({
+        id: line.id,
+        source,
+        unit,
+        allocation: 'shared',
+        amount: line.item.entered_amount,
+      })
+    : buildDishLine({ id: line.id, source, unit, allocation: 'per_portion', amounts: line.amounts })
+}
+
+/** Puts the swapped line in place; a product marked as an estimate marks the dish. */
+export function withSwappedLine(
+  dish: Dish,
+  line: DishLine,
+  estimatedIngredientIds: ReadonlySet<string>,
+): Dish {
+  const next = withLine(dish, line)
+  return isEstimatedLine(line, estimatedIngredientIds) ? withKcalEstimated(next, true) : next
 }
 
 export function lineWho(line: DishLine): LineWho {

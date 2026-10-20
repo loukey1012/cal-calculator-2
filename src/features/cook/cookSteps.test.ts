@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { COOK_PATH, cookStepOf, cookStepPath } from './cookSteps'
+import { COOK_PATH, cookStepOf, cookStepPath, parentStep } from './cookSteps'
 
 describe('Cook steps as pages', () => {
   test.each([
@@ -10,6 +10,11 @@ describe('Cook steps as pages', () => {
     [{ kind: 'newIngredient', barcode: '3017620422003' } as const, '/cook/add/new-3017620422003'],
     [{ kind: 'newLine', ingredientId: 'patty' } as const, '/cook/add/patty'],
     [{ kind: 'editLine', lineId: 'l-1' } as const, '/cook/line-l-1'],
+    [{ kind: 'swap', lineId: 'l-1' } as const, '/cook/line-l-1/swap'],
+    [
+      { kind: 'swapLine', lineId: 'l-1', ingredientId: 'edamer' } as const,
+      '/cook/line-l-1/swap/edamer',
+    ],
   ])('%o has its own address %s, and back', (step, path) => {
     expect(cookStepPath(step)).toBe(path)
     expect(cookStepOf(path)).toEqual(step)
@@ -21,6 +26,17 @@ describe('Cook steps as pages', () => {
       `${cookStepPath({ kind: 'pick' })}/patty`,
     )
     expect(cookStepPath({ kind: 'pick' })).toBe(`${COOK_PATH}/add`)
+    expect(cookStepPath({ kind: 'swap', lineId: 'l-1' })).toBe(
+      `${cookStepPath({ kind: 'editLine', lineId: 'l-1' })}/swap`,
+    )
+  })
+
+  test('Back from swapping goes to the line, from its amount to the search', () => {
+    expect(parentStep({ kind: 'swap', lineId: 'l-1' })).toEqual({ kind: 'editLine', lineId: 'l-1' })
+    expect(parentStep({ kind: 'swapLine', lineId: 'l-1', ingredientId: 'x' })).toEqual({
+      kind: 'swap',
+      lineId: 'l-1',
+    })
   })
 
   test('odd characters in an id stay inside their part of the address', () => {

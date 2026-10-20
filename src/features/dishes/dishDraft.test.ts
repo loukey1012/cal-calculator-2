@@ -5,6 +5,7 @@ import {
   lineWho,
   newDish,
   rescaledLine,
+  swappedLine,
   throwAwayLeftover,
   takeLeftover,
   withCookedWeight,
@@ -20,7 +21,10 @@ import {
   withPortionMeal,
   withSplitMode,
   withSplitValue,
+  withSwappedLine,
 } from './dishDraft'
+import { ingredient } from '../ingredients/testData'
+import { ingredientSource } from '../nutrition/fromIngredient'
 import type { DishLine } from './portions'
 import { gramsItem, HER_LUNCH, ME_LUNCH, sharedLine, testDish } from './testData'
 
@@ -204,6 +208,52 @@ describe('lines', () => {
     expect(describeLine(sharedLine('l', 'Mince', 400, 250), nameOf)).toBe('400 g · shared')
     expect(describeLine(TOMATO, nameOf)).toBe('20 g · only Lisa')
     expect(describeLine(NOODLES, nameOf)).toBe('Lukas 120 g · Lisa 100 g')
+  })
+})
+
+describe('swapping an ingredient', () => {
+  const GOUDA = ingredient({ id: 'gouda', name: 'Gouda', brand: 'Billa', kcal_100: 350 })
+  const EDAMER = ingredient({ id: 'edamer', name: 'Edamer', brand: 'Spar', kcal_100: 330 })
+  const goudaLine: DishLine = {
+    id: 'l-cheese',
+    allocation: 'per_portion',
+    item: { ...gramsItem('Gouda', 50, 350), ingredient_id: 'gouda', brand: 'Billa' },
+    amounts: { 'p-me': 30, 'p-her': 20 },
+  }
+
+  test('keeps the line, its amounts and who has it; takes the new product’s values', () => {
+    const swapped = swappedLine(goudaLine, ingredientSource(EDAMER))
+
+    expect(swapped).toEqual({
+      id: 'l-cheese',
+      allocation: 'per_portion',
+      amounts: { 'p-me': 30, 'p-her': 20 },
+      item: expect.objectContaining({
+        ingredient_id: 'edamer',
+        name: 'Edamer',
+        brand: 'Spar',
+        entered_amount: 50,
+        kcal: 330,
+      }),
+    })
+  })
+
+  test('a product that can’t be measured that way needs a new amount', () => {
+    const slices: DishLine = {
+      ...sharedLine('l-toast', 'Toast', 2, 0),
+      item: { ...gramsItem('Toast', 2, 0), entered_unit: 'unit', basis: 'per_unit' },
+    }
+
+    expect(swappedLine(slices, ingredientSource(GOUDA))).toBeNull()
+  })
+
+  test('swapping in an ingredient marked as an estimate marks the dish', () => {
+    const dish = testDish({ lines: [goudaLine] })
+    const next = swappedLine(goudaLine, ingredientSource(EDAMER))
+    if (!next) throw new Error('not swapped')
+
+    expect(withSwappedLine(dish, next, new Set(['edamer'])).kcalEstimated).toBe(true)
+    expect(withSwappedLine(dish, next, new Set()).lines).toEqual([next])
   })
 })
 

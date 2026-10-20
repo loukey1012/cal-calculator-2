@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useCurrentUser } from '../../app/currentUser'
 import { ErrorBanner } from '../../components/ios/ErrorBanner'
 import { GroupedSection } from '../../components/ios/GroupedSection'
@@ -19,8 +20,11 @@ type FoodPickerProps = {
   readonly filter: IngredientFilter
   readonly onFilterChange: (filter: IngredientFilter) => void
   readonly onPick: (ingredient: Ingredient) => void
-  /** create a missing ingredient, saved to the shared database; maybe for a scanned barcode */
-  readonly onNew: (barcode?: string) => void
+  /**
+   * create a missing ingredient, saved to the shared database; maybe for a scanned barcode.
+   * Without it (swapping a product) only saved ingredients can be picked.
+   */
+  readonly onNew?: (barcode?: string) => void
 }
 
 function Note({ text }: { readonly text: string }) {
@@ -28,6 +32,7 @@ function Note({ text }: { readonly text: string }) {
 }
 
 export function FoodPicker({ filter, onFilterChange, onPick, onNew }: FoodPickerProps) {
+  const [unknownScan, setUnknownScan] = useState(false)
   const { householdId } = useCurrentUser()
   // a partner may have added ingredients since the list was loaded
   const ingredients = useIngredients(householdId, { alwaysRefresh: true })
@@ -51,8 +56,10 @@ export function FoodPicker({ filter, onFilterChange, onPick, onNew }: FoodPicker
             onScanned={(barcode) => {
               // a known package goes straight to its amount
               const known = findByBarcode(ingredients.data ?? [], barcode)
+              setUnknownScan(false)
               if (known) onPick(known)
-              else onNew(barcode)
+              else if (onNew) onNew(barcode)
+              else setUnknownScan(true)
             }}
           />
         }
@@ -74,6 +81,9 @@ export function FoodPicker({ filter, onFilterChange, onPick, onNew }: FoodPicker
         sort={sort}
         onSortChange={setSort}
       />
+      {unknownScan && (
+        <Note text="This package isn’t in your ingredients yet. Add it to the dish with Add ingredient first." />
+      )}
       {ingredients.isError && <ErrorBanner message={toUserMessage(ingredients.error)} />}
       {ingredients.isPending && <Note text="Loading…" />}
       {ingredients.isSuccess && matches.length === 0 && (

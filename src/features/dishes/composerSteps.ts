@@ -10,6 +10,10 @@ export type ComposerStep =
   | { readonly kind: 'newIngredient'; readonly barcode?: string }
   | { readonly kind: 'newLine'; readonly ingredientId: string }
   | { readonly kind: 'editLine'; readonly lineId: string }
+  /** another product for a line (e.g. Edamer instead of Gouda): the search */
+  | { readonly kind: 'swap'; readonly lineId: string }
+  /** its amount, when the new product can't be measured the way the line is */
+  | { readonly kind: 'swapLine'; readonly lineId: string; readonly ingredientId: string }
 
 export const MAIN_STEP: ComposerStep = { kind: 'main' }
 
@@ -42,6 +46,10 @@ export function stepKey(step: ComposerStep): string {
       return `newLine:${step.ingredientId}`
     case 'editLine':
       return `editLine:${step.lineId}`
+    case 'swap':
+      return `swap:${step.lineId}`
+    case 'swapLine':
+      return `swapLine:${step.lineId}:${step.ingredientId}`
     case 'newIngredient':
       return step.barcode ? `newIngredient:${step.barcode}` : step.kind
     default:

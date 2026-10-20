@@ -203,6 +203,66 @@ describe('the dish waiting on Cook', () => {
   })
 })
 
+describe('swapping an ingredient', () => {
+  const VEGGIE = ingredient({
+    id: 'veggie',
+    name: 'Veggie patty',
+    kcal_100: 180,
+    category_id: 'c-meat',
+  })
+  // counted in pieces, without a weight per piece
+  const FROZEN = ingredient({
+    id: 'frozen',
+    name: 'Frozen patty',
+    kcal_unit: 150,
+    unit_label: 'Patty',
+    category_id: 'c-meat',
+  })
+
+  test('another product from the same category takes the line’s place and amount', async () => {
+    // Arrange
+    vi.mocked(fetchIngredients).mockResolvedValue([PATTY, TOMATO, NOODLES, VEGGIE])
+    const user = userEvent.setup()
+    renderCook()
+    await addIngredient(user, 'Patty', '250')
+
+    // Act
+    await user.click(screen.getByRole('button', { name: /^Patty/ }))
+    await user.click(screen.getByRole('button', { name: 'Swap ingredient' }))
+    // the search starts in the patty's category
+    expect(await screen.findByRole('button', { name: /Veggie patty/ })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Tomato/ })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /Veggie patty/ }))
+
+    // Assert
+    const row = await screen.findByRole('button', { name: /Veggie patty/ })
+    expect(row).toHaveTextContent('250 g')
+    expect(row).toHaveTextContent('450 kcal')
+    expect(currentPath()).toBe('/cook')
+    expect(screen.queryByRole('button', { name: /^Patty/ })).not.toBeInTheDocument()
+  })
+
+  test('a product measured differently asks for its amount first', async () => {
+    vi.mocked(fetchIngredients).mockResolvedValue([PATTY, FROZEN])
+    const user = userEvent.setup()
+    renderCook()
+    await user.click(screen.getByRole('button', { name: 'Add ingredient' }))
+    await user.click(await screen.findByRole('button', { name: /^Patty/ }))
+    await user.type(screen.getByLabelText('Amount'), '250')
+    await user.click(screen.getByRole('button', { name: 'Add to dish' }))
+
+    await user.click(screen.getByRole('button', { name: /^Patty/ }))
+    await user.click(screen.getByRole('button', { name: 'Swap ingredient' }))
+    await user.click(await screen.findByRole('button', { name: /Frozen patty/ }))
+    await user.type(await screen.findByLabelText('Amount'), '2')
+    await user.click(screen.getByRole('button', { name: 'Use instead of Patty' }))
+
+    const row = await screen.findByRole('button', { name: /Frozen patty/ })
+    expect(row).toHaveTextContent('300 kcal')
+    expect(currentPath()).toBe('/cook')
+  })
+})
+
 describe('cooking alone', () => {
   test('one food for me, saved as a dish into the chosen meal of today', async () => {
     // Arrange
