@@ -671,6 +671,74 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          settings: Json
+          time_zone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          settings?: Json
+          time_zone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          settings?: Json
+          time_zone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_changes: {
+        Row: {
+          actor_id: string
+          changed_at: string
+          date: string
+          meal_type: Database["public"]["Enums"]["meal_type"]
+          user_id: string
+        }
+        Insert: {
+          actor_id: string
+          changed_at?: string
+          date: string
+          meal_type: Database["public"]["Enums"]["meal_type"]
+          user_id: string
+        }
+        Update: {
+          actor_id?: string
+          changed_at?: string
+          date?: string
+          meal_type?: Database["public"]["Enums"]["meal_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_changes_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_changes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           accent_color: string
@@ -705,6 +773,35 @@ export type Database = {
             columns: ["household_id"]
             isOneToOne: false
             referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      push_sent: {
+        Row: {
+          key: string
+          kind: string
+          sent_at: string
+          user_id: string
+        }
+        Insert: {
+          key: string
+          kind: string
+          sent_at?: string
+          user_id: string
+        }
+        Update: {
+          key?: string
+          kind?: string
+          sent_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_sent_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

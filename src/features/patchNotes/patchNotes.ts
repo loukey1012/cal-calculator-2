@@ -30,6 +30,17 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-20T16:16',
+    kind: 'new',
+    title: 'Meal reminders, day summary and partner changes',
+    items: [
+      'Settings › Notifications: choose what you are notified about; saved to your account for all your phones',
+      'Meal reminders for breakfast, lunch and dinner (10:00, 14:00, 20:00 by default) when that meal is still empty; they open Cook for it',
+      'A day summary with calories and macros against your goal: the next morning about the day before, or the same day at a time you pick',
+      'When your partner changes your meals, one notification once they are done, naming the meals',
+    ],
+  },
+  {
     at: '2026-10-20T16:04',
     kind: 'new',
     title: 'Notifications, first part',

@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { fireEvent, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { renderWithProviders } from '../../test/render'
@@ -15,7 +15,15 @@ vi.mock('./pushSupport', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./pushSupport')>()),
   browserPushEnvironment: vi.fn(),
 }))
+vi.mock('./preferencesApi', () => ({
+  fetchPreferences: vi.fn(),
+  savePreferences: vi.fn(),
+  deviceTimeZone: vi.fn(),
+}))
 
+import { CurrentUserContext } from '../../app/currentUser'
+import { DEFAULT_SETTINGS } from '../../../supabase/functions/_shared/notificationSettings.ts'
+import { deviceTimeZone, fetchPreferences, savePreferences } from './preferencesApi'
 import {
   deviceState,
   PermissionRefusedError,
@@ -36,8 +44,29 @@ const INSTALLED: PushEnvironment = {
   isIos: true,
 }
 
+const ME = {
+  id: 'u1',
+  household_id: 'h1',
+  display_name: 'Lukas',
+  accent_color: '#007aff',
+  appearance: {},
+  created_at: '',
+  updated_at: '',
+}
+
 function renderPage() {
-  return renderWithProviders(<NotificationsPage />, { route: '/settings/notifications' })
+  return renderWithProviders(
+    <CurrentUserContext value={{ profile: ME, householdId: 'h1' }}>
+      <NotificationsPage />
+    </CurrentUserContext>,
+    { route: '/settings/notifications' },
+  )
+}
+
+function lastSaved() {
+  const call = vi.mocked(savePreferences).mock.calls.at(-1)
+  if (!call) throw new Error('savePreferences was not called')
+  return call[1]
 }
 
 beforeEach(() => {
@@ -47,6 +76,75 @@ beforeEach(() => {
   vi.mocked(refreshSubscription).mockResolvedValue()
   vi.mocked(turnOn).mockResolvedValue()
   vi.mocked(turnOff).mockResolvedValue()
+  vi.mocked(fetchPreferences).mockResolvedValue({
+    settings: DEFAULT_SETTINGS,
+    timeZone: 'Europe/Vienna',
+  })
+  vi.mocked(savePreferences).mockResolvedValue()
+  vi.mocked(deviceTimeZone).mockReturnValue('Europe/Vienna')
+})
+
+describe('what to be notified about', () => {
+  test('a meal reminder is switched off and saved to my account', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    renderPage()
+
+    // Act
+    await user.click(await screen.findByRole('switch', { name: 'Lunch' }))
+
+    // Assert
+    expect(lastSaved().settings.reminders.lunch).toEqual({ on: false, time: '14:00' })
+    expect(screen.queryByLabelText('Lunch time')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Dinner time')).toHaveValue('20:00')
+  })
+
+  test('a reminder gets a new time', async () => {
+    renderPage()
+
+    const time = await screen.findByLabelText('Breakfast time')
+    fireEvent.change(time, { target: { value: '09:15' } })
+
+    await vi.waitFor(() =>
+      expect(lastSaved().settings.reminders.breakfast).toEqual({ on: true, time: '09:15' }),
+    )
+  })
+
+  test('the summary can be about the same day', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('radio', { name: 'Same day' }))
+
+    expect(lastSaved().settings.summary).toEqual({ on: true, day: 'same', time: '08:00' })
+    expect(screen.getByText('About the same day, at the time you choose.')).toBeVisible()
+  })
+
+  test('partner changes can be switched off', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('switch', { name: 'Changes to your meals' }))
+
+    expect(lastSaved().settings.partnerChanges).toBe(false)
+  })
+
+  test('the phone’s time zone is saved when it changed', async () => {
+    vi.mocked(deviceTimeZone).mockReturnValue('America/New_York')
+
+    renderPage()
+
+    await vi.waitFor(() => expect(lastSaved().timeZone).toBe('America/New_York'))
+    expect(savePreferences).toHaveBeenCalledTimes(1)
+  })
+
+  test('the same time zone is not saved again', async () => {
+    renderPage()
+
+    await screen.findByRole('switch', { name: 'Lunch' })
+
+    expect(savePreferences).not.toHaveBeenCalled()
+  })
 })
 
 describe('NotificationsPage', () => {

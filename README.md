@@ -109,7 +109,12 @@ Built for a two-person household: both members log their own meals, can see and 
 - **Push notifications on the iPhone**, for the app opened from the Home Screen (iOS 16.4 or later; a Safari tab says to add it to the Home Screen first). Switched on per phone: the switch asks iOS for permission right from the tap. If they are blocked in the iPhone's settings, the page says where to allow them.
 - **Send test notification** sends one to every phone of yours that has them on and says how many it reached. Tapping a notification opens the app on the right page.
 - Signing out turns them off on that phone; signing in as the other person there and opening this page takes the phone over.
-- What you are notified about (meal reminders, the day summary, your partner's changes, an unsaved Cook dish, the weekly review) follows in the next steps of point 10.
+- **What you are notified about** is saved to your account (only you see it), so all your phones follow it; each kind is on by default:
+  - **Your partner changes your meals**: they log, change or delete food in one of your meals, mark it as a cheat meal, or log a dish you eat too. Told once they stopped for 3 minutes, as one notification ("baby changed your meals · Today: Lunch, Dinner"), using your nickname for them. It opens that day.
+  - **Meal reminders** for breakfast, lunch and dinner (10:00, 14:00, 20:00; each on or off, any time): only if that meal is still empty (or not marked as a cheat meal). It opens Cook for that meal.
+  - **Day summary**: calories and macros against your goal. By default the **next morning at 08:00 about the day before** (so late snacks count); it can be the **same day** at any time instead (e.g. 23:00). Days with nothing logged get none. It opens that day.
+  - The times follow the time zone of the phone that last opened this page. A notification is sent at most once and up to 2 hours late (e.g. if the server was busy), never later.
+- An unsaved Cook dish and the weekly review's findings follow in the last step of point 10.
 
 ### Works offline
 
@@ -230,15 +235,15 @@ Noted 2026-10-15.
 - [x] Text recognition runs on the phone (no online service, works offline); it loads only the first time you use it
 - [x] Reads German and English labels and takes the per-100 g / per-100 ml column; you always check the values before saving
 
-**10. Notifications** (in progress: notifications per phone and the test are done)
+**10. Notifications** (in progress: all but the unsaved Cook dish and the weekly review are done)
 
 - [x] Push notifications on the iPhone (home-screen app), switched on once in Settings
-- [ ] **Everything is set per person**, saved to your account: each kind on or off, and every time below can be changed
+- [x] **Everything is set per person**, saved to your account: each kind on or off, and every time below can be changed
 - [x] A **Send test notification** button
-- [ ] **Partner changes your day**: your partner logs, edits or deletes a meal for you, or shares a dish with you
+- [x] **Partner changes your day**: your partner logs, edits or deletes a meal for you, or shares a dish with you
 - [ ] **Unsaved Cook dish**: a dish has been sitting on Cook without being logged for a while (default 30 minutes, adjustable)
-- [ ] **Meal reminders**: nothing logged for breakfast, lunch or dinner by a time you set (defaults 10:00, 14:00, 20:00; each one on or off)
-- [ ] **Day summary**: kcal and macros vs. your goal, what you ate. Default: the **next morning** about the day before (so evening snacks count); each person can switch to the same day and pick the time (e.g. 23:00)
+- [x] **Meal reminders**: nothing logged for breakfast, lunch or dinner by a time you set (defaults 10:00, 14:00, 20:00; each one on or off)
+- [x] **Day summary**: kcal and macros vs. your goal. Default: the **next morning** about the day before (so evening snacks count); each person can switch to the same day and pick the time (e.g. 23:00)
 - [ ] **Weekly review**: the weekly review (point 20) found something new
 
 **11. Unsaved Cook dishes** (badge: done; the push comes with point 10)
@@ -462,7 +467,9 @@ e2e/
 supabase/
   migrations/     database schema, RLS policies, RPCs, views, triggers
   tests/          integration tests against the dev Supabase project
-  functions/      Edge Functions (Deno): push-test; _shared holds web push sending and helpers
+  functions/      Edge Functions (Deno): push-test, push-tick (timed and partner notifications);
+                  _shared: web push sending, plus plain-TypeScript settings and scheduling that the
+                  app's tests cover and Settings › Notifications reuses
 scripts/
   migrate-firebase/  one-off import of the old Firebase `foods` collection
 ```
@@ -478,6 +485,8 @@ scripts/
 - `recipes` (name, split, cooked weight, estimate flag; shared by the household), `recipe_portions` (who eats, or nobody = a leftover; split value), `recipe_lines` (ingredient link plus a snapshot like `dish_lines`, used for custom items and deleted ingredients), `recipe_line_amounts` (own amounts per portion). Written only through `save_recipe` (create or replace, the last save wins) and `delete_recipe`
 - Views `meal_totals` and `daily_totals` (with `kcal_estimated`: some food came from a dish marked as an estimate; `cheat_meal` and `cheat_day`; a cheat day without any meal still has a row). RPCs `create_household`, `join_household`, `ensure_meal`, `set_cheat_meal` (marks a meal, creating an empty one), `save_dish` and `delete_dish`; `ingredient_use_counts` (how often each ingredient was used, for sorting by Most used; runs with the caller's rights, so RLS keeps it to the household). `keep_alive` returns `true` to anyone, for the keep-alive workflow.
 - `push_subscriptions` (each phone that allowed notifications: its push address and keys, whose it is, when a push last arrived). Members only see their own phones and never the keys; `save_push_subscription` (also takes a phone over from the other account) and `delete_push_subscription` write them; only the Edge Functions (service role) read the keys to send.
+- `notification_preferences` (per person, only they see it: which notifications and when, as JSON read with defaults by `supabase/functions/_shared/notificationSettings.ts`, and the phone's time zone), `push_sent` (each notification sent once: kind + key, e.g. a reminder per day and meal), `partner_changes` (filled by triggers on `meals` / `meal_items` when someone changes another person's meal; cleared once told). Members can't read the last two.
+- **Timed notifications:** pg_cron runs `push-tick` every 5 minutes through pg_net; its address and shared secret are in Vault (`push_tick_url`, `push_tick_secret`), never in a migration. Without them the job does nothing.
 - `review_findings` (what the weekly review routine found: about an ingredient, with a suggested fix as `column → value`, or about a person's day, optionally one meal and item; `open` / `applied` / `ignored`, who decided when). Members read them and only change the decision; the routine reads through `review_ingredients` and `review_meals` (members, goals, meals with item totals and day totals for up to 31 days) and adds findings through `submit_review_findings`, all authorized by the household's review key (`review_keys`, stored as a SHA-256 hash, readable by nobody). A finding is never added twice (same ingredient, kind and fix; or same person, day, kind, meal and item).
 - **Live updates:** triggers on the household's tables send a small hint over Supabase Realtime Broadcast to the private channel `household:<id>` (what changed: a person's day, a dish, the ingredient database, …). Hints carry no data: the app marks the matching queries out of date, and what's on screen re-fetches through the normal RLS-checked queries. A failed hint never fails a save.
 - `save_dish` stores a whole dish at once and re-logs every eaten portion as meal items in its eater's meal (shared lines × the portion's share, own amounts as entered), so the totals views count dishes like any other food. Resending the same save does nothing; a save based on an outdated revision is rejected ("changed meanwhile"). It can also take over plain items of a meal ("share this meal").
@@ -587,7 +596,7 @@ MIGRATION_SUPABASE_URL=... MIGRATION_SUPABASE_SERVICE_ROLE_KEY=... \
 
 - **Vercel** builds every push to `main` (`vercel.json`: SPA rewrites, long-lived caching for hashed assets, no caching for the service worker and `index.html`).
 - Vercel environment variables: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (production project).
-- **Edge Functions** (`supabase/functions`): `bash scripts/deploy-functions.sh dev` or `… prod` sets their secrets (`VAPID_SUBJECT`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` from `.env.secrets.local`) and deploys every function. Web push uses one VAPID key pair for both projects; the public key is also in `src/features/notifications/pushDevice.ts`. `push-test` checks the caller's sign-in itself (Supabase's JWT check stays on).
+- **Edge Functions** (`supabase/functions`): `bash scripts/deploy-functions.sh dev` or `… prod` sets their secrets (`VAPID_SUBJECT`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `PUSH_TICK_SECRET` from `.env.secrets.local`), puts the tick's address and secret into Vault for the cron job, and deploys every function (`push-tick` without Supabase's JWT check: it checks the shared secret itself). Web push uses one VAPID key pair for both projects; the public key is also in `src/features/notifications/pushDevice.ts`. `push-test` checks the caller's sign-in itself (Supabase's JWT check stays on).
 - **Keep-alive** (`.github/workflows/keep-alive.yml`): every other day (and on demand from the Actions tab) it calls the `keep_alive()` function on both Supabase projects, so neither is paused for a week without use. It uses the public anon keys from the repository secrets `SUPABASE_PROD_URL` / `SUPABASE_PROD_ANON_KEY` and `SUPABASE_TEST_URL` / `SUPABASE_TEST_ANON_KEY`. GitHub switches scheduled workflows off after 60 days without any repository activity; if that happens, switch it back on in the Actions tab.
 - **GitHub Actions** (`.github/workflows/ci.yml`) on every push and pull request: lint, typecheck, format, unit tests with coverage. On pushes to `main` it also runs, against the dev project with the `SUPABASE_TEST_*` repository secrets, the database integration tests and the WebKit smoke tests plus end-to-end journeys (WebKit with an iPhone profile, 4 at a time; the offline restart additionally in Chromium, since Playwright's WebKit has no service workers); pull requests run the smoke tests alone. The jobs run side by side (about 2½–3 minutes); browser installs get a time limit and one retry, and each job a time limit, so a hanging install fails fast.
 

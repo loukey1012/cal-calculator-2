@@ -6,6 +6,7 @@ import { GroupedSection } from '../../components/ios/GroupedSection'
 import { toUserMessage } from '../../lib/errors'
 import { AppearanceSubPage } from '../appearance/AppearanceSubPage'
 import { useDeviceState, useSendTest, useSwitchDevice } from './hooks'
+import { NotificationKinds } from './NotificationKinds'
 import { PermissionRefusedError } from './pushDevice'
 import { browserPushEnvironment, pushAvailability } from './pushSupport'
 import { testResultText } from './testResult'
@@ -64,7 +65,7 @@ function ThisPhone() {
     <>
       <GroupedSection
         header="This phone"
-        footer="Reminders, the day summary and your partner’s changes are chosen here next."
+        footer="What you're notified about is saved to your account, for all your phones."
       >
         <ToggleRow
           label="Notifications"
@@ -98,6 +99,7 @@ function ThisPhone() {
           {message}
         </p>
       )}
+      <NotificationKinds />
     </>
   )
 }
