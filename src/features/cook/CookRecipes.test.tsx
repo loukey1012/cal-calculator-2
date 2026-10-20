@@ -1,5 +1,6 @@
 import { screen, within } from '@testing-library/react'
 import userEvent, { type UserEvent } from '@testing-library/user-event'
+import type { QueryKey } from '@tanstack/react-query'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { Route, Routes, useLocation } from 'react-router'
 import { CurrentUserContext } from '../../app/currentUser'
@@ -112,7 +113,7 @@ function LocationProbe() {
 
 const currentPath = () => screen.getByTestId('path').textContent
 
-function renderCook(route = '/cook') {
+function renderCook(route = '/cook', cached: ReadonlyArray<readonly [QueryKey, unknown]> = []) {
   return renderWithProviders(
     <CurrentUserContext value={{ profile: ME, householdId: 'h1' }}>
       <CookSession>
@@ -122,7 +123,7 @@ function renderCook(route = '/cook') {
         <LocationProbe />
       </CookSession>
     </CurrentUserContext>,
-    { route },
+    { route, cached },
   )
 }
 
@@ -306,6 +307,19 @@ describe('recipes on Cook', () => {
     )
     await user.click(screen.getByRole('switch', { name: 'Optional' }))
     await vi.waitFor(() => expect(savedRecipe().slots[0]?.optional).toBe(true))
+  })
+
+  test('recipes kept on the phone by the version before choices don’t break the pages', async () => {
+    // Arrange: the old shape had `lines`, no `slots`
+    const { slots: _slots, ...withoutSlots } = BURGERS
+    const old = { ...withoutSlots, lines: [] }
+
+    // Act
+    renderCook('/cook/recipes/r-burgers', [[['recipes', 'h1'], [old]]])
+
+    // Assert
+    expect(await screen.findByRole('heading', { name: 'Burgers' })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: /Patty/ })).toBeInTheDocument()
   })
 
   test('without recipes the list says how to make one', async () => {

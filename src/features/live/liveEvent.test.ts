@@ -93,7 +93,7 @@ describe('keysForHint', () => {
     const hint = parseHint({ table: 'recipes', actor: PARTNER })
 
     expect(hint).not.toBeNull()
-    expect(keysForHint(hint!, HOUSEHOLD)).toEqual([['recipes', HOUSEHOLD]])
+    expect(keysForHint(hint!, HOUSEHOLD)).toEqual([['recipes', 'v2', HOUSEHOLD]])
   })
 
   test("a partner's new goal refreshes their goals", () => {

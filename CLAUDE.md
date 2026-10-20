@@ -16,6 +16,10 @@ same commit as any feature, setup or architecture change. Production: migrations
 allowed), always proven on dev first; never push app code that needs a migration that isn't on
 production yet. After a push, watch CI with a background `gh run watch`; a red journey run is
 rerun once first (load flakes happen), then investigated.
+Data the app keeps on the phone (TanStack Query persistence) survives updates: when the shape of
+a cached query changes, give its query key a new version (like `RECIPES_SHAPE` in
+`src/features/recipes/hooks.ts`), so an old copy is ignored instead of crashing the new version.
+Don't bump `CACHE_BUSTER` for that: it would also drop changes still waiting to be sent.
 
 **State (2026-10-20, evening):** everything from the October lists in README.md is built; the
 old build plan (`docs/plan-2026-10-15.md`) was removed at the user's request, its decisions live

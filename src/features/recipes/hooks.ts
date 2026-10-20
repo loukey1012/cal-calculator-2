@@ -8,8 +8,13 @@ import {
 import type { Recipe } from './recipeModel'
 import { deleteRecipe, fetchRecipes, saveRecipe } from './recipesApi'
 
+// The cached recipes are kept on the phone; a new shape gets a new version here, so a list kept
+// by an older app version is ignored (and loaded again) instead of misread. v2: lines with
+// choices (`slots`) instead of `lines`.
+const RECIPES_SHAPE = 'v2'
+
 export const recipeKeys = {
-  recipes: (householdId: string) => ['recipes', householdId] as const,
+  recipes: (householdId: string) => ['recipes', RECIPES_SHAPE, householdId] as const,
 }
 
 export function useRecipes(householdId: string): UseQueryResult<Recipe[]> {

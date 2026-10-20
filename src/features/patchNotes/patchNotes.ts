@@ -30,6 +30,14 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-20T18:01',
+    kind: 'fix',
+    title: 'Recipes open again after the update',
+    items: [
+      'The recipe pages on Cook no longer break on a phone that still had the recipe list from before recipes had choices',
+    ],
+  },
+  {
     at: '2026-10-20T17:15',
     kind: 'new',
     title: 'Recipes with choices that learn',
