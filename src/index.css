@@ -660,3 +660,11 @@ select,
 textarea {
   font-size: max(16px, 1em);
 }
+
+/* History: days over the goal in the rings' two over colors (red when they are switched off) */
+.day-over {
+  background: color-mix(in srgb, var(--goal-over-full, var(--color-destructive)) 30%, transparent);
+}
+.day-well-over {
+  background: color-mix(in srgb, var(--goal-over-well, var(--color-destructive)) 38%, transparent);
+}

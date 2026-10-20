@@ -1,4 +1,6 @@
-import { useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { Button } from '../../components/ios/Button'
+import { KeyboardNextButton } from '../../components/ios/KeyboardNextButton'
 import { InputRow, ToggleRow } from '../../components/ios/FormRows'
 import { GroupedSection } from '../../components/ios/GroupedSection'
 import { SegmentedControl } from '../../components/ios/SegmentedControl'
@@ -19,6 +21,7 @@ import {
 } from './ingredientForm'
 import type { Category, CategoryGroup, Ingredient } from './ingredientsApi'
 import { SplitPortionRow } from './SplitPortionRow'
+import { clearIngredientDraft, loadIngredientDraft, saveIngredientDraft } from './ingredientDraft'
 import { UndoBar } from './UndoBar'
 import { useIngredientFormState, type IngredientFormState } from './useIngredientFormState'
 import { flaggedFields, valueWarnings } from './valueChecks'
@@ -43,9 +46,65 @@ type IngredientFormProps = {
   readonly packagePortion?: string | null
   /** a saved ingredient is edited (its barcode can be looked up again) */
   readonly editing?: boolean
+  /**
+   * Keeps what's typed on the phone under this key (person and ingredient) until it's saved, so
+   * a page closed by accident loses nothing; none: nothing is kept.
+   */
+  readonly draftKey?: string
 }
 
-export function IngredientForm({
+/** The form, with what was typed before and not saved restored (and offered to discard). */
+export function IngredientForm(props: IngredientFormProps) {
+  const { draftKey, initialValues, onSubmit } = props
+  const [restored, setRestored] = useState(() => (draftKey ? loadIngredientDraft(draftKey) : null))
+  // a discarded draft starts the form over
+  const [generation, setGeneration] = useState(0)
+  const openedWith = JSON.stringify(initialValues)
+
+  function keep(values: IngredientFormValues) {
+    if (!draftKey) return
+    // as it opened (nothing typed, or typed back): nothing to keep
+    if (JSON.stringify(values) === openedWith) clearIngredientDraft(draftKey)
+    else saveIngredientDraft(draftKey, values)
+  }
+
+  function discard() {
+    if (draftKey) clearIngredientDraft(draftKey)
+    setRestored(null)
+    setGeneration((current) => current + 1)
+  }
+
+  return (
+    <>
+      {restored && (
+        <div className="mb-2 flex items-center gap-3 rounded-2xl bg-bg-elevated py-1 pr-2 pl-4 shadow-card">
+          <p role="status" className="flex-1 text-[15px] text-label-secondary">
+            Restored what you typed before.
+          </p>
+          <Button variant="plain" onClick={discard}>
+            Discard
+          </Button>
+        </div>
+      )}
+      <IngredientFormBody
+        key={generation}
+        {...props}
+        initialValues={restored ?? initialValues}
+        onValuesChange={keep}
+        onSubmit={(data) => {
+          if (draftKey) clearIngredientDraft(draftKey)
+          onSubmit(data)
+        }}
+      />
+    </>
+  )
+}
+
+type IngredientFormBodyProps = IngredientFormProps & {
+  readonly onValuesChange: (values: IngredientFormValues) => void
+}
+
+function IngredientFormBody({
   formId,
   initialValues,
   categories,
@@ -54,9 +113,17 @@ export function IngredientForm({
   savedIngredients = [],
   packagePortion = null,
   editing = false,
-}: IngredientFormProps) {
+  onValuesChange,
+}: IngredientFormBodyProps) {
   const form = useIngredientFormState(initialValues, packagePortion)
   const { values } = form
+  const formElement = useRef<HTMLFormElement>(null)
+  // told once per change of the values (the callback itself is new on every render)
+  const report = useRef(onValuesChange)
+  useEffect(() => {
+    report.current = onValuesChange
+  })
+  useEffect(() => report.current(values), [values])
   const [errors, setErrors] = useState<FieldErrors>({})
   const warnings = valueWarnings(values)
   const flagged = flaggedFields(warnings)
@@ -78,7 +145,8 @@ export function IngredientForm({
   }
 
   return (
-    <form id={formId} noValidate onSubmit={handleSubmit}>
+    <form ref={formElement} id={formId} noValidate onSubmit={handleSubmit}>
+      <KeyboardNextButton container={formElement} />
       <IdentitySection
         values={values}
         errors={errors}

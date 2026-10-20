@@ -7,6 +7,7 @@ import { BarcodeLink } from '../barcode/BarcodeLink'
 import { PrefillNote } from '../barcode/PrefillNote'
 import { useProductPrefill } from '../barcode/useProductPrefill'
 import { useCategories, useCategoryGroups, useIngredients, useSaveIngredient } from './hooks'
+import { clearIngredientDraft } from './ingredientDraft'
 import { IngredientForm } from './IngredientForm'
 import { EMPTY_INGREDIENT_FORM } from './ingredientForm'
 import type { Ingredient } from './ingredientsApi'
@@ -37,6 +38,8 @@ export function NewIngredientForm({
   const prefill = useProductPrefill(barcode, typed)
   // bumped to put the form back to the values from Open Food Facts
   const [resets, setResets] = useState(0)
+  // what's typed is kept on the phone until saved
+  const draftKey = `${householdId}:new:${barcode ?? ''}`
 
   if (prefill?.status === 'loading') {
     return (
@@ -66,12 +69,16 @@ export function NewIngredientForm({
           text={prefill.note}
           warnings={prefill.warnings}
           info={prefill.info}
-          onReset={() => setResets((count) => count + 1)}
+          onReset={() => {
+            clearIngredientDraft(draftKey)
+            setResets((count) => count + 1)
+          }}
         />
       )}
       <IngredientForm
         key={resets}
         formId={FORM_ID}
+        draftKey={draftKey}
         initialValues={prefill?.values ?? typed}
         packagePortion={prefill?.info?.portion ?? null}
         categories={categoryList}

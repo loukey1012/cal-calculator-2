@@ -5,6 +5,7 @@ import {
   layerTransforms,
   releaseCompletesBack,
   stackChange,
+  startsAtBottomEdge,
 } from './stackMotion'
 
 describe('dragDirection', () => {
@@ -67,5 +68,14 @@ describe('layerTransforms', () => {
   test('progress is kept between 0 and 1', () => {
     expect(layerTransforms(1.4, 400).top).toBe('translate3d(400px, 0, 0)')
     expect(layerTransforms(-0.2, 400).top).toBe('translate3d(0px, 0, 0)')
+  })
+})
+
+describe('startsAtBottomEdge', () => {
+  test('a touch in the home-indicator strip belongs to iOS (switching apps), not to the app', () => {
+    expect(startsAtBottomEdge(820, 844)).toBe(true)
+    expect(startsAtBottomEdge(801, 844)).toBe(true)
+    expect(startsAtBottomEdge(799, 844)).toBe(false)
+    expect(startsAtBottomEdge(300, 844)).toBe(false)
   })
 })

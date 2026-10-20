@@ -320,6 +320,38 @@ describe('TabShell swiping', () => {
       expect(screen.getByTestId('path')).toHaveTextContent('/settings/appearance/colors')
     })
 
+    test('a swipe along the bottom edge (iOS switching apps) never goes back', () => {
+      renderShell('/settings/appearance/colors')
+      const bottom = window.innerHeight - 10
+
+      const takenOver = dragTo({ x: 30, y: bottom }, { x: 300, y: bottom })
+      release({ x: 300, y: bottom })
+
+      expect(takenOver).toBe(false)
+      expect(layers()).toHaveLength(1)
+      expect(screen.getByTestId('path')).toHaveTextContent('/settings/appearance/colors')
+    })
+
+    test('a swipe along the bottom edge never switches tabs either', () => {
+      renderShell('/today')
+      const touchAt = (y: number) =>
+        ({ target: document.body, touches: [{ clientX: 100, clientY: y }] }) as unknown as Event
+
+      expect(watchDrag()(embla.api, touchAt(window.innerHeight - 10))).toBe(false)
+      expect(watchDrag()(embla.api, touchAt(300))).toBe(true)
+    })
+
+    test('a swipe iOS takes over (cancelled) puts the page back instead of going back', async () => {
+      renderShell('/settings/appearance/colors')
+
+      // fast and far: released, this would go back
+      dragTo({ x: 30, y: 300 }, { x: 300, y: 310 })
+      fireEvent.touchCancel(activePage(), { touches: [] })
+
+      await waitFor(() => expect(layers()).toHaveLength(1))
+      expect(screen.getByTestId('path')).toHaveTextContent('/settings/appearance/colors')
+    })
+
     test('on a page inside Appearance, swiping right goes back to the Appearance menu', async () => {
       renderShell('/settings/appearance/colors')
 

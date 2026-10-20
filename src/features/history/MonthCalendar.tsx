@@ -18,6 +18,7 @@ const STATUS_TEXT: Record<DayStatus, string> = {
   logged: ', logged',
   onTarget: ', within goal',
   over: ', over goal',
+  wellOver: ', well over goal',
   cheatDay: ', cheat day',
   cheatMeal: ', cheat meal',
   missing: ', lunch or dinner missing',
@@ -27,7 +28,9 @@ const STATUS_CLASSES: Record<DayStatus, string> = {
   none: 'text-label',
   logged: 'bg-fill text-label',
   onTarget: 'bg-success/25 text-label',
-  over: 'bg-destructive/25 text-label',
+  // the rings' over colors (Appearance), or red when those are switched off
+  over: 'day-over text-label',
+  wellOver: 'day-well-over text-label',
   // left out of the averages: an outline instead of a fill
   cheatDay: 'border-2 border-dashed border-label-secondary/60 text-label-secondary',
   cheatMeal: 'bg-fill text-label',

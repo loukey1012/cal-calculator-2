@@ -145,7 +145,6 @@ test('a meal eaten out is logged as an estimate and the day shows ~', async ({ p
 
   const today = activePage(page)
   await expect(today.getByRole('button', { name: /Dinner/ })).toContainText('~900 kcal · 1 item')
-  await expect(today.getByTestId('day-total')).toContainText('~900 kcal')
   await expect
     .poll(async () => {
       const { data } = await backend.admin
@@ -158,7 +157,7 @@ test('a meal eaten out is logged as an estimate and the day shows ~', async ({ p
 
   await page.reload()
   const reloaded = activePage(page)
-  await expect(reloaded.getByTestId('day-total')).toContainText('~900 kcal')
+  await expect(reloaded.getByRole('button', { name: /Dinner/ })).toContainText('~900 kcal')
   await reloaded.getByRole('button', { name: /Dinner/ }).click()
   await expect(
     page.getByRole('dialog').getByRole('button', { name: /Pizza.*Estimate · 1 unit.*~900 kcal/ }),

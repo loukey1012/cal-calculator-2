@@ -4,6 +4,7 @@ import {
   dragDirection,
   layerTransforms,
   releaseCompletesBack,
+  startsAtBottomEdge,
   STACK_DURATION_MS,
   STACK_EASING,
   stackChange,
@@ -245,7 +246,11 @@ export function PageStack({
       const touch = event.touches[0]
       const { backPath: back, motion: current } = latest.current
       gesture.current =
-        touch && back && current.kind === 'idle' && !isSwipeLocked(event.target)
+        touch &&
+        back &&
+        current.kind === 'idle' &&
+        !isSwipeLocked(event.target) &&
+        !startsAtBottomEdge(touch.clientY, window.innerHeight)
           ? {
               startX: touch.clientX,
               startY: touch.clientY,
@@ -300,16 +305,26 @@ export function PageStack({
       }
       setMotion({ kind: 'slide', top, under, from: progress, to: back ? 1 : 0, thenBack: back })
     }
+    // iOS took the gesture over (e.g. switching apps): never go back, put the page in place again
+    const onCancel = () => {
+      const drag = gesture.current
+      gesture.current = null
+      const { path: top, backPath: under } = latest.current
+      if (!drag || drag.direction !== 'back' || !under) return
+      if (prefersReducedMotion()) return setMotion({ kind: 'idle' })
+      const progress = drag.dx / screenWidth(container)
+      setMotion({ kind: 'slide', top, under, from: progress, to: 0, thenBack: false })
+    }
     container.addEventListener('touchstart', onStart, { passive: true })
     // not passive: a sideways drag must stop the page from scrolling
     container.addEventListener('touchmove', onMove, { passive: false })
     container.addEventListener('touchend', onEnd)
-    container.addEventListener('touchcancel', onEnd)
+    container.addEventListener('touchcancel', onCancel)
     return () => {
       container.removeEventListener('touchstart', onStart)
       container.removeEventListener('touchmove', onMove)
       container.removeEventListener('touchend', onEnd)
-      container.removeEventListener('touchcancel', onEnd)
+      container.removeEventListener('touchcancel', onCancel)
     }
   }, [container])
 

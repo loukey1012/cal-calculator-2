@@ -10,7 +10,7 @@ describe('TodayIcon', () => {
     expect(container.querySelectorAll('circle[stroke-opacity]')).toHaveLength(0)
     const arcs = container.querySelectorAll('path')
     expect(arcs).toHaveLength(1)
-    expect(arcs[0]?.getAttribute('d')).toMatch(/^M18\.1 6\.9A8 8 0 1 0 18\.1 17\.1$/)
+    expect(arcs[0]?.getAttribute('d')).toMatch(/^M17\.75 7\.18A7\.5 7\.5 0 1 0 17\.75 16\.82$/)
     // the dot sits in the opening, on the right, in the icon's own color
     const dots = container.querySelectorAll('circle')
     expect(dots).toHaveLength(1)

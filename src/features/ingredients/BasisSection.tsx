@@ -93,13 +93,18 @@ export function BasisSection({
       {enabled &&
         (undo ??
           (hasValues && (
-            <button
-              type="button"
-              onClick={onClearAll}
-              className="block w-full px-4 py-3 text-left text-[17px] text-destructive active:opacity-60"
-            >
-              Clear values {title.toLowerCase()}
-            </button>
+            // only the words are the button, not the whole row; it asks first
+            <div className="px-4 py-3">
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm(`Clear all values ${title.toLowerCase()}?`)) onClearAll()
+                }}
+                className="text-left text-[17px] text-destructive active:opacity-60"
+              >
+                Clear values {title.toLowerCase()}
+              </button>
+            </div>
           )))}
     </GroupedSection>
   )

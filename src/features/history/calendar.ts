@@ -1,4 +1,5 @@
 import { fromLocalDateString, toLocalDateString } from '../../lib/dates'
+import { WELL_OVER_RATIO } from '../appearance/overColors'
 import { toWholeKcal } from '../nutrition/format'
 import { goalForDate, type Goal } from '../nutrition/goals'
 import { countsInAverages, isCheat, isMissingMeals, type CountedDay } from './dayCounting'
@@ -17,7 +18,10 @@ export type DayStatus =
   | 'none'
   | 'logged'
   | 'onTarget'
+  /** over the goal, up to WELL_OVER_RATIO (the rings' first over color) */
   | 'over'
+  /** beyond it (the rings' second over color) */
+  | 'wellOver'
   | 'cheatDay'
   | 'cheatMeal'
   /** a past day without food at lunch or dinner (see dayCounting) */
@@ -82,7 +86,9 @@ export function dayStatus(
   if (!total || total.mealCount === 0) return 'none'
   const goal = goalForDate(goals, total.date)
   if (!goal) return 'logged'
-  return toWholeKcal(total.kcal) <= goal.kcal ? 'onTarget' : 'over'
+  const kcal = toWholeKcal(total.kcal)
+  if (kcal <= goal.kcal) return 'onTarget'
+  return kcal / goal.kcal > WELL_OVER_RATIO ? 'wellOver' : 'over'
 }
 
 export function monthSummary(totals: readonly DayTotal[], today: string): MonthSummary {

@@ -7,6 +7,7 @@ import { BarcodeLink } from '../barcode/BarcodeLink'
 import { PrefillNote } from '../barcode/PrefillNote'
 import { useProductPrefill } from '../barcode/useProductPrefill'
 import { useDeleteIngredient, useIngredients, useSaveIngredient } from './hooks'
+import { clearIngredientDraft } from './ingredientDraft'
 import { IngredientForm } from './IngredientForm'
 import { EMPTY_INGREDIENT_FORM, toFormValues } from './ingredientForm'
 import type { Category, CategoryGroup, Ingredient } from './ingredientsApi'
@@ -47,6 +48,8 @@ export function IngredientSheet({
   const remove = useDeleteIngredient(householdId)
   // bumped to put the form back to the values from Open Food Facts
   const [resets, setResets] = useState(0)
+  // what's typed is kept on the phone until saved (one per ingredient, or a new one per barcode)
+  const draftKey = `${householdId}:${ingredient?.id ?? `new:${barcode ?? ''}`}`
   const error = save.error ?? remove.error
 
   function close() {
@@ -100,12 +103,16 @@ export function IngredientSheet({
               text={prefill.note}
               warnings={prefill.warnings}
               info={prefill.info}
-              onReset={() => setResets((count) => count + 1)}
+              onReset={() => {
+                clearIngredientDraft(draftKey)
+                setResets((count) => count + 1)
+              }}
             />
           )}
           <IngredientForm
             key={ingredient?.id ?? `new:${barcode ?? ''}:${resets}`}
             formId={FORM_ID}
+            draftKey={draftKey}
             editing={ingredient !== null}
             packagePortion={prefill?.status === 'ready' ? (prefill.info?.portion ?? null) : null}
             initialValues={

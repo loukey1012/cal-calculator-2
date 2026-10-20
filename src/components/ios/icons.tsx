@@ -18,10 +18,11 @@ function Icon(props: SVGProps<SVGSVGElement>) {
 
 export function TodayIcon() {
   return (
-    // the app icon (public/icon.svg) scaled down: the C ring and the dot in its opening
+    // the app icon (public/icon.svg) scaled down: the C ring (as thick as there, about half
+    // its radius) and the dot in its opening
     <Icon>
-      <path d="M18.1 6.9A8 8 0 1 0 18.1 17.1" />
-      <circle cx="19.6" cy="12" r="1.9" fill="currentColor" stroke="none" />
+      <path d="M17.75 7.18A7.5 7.5 0 1 0 17.75 16.82" strokeWidth={4} />
+      <circle cx="19.6" cy="12" r="2" fill="currentColor" stroke="none" />
     </Icon>
   )
 }

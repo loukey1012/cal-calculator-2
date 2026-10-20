@@ -172,6 +172,35 @@ Everything here is saved **to your account**, never to the device: you get the s
 
 ---
 
+## Fixes and improvements, noted 2026-10-20 (planned)
+
+Build plan with every decision: [`docs/plan-2026-10-20.md`](docs/plan-2026-10-20.md). Order: quick fixes → categories and duplicates → meals and Cook → clean-up.
+
+**Quick fixes**
+
+- [x] **32.** A swipe along the bottom of the screen (switching apps) or up into the app switcher no longer closes the page you're on; a new ingredient's values are kept on the phone until saved
+- [x] **33.** In the value fields, a **Next** button on top of the keyboard moves to the next field (keyboard stays open); on the last one **Done** closes the keyboard (the ✓ of the iPhone's bar keeps closing it: iOS opens the keyboard only for a field tapped in the page)
+- [x] **34.** Clear values asks first, and the button is just its text
+- [x] **35.** A clear (×) button in the Ingredients search
+- [x] **36.** A thicker "C" in the Today tab icon, closer to the app icon
+- [x] **37.** History: days over the goal in the ring's two "over" colors (over, and well over above 110 %)
+
+**Categories and duplicates**
+
+- [ ] **38.** Categories redone in two levels: broad ones like Meat & Fish, specific ones inside like Leberkäse; every ingredient must have one, and only a specific one (a draft of the new tree with every ingredient placed comes first, for review)
+- [ ] **39.** The review merges duplicates: both side by side with their differences, pick which one stays (and single values from the other); everything logged with the other moves over
+
+**Meals and Cook**
+
+- [ ] **40.** No Cook tab: tapping a meal on Today or in History opens it as a page with **Add food** (the Cook form, set to that person, day and meal; an empty meal opens it straight away); leftovers there and as the pill on Today; recipes via **Add from recipe**, managed under Ingredients; an unsaved dish shows on its meal
+- [ ] **41.** Editing past meals without the Cook form: change amounts and remove foods right in the meal page; a dish in a compact view
+- [ ] **42.** **Move to…** next to Copy to…: a meal or a single food to another meal, day or person
+- [x] **43.** Today tidied: the day's kcal and macros under "Meals" go (the rings already show them); the layout stays
+
+**Clean-up**
+
+- [ ] **44.** A full tidy-up behind the scenes: unused files and code removed, files in a clearer structure, unused database parts dropped
+
 ## Fixes and improvements, October 11–20 (done)
 
 Noted 2026-10-11.
@@ -417,7 +446,7 @@ Planned 2026-10-07, all five groups shipped 2026-10-08, one group at a time.
 
 ## Coming next
 
-Everything planned is built (see the lists above). Recipes with choices, the notifications and the label reader are being tried in daily use.
+Next up is the list noted 2026-10-20 above. Recipes with choices, the notifications and the label reader are being tried in daily use.
 
 **Ideas for later (not planned yet, need discussing first):**
 

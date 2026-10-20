@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react'
-import { SearchIcon } from './icons'
+import { useRef, type ReactNode } from 'react'
+import { ClearIcon, SearchIcon } from './icons'
 
 type SearchFieldProps = {
   readonly label: string
@@ -21,10 +21,12 @@ export function SearchField({
   onSubmit,
   placeholder = 'Search',
 }: SearchFieldProps) {
+  const input = useRef<HTMLInputElement>(null)
   return (
     <div className="glass-surface flex items-center gap-2 rounded-2xl bg-bg-elevated px-3 py-2.5 shadow-card">
       <SearchIcon className="h-4 w-4 shrink-0 text-label-secondary" />
       <input
+        ref={input}
         type="search"
         aria-label={label}
         placeholder={placeholder}
@@ -40,8 +42,23 @@ export function SearchField({
           event.currentTarget.blur()
           onSubmit()
         }}
-        className="w-full bg-transparent text-[17px] text-label outline-none placeholder:text-label-secondary"
+        // our own clear button below, never the browser's
+        className="w-full bg-transparent text-[17px] text-label outline-none placeholder:text-label-secondary [&::-webkit-search-cancel-button]:appearance-none"
       />
+      {value !== '' && (
+        <button
+          type="button"
+          aria-label="Clear search"
+          onClick={() => {
+            onChange('')
+            // keep typing right away
+            input.current?.focus()
+          }}
+          className="-m-1 shrink-0 p-1 text-label-secondary active:opacity-60"
+        >
+          <ClearIcon className="h-[18px] w-[18px]" />
+        </button>
+      )}
       {accessory}
     </div>
   )

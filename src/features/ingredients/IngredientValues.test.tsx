@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, test, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { CurrentUserContext } from '../../app/currentUser'
 import { renderWithProviders } from '../../test/render'
 import { category, ingredient } from './testData'
@@ -88,6 +88,8 @@ beforeEach(() => {
   vi.mocked(updateIngredient).mockResolvedValue(SKYR)
 })
 
+afterEach(() => vi.restoreAllMocks())
+
 describe('the order of the values', () => {
   test('follows a nutrition label, with saturates and sugars as "of which" lines', () => {
     renderSheet({ editing: SKYR })
@@ -123,14 +125,27 @@ describe('clearing values', () => {
     expect(screen.queryByRole('button', { name: 'Clear Protein per 100 g' })).toBeNull()
   })
 
+  test('clearing a whole section asks first; saying no keeps everything', async () => {
+    const user = userEvent.setup()
+    vi.spyOn(window, 'confirm').mockReturnValue(false)
+    renderSheet({ editing: SKYR })
+
+    await user.click(screen.getByRole('button', { name: 'Clear values per 100 g' }))
+
+    expect(screen.getByLabelText('Calories per 100 g')).toHaveValue('62')
+    expect(screen.queryByText('Cleared 2 values per 100 g')).toBeNull()
+  })
+
   test('a whole section can be cleared, and Undo brings the values back', async () => {
     const user = userEvent.setup()
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
     renderSheet({ editing: SKYR })
 
     await user.click(screen.getByRole('button', { name: 'Clear values per 100 g' }))
 
     expect(screen.getByLabelText('Calories per 100 g')).toHaveValue('')
     expect(screen.getByRole('switch', { name: 'Per 100 g' })).toBeChecked()
+    expect(confirm).toHaveBeenCalledWith('Clear all values per 100 g?')
     expect(screen.getByText('Cleared 2 values per 100 g')).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Undo' }))
@@ -266,6 +281,7 @@ describe('safety of the buttons', () => {
 
   test('Undo goes away once something else is typed, so it never reverts that', async () => {
     const user = userEvent.setup()
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
     renderSheet({ editing: SKYR })
 
     await user.click(screen.getByRole('button', { name: 'Clear values per 100 g' }))

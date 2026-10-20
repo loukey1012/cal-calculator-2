@@ -80,6 +80,12 @@ describe('dayStatus', () => {
     expect(statusOf(undefined, '2026-09-30')).toBe('none')
   })
 
+  test('over the goal: up to 110 % is over, beyond that well over (like the rings)', () => {
+    expect(statusOf(total({ kcal: 2200 }))).toBe('over')
+    expect(statusOf(total({ kcal: 2200.6 }))).toBe('wellOver')
+    expect(statusOf(total({ kcal: 3000 }))).toBe('wellOver')
+  })
+
   test('a past day since tracking started without lunch or dinner is missing a meal', () => {
     expect(statusOf(total({ dinnerLogged: false, kcal: 900 }))).toBe('missing')
     expect(statusOf(undefined, '2026-10-12')).toBe('missing')

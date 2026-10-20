@@ -118,7 +118,9 @@ describe('TodayPage', () => {
 
     expect(screen.getByRole('heading', { level: 1, name: 'Today' })).toBeInTheDocument()
     expect(screen.getByText(/Thursday/)).toHaveTextContent(/October/)
-    await waitFor(() => expect(screen.getByTestId('day-total')).toHaveTextContent('538 kcal'))
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /Lunch/ })).toHaveTextContent('538 kcal'),
+    )
     expect(fetchDay).toHaveBeenCalledWith('u1', '2026-10-01')
   })
 
@@ -129,7 +131,8 @@ describe('TodayPage', () => {
     await waitFor(() => expect(lunch).toHaveTextContent('2 items'))
     expect(lunch).toHaveTextContent('538 kcal')
     expect(screen.getByRole('button', { name: /Breakfast/ })).toHaveTextContent('Nothing logged')
-    expect(screen.getByTestId('day-total')).toHaveTextContent('538 kcal')
+    // the day's total is on the goal card, not repeated under "Meals"
+    expect(screen.getByTestId('day-total')).not.toHaveTextContent('kcal')
   })
 
   test('a cooked dish counts as one item, however many ingredients it has', async () => {
@@ -170,7 +173,6 @@ describe('TodayPage', () => {
     const dinner = screen.getByRole('button', { name: /Dinner/ })
     await waitFor(() => expect(dinner).toHaveTextContent('~900 kcal'))
     expect(screen.getByRole('button', { name: /Lunch/ })).toHaveTextContent(/^Lunch538 kcal/)
-    expect(screen.getByTestId('day-total')).toHaveTextContent('~1,438 kcal')
     const goals = await screen.findByRole('list', { name: 'Goals' })
     expect(goals).toHaveTextContent('~1,438 / 2,000 kcal')
     expect(goals).toHaveTextContent('~562')
@@ -197,7 +199,6 @@ describe('TodayPage', () => {
     // Assert
     const total = screen.getByTestId('day-total')
     await waitFor(() => expect(total).toHaveTextContent('Cheat day'))
-    expect(total).toHaveTextContent('2,538 kcal')
     const goals = await screen.findByRole('list', { name: 'Goals' })
     const ring = within(goals).getAllByTestId('ring')[0]
     expect(ring?.querySelectorAll('circle')[1]?.style.stroke).toBe('var(--goal-kcal)')
@@ -214,7 +215,6 @@ describe('TodayPage', () => {
     const dinner = screen.getByRole('button', { name: /Dinner/ })
     await waitFor(() => expect(dinner).toHaveTextContent('Cheat meal · 1,900 kcal'))
     const total = screen.getByTestId('day-total')
-    expect(total).toHaveTextContent('2,438 kcal')
     expect(total).toHaveTextContent('Cheat meal')
     const goals = await screen.findByRole('list', { name: 'Goals' })
     expect(goals).toHaveTextContent('2,438 / 2,000 kcal')

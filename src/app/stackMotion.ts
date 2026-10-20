@@ -18,6 +18,15 @@ const COMPLETE_VELOCITY = 0.5
 
 export type DragDirection = 'back' | 'other'
 
+// the strip above the screen's bottom edge where iOS's own swipes start (home indicator: to
+// another app, or up into the app switcher); the user's iPhone has a 34 px bottom inset
+const BOTTOM_EDGE_PX = 44
+
+/** A touch starting here is iOS's (switching apps), never a swipe inside the app. */
+export function startsAtBottomEdge(clientY: number, viewportHeight: number): boolean {
+  return clientY > viewportHeight - BOTTOM_EDGE_PX
+}
+
 /** null until the finger moved far enough to tell. */
 export function dragDirection(dx: number, dy: number): DragDirection | null {
   if (Math.max(Math.abs(dx), Math.abs(dy)) < DIRECTION_THRESHOLD_PX) return null

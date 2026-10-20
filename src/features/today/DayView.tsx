@@ -18,7 +18,7 @@ import { useLookOf } from '../household/usePersonLook'
 import { cheatMeals, itemsByMeal, mealEntries, MEAL_TYPES, type MealType } from '../meals/dayModel'
 import { useDay, useLatestDayChangeError, useCheatDay } from '../meals/hooks'
 import { MealSheet } from '../meals/MealSheet'
-import { formatKcalTotal, macroSummary } from '../nutrition/format'
+import { formatKcalTotal } from '../nutrition/format'
 import type { NutritionTotals } from '../nutrition/types'
 import { mealTotals, sumTotals } from '../nutrition/totals'
 import { isMissingMeals, missingMainMeals, type MainMeal } from '../history/dayCounting'
@@ -190,9 +190,6 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
                 <span className="flex min-w-0 flex-1">
                   <LeftoversPill />
                 </span>
-                {!day.isPending && (
-                  <span className="text-[15px] font-bold">{formatKcalTotal(dayTotals)} kcal</span>
-                )}
                 <button
                   type="button"
                   aria-label="Day options"
@@ -203,14 +200,14 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
                   <EllipsisIcon className="h-5 w-5" />
                 </button>
               </div>
-              <div className="flex items-center gap-2">
-                <p className="min-w-0 flex-1 truncate text-[13px] font-semibold text-label-secondary">
-                  {day.isPending ? 'Loading…' : macroSummary(dayTotals)}
-                </p>
-                {cheatDay && <DayBadge label="Cheat day" />}
-                {hasCheatMeal && <DayBadge label="Cheat meal" />}
-                {missing.length > 0 && <DayBadge label={missingLabel(missing)} />}
-              </div>
+              {/* the day's kcal and macros are on the goal card above, not repeated here */}
+              {(cheatDay || hasCheatMeal || missing.length > 0) && (
+                <div className="flex flex-wrap items-center gap-2">
+                  {cheatDay && <DayBadge label="Cheat day" />}
+                  {hasCheatMeal && <DayBadge label="Cheat meal" />}
+                  {missing.length > 0 && <DayBadge label={missingLabel(missing)} />}
+                </div>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               {meals.map(({ type, label, ...summary }) => (

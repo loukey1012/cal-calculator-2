@@ -2,8 +2,12 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup } from '@testing-library/react'
 import { afterEach } from 'vitest'
 
-// Vitest runs without globals, so Testing Library can't register its auto-cleanup
-afterEach(() => cleanup())
+// Vitest runs without globals, so Testing Library can't register its auto-cleanup; each test
+// also starts with an empty phone storage (drafts, caches)
+afterEach(() => {
+  cleanup()
+  localStorage.clear()
+})
 
 // jsdom lacks browser APIs that Embla (tab swiping) and pointer gestures rely on
 class NoopObserver {

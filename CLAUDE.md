@@ -21,9 +21,15 @@ a cached query changes, give its query key a new version (like `RECIPES_SHAPE` i
 `src/features/recipes/hooks.ts`), so an old copy is ignored instead of crashing the new version.
 Don't bump `CACHE_BUSTER` for that: it would also drop changes still waiting to be sent.
 
-**State (2026-10-20, evening):** everything from the October lists in README.md is built; the
-old build plan (`docs/plan-2026-10-15.md`) was removed at the user's request, its decisions live
-in README.md and the code. Being tried by the user over the next days, ask how it went:
+**Current work:** `docs/plan-2026-10-20.md` has the build plan for items 32–44 (the user's list of
+2026-10-20): every decision, the approach per item and a status table. Read it before working on
+any of them; keep its status table and the README checkboxes current. Batch A (32–37, 43) is
+built (2026-10-20, user tests it); next is batch B: 38 (categories, starts with a draft tree for
+the user to review) and 39 (merge duplicates).
+
+**State (2026-10-20, evening):** items 1–31 are built; their build plan
+(`docs/plan-2026-10-15.md`) was removed at the user's request, its decisions live in README.md
+and the code. Being tried by the user over the next days, ask how it went:
 
 - **Recipes with choices** (Cook › Recipes, Swap ingredient, recipes that learn on Save meal).
 - **Notifications:** the test notification works on the iPhone; the timed ones (reminders, day

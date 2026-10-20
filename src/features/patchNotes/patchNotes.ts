@@ -30,6 +30,20 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-20T19:03',
+    kind: 'fix',
+    title: 'Swipes at the bottom no longer close pages, and other small fixes',
+    items: [
+      'Swiping along the bottom edge to switch apps, or up into the app switcher, no longer closes the page you are on',
+      'A new or changed ingredient keeps what you typed until it is saved, even if the page closes; "Discard" drops it',
+      'In the value fields, a Next button on top of the keyboard moves to the next field; on the last one Done closes the keyboard',
+      'Clear values asks first, and only its words are the button',
+      'A clear (×) button in the search fields',
+      'History shows days over the goal in the rings’ two over colors: over, and well over (above 110 %)',
+      'Today no longer repeats the day’s calories and macros under Meals; a thicker C in the Today tab icon',
+    ],
+  },
+  {
     at: '2026-10-20T18:01',
     kind: 'fix',
     title: 'Recipes open again after the update',

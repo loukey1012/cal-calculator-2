@@ -61,7 +61,8 @@ test('select a past day in History and add a forgotten dinner beneath the calend
   await cook.getByLabel('Amount').fill('1')
   await cook.getByRole('button', { name: 'Add to dish' }).click()
   await cook.getByRole('button', { name: 'Save meal' }).click()
-  await expect(day.getByTestId('day-total')).toContainText('2,250 kcal')
+  // the day's total is on its goal card (not repeated under "Meals")
+  await expect(day.getByRole('list', { name: 'Goals' })).toContainText('2,250')
   // the calendar above updates right away
   await expect(history.getByRole('button', { name: /over goal/, pressed: true })).toBeVisible()
   const { data } = await backend.admin

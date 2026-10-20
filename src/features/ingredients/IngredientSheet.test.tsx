@@ -135,6 +135,41 @@ describe('IngredientSheet', () => {
     expect(createIngredient).not.toHaveBeenCalled()
   })
 
+  test('what was typed comes back after the sheet was closed by accident, until discarded', async () => {
+    // Arrange: typed, then the sheet goes away without saving (e.g. an iOS swipe)
+    const user = userEvent.setup()
+    const first = renderSheet()
+    await user.type(screen.getByLabelText('Name'), 'Leberkäse')
+    first.unmount()
+
+    // Act
+    renderSheet()
+
+    // Assert
+    expect(screen.getByText('Restored what you typed before.')).toBeInTheDocument()
+    expect(screen.getByLabelText('Name')).toHaveValue('Leberkäse')
+    await user.click(screen.getByRole('button', { name: 'Discard' }))
+    expect(screen.getByLabelText('Name')).toHaveValue('')
+    expect(screen.queryByText('Restored what you typed before.')).not.toBeInTheDocument()
+  })
+
+  test('a saved ingredient leaves nothing to restore', async () => {
+    vi.mocked(createIngredient).mockResolvedValue(CREAM)
+    const user = userEvent.setup()
+    const first = renderSheet()
+    await user.type(screen.getByLabelText('Name'), 'Cream')
+    await user.click(screen.getByRole('switch', { name: 'Per 100 g' }))
+    await user.type(screen.getByLabelText('Calories per 100 g'), '92')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+    await waitFor(() => expect(createIngredient).toHaveBeenCalled())
+    first.unmount()
+
+    renderSheet()
+
+    expect(screen.queryByText('Restored what you typed before.')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Name')).toHaveValue('')
+  })
+
   test('creates a new category on the fly', async () => {
     vi.mocked(createCategory).mockResolvedValue(category('c9', 'Snacks'))
     const user = userEvent.setup()

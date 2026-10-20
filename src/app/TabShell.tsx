@@ -30,6 +30,7 @@ import { useGlassField } from '../features/appearance/useGlassField'
 import { useCurrentUser } from './currentUser'
 import { useResumeOfflineChanges, useSaveWhenHidden } from './offlineLifecycle'
 import { PageStack } from './PageStack'
+import { startsAtBottomEdge } from './stackMotion'
 import { SyncStatus } from './SyncStatus'
 import { wasUpdatedThisStart } from './appVersion'
 import { updateReady } from './updateReady'
@@ -89,6 +90,12 @@ function PageFrame({ children }: { readonly children: ReactNode }) {
 
 function tabIndexForPath(pathname: string): number {
   return TABS.findIndex((tab) => pathname === tab.path || pathname.startsWith(`${tab.path}/`))
+}
+
+/** iOS's own swipes start at the bottom edge (switching apps): they never switch tabs. */
+function startsAtBottom(event: MouseEvent | TouchEvent): boolean {
+  const y = 'touches' in event ? event.touches[0]?.clientY : event.clientY
+  return y !== undefined && startsAtBottomEdge(y, window.innerHeight)
 }
 
 /** Lets horizontal gestures that start inside `[data-swipe-lock]` (e.g. chip scrollers) stay local. */
@@ -152,7 +159,7 @@ function ShellContent() {
     startIndex: activeIndex,
     // on a sub-page a sideways swipe means "back", not "next tab"
     watchDrag: (_embla: unknown, event: MouseEvent | TouchEvent) =>
-      backPathRef.current === null && !startsInSwipeLock(event),
+      backPathRef.current === null && !startsInSwipeLock(event) && !startsAtBottom(event),
     duration: SWIPE_SETTLE_DURATION,
   }))
   const [emblaRef, emblaApi] = useEmblaCarousel(carouselOptions)
