@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Button } from '../../components/ios/Button'
 import { ErrorBanner } from '../../components/ios/ErrorBanner'
 import { ListRow } from '../../components/ios/ListRow'
@@ -22,8 +23,8 @@ type MealItemsViewProps = {
   readonly onEditDish: (dishId: string) => void
   /** asks first when the dish has more portions */
   readonly onDeleteDish: (dishId: string, portionCount: number | undefined) => void
-  /** opens Cook for this meal */
-  readonly onCook: () => void
+  /** below the list, e.g. Add food */
+  readonly actions?: ReactNode
   readonly onSaveRecipe: () => void
   /** to another day, meal or person */
   readonly onCopy: () => void
@@ -54,7 +55,7 @@ export function MealItemsView({
   onEditFood,
   onEditDish,
   onDeleteDish,
-  onCook,
+  actions,
   onSaveRecipe,
   onCopy,
 }: MealItemsViewProps) {
@@ -74,15 +75,7 @@ export function MealItemsView({
       )}
       {error && <ErrorBanner message={toUserMessage(error)} />}
       {items.length === 0 && !loading && (
-        <div className="mt-6 text-center text-[15px] text-label-secondary">
-          <p>Nothing logged yet.</p>
-          <p className="mt-1 text-[13px]">Meals are added on the Cook tab.</p>
-          <div className="mt-4">
-            <Button variant="secondary" onClick={onCook}>
-              Add on Cook
-            </Button>
-          </div>
-        </div>
+        <p className="mt-6 text-center text-[15px] text-label-secondary">Nothing logged yet.</p>
       )}
       {items.length > 0 && (
         <div className="mt-4 divide-y divide-separator overflow-hidden rounded-3xl bg-bg-elevated shadow-card">
@@ -125,8 +118,9 @@ export function MealItemsView({
           })}
         </div>
       )}
+      {actions && <div className="mt-6 flex flex-col gap-3">{actions}</div>}
       {items.length > 0 && (
-        <div className="mt-6 flex flex-col gap-3">
+        <div className="mt-3 flex flex-col gap-3">
           <Button variant="secondary" onClick={onCopy}>
             Copy to…
           </Button>

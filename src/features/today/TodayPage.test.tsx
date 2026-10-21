@@ -23,6 +23,16 @@ vi.mock('../meals/mealsApi', () => ({
   setCheatMeal: vi.fn(),
   setCheatDay: vi.fn(),
 }))
+// Add food (opened from an empty meal) loads the recipes and notes a started dish
+vi.mock('../recipes/recipesApi', () => ({
+  fetchRecipes: vi.fn().mockResolvedValue([]),
+  saveRecipe: vi.fn(),
+  deleteRecipe: vi.fn(),
+}))
+vi.mock('../cook/draftNotice', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../cook/draftNotice')>()),
+  sendDraftNotice: vi.fn().mockResolvedValue(undefined),
+}))
 vi.mock('../goals/goalsApi', () => ({ fetchGoals: vi.fn(), saveGoal: vi.fn() }))
 vi.mock('../weight/weightApi', () => ({
   fetchWeights: vi.fn(),
@@ -45,6 +55,9 @@ import {
   updateMealItem,
 } from '../meals/mealsApi'
 import { fetchWeights, saveWeight } from '../weight/weightApi'
+import { newCookDraft, withDish } from '../cook/cookDraft'
+import { CookSession } from '../cook/CookSession'
+import { saveCookDraft } from '../cook/draftStorage'
 import { TodayPage } from './TodayPage'
 
 const PROFILE = {
@@ -96,7 +109,9 @@ function LocationProbe() {
 function renderPage() {
   return renderWithProviders(
     <CurrentUserContext value={{ profile: PROFILE, householdId: 'h1' }}>
-      <TodayPage />
+      <CookSession>
+        <TodayPage />
+      </CookSession>
       <LocationProbe />
     </CurrentUserContext>,
     { route: '/today' },
@@ -185,9 +200,8 @@ describe('TodayPage', () => {
     expect(goals).toHaveTextContent('~562')
 
     await user.click(dinner)
-    const sheet = screen.getByRole('dialog', { name: 'Dinner' })
-    expect(within(sheet).getByTestId('meal-total')).toHaveTextContent('~900 kcal')
-    expect(within(sheet).getByRole('button', { name: /Pizza out/ })).toHaveTextContent(
+    expect(screen.getByTestId('meal-total')).toHaveTextContent('~900 kcal')
+    expect(screen.getByRole('button', { name: /Pizza out/ })).toHaveTextContent(
       /Estimate · 1 ingredient.*~900 kcal/,
     )
   })
@@ -294,11 +308,12 @@ describe('TodayPage', () => {
 
     await user.click(await screen.findByRole('button', { name: /Lunch/ }))
 
-    const sheet = within(screen.getByRole('dialog', { name: 'Lunch' }))
-    expect(sheet.getByText('Croissant')).toBeInTheDocument()
+    expect(screen.getByTestId('location')).toHaveTextContent('/today/meal-lunch-2026-10-01-u1')
+    expect(screen.getByRole('heading', { level: 1, name: 'Lunch' })).toBeInTheDocument()
+    expect(screen.getByText('Croissant')).toBeInTheDocument()
   })
 
-  test('a save that fails after the sheet was closed is still reported', async () => {
+  test('a save that fails after its meal was left is still reported', async () => {
     let failUpdate = (_error: Error) => {}
     vi.mocked(updateMealItem).mockReturnValue(
       new Promise<void>((_resolve, reject) => (failUpdate = reject)),
@@ -307,13 +322,12 @@ describe('TodayPage', () => {
     renderPage()
 
     await user.click(await screen.findByRole('button', { name: /Lunch/ }))
-    const sheet = within(screen.getByRole('dialog', { name: 'Lunch' }))
-    await user.click(sheet.getByRole('button', { name: /Cream/ }))
-    const amount = sheet.getByLabelText('Amount')
+    await user.click(screen.getByRole('button', { name: /Cream/ }))
+    const amount = screen.getByLabelText('Amount')
     await user.clear(amount)
     await user.type(amount, '200')
-    await user.click(sheet.getByRole('button', { name: 'Save' }))
-    await user.click(sheet.getByRole('button', { name: 'Close' }))
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+    await user.click(screen.getByRole('button', { name: 'Back' }))
     act(() =>
       failUpdate(
         new ApiError('new row for relation "meal_items" violates check constraint', '23514'),
@@ -323,7 +337,7 @@ describe('TodayPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Some values aren’t allowed.')
   })
 
-  test('a meal tapped before the day loaded, and empty, still leads to Cook', async () => {
+  test('a meal tapped before the day loaded opens its page, with Add food there', async () => {
     let finishLoading = (_meals: never[]) => {}
     vi.mocked(fetchDay).mockReturnValue(new Promise((resolve) => (finishLoading = resolve)))
     const user = userEvent.setup()
@@ -331,41 +345,37 @@ describe('TodayPage', () => {
 
     await user.click(await screen.findByRole('button', { name: /Dinner.*Loading/ }))
     act(() => finishLoading([]))
-    const sheet = within(screen.getByRole('dialog', { name: 'Dinner' }))
-    await user.click(await sheet.findByRole('button', { name: 'Add on Cook' }))
+    await user.click(await screen.findByRole('button', { name: '+ Add food' }))
 
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(screen.getByTestId('location')).toHaveTextContent(
-      '/cook?person=u1&date=2026-10-01&meal=dinner&from=%2Ftoday',
+      '/today/meal-dinner-2026-10-01-u1/food',
     )
   })
 
-  test('an empty meal opens Cook for it', async () => {
+  test('a dish being added shows on its meal, which opens its Add food to continue', async () => {
+    const draft = { ...newCookDraft('u1'), mealType: 'dinner' as const }
+    saveCookDraft('u1', withDish(draft, { ...draft.dish, name: 'Chili' }))
+    const user = userEvent.setup()
+    renderPage()
+
+    const dinner = await screen.findByRole('button', { name: /Dinner.*Unsaved dish/ })
+    await user.click(dinner)
+
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      '/today/meal-dinner-2026-10-01-u1/food',
+    )
+  })
+
+  test('an empty meal opens straight at its Add food', async () => {
     const user = userEvent.setup()
     renderPage()
 
     await user.click(await screen.findByRole('button', { name: /Dinner.*Nothing logged/ }))
 
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(screen.getByTestId('location')).toHaveTextContent(
-      '/cook?person=u1&date=2026-10-01&meal=dinner&from=%2Ftoday',
+      '/today/meal-dinner-2026-10-01-u1/food',
     )
   })
-  test('the open meal closes when the day rolls over at midnight', async () => {
-    vi.useRealTimers()
-    vi.useFakeTimers({ shouldAdvanceTime: true })
-    vi.setSystemTime(new Date(2026, 9, 1, 23, 59, 50))
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-    renderPage()
-
-    await user.click(await screen.findByRole('button', { name: /Lunch/ }))
-    expect(screen.getByRole('dialog', { name: 'Lunch' })).toBeInTheDocument()
-    act(() => vi.advanceTimersByTime(15_000))
-
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(screen.getByText(/Friday/)).toBeInTheDocument()
-  })
-
   test('shows rings for the goal valid today', async () => {
     renderPage()
 

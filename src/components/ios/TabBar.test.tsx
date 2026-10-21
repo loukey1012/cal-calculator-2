@@ -38,15 +38,4 @@ describe('TabBar', () => {
     expect(onReselect).toHaveBeenCalledWith(1)
     expect(onSelect).not.toHaveBeenCalled()
   })
-
-  test('a tab can carry a badge, a dot that is also read out with its name', () => {
-    const items = [ITEMS[0]!, { ...ITEMS[1]!, badge: 'unsaved dish' }]
-    render(<TabBar items={items} activeIndex={0} onSelect={vi.fn()} onReselect={vi.fn()} />)
-
-    const badged = screen.getByRole('button', { name: 'History, unsaved dish' })
-    expect(badged.querySelector('[data-testid="tab-badge"]')).not.toBeNull()
-    expect(
-      screen.getByRole('button', { name: 'Today' }).querySelector('[data-testid="tab-badge"]'),
-    ).toBeNull()
-  })
 })

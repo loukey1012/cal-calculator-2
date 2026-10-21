@@ -1,8 +1,7 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { BackButton } from '../../components/ios/BackButton'
 import { Button } from '../../components/ios/Button'
 import { ErrorBanner } from '../../components/ios/ErrorBanner'
-import { Sheet } from '../../components/ios/Sheet'
 import { toUserMessage } from '../../lib/errors'
 import { confirmDeleteDish } from '../dishes/confirmDelete'
 import { lineWho, rescaledLine } from '../dishes/dishDraft'
@@ -28,24 +27,13 @@ type View =
   | { readonly kind: 'saveRecipe' }
   | { readonly kind: 'copy' }
 
-type MealSheetProps = {
-  readonly open: boolean
+type MealContentProps = {
   readonly mealType: MealType
   readonly userId: string
   /** local YYYY-MM-DD */
   readonly date: string
-  readonly onClose: () => void
-  /** an empty meal: open Cook for it */
-  readonly onCook: () => void
-}
-
-/** A meal of a day: what was eaten, to look at, change or remove. Food is added on Cook. */
-export function MealSheet({ open, mealType, userId, date, onClose, onCook }: MealSheetProps) {
-  return (
-    <Sheet open={open} onClose={onClose} title={mealLabel(mealType)}>
-      <MealSheetContent mealType={mealType} userId={userId} date={date} onCook={onCook} />
-    </Sheet>
-  )
+  /** below the list of what was eaten, e.g. Add food */
+  readonly actions?: ReactNode
 }
 
 /**
@@ -59,12 +47,8 @@ function editedItemOf(view: View, items: readonly MealItem[]): MealItem | undefi
   return items.find((candidate) => candidate.dish?.id === view.dishId)
 }
 
-function MealSheetContent({
-  mealType,
-  userId,
-  date,
-  onCook,
-}: Omit<MealSheetProps, 'open' | 'onClose'>) {
+/** What was eaten at a meal, to look at, change or remove, each change in a view of its own. */
+export function MealContent({ mealType, userId, date, actions }: MealContentProps) {
   const [requestedView, setView] = useState<View>({ kind: 'items' })
   // e.g. "Copied to Lunch, …", shown above the list after going back to it
   const [notice, setNotice] = useState<string | null>(null)
@@ -111,7 +95,7 @@ function MealSheetContent({
           onEditFood={(item, dishId) => setView({ kind: 'food', itemId: item.id, dishId })}
           onEditDish={(dishId) => setView({ kind: 'dish', dishId })}
           onDeleteDish={removeDish}
-          onCook={onCook}
+          actions={actions}
           onSaveRecipe={() => open({ kind: 'saveRecipe' })}
           onCopy={() => open({ kind: 'copy' })}
         />
@@ -123,7 +107,7 @@ function MealSheetContent({
           <MealRecipeForm
             items={items}
             userId={userId}
-            onSaved={() => showItemsWith('Saved as a recipe. Find it on Cook › Recipes.')}
+            onSaved={() => showItemsWith('Saved as a recipe. Find it under Ingredients › Recipes.')}
           />
         </>
       )

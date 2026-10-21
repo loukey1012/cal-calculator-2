@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
-import { useNavigate } from 'react-router'
 import { useCurrentUser } from '../../app/currentUser'
-import { usePagePath } from '../../app/pagePath'
+import { useStackNavigate } from '../../app/stackNavigate'
+import { BackButton } from '../../components/ios/BackButton'
 import { Button } from '../../components/ios/Button'
 import { PageHeader } from '../../components/ios/PageHeader'
 import { Sheet } from '../../components/ios/Sheet'
@@ -21,40 +21,34 @@ import {
   type RecipeLink,
 } from '../recipes/recipeModel'
 import { SaveRecipeForm } from '../recipes/SaveRecipeForm'
+import { mealLabel } from '../meals/dayModel'
+import { foodPath, mealPath, type MealPageRef } from '../meals/mealPages'
 import { useToday } from '../today/useToday'
 import { hasContent, keepEaters, resolvedDish, withDish, type CookDraft } from './cookDraft'
-import { COOK_HOME, useCookSession } from './cookSessionContext'
-import { CookRecipePages, RecipesRow } from './CookRecipePages'
+import { useCookSession } from './cookSessionContext'
 import { CookWhoWhen } from './CookWhoWhen'
 import { RecipeChoices } from './RecipeChoices'
-import { LeftoversCard } from './LeftoversCard'
 import { useCookSteps } from './useCookSteps'
-import { recipePageOf } from './recipePages'
 import { useMealOfDay } from './useMealOfDay'
 
 const DISCARD_QUESTION = 'Discard this meal? Everything entered so far is removed.'
 
 /**
- * The one place food is logged: alone or together, cooked or a single food. Each step of adding
- * an ingredient (search, amount) is a page of its own inside the Cook tab, and so are the
- * recipes.
+ * A meal's Add food, the one place food is logged: alone or together, cooked or a single food.
+ * Each step of adding an ingredient (search, amount) is a page of its own below it.
  */
-export function CookPage() {
-  const recipePage = recipePageOf(usePagePath())
-  return recipePage ? <CookRecipePages page={recipePage} /> : <CookDish />
-}
-
-function CookDish() {
+export function CookPage({ page }: { readonly page: MealPageRef }) {
   const { profile, householdId } = useCurrentUser()
   const members = useMembers(householdId)
   const people = usePeople(profile, householdId)
   const lookOf = useLookOf()
   const today = useToday()
   const mealOfDay = useMealOfDay()
-  const navigate = useNavigate()
+  const navigate = useStackNavigate()
   const saveDish = useSaveDish()
-  const { draft: storedDraft, setDraft, reset, returnTo, setReturnTo } = useCookSession()
-  const steps = useCookSteps()
+  const { draft: storedDraft, setDraft, reset } = useCookSession()
+  const steps = useCookSteps(foodPath(page.mealPath))
+  const backToMeal = () => navigate(page.mealPath)
   const recipes = useRecipes(householdId)
   const saveRecipe = useSaveRecipe(householdId)
   const [error, setError] = useState<string | null>(null)
@@ -100,25 +94,29 @@ function CookDish() {
     }
     reset()
     setError(null)
-    setReturnTo(COOK_HOME)
-    void navigate(returnTo, { replace: true })
+    // to the meal it was logged in, seen from the same tab (it may have been changed here)
+    const [eater] = dish.portions.flatMap((portion) => (portion.eater ? [portion.eater] : []))
+    const shown = dish.portions.some((portion) => portion.eater?.userId === page.meal.userId)
+    const saved = eater && { ...eater, userId: shown ? page.meal.userId : eater.userId }
+    const from = page.mealPath.startsWith('/history') ? 'history' : 'today'
+    navigate(saved ? mealPath(saved, from) : page.mealPath, saved && { person: saved.userId })
   }
 
   function discard() {
     if (!window.confirm(DISCARD_QUESTION)) return
     reset()
     setError(null)
+    backToMeal()
   }
 
   const onDish = steps.step.kind === 'main'
   return (
     <>
       {onDish ? (
-        <>
-          <PageHeader title="Cook" />
-          <LeftoversCard today={today} mealOfDay={mealOfDay} />
-          <RecipesRow />
-        </>
+        <PageHeader
+          title="Add food"
+          leading={<BackButton label={mealLabel(page.meal.mealType)} onClick={backToMeal} />}
+        />
       ) : (
         <div className="pt-3 pb-2">
           <ComposerBar steps={steps} onBack={steps.back} />

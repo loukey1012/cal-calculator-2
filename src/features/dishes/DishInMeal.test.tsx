@@ -31,7 +31,7 @@ vi.mock('./dishesApi', () => ({
 import { fetchMembers } from '../household/householdApi'
 import { fetchIngredients } from '../ingredients/ingredientsApi'
 import { fetchDay } from '../meals/mealsApi'
-import { MealSheet } from '../meals/MealSheet'
+import { MealContent } from '../meals/MealContent'
 import { DELETE_SHARED_QUESTION } from './confirmDelete'
 import { deleteDish, fetchDish, fetchLeftoverDishes, saveDish } from './dishesApi'
 import type { Dish } from './portions'
@@ -105,20 +105,15 @@ const MY_BANANA = mealItem({
 })
 
 function renderSheet() {
-  return within(renderSheetWithCache().getByRole('dialog', { name: 'Lunch' }))
+  return within(renderSheetWithCache().getByRole('region', { name: 'Lunch' }))
 }
 
 function renderSheetWithCache() {
   const { queryClient } = renderWithProviders(
     <CurrentUserContext value={{ profile: ME, householdId: 'h1' }}>
-      <MealSheet
-        open
-        mealType="lunch"
-        userId="u1"
-        date={DATE}
-        onClose={() => {}}
-        onCook={() => {}}
-      />
+      <section aria-label="Lunch">
+        <MealContent mealType="lunch" userId="u1" date={DATE} />
+      </section>
     </CurrentUserContext>,
   )
   return { getByRole: screen.getByRole, queryClient }
@@ -210,7 +205,7 @@ describe('a shared dish in the meal', () => {
     // Arrange: I'm editing the chili
     const user = userEvent.setup()
     const { getByRole, queryClient } = renderSheetWithCache()
-    const sheet = within(getByRole('dialog', { name: 'Lunch' }))
+    const sheet = within(getByRole('region', { name: 'Lunch' }))
     await user.click(await sheet.findByRole('button', { name: /Chili/ }))
     await user.click(sheet.getByRole('button', { name: 'Edit dish' }))
     const name = await sheet.findByLabelText('Dish name (optional)')
@@ -230,7 +225,7 @@ describe('a shared dish in the meal', () => {
     // Arrange: I changed the name, then she saved the same dish
     const user = userEvent.setup()
     const { getByRole, queryClient } = renderSheetWithCache()
-    const sheet = within(getByRole('dialog', { name: 'Lunch' }))
+    const sheet = within(getByRole('region', { name: 'Lunch' }))
     await user.click(await sheet.findByRole('button', { name: /Chili/ }))
     await user.click(sheet.getByRole('button', { name: 'Edit dish' }))
     const name = await sheet.findByLabelText('Dish name (optional)')
@@ -253,7 +248,7 @@ describe('a shared dish in the meal', () => {
     // Arrange
     const user = userEvent.setup()
     const { getByRole, queryClient } = renderSheetWithCache()
-    const sheet = within(getByRole('dialog', { name: 'Lunch' }))
+    const sheet = within(getByRole('region', { name: 'Lunch' }))
     await user.click(await sheet.findByRole('button', { name: /Chili/ }))
     await user.click(sheet.getByRole('button', { name: 'Edit dish' }))
     await sheet.findByLabelText('Dish name (optional)')
@@ -367,7 +362,7 @@ describe('a single food logged alone', () => {
     // Arrange: the editor is open on the banana
     const user = userEvent.setup()
     const { getByRole, queryClient } = renderSheetWithCache()
-    const sheet = within(getByRole('dialog', { name: 'Lunch' }))
+    const sheet = within(getByRole('region', { name: 'Lunch' }))
     await user.click(await sheet.findByRole('button', { name: /Banana/ }))
     await sheet.findByLabelText('Amount')
 

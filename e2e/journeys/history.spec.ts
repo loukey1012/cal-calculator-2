@@ -1,5 +1,5 @@
 import { activePage, dayLabel, expect, localDay, logIn, test } from './backend.ts'
-import { cookFor } from './cook.ts'
+import { backToDay, cookFor } from './cook.ts'
 
 test('select a past day in History and add a forgotten dinner beneath the calendar', async ({
   page,
@@ -49,10 +49,10 @@ test('select a past day in History and add a forgotten dinner beneath the calend
   await expect(history.getByRole('button', { pressed: true })).toBeVisible()
   const carousel = page.locator('[data-testid="tab-page"]').first().locator('xpath=../..')
   expect(await carousel.evaluate((element) => element.scrollLeft)).toBe(0)
-  // the empty dinner opens Cook for that day, and saving comes back here
+  // the empty dinner opens its Add food on top of that day; Back from the meal returns here
   await cookFor(day, page, /Dinner/)
   const cook = activePage(page)
-  await expect(cook.getByLabel('Day')).toHaveValue(localDay(1))
+  await expect(cook.getByRole('textbox', { name: 'Day' })).toHaveValue(localDay(1))
   await cook.getByRole('button', { name: 'Add ingredient' }).click()
   await cook.getByRole('button', { name: 'Custom item' }).click()
   await cook.getByLabel('Name', { exact: true }).fill('Forgotten pizza')
@@ -61,6 +61,7 @@ test('select a past day in History and add a forgotten dinner beneath the calend
   await cook.getByLabel('Amount').fill('1')
   await cook.getByRole('button', { name: 'Add to dish' }).click()
   await cook.getByRole('button', { name: 'Save meal' }).click()
+  await backToDay(page)
   // the day's total is on its goal card (not repeated under "Meals")
   await expect(day.getByRole('list', { name: 'Goals' })).toContainText('2,250')
   // the calendar above updates right away

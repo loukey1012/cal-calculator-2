@@ -17,8 +17,8 @@ function ingredientCount(count: number): string {
 
 /** The household's recipes; tapping one opens it. */
 type RecipesListProps = {
-  /** the bar control above the title, e.g. Back */
-  readonly leading: ReactNode
+  /** the bar control above the title, e.g. Back; null: no title (it sits under another one) */
+  readonly leading: ReactNode | null
   readonly onOpen: (recipeId: string) => void
 }
 
@@ -29,7 +29,7 @@ export function RecipesList({ leading, onOpen }: RecipesListProps) {
 
   return (
     <>
-      <PageHeader title="Recipes" leading={leading} />
+      {leading !== null && <PageHeader title="Recipes" leading={leading} />}
       {recipes.isError && <ErrorBanner message={toUserMessage(recipes.error)} />}
       {recipes.isPending && (
         <p className="mt-6 text-center text-[15px] text-label-secondary">Loading…</p>
@@ -37,7 +37,7 @@ export function RecipesList({ leading, onOpen }: RecipesListProps) {
       {recipes.data?.length === 0 && (
         <EmptyState
           title="No recipes yet"
-          message="Save a dish on Cook, or a logged meal, as a recipe to cook it again."
+          message="Save a dish you add, or a logged meal, as a recipe to cook it again."
         />
       )}
       {recipes.data && recipes.data.length > 0 && (

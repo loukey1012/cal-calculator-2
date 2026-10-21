@@ -164,13 +164,13 @@ describe('TabShell swiping', () => {
   test('starts the carousel on the tab from the URL', () => {
     renderShell('/ingredients')
 
-    expect(embla.state.options).toMatchObject({ startIndex: 3 })
+    expect(embla.state.options).toMatchObject({ startIndex: 2 })
   })
 
   test('a swipe that settles on another page updates the URL', () => {
     renderShell('/today')
 
-    swipeTo(2)
+    swipeTo(1)
 
     expect(screen.getByTestId('path')).toHaveTextContent('/history')
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('History')
@@ -188,7 +188,7 @@ describe('TabShell swiping', () => {
   test('settling on the current page keeps a nested URL', () => {
     renderShell('/history/2026-10-01')
 
-    swipeTo(2)
+    swipeTo(1)
 
     expect(screen.getByTestId('path')).toHaveTextContent('/history/2026-10-01')
   })
@@ -233,26 +233,28 @@ describe('TabShell swiping', () => {
     expect(embla.api.off).toHaveBeenCalledWith('select', expect.any(Function))
   })
 
-  describe('on a Cook step', () => {
+  describe('on a meal and its Add food steps', () => {
     beforeEach(() => vi.spyOn(window, 'innerWidth', 'get').mockReturnValue(390))
     afterEach(() => vi.restoreAllMocks())
+    const MEAL = '/today/meal-lunch-2026-10-01-u1'
+    const FOOD = `${MEAL}/food`
 
     test('swiping right on the amount goes back to the search, not to another tab', async () => {
-      renderShell('/cook/add/patty')
+      renderShell(`${FOOD}/add/patty`)
 
       expect(watchDrag()(embla.api, { target: document.body } as unknown as Event)).toBe(false)
       drag({ x: 30, y: 300 }, { x: 200, y: 320 })
 
-      await waitFor(() => expect(screen.getByTestId('path')).toHaveTextContent(/^\/cook\/add$/))
+      await waitFor(() => expect(screen.getByTestId('path')).toHaveTextContent(`${FOOD}/add`))
       expect(within(activePage()).getByLabelText('Search ingredients')).toBeInTheDocument()
     })
 
     test('swiping right on the search goes back to the dish', async () => {
-      renderShell('/cook/add')
+      renderShell(`${FOOD}/add`)
 
       drag({ x: 30, y: 300 }, { x: 200, y: 320 })
 
-      await waitFor(() => expect(screen.getByTestId('path')).toHaveTextContent(/^\/cook$/))
+      await waitFor(() => expect(screen.getByTestId('path').textContent).toBe(FOOD))
       expect(
         within(activePage()).getByRole('button', { name: 'Add ingredient' }),
       ).toBeInTheDocument()
@@ -260,18 +262,22 @@ describe('TabShell swiping', () => {
 
     test('Back slides the step away to the one before it', async () => {
       const user = userEvent.setup()
-      renderShell('/cook/add')
+      renderShell(`${FOOD}/add`)
 
       await user.click(within(activePage()).getByRole('button', { name: 'Back' }))
 
       expect(layers()).toHaveLength(2)
       await waitFor(() => expect(layers()).toHaveLength(1))
-      expect(screen.getByTestId('path')).toHaveTextContent(/^\/cook$/)
+      expect(screen.getByTestId('path').textContent).toBe(FOOD)
     })
 
-    test('on the dish itself, swiping switches tabs again', () => {
-      renderShell('/cook')
+    test('swiping right on the meal goes back to Today; there, swiping switches tabs again', async () => {
+      renderShell(MEAL)
 
+      expect(watchDrag()(embla.api, { target: document.body } as unknown as Event)).toBe(false)
+      drag({ x: 30, y: 300 }, { x: 200, y: 320 })
+
+      await waitFor(() => expect(screen.getByTestId('path').textContent).toBe('/today'))
       expect(watchDrag()(embla.api, { target: document.body } as unknown as Event)).toBe(true)
     })
   })

@@ -1,5 +1,5 @@
 import { activePage, expect, localDay, logIn, test, type DevBackend } from './backend.ts'
-import { addIngredient } from './cook.ts'
+import { addIngredient, backToDay, openAddFood } from './cook.ts'
 
 /** A plain portion of 200 g Skyr at 60 kcal / 100 g, logged for someone on a day. */
 async function logSkyr(backend: DevBackend, userId: string, ingredientId: string, date: string) {
@@ -45,11 +45,11 @@ test('editing an ingredient updates the last two weeks’ meals of both, not old
   const tabs = page.getByRole('navigation', { name: 'Tabs' })
 
   // and 100 g of it in a dish of mine today
-  await tabs.getByRole('button', { name: 'Cook' }).click()
+  await openAddFood(page)
   const cook = activePage(page)
-  await cook.getByRole('heading', { level: 1, name: 'Cook' }).waitFor()
   await addIngredient(page, 'Skyr', '100')
   await cook.getByRole('button', { name: 'Save meal' }).click()
+  await backToDay(page)
   await expect(activePage(page).getByRole('heading', { level: 1, name: 'Today' })).toBeVisible()
   await expect(activePage(page).getByText('60 kcal').first()).toBeVisible()
 

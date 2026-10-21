@@ -9,18 +9,10 @@ import {
   type ReactNode,
 } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router'
-import {
-  CookIcon,
-  HistoryIcon,
-  IngredientsIcon,
-  SettingsIcon,
-  TodayIcon,
-} from '../components/ios/icons'
+import { HistoryIcon, IngredientsIcon, SettingsIcon, TodayIcon } from '../components/ios/icons'
 import { TabBar } from '../components/ios/TabBar'
-import { CookPage } from '../features/cook/CookPage'
-import { hasContent } from '../features/cook/cookDraft'
 import { CookSession } from '../features/cook/CookSession'
-import { useCookSession } from '../features/cook/cookSessionContext'
+import { useLegacyCookTarget } from '../features/cook/legacyCookLink'
 import { HistoryPage } from '../features/history/HistoryPage'
 import { IngredientsPage } from '../features/ingredients/IngredientsPage'
 import { SettingsPage } from '../features/settings/SettingsPage'
@@ -30,6 +22,7 @@ import { useGlassField } from '../features/appearance/useGlassField'
 import { useCurrentUser } from './currentUser'
 import { useResumeOfflineChanges, useSaveWhenHidden } from './offlineLifecycle'
 import { PageStack } from './PageStack'
+import { useStackNavigate } from './stackNavigate'
 import { startsAtBottomEdge } from './stackMotion'
 import { SyncStatus } from './SyncStatus'
 import { wasUpdatedThisStart } from './appVersion'
@@ -38,25 +31,35 @@ import { UpdateToasts } from './UpdateToasts'
 import { useAppearance } from '../features/appearance/useAppearance'
 import { useLiveUpdates } from '../features/live/useLiveUpdates'
 
+// Every tab is a stack of pages: a meal (and its Add food steps) opens on top of Today or of a
+// History day, a recipe on top of Ingredients › Recipes, Appearance etc. on top of Settings.
+// `roots` are the tab's own pages: switching between them moves nothing, a swipe there
+// switches tabs.
 const TABS = [
-  { id: 'today', label: 'Today', path: '/today', icon: <TodayIcon />, Page: TodayPage },
-  // the one place food is logged
   {
-    id: 'cook',
-    label: 'Cook',
-    path: '/cook',
-    icon: <CookIcon />,
-    Page: CookPage,
-    // the steps of adding an ingredient (/cook/add, /cook/add/<id>) are pages pushed on top
-    hasSubPages: true,
+    id: 'today',
+    label: 'Today',
+    path: '/today',
+    icon: <TodayIcon />,
+    Page: TodayPage,
+    roots: /^\/today$/,
   },
-  { id: 'history', label: 'History', path: '/history', icon: <HistoryIcon />, Page: HistoryPage },
+  {
+    id: 'history',
+    label: 'History',
+    path: '/history',
+    icon: <HistoryIcon />,
+    Page: HistoryPage,
+    // the month, with a day picked or not
+    roots: /^\/history(\/\d{4}-\d{2}-\d{2})?$/,
+  },
   {
     id: 'ingredients',
     label: 'Ingredients',
     path: '/ingredients',
     icon: <IngredientsIcon />,
     Page: IngredientsPage,
+    roots: /^\/ingredients(\/recipes)?$/,
   },
   {
     id: 'settings',
@@ -64,8 +67,7 @@ const TABS = [
     path: '/settings',
     icon: <SettingsIcon />,
     Page: SettingsPage,
-    // /settings/appearance etc. are pages pushed on top of Settings: a swipe goes back
-    hasSubPages: true,
+    roots: /^\/settings$/,
   },
 ] as const
 
@@ -73,11 +75,6 @@ const TABS = [
 const SWIPE_SETTLE_DURATION = 22
 
 // switching tabs replaces the history entry: like UITabBarController, tabs build no back stack
-
-/** Pages only re-render for their own data, not when the active tab changes mid-swipe. */
-const TabPageContent = memo(function TabPageContent({ Page }: { readonly Page: ComponentType }) {
-  return <Page />
-})
 
 /** A page's padding (clear of the status bar and the tab bar) and width. */
 function PageFrame({ children }: { readonly children: ReactNode }) {
@@ -103,27 +100,21 @@ function startsInSwipeLock(event: MouseEvent | TouchEvent): boolean {
   return event.target instanceof Element && event.target.closest('[data-swipe-lock]') !== null
 }
 
+function isRootPath(pathname: string): boolean {
+  return TABS.some((tab) => tab.roots.test(pathname))
+}
+
 /**
- * On a sub-page (e.g. Settings › Appearance › App colors) the page one level up a back swipe
- * leads to, otherwise null.
+ * On a page opened on top (e.g. a meal, Settings › Appearance) the page one level up a back
+ * swipe leads to, otherwise null.
  */
 function backPathFor(pathname: string): string | null {
-  const tab = TABS.find((candidate) => pathname.startsWith(`${candidate.path}/`))
-  if (!tab || !('hasSubPages' in tab)) return null
-  return pathname.replace(/\/+$/, '').replace(/\/[^/]*$/, '')
+  const trimmed = pathname.replace(/\/+$/, '')
+  if (isRootPath(trimmed)) return null
+  return trimmed.replace(/\/[^/]*$/, '')
 }
 
-/** The signed-in app: five pages side by side, switched by the tab bar or by swiping. */
-/** The tab bar; Cook carries a badge while a dish waits there, not logged yet. */
-function ShellTabBar(props: Omit<ComponentProps<typeof TabBar>, 'items'>) {
-  const { draft } = useCookSession()
-  const items = TABS.map((tab) =>
-    tab.id === 'cook' && hasContent(draft) ? { ...tab, badge: 'unsaved dish' } : tab,
-  )
-  return <TabBar items={items} {...props} />
-}
-
-/** The tabs; the Cook draft lives above them, so the tab bar can show it's waiting. */
+/** The tabs; the dish being added lives above them, so any meal's Add food finds it. */
 export function TabShell() {
   return (
     <CookSession>
@@ -131,6 +122,26 @@ export function TabShell() {
     </CookSession>
   )
 }
+
+type TabStackProps = Omit<ComponentProps<typeof PageStack>, 'renderPage' | 'isRoot'> & {
+  readonly Page: ComponentType
+}
+
+/** A tab's pages; only re-rendered for its own changes, not when another tab becomes active. */
+const TabStack = memo(function TabStack({ Page, onBack, ...stack }: TabStackProps) {
+  return (
+    <PageStack
+      {...stack}
+      isRoot={isRootPath}
+      renderPage={() => (
+        <PageFrame>
+          <Page />
+        </PageFrame>
+      )}
+      onBack={onBack}
+    />
+  )
+})
 
 function ShellContent() {
   const { profile, householdId } = useCurrentUser()
@@ -141,6 +152,14 @@ function ShellContent() {
 
   const { pathname } = useLocation()
   const navigate = useNavigate()
+  const legacyCookTarget = useLegacyCookTarget()
+  // a swipe back keeps the navigation state (whose meal it is), like Back on the page does
+  const stackNavigate = useStackNavigate()
+  const stackNavigateRef = useRef(stackNavigate)
+  useEffect(() => {
+    stackNavigateRef.current = stackNavigate
+  })
+  const [goBack] = useState(() => (path: string) => stackNavigateRef.current(path))
   const routeIndex = tabIndexForPath(pathname)
   const activeIndex = Math.max(routeIndex, 0)
   // the color background behind Liquid Glass Full, new colors on tab changes if chosen
@@ -224,6 +243,8 @@ function ShellContent() {
     }
   }, [emblaApi, navigate])
 
+  // the Cook tab of older versions (links in notifications): to that meal's Add food
+  if (legacyCookTarget) return <Navigate to={legacyCookTarget} replace />
   if (routeIndex === -1) return <Navigate to={TABS[0].path} replace />
 
   return (
@@ -233,7 +254,6 @@ function ShellContent() {
           {TABS.map((tab, index) => {
             const { id, Page } = tab
             const active = index === activeIndex
-            const hasSubPages = 'hasSubPages' in tab
             const container = stackContainers[id] ?? null
             return (
               <div
@@ -241,7 +261,7 @@ function ShellContent() {
                 data-testid="tab-page"
                 ref={(element) => {
                   pageRefs.current[index] = element
-                  if (hasSubPages && element && stackContainers[id] !== element) {
+                  if (element && stackContainers[id] !== element) {
                     setStackContainers((current) => ({ ...current, [id]: element }))
                   }
                 }}
@@ -249,24 +269,14 @@ function ShellContent() {
                 aria-hidden={active ? undefined : true}
                 className="no-scrollbar stable-paint-layer relative h-full min-w-0 flex-[0_0_100%] overflow-x-hidden overflow-y-auto overscroll-contain"
               >
-                {hasSubPages ? (
-                  <PageStack
-                    path={active ? pathname : tab.path}
-                    backPath={active ? backPath : null}
-                    animated={active}
-                    container={container}
-                    renderPage={() => (
-                      <PageFrame>
-                        <Page />
-                      </PageFrame>
-                    )}
-                    onBack={(path) => navigate(path, { replace: true })}
-                  />
-                ) : (
-                  <PageFrame>
-                    <TabPageContent Page={Page} />
-                  </PageFrame>
-                )}
+                <TabStack
+                  path={active ? pathname : tab.path}
+                  backPath={active ? backPath : null}
+                  animated={active}
+                  container={container}
+                  Page={Page}
+                  onBack={goBack}
+                />
               </div>
             )
           })}
@@ -274,7 +284,8 @@ function ShellContent() {
       </div>
       <SyncStatus />
       <UpdateToasts updatedThisStart={wasUpdatedThisStart()} update={updateReady} />
-      <ShellTabBar
+      <TabBar
+        items={TABS}
         activeIndex={activeIndex}
         onSelect={(index) => navigate(TABS[index]?.path ?? TABS[0].path, { replace: true })}
         onReselect={(index) => pageRefs.current[index]?.scrollTo({ top: 0, behavior: 'smooth' })}

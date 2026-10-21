@@ -1,7 +1,6 @@
 import { normalizeBarcode } from '../barcode/barcode'
 import type { ComposerStep } from '../dishes/composerSteps'
 
-export const COOK_PATH = '/cook'
 const ADD_SEGMENT = 'add'
 const CUSTOM_SEGMENT = 'custom'
 const NEW_INGREDIENT_SEGMENT = 'new'
@@ -11,29 +10,30 @@ const LINE_PREFIX = 'line-'
 const SWAP_SEGMENT = 'swap'
 
 /**
- * The address of a Cook step. Each step is one level below the step Back leads to, so the page
- * stack's back swipe (which drops the last part of the address) goes back exactly one step.
+ * The address of a Cook step below `base` (a meal's Add food page). Each step is one level below
+ * the step Back leads to, so the page stack's back swipe (which drops the last part of the
+ * address) goes back exactly one step.
  */
-export function cookStepPath(step: ComposerStep): string {
+export function cookStepPath(step: ComposerStep, base: string): string {
   switch (step.kind) {
     case 'main':
-      return COOK_PATH
+      return base
     case 'pick':
-      return `${COOK_PATH}/${ADD_SEGMENT}`
+      return `${base}/${ADD_SEGMENT}`
     case 'custom':
-      return `${COOK_PATH}/${ADD_SEGMENT}/${CUSTOM_SEGMENT}`
+      return `${base}/${ADD_SEGMENT}/${CUSTOM_SEGMENT}`
     case 'newIngredient':
       return step.barcode
-        ? `${COOK_PATH}/${ADD_SEGMENT}/${BARCODE_PREFIX}${step.barcode}`
-        : `${COOK_PATH}/${ADD_SEGMENT}/${NEW_INGREDIENT_SEGMENT}`
+        ? `${base}/${ADD_SEGMENT}/${BARCODE_PREFIX}${step.barcode}`
+        : `${base}/${ADD_SEGMENT}/${NEW_INGREDIENT_SEGMENT}`
     case 'newLine':
-      return `${COOK_PATH}/${ADD_SEGMENT}/${encodeURIComponent(step.ingredientId)}`
+      return `${base}/${ADD_SEGMENT}/${encodeURIComponent(step.ingredientId)}`
     case 'editLine':
-      return `${COOK_PATH}/${LINE_PREFIX}${encodeURIComponent(step.lineId)}`
+      return `${base}/${LINE_PREFIX}${encodeURIComponent(step.lineId)}`
     case 'swap':
-      return `${cookStepPath({ kind: 'editLine', lineId: step.lineId })}/${SWAP_SEGMENT}`
+      return `${cookStepPath({ kind: 'editLine', lineId: step.lineId }, base)}/${SWAP_SEGMENT}`
     case 'swapLine':
-      return `${cookStepPath({ kind: 'swap', lineId: step.lineId })}/${encodeURIComponent(step.ingredientId)}`
+      return `${cookStepPath({ kind: 'swap', lineId: step.lineId }, base)}/${encodeURIComponent(step.ingredientId)}`
   }
 }
 
@@ -76,10 +76,10 @@ function stepOfSegments(segments: readonly string[]): ComposerStep | null {
   return null
 }
 
-/** The step an address under Cook shows; anything unknown shows the dish. */
-export function cookStepOf(path: string): ComposerStep {
+/** The step an address below `base` shows; anything unknown shows the dish. */
+export function cookStepOf(path: string, base: string): ComposerStep {
   const segments = path
-    .slice(COOK_PATH.length)
+    .slice(base.length)
     .split('/')
     .filter((segment) => segment !== '')
   return stepOfSegments(segments) ?? { kind: 'main' }

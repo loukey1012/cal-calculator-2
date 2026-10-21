@@ -1,29 +1,17 @@
 import { useState } from 'react'
-import { useCurrentUser } from '../../app/currentUser'
 import { Button } from '../../components/ios/Button'
 import { GroupedSection } from '../../components/ios/GroupedSection'
 import { ListRow } from '../../components/ios/ListRow'
-import { SegmentedControl } from '../../components/ios/SegmentedControl'
 import { Sheet } from '../../components/ios/Sheet'
 import { takeLeftover, throwAwayLeftover } from '../dishes/dishDraft'
 import { useLeftovers, useSaveDish } from '../dishes/hooks'
 import { leftoverOffers, type LeftoverOffer } from '../dishes/leftovers'
-import { usePeople } from '../household/hooks'
-import { PersonSwitch } from '../household/PersonSwitch'
-import { MEAL_TYPES, type MealType } from '../meals/dayModel'
 import { formatKcalTotal } from '../nutrition/format'
+import { mealLabel } from './dayModel'
+import type { MealRef } from './mealPages'
 
-const MEAL_OPTIONS = MEAL_TYPES.map(({ type, label }) => ({ value: type, label }))
-
-type LeftoversCardProps = {
-  /** local YYYY-MM-DD: a leftover is eaten today */
-  readonly today: string
-  /** suggested meal */
-  readonly mealOfDay: MealType
-}
-
-/** The household's leftovers; each can be eaten in a meal or thrown away. */
-export function LeftoversCard({ today, mealOfDay }: LeftoversCardProps) {
+/** The household's leftovers, on a meal's page: each can be eaten at this meal or thrown away. */
+export function MealLeftovers({ meal }: { readonly meal: MealRef }) {
   const leftovers = useLeftovers()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const offers = leftoverOffers(leftovers.data ?? [])
@@ -49,53 +37,34 @@ export function LeftoversCard({ today, mealOfDay }: LeftoversCardProps) {
         title={selected?.title ?? ''}
       >
         {selected && (
-          <LeftoverActions
-            offer={selected}
-            today={today}
-            mealOfDay={mealOfDay}
-            onDone={() => setSelectedId(null)}
-          />
+          <LeftoverActions offer={selected} meal={meal} onDone={() => setSelectedId(null)} />
         )}
       </Sheet>
     </>
   )
 }
 
-type LeftoverActionsProps = LeftoversCardProps & {
+type LeftoverActionsProps = {
   readonly offer: LeftoverOffer
+  readonly meal: MealRef
   readonly onDone: () => void
 }
 
-function LeftoverActions({ offer, today, mealOfDay, onDone }: LeftoverActionsProps) {
-  const { profile, householdId } = useCurrentUser()
-  const people = usePeople(profile, householdId)
+function LeftoverActions({ offer, meal, onDone }: LeftoverActionsProps) {
   const saveDish = useSaveDish()
-  const [personId, setPersonId] = useState(profile.id)
-  const [mealType, setMealType] = useState<MealType>(mealOfDay)
-
   return (
     <>
       <p className="text-[15px] text-label-secondary">
         1 portion · {formatKcalTotal(offer.totals)} kcal
       </p>
-      <PersonSwitch people={people} selectedId={personId} onChange={setPersonId} />
-      <div className="mt-4">
-        <SegmentedControl
-          label="Meal"
-          options={MEAL_OPTIONS}
-          value={mealType}
-          onChange={setMealType}
-        />
-      </div>
       <div className="mt-6 flex flex-col gap-3">
         <Button
           onClick={() => {
-            const eater = { userId: personId, date: today, mealType }
-            saveDish.save({ dish: takeLeftover(offer.dish, offer.portionId, eater) })
+            saveDish.save({ dish: takeLeftover(offer.dish, offer.portionId, meal) })
             onDone()
           }}
         >
-          Add to meal
+          Add to {mealLabel(meal.mealType)}
         </Button>
         <Button
           variant="destructive"

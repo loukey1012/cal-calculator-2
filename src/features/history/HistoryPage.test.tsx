@@ -18,6 +18,16 @@ vi.mock('../weight/weightApi', () => ({
   saveWeight: vi.fn(),
   deleteWeight: vi.fn(),
 }))
+// Add food (opened from an empty meal) loads the recipes and notes a started dish
+vi.mock('../recipes/recipesApi', () => ({
+  fetchRecipes: vi.fn().mockResolvedValue([]),
+  saveRecipe: vi.fn(),
+  deleteRecipe: vi.fn(),
+}))
+vi.mock('../cook/draftNotice', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../cook/draftNotice')>()),
+  sendDraftNotice: vi.fn().mockResolvedValue(undefined),
+}))
 vi.mock('../goals/goalsApi', () => ({ fetchGoals: vi.fn(), saveGoal: vi.fn() }))
 vi.mock('../household/householdApi', () => ({ fetchMembers: vi.fn() }))
 vi.mock('../meals/mealsApi', () => ({
@@ -39,6 +49,7 @@ import { fetchGoals } from '../goals/goalsApi'
 import { fetchMembers } from '../household/householdApi'
 import { addMealItem, fetchDay } from '../meals/mealsApi'
 import { fetchDailyTotals } from './historyApi'
+import { CookSession } from '../cook/CookSession'
 import { HistoryPage } from './HistoryPage'
 
 const PROFILE = {
@@ -94,7 +105,9 @@ function OpenPartnersDay() {
 function renderPage(route = '/history') {
   return renderWithProviders(
     <CurrentUserContext value={{ profile: PROFILE, householdId: 'h1' }}>
-      <HistoryPage />
+      <CookSession>
+        <HistoryPage />
+      </CookSession>
       <LocationProbe />
       <OpenPartnersDay />
     </CurrentUserContext>,
@@ -163,10 +176,11 @@ describe('HistoryPage', () => {
     // the weight that applied that day, below the meals
     expect(await within(day).findByRole('button', { name: /Weight/ })).toHaveTextContent('72.4 kg')
 
-    // the forgotten dinner is added on Cook, which comes back to this day
+    // the forgotten dinner is added on its own page, on top of this day
     await user.click(screen.getByRole('button', { name: /Dinner/ }))
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(screen.getByTestId('path')).toHaveTextContent('/cook')
+    expect(screen.getByTestId('path')).toHaveTextContent(
+      '/history/2026-10-01/meal-dinner-2026-10-01-u1/food',
+    )
   })
 
   test('the protein average is left out when nothing logged had protein data', async () => {
@@ -316,7 +330,9 @@ describe('HistoryPage', () => {
     vi.mocked(fetchMembers).mockResolvedValue([PROFILE, PARTNER])
     renderWithProviders(
       <CurrentUserContext value={{ profile: PROFILE, householdId: 'h1' }}>
-        <HistoryPage />
+        <CookSession>
+          <HistoryPage />
+        </CookSession>
       </CurrentUserContext>,
       { route: '/history/2026-09-10', state: { person: 'u2' } },
     )

@@ -30,6 +30,18 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-21T13:47',
+    kind: 'new',
+    title: 'Every meal is a page of its own; no more Cook tab',
+    items: [
+      'Tap a meal on Today or on a day in History: it opens as a page with what was eaten, + Add food, Add from recipe and the leftovers',
+      'An empty meal opens straight at Add food; Save meal leads back to the meal',
+      'A dish not logged yet shows on its meal as "Unsaved dish"',
+      'Recipes are managed under Ingredients › Recipes',
+      'The tab bar has four tabs: Today, History, Ingredients and Settings',
+    ],
+  },
+  {
     at: '2026-10-21T11:49',
     kind: 'fix',
     title: 'Merging duplicates: every name and value shown in full',

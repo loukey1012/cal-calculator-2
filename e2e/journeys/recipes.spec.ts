@@ -1,7 +1,6 @@
-import type { Page } from '@playwright/test'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { activePage, expect, localDay, logIn, test } from './backend.ts'
-import { addIngredient } from './cook.ts'
+import { addFromRecipe, addIngredient, openAddFood } from './cook.ts'
 
 /** name → amount of one person's items in a meal of today, as stored on the server */
 async function loggedItems(admin: SupabaseClient, userId: string, mealType: string) {
@@ -13,10 +12,6 @@ async function loggedItems(admin: SupabaseClient, userId: string, mealType: stri
     .eq('meals.meal_type', mealType)
     .order('name')
   return data?.map((item) => `${item.name} ${item.entered_amount} (${item.kcal})`) ?? []
-}
-
-function openTab(page: Page, name: string) {
-  return page.getByRole('navigation', { name: 'Tabs' }).getByRole('button', { name }).click()
 }
 
 test('a dish saved as a recipe is cooked again at the ingredient’s new values', async ({
@@ -39,7 +34,7 @@ test('a dish saved as a recipe is cooked again at the ingredient’s new values'
   await logIn(page, me)
 
   // burgers for both, saved as a recipe before logging lunch
-  await openTab(page, 'Cook')
+  await openAddFood(page, /Lunch/)
   const cook = activePage(page)
   await cook.getByRole('button', { name: 'baby', pressed: false }).click()
   await cook.getByRole('radio', { name: 'Lunch' }).click()
@@ -59,10 +54,7 @@ test('a dish saved as a recipe is cooked again at the ingredient’s new values'
     .from('ingredients')
     .update({ kcal_100: 200 })
     .eq('id', patty?.id ?? '')
-  await openTab(page, 'Cook')
-  await activePage(page)
-    .getByRole('button', { name: /Recipes/ })
-    .click()
+  await addFromRecipe(page, /Dinner/)
   await activePage(page)
     .getByRole('button', { name: /Burgers/ })
     .click()
@@ -101,18 +93,14 @@ test('a logged meal is copied to another meal and saved as a recipe', async ({ p
   ])
   await logIn(page, me)
 
-  await openTab(page, 'Cook')
+  await openAddFood(page, /Breakfast/)
   const cook = activePage(page)
-  await cook.getByRole('radio', { name: 'Breakfast' }).click()
   await addIngredient(page, 'Toast', '60')
   await addIngredient(page, 'Jam', '20')
   await cook.getByRole('button', { name: 'Save meal' }).click()
 
-  // the same breakfast for her, as a snack
-  const sheet = page.getByRole('dialog')
-  await activePage(page)
-    .getByRole('button', { name: /Breakfast/ })
-    .click()
+  // the same breakfast for her, as a snack (saving led to the breakfast's page)
+  const sheet = activePage(page)
   await sheet.getByRole('button', { name: 'Copy to…' }).click()
   await sheet.getByRole('radio', { name: /baby/ }).click()
   await sheet.getByRole('radio', { name: 'Snacks' }).click()
@@ -176,7 +164,7 @@ test('a recipe learns a swapped product and offers both next time', async ({ pag
   await logIn(page, me)
 
   // toast with Gouda, kept as a recipe and logged
-  await openTab(page, 'Cook')
+  await openAddFood(page)
   const cook = activePage(page)
   await addIngredient(page, 'Toastbrot', '60')
   await addIngredient(page, 'Gouda', '30')
@@ -188,11 +176,10 @@ test('a recipe learns a swapped product and offers both next time', async ({ pag
   await cook.getByRole('button', { name: 'Save meal' }).click()
 
   // next time with Edamer: swapped on Cook, then logged
-  await openTab(page, 'Cook')
+  await addFromRecipe(page)
   await activePage(page)
-    .getByRole('button', { name: /Recipes/ })
+    .getByRole('button', { name: /^Toast \d+ ingredients/ })
     .click()
-  await activePage(page).getByRole('button', { name: /Toast/ }).click()
   await activePage(page).getByRole('button', { name: 'Cook this' }).click()
   const again = activePage(page)
   await again.getByRole('button', { name: /^Gouda/ }).click()
@@ -215,11 +202,10 @@ test('a recipe learns a swapped product and offers both next time', async ({ pag
     .toEqual(['Toastbrot (last time)', 'Gouda', 'Edamer (last time)'])
 
   // the third time Cook offers both cheeses, Edamer first
-  await openTab(page, 'Cook')
+  await addFromRecipe(page)
   await activePage(page)
-    .getByRole('button', { name: /Recipes/ })
+    .getByRole('button', { name: /^Toast \d+ ingredients/ })
     .click()
-  await activePage(page).getByRole('button', { name: /Toast/ }).click()
   await activePage(page).getByRole('button', { name: 'Cook this' }).click()
   const third = activePage(page).getByRole('radiogroup', { name: 'Edamer: product' })
   await expect(third.getByRole('radio', { name: 'Edamer (Spar)' })).toBeChecked()

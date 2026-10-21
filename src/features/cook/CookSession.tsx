@@ -1,38 +1,32 @@
 import { useState, type ReactNode } from 'react'
-import { useSearchParams } from 'react-router'
+import { useLocation } from 'react-router'
 import { useCurrentUser } from '../../app/currentUser'
 import { useToday } from '../today/useToday'
 import { NO_FILTER } from '../dishes/composerSteps'
+import { mealPageOf } from '../meals/mealPages'
 import { withPrefill } from './cookDraft'
-import { parseCookLink } from './cookLink'
-import { COOK_HOME, CookSessionContext } from './cookSessionContext'
+import { CookSessionContext } from './cookSessionContext'
 import { useCookDraft } from './useCookDraft'
 
-/** Holds the Cook tab's draft and ingredient search for all of its pages. */
+/** Holds the dish being put together and the ingredient search, for every Add food page. */
 export function CookSession({ children }: { readonly children: ReactNode }) {
   const { profile } = useCurrentUser()
   const today = useToday()
-  const [params] = useSearchParams()
+  const { pathname } = useLocation()
   const { draft, setDraft, reset } = useCookDraft(profile.id)
-  const [returnTo, setReturnTo] = useState(COOK_HOME)
   const [filter, setFilter] = useState(NO_FILTER)
-  const [handledLink, setHandledLink] = useState('')
+  const [handledMeal, setHandledMeal] = useState('')
 
-  // opened from an empty meal: take over its person, day and meal (once per link)
-  const link = params.toString()
-  if (link !== handledLink) {
-    setHandledLink(link)
-    const parsed = parseCookLink(params, today)
-    if (parsed) {
-      setDraft((current) => withPrefill(current, parsed.prefill, today))
-      setReturnTo(parsed.returnTo)
-    }
+  // Add food of a meal: the dish takes over its person, day and meal (once per meal opened)
+  const page = mealPageOf(pathname)
+  const openedMeal = page?.page === 'food' ? page.mealPath : ''
+  if (openedMeal !== handledMeal) {
+    setHandledMeal(openedMeal)
+    if (page && openedMeal !== '') setDraft((current) => withPrefill(current, page.meal, today))
   }
 
   return (
-    <CookSessionContext
-      value={{ draft, setDraft, reset, returnTo, setReturnTo, filter, setFilter }}
-    >
+    <CookSessionContext value={{ draft, setDraft, reset, filter, setFilter }}>
       {children}
     </CookSessionContext>
   )

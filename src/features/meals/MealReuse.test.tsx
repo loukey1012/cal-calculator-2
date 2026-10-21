@@ -36,7 +36,7 @@ import { fetchMembers } from '../household/householdApi'
 import { saveRecipe } from '../recipes/recipesApi'
 import { pickedChoice, type Recipe } from '../recipes/recipeModel'
 import { fetchDay } from './mealsApi'
-import { MealSheet } from './MealSheet'
+import { MealContent } from './MealContent'
 
 function profile(id: string, name: string) {
   return {
@@ -80,10 +80,12 @@ const CHILI_ITEM = mealItem({
 function renderSheet() {
   renderWithProviders(
     <CurrentUserContext value={{ profile: ME, householdId: 'h1' }}>
-      <MealSheet open mealType="lunch" userId="u1" date={DAY} onClose={vi.fn()} onCook={vi.fn()} />
+      <section aria-label="Lunch">
+        <MealContent mealType="lunch" userId="u1" date={DAY} />
+      </section>
     </CurrentUserContext>,
   )
-  return within(screen.getByRole('dialog', { name: 'Lunch' }))
+  return within(screen.getByRole('region', { name: 'Lunch' }))
 }
 
 function sentDishes(): Dish[] {

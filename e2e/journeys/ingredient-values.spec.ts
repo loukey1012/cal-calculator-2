@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test'
 import { activePage, expect, logIn, pickBasics, test } from './backend.ts'
+import { openAddFood } from './cook.ts'
 
 const BARCODE = '3017620422003'
 
@@ -97,7 +98,7 @@ test('on Cook, an unknown package goes to the saved ingredient it is; an estimat
     nutriments: { 'energy-kcal_100g': 62 },
   })
   await logIn(page, me)
-  await page.getByRole('navigation', { name: 'Tabs' }).getByRole('button', { name: 'Cook' }).click()
+  await openAddFood(page)
   const cook = activePage(page)
 
   await cook.getByRole('button', { name: 'Add ingredient' }).click()

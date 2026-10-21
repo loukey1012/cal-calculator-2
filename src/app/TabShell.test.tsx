@@ -109,19 +109,20 @@ describe('TabShell', () => {
     expect(tabs().getByRole('button', { name: title })).toHaveAttribute('aria-current', 'page')
   })
 
-  test('a dish waiting on Cook puts a badge on the Cook tab, wherever you are', () => {
-    const draft = newCookDraft('u1')
+  test('the old Cook address (the unsaved-dish notification) opens the meal the dish is for', () => {
+    const draft = { ...newCookDraft('u1'), mealType: 'dinner' as const }
     saveCookDraft('u1', withDish(draft, { ...draft.dish, name: 'Pasta' }))
 
-    renderShell('/today')
+    renderShell('/cook')
 
-    expect(tabs().getByRole('button', { name: 'Cook, unsaved dish' })).toBeInTheDocument()
+    expect(screen.getByTestId('path').textContent).toMatch(/^\/today\/meal-dinner-[\d-]+-u1\/food$/)
   })
 
-  test('no badge while Cook is empty', () => {
-    renderShell('/today')
+  test('the old Cook address without a dish opens Today', () => {
+    renderShell('/cook')
 
-    expect(tabs().getByRole('button', { name: 'Cook' })).toBeInTheDocument()
+    expect(screen.getByTestId('path')).toHaveTextContent('/today')
+    expect(visibleTitle()).toHaveTextContent('Today')
   })
 
   test.each(['/', '/unknown'])('%s redirects to Today', (route) => {
@@ -141,18 +142,14 @@ describe('TabShell', () => {
     expect(visibleTitle()).toHaveTextContent('Ingredients')
   })
 
-  test('Cook is the second tab, where food is logged', async () => {
-    const user = userEvent.setup()
+  test('four tabs: food is added on a meal’s page, not on a tab of its own', () => {
     renderShell('/today')
 
     const labels = tabs()
       .getAllByRole('button')
       .map((tab) => tab.getAttribute('aria-label'))
-    await user.click(tabs().getByRole('button', { name: 'Cook' }))
 
-    expect(labels).toEqual(['Today', 'Cook', 'History', 'Ingredients', 'Settings'])
-    expect(screen.getByTestId('path')).toHaveTextContent('/cook')
-    expect(visibleTitle()).toHaveTextContent('Cook')
+    expect(labels).toEqual(['Today', 'History', 'Ingredients', 'Settings'])
   })
 
   test('tapping the active tab scrolls its page back to the top', async () => {

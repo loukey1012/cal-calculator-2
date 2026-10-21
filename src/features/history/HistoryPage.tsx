@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import { useCurrentUser } from '../../app/currentUser'
+import { usePagePath } from '../../app/pagePath'
+import { personOf } from '../../app/stackNavigate'
 import { ErrorBanner } from '../../components/ios/ErrorBanner'
 import { PageHeader } from '../../components/ios/PageHeader'
 import { SegmentedControl } from '../../components/ios/SegmentedControl'
@@ -11,6 +13,8 @@ import { usePeople } from '../household/hooks'
 import type { Profile } from '../household/householdApi'
 import { PersonSwitch } from '../household/PersonSwitch'
 import { formatGrams, formatKcalTotal } from '../nutrition/format'
+import { MealRoute } from '../meals/MealPage'
+import { mealPageOf } from '../meals/mealPages'
 import { DayView } from '../today/DayView'
 import { TrendsView } from '../trends/TrendsView'
 import { DayWeight } from '../weight/DayWeight'
@@ -57,24 +61,24 @@ const VIEW_OPTIONS = [
   { value: 'trends', label: 'Trends' },
 ] as const satisfies ReadonlyArray<{ value: HistoryView; label: string }>
 
-/** The person a navigation asks History to show, e.g. `{ person: id }` from the review. */
-function openedFor(state: unknown): string | null {
-  if (typeof state !== 'object' || state === null || !('person' in state)) return null
-  return typeof state.person === 'string' ? state.person : null
-}
-
 /**
  * Month calendar (the selected day, kept in the URL, opens beneath it, fully editable) or the
  * trends of calories, nutrients and weight.
  */
 export function HistoryPage() {
+  const page = mealPageOf(usePagePath())
+  return page ? <MealRoute page={page} /> : <HistoryMonth />
+}
+
+function HistoryMonth() {
   const { profile, householdId } = useCurrentUser()
   const today = useToday()
   const location = useLocation()
-  const { pathname } = location
+  // the page stack also shows History below a meal, for its own address
+  const pathname = usePagePath()
   const navigate = useNavigate()
   const people = usePeople(profile, householdId)
-  const [selectedId, setSelectedId] = useState(() => openedFor(location.state) ?? profile.id)
+  const [selectedId, setSelectedId] = useState(() => personOf(location.state) ?? profile.id)
   const [view, setView] = useState<HistoryView>('calendar')
   const person = people.find((member) => member.id === selectedId) ?? profile
 
@@ -90,7 +94,7 @@ export function HistoryPage() {
   const [seenNavigation, setSeenNavigation] = useState(location.key)
   if (seenNavigation !== location.key) {
     setSeenNavigation(location.key)
-    const person = openedFor(location.state)
+    const person = personOf(location.state)
     if (person) setSelectedId(person)
     if (selectedDay) setMonth(monthStart(selectedDay))
   }

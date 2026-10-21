@@ -37,6 +37,7 @@ vi.mock('./dishesApi', () => ({
 import { fetchGoals } from '../goals/goalsApi'
 import { fetchMembers } from '../household/householdApi'
 import { fetchDay } from '../meals/mealsApi'
+import { CookSession } from '../cook/CookSession'
 import { TodayPage } from '../today/TodayPage'
 import { fetchLeftoverDishes } from './dishesApi'
 import type { Dish } from './portions'
@@ -75,7 +76,9 @@ function LocationProbe() {
 function renderToday() {
   renderWithProviders(
     <CurrentUserContext value={{ profile: PROFILE, householdId: 'h1' }}>
-      <TodayPage />
+      <CookSession>
+        <TodayPage />
+      </CookSession>
       <LocationProbe />
     </CurrentUserContext>,
     { route: '/today' },
@@ -97,14 +100,14 @@ afterEach(() => {
 })
 
 describe('leftovers on Today', () => {
-  test('shows that food is left and opens Cook, where leftovers are eaten', async () => {
+  test('shows that food is left and opens the meal of the time of day, where it is eaten', async () => {
     const user = userEvent.setup()
     renderToday()
 
     await user.click(await screen.findByRole('button', { name: /Chili left/ }))
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(screen.getByTestId('path')).toHaveTextContent('/cook')
+    expect(screen.getByTestId('path').textContent).toMatch(/^\/today\/meal-[a-z]+-[\d-]+-u1$/)
   })
 
   test('nothing shows without leftovers', async () => {

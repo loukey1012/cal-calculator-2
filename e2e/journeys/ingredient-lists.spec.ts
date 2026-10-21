@@ -1,5 +1,5 @@
 import { activePage, expect, logIn, pickBasics, test } from './backend.ts'
-import { addIngredient } from './cook.ts'
+import { addIngredient, openAddFood } from './cook.ts'
 
 function openTab(page: import('@playwright/test').Page, tab: string) {
   return page.getByRole('navigation', { name: 'Tabs' }).getByRole('button', { name: tab }).click()
@@ -26,9 +26,8 @@ test('a drink saved in ml is logged in ml', async ({ page, backend }) => {
     '46 kcal / 100 ml',
   )
 
-  await openTab(page, 'Cook')
+  await openAddFood(page)
   const cook = activePage(page)
-  await cook.getByRole('heading', { level: 1, name: 'Cook' }).waitFor()
   await addIngredient(page, 'Hafer Drink', '300')
   await expect(cook.getByText('300 ml · shared')).toBeVisible()
   await cook.getByRole('button', { name: 'Save meal' }).click()

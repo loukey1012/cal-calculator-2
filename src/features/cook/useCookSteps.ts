@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
-import { useNavigate } from 'react-router'
 import { usePagePath } from '../../app/pagePath'
+import { useStackNavigate } from '../../app/stackNavigate'
 import {
   MAIN_STEP,
   NO_FILTER,
@@ -10,14 +10,13 @@ import {
 import { cookStepOf, cookStepPath, parentStep } from './cookSteps'
 import { useCookSession } from './cookSessionContext'
 
-/** The Cook steps as pages: opening one pushes it, Back and a back swipe pop it. */
-export function useCookSteps(): ComposerSteps {
+/** The Cook steps as pages below `base`: opening one pushes it, Back and a back swipe pop it. */
+export function useCookSteps(base: string): ComposerSteps {
   const path = usePagePath()
-  const navigate = useNavigate()
+  const navigate = useStackNavigate()
   const { filter, setFilter } = useCookSession()
-  const step = useMemo(() => cookStepOf(path), [path])
-  // like the Settings pages, steps build no browser history
-  const go = (next: ComposerStep) => void navigate(cookStepPath(next), { replace: true })
+  const step = useMemo(() => cookStepOf(path, base), [path, base])
+  const go = (next: ComposerStep) => navigate(cookStepPath(next, base))
   return {
     step,
     open: (next) => {

@@ -1,21 +1,20 @@
-import { COOK_PATH } from './cookSteps'
-
-/** The recipe pages on the Cook tab, pushed on top of the dish like the Cook steps. */
+/**
+ * The recipe pages below a base address: a meal's Add from recipe (to cook one) or Ingredients ›
+ * Recipes (to manage them). The list is the base itself, a recipe one level below.
+ */
 export type RecipePageRef =
   { readonly kind: 'list' } | { readonly kind: 'recipe'; readonly recipeId: string }
 
-export const RECIPES_PATH = `${COOK_PATH}/recipes`
-
-export function recipePath(recipeId: string): string {
-  return `${RECIPES_PATH}/${encodeURIComponent(recipeId)}`
+export function recipePath(base: string, recipeId: string): string {
+  return `${base}/${encodeURIComponent(recipeId)}`
 }
 
-/** The recipe page an address under Cook shows, or null for the dish and its steps. */
-export function recipePageOf(path: string): RecipePageRef | null {
+/** The recipe page an address below `base` shows, or null for anything else. */
+export function recipePageOf(path: string, base: string): RecipePageRef | null {
   const trimmed = path.replace(/\/+$/, '')
-  if (trimmed === RECIPES_PATH) return { kind: 'list' }
-  if (!trimmed.startsWith(`${RECIPES_PATH}/`)) return null
-  const segment = trimmed.slice(RECIPES_PATH.length + 1)
+  if (trimmed === base) return { kind: 'list' }
+  if (!trimmed.startsWith(`${base}/`)) return null
+  const segment = trimmed.slice(base.length + 1)
   if (segment === '' || segment.includes('/')) return null
   try {
     return { kind: 'recipe', recipeId: decodeURIComponent(segment) }

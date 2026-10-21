@@ -1,5 +1,6 @@
 import { useState, type ComponentType, type SVGProps } from 'react'
-import { useLocation, useNavigate } from 'react-router'
+import { usePagePath } from '../../app/pagePath'
+import { useStackNavigate } from '../../app/stackNavigate'
 import { Button } from '../../components/ios/Button'
 import { ErrorBanner } from '../../components/ios/ErrorBanner'
 import {
@@ -10,14 +11,16 @@ import {
   SnackIcon,
 } from '../../components/ios/icons'
 import { toUserMessage } from '../../lib/errors'
-import { cookLink } from '../cook/cookLink'
+import { useCookSession } from '../cook/cookSessionContext'
+import { useMealOfDay } from '../cook/useMealOfDay'
 import { useLatestDishChangeError } from '../dishes/hooks'
 import { LeftoversPill } from '../dishes/LeftoversPill'
 import type { Profile } from '../household/householdApi'
 import { useLookOf } from '../household/usePersonLook'
 import { cheatMeals, itemsByMeal, mealEntries, MEAL_TYPES, type MealType } from '../meals/dayModel'
 import { useDay, useDayNote, useLatestDayChangeError, useCheatDay } from '../meals/hooks'
-import { MealSheet } from '../meals/MealSheet'
+import { foodPath, mealPath } from '../meals/mealPages'
+import { isDraftFor } from '../meals/unsavedDish'
 import { formatKcalTotal } from '../nutrition/format'
 import type { NutritionTotals } from '../nutrition/types'
 import { mealTotals, sumTotals } from '../nutrition/totals'
@@ -41,14 +44,18 @@ type MealSummary = {
   readonly count: number
   readonly totals: NutritionTotals
   readonly cheatMeal: boolean
+  /** a dish for it is being put together, not logged yet */
+  readonly unsaved: boolean
 }
 
 function mealSubtitle(
   loading: boolean,
   offline: boolean,
-  { count, totals, cheatMeal }: MealSummary,
+  { count, totals, cheatMeal, unsaved }: MealSummary,
 ): string {
   if (loading) return offline ? 'Offline – not loaded yet' : 'Loading…'
+  if (unsaved)
+    return count === 0 ? 'Unsaved dish' : `Unsaved dish · ${formatKcalTotal(totals)} kcal`
   if (cheatMeal) return count === 0 ? 'Cheat meal' : `Cheat meal · ${formatKcalTotal(totals)} kcal`
   if (count === 0) return 'Nothing logged'
   return `${formatKcalTotal(totals)} kcal · ${itemCount(count)}`
@@ -114,8 +121,8 @@ type DayViewProps = {
 }
 
 /**
- * A person's day: goal progress, total and the four meals. A meal with food opens to be looked
- * at, changed or removed; an empty one opens Cook for it.
+ * A person's day: goal progress, total and the four meals. A meal opens as a page of its own;
+ * an empty one straight at its Add food.
  */
 export function DayView({ person, isOwnDay, date }: DayViewProps) {
   const day = useDay(person.id, date)
@@ -124,18 +131,19 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
   const today = useToday()
   const lookOf = useLookOf()
   const [optionsOpen, setOptionsOpen] = useState(false)
-  // the sheet belongs to the day it was opened on, so it closes when the day rolls over
-  const [openMeal, setOpenMeal] = useState<{ type: MealType; date: string } | null>(null)
-  const openMealType = openMeal?.date === date ? openMeal.type : null
-  // reported here too, so a save that fails after the sheet was closed (or on Cook) isn't silent
+  // reported here too, so a save that fails after its meal was left isn't silent
   const latestDayError = useLatestDayChangeError(person.id, date)
   const latestDishError = useLatestDishChangeError()
   const latestChangeError = latestDayError ?? latestDishError
-  const navigate = useNavigate()
-  const { pathname } = useLocation()
-  // food is added on Cook, set up for this person, day and meal; saving comes back here
-  const openCook = (mealType: MealType) =>
-    void navigate(cookLink({ userId: person.id, date, mealType }, pathname), { replace: true })
+  const navigate = useStackNavigate()
+  const from = usePagePath().startsWith('/history') ? 'history' : 'today'
+  const { draft } = useCookSession()
+  const mealOfDay = useMealOfDay()
+  const mealOf = (mealType: MealType) => ({ userId: person.id, date, mealType })
+  const openMeal = (mealType: MealType, toFood: boolean) => {
+    const path = mealPath(mealOf(mealType), from)
+    navigate(toFood ? foodPath(path) : path, { person: person.id })
+  }
 
   const byMeal = itemsByMeal(day.data ?? [])
   const cheatMealTypes = cheatMeals(day.data ?? [])
@@ -146,6 +154,7 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
     count: mealEntries(byMeal[type]).length,
     totals: mealTotals(byMeal[type]),
     cheatMeal: cheatMealTypes.has(type),
+    unsaved: isDraftFor(draft, mealOf(type), today, mealOfDay),
     note: day.data?.find((meal) => meal.meal_type === type)?.note ?? null,
   }))
   const dayTotals = sumTotals(meals.map((meal) => meal.totals))
@@ -164,7 +173,7 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
 
   return (
     <>
-      {latestChangeError && openMealType === null && (
+      {latestChangeError && (
         <ErrorBanner
           message={`Couldn’t save your last change. ${toUserMessage(latestChangeError)}`}
         />
@@ -194,7 +203,7 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
                 <h2 className="font-display text-[20px] font-bold">Meals</h2>
                 {/* in the heading row, so Today still fits the screen */}
                 <span className="flex min-w-0 flex-1">
-                  <LeftoversPill />
+                  <LeftoversPill onOpen={() => openMeal(mealOfDay, false)} />
                 </span>
                 <button
                   type="button"
@@ -227,9 +236,7 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
                   note={note}
                   subtitle={mealSubtitle(day.isPending, day.fetchStatus === 'paused', summary)}
                   onOpen={() =>
-                    !day.isPending && summary.count === 0
-                      ? openCook(type)
-                      : setOpenMeal({ type, date })
+                    openMeal(type, !day.isPending && (summary.count === 0 || summary.unsaved))
                   }
                 />
               ))}
@@ -242,17 +249,6 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
         userId={person.id}
         date={date}
         onClose={() => setOptionsOpen(false)}
-      />
-      <MealSheet
-        open={openMealType !== null}
-        mealType={openMealType ?? 'breakfast'}
-        userId={person.id}
-        date={date}
-        onClose={() => setOpenMeal(null)}
-        onCook={() => {
-          setOpenMeal(null)
-          openCook(openMealType ?? 'breakfast')
-        }}
       />
     </>
   )

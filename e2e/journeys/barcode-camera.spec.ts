@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { activePage, expect, logIn, test } from './backend.ts'
+import { openAddFood } from './cook.ts'
 
 const NUTELLA_PHOTO = fileURLToPath(new URL('../fixtures/ean13-nutella.png', import.meta.url))
 const FAKE_CAMERA = fileURLToPath(new URL('../fixtures/fake-camera.js', import.meta.url))
@@ -24,7 +25,7 @@ test('the live camera reads a package on Cook and goes straight to its amount', 
   await page.addInitScript({ path: FAKE_CAMERA })
   await logIn(page, me)
 
-  await page.getByRole('navigation', { name: 'Tabs' }).getByRole('button', { name: 'Cook' }).click()
+  await openAddFood(page)
   await activePage(page).getByRole('button', { name: 'Add ingredient' }).click()
   await activePage(page).getByRole('button', { name: 'Scan barcode' }).click()
 

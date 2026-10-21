@@ -35,8 +35,8 @@ type RecipePageProps = {
   readonly recipeId: string
   /** the bar control above the title, e.g. Back */
   readonly leading: ReactNode
-  /** fill Cook with it */
-  readonly onCook: (recipe: Recipe) => void
+  /** fill a meal's Add food with it; left out where recipes are only managed */
+  readonly onCook?: (recipe: Recipe) => void
   readonly onDeleted: () => void
 }
 
@@ -153,9 +153,11 @@ function RecipeView({ recipe, leading, onCook, onDeleted }: RecipeViewProps) {
           )
         })}
       </GroupedSection>
-      <div className="mt-6">
-        <Button onClick={() => onCook(recipe)}>Cook this</Button>
-      </div>
+      {onCook && (
+        <div className="mt-6">
+          <Button onClick={() => onCook(recipe)}>Cook this</Button>
+        </div>
+      )}
       <p className="px-4 pt-2 text-[13px] text-label-secondary">
         Cooking it learns: products you swap in become choices, ingredients you leave out become
         optional.

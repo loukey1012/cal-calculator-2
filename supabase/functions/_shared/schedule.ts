@@ -92,7 +92,7 @@ const MEAL_LABELS: Readonly<Record<MealType, string>> = {
 }
 const MEAL_ORDER: readonly MealType[] = ['breakfast', 'lunch', 'dinner', 'snack']
 
-/** e.g. /cook?person=u1&date=2026-10-20&meal=lunch&from=%2Ftoday (src/features/cook/cookLink.ts) */
+/** e.g. /cook?person=u1&date=2026-10-20&meal=lunch&from=%2Ftoday (src/features/cook/legacyCookLink.ts sends it to the meal) */
 function cookLink(userId: string, date: string, meal: MealType): string {
   const params = new URLSearchParams({ person: userId, date, meal, from: '/today' })
   return `/cook?${params.toString()}`

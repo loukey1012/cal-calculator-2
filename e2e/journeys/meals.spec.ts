@@ -1,5 +1,5 @@
 import { activePage, expect, localDay, logIn, test } from './backend.ts'
-import { addIngredient, cookFor } from './cook.ts'
+import { addIngredient, backToDay, cookFor, openAddFood } from './cook.ts'
 
 test('log a meal on Cook: from the database and as a custom item, then change and delete', async ({
   page,
@@ -25,9 +25,10 @@ test('log a meal on Cook: from the database and as a custom item, then change an
     },
   ])
   await logIn(page, me)
-  const sheet = page.getByRole('dialog')
+  // a meal opens as a page of its own
+  const sheet = activePage(page)
 
-  // an empty meal opens Cook for it
+  // an empty meal opens its Add food
   await cookFor(activePage(page), page, /Lunch/)
   const cook = activePage(page)
   await expect(cook.getByRole('radio', { name: 'Lunch' })).toBeChecked()
@@ -53,6 +54,7 @@ test('log a meal on Cook: from the database and as a custom item, then change an
   // 126 + 420 + 232 (rounded up)
   await expect(cook.getByTestId('dish-totals')).toContainText('778 kcal')
   await cook.getByRole('button', { name: 'Save meal' }).click()
+  await backToDay(page)
 
   // back on Today: the meal is one dish
   const today = activePage(page)
@@ -69,7 +71,7 @@ test('log a meal on Cook: from the database and as a custom item, then change an
   await sheet.getByRole('button', { name: 'Remove from dish' }).click()
   await sheet.getByRole('button', { name: 'Save dish' }).click()
   await expect(sheet.getByTestId('meal-total')).toContainText('295 kcal')
-  await sheet.getByRole('button', { name: 'Close' }).click()
+  await backToDay(page)
   // wait until every change reached the server ("Saving" may not even have appeared yet)
   await expect
     .poll(async () => {
@@ -110,15 +112,14 @@ test('a single food logged alone shows like an item, changes in place and is rem
     kcal_100: 52,
   })
   await logIn(page, me)
-  const sheet = page.getByRole('dialog')
 
-  await page.getByRole('navigation', { name: 'Tabs' }).getByRole('button', { name: 'Cook' }).click()
-  await activePage(page).getByRole('radio', { name: 'Snacks' }).click()
+  await openAddFood(page, /Snacks/)
   await addIngredient(page, 'Apple', '150')
   await activePage(page).getByRole('button', { name: 'Save meal' }).click()
 
-  const today = activePage(page)
-  await today.getByRole('button', { name: /Snacks/ }).click()
+  // saving leads to the meal's page
+  const sheet = activePage(page)
+  await expect(sheet.getByRole('heading', { level: 1, name: 'Snacks' })).toBeVisible()
   await sheet.getByRole('button', { name: /Apple.*150 g.*78 kcal/ }).click()
   await sheet.getByLabel('Amount').fill('300')
   await sheet.getByRole('button', { name: 'Save', exact: true }).click()
@@ -152,6 +153,7 @@ test('a meal eaten out is logged as an estimate and the day shows ~', async ({ p
   await cook.getByRole('switch', { name: 'Calories are an estimate' }).click()
   await expect(cook.getByTestId('dish-totals')).toContainText('~900 kcal')
   await cook.getByRole('button', { name: 'Save meal' }).click()
+  await backToDay(page)
 
   const today = activePage(page)
   await expect(today.getByRole('button', { name: /Dinner/ })).toContainText('~900 kcal · 1 item')
@@ -170,6 +172,6 @@ test('a meal eaten out is logged as an estimate and the day shows ~', async ({ p
   await expect(reloaded.getByRole('button', { name: /Dinner/ })).toContainText('~900 kcal')
   await reloaded.getByRole('button', { name: /Dinner/ }).click()
   await expect(
-    page.getByRole('dialog').getByRole('button', { name: /Pizza.*Estimate · 1 unit.*~900 kcal/ }),
+    activePage(page).getByRole('button', { name: /Pizza.*Estimate · 1 unit.*~900 kcal/ }),
   ).toBeVisible()
 })

@@ -10,9 +10,10 @@ Built for a two-person household: both members log their own meals, can see and 
 
 ## Features
 
-### Logging food (Cook tab)
+### Meals and Add food
 
-- **One place for everything you eat**, alone or together: a snack, a quick breakfast or a dish cooked for two. The Today and History pages only show, change and delete.
+- **Every meal is a page of its own:** tap Breakfast, Lunch, Dinner or Snacks on Today (or on a day in History) and it slides in over the day, with what was eaten, **+ Add food**, **Add from recipe** and the household's **leftovers**; an **empty meal opens straight at Add food**. **‹ Today** (or **‹ History**) or a swipe to the right goes back, still showing the person picked. There is no Cook tab any more; its old links (and the notifications') open the meal they are about.
+- **Add food** is one place for everything you eat, alone or together: a snack, a quick breakfast or a dish cooked for two, set up for that meal's person, day and meal.
 - **Who eats:** tap yourself and/or your partner. **When:** the day (today, or an earlier one) and the meal, which follows the time of day until you pick one (e.g. Dinner in the evening).
 - Add ingredients from the shared **ingredient database** (with search) or as a **custom one-off item** that isn't saved to the database. Amounts in **grams (or millilitres, for an ingredient measured in ml) or the ingredient's own unit** (e.g. "Riegel"), with a **live preview** of calories and macros. For units, **amount chips** in two rows: **whole numbers** (1 to 5) set the amount, and **fractions** (¼ ⅓ ½ ⅔ ¾) fill in parts the iPhone number pad can't type: 2 then ½ makes "2 1/2", and ⅓ stays an exact third. Typed fractions such as "1/3" work too.
 - The ingredient search has the **category chips** of the Ingredients page, in the layout chosen under Appearance › Category chips. The search and the chosen chip stay while you look at an amount and go back; a new search starts over.
@@ -21,16 +22,16 @@ Built for a two-person household: both members log their own meals, can see and 
 - With two people, each ingredient is **Shared** (split by the dish's split), **only for one person** (e.g. the tomato on her burger) or has **own amounts** per person (noodles 120 g / 100 g). The split for shared ingredients: **Equal**, **Count** (3 toasts : 2 toasts), **%**, or **Weight** (weigh the cooked dish and each plate). What each portion gets is shown live; a split that can't work (e.g. 110 %) says why.
 - **Swap ingredient** (tap an ingredient of the dish): another product for it, e.g. Edamer from Spar instead of Gouda from Billa. The search starts in its category; the new product keeps the amount and who has it. If it can't be measured that way (e.g. slices, but no slice size), its amount is asked for first. Also in the dish editor on Today and History.
 - Optional **dish name** and **leftover portions** (each takes its share like a person would).
-- While a dish waits on Cook without being logged, the **Cook tab shows a dot**, wherever you are in the app.
+- While a dish waits without being logged, **its meal says "Unsaved dish"** on Today and in History, and its page offers **Continue unsaved dish**.
 - **Calories are an estimate:** a switch for food whose calories you only roughly know (eaten out, cooked by someone else; e.g. a custom item "Pizza, 900 kcal"). It applies to the whole dish and can be changed later with Edit dish. Adding an ingredient that is **marked as an estimate** switches it on by itself, with a note naming that ingredient; it can still be switched off for the dish. The calories still count in full, but show as **"~900 kcal"** with an "Estimate" label.
-- **Save meal** logs everything at once (each person's portion into their own meal) and goes back to where you came from.
+- **Save meal** logs everything at once (each person's portion into their own meal) and goes to the meal's page.
 - The draft is **kept on the phone** while you put it together, so switching tabs or iOS closing the app loses nothing. **Discard** starts over.
-- **Leftovers** of the last 7 days are listed at the top of Cook: eat one in any meal (for you or your partner), or **throw it away** (it keeps its share, so the eaten portions never change). While food is left, a **"Chili left"** pill sits next to "Meals" on Today and opens Cook.
+- **Leftovers** of the last 7 days are listed on every meal's page: eat one at that meal, or **throw it away** (it keeps its share, so the eaten portions never change). While food is left, a **"Chili left"** pill sits next to "Meals" on Today and opens the meal of the time of day.
 - Every logged food keeps a **snapshot of its nutrition values**. Editing an ingredient updates the food logged with it in the **last 14 days** (today and the 13 days before, for both of you, plain food and dishes alike) and says how many meals changed; older meals keep the values they were logged with.
 - Works offline like every change (queued on the phone, sent in order once back online).
 - **Recipes** for what you cook often, even with changing products (toast with Clever or Spar bread, Gouda or Edamer, Frischkäse only sometimes):
-  - **Save as recipe** keeps the dish on Cook by name (who eats, the split, own amounts, leftover portions), shared by both of you. **Cook › Recipes** lists them with their calories; **Cook this** fills Cook (asking first if a dish is already there) with the **current values** of the ingredients (custom items and deleted ingredients keep the values they were saved with). No scaling.
-  - A recipe line can hold **several products**, each with its own amount, and can be **optional**. On Cook, "From “Toast”" shows the products as chips and optional lines as switches, set as **last time**.
+  - **Save as recipe** keeps the dish on Cook by name (who eats, the split, own amounts, leftover portions), shared by both of you. **Ingredients › Recipes** lists them with their calories (rename, change, delete); a meal's **Add from recipe** lists them too, where **Cook this** fills its Add food (asking first if a dish is already there) with the **current values** of the ingredients (custom items and deleted ingredients keep the values they were saved with). No scaling.
+  - A recipe line can hold **several products**, each with its own amount, and can be **optional**. On Add food, "From “Toast”" shows the products as chips and optional lines as switches, set as **last time**.
   - **It learns when the meal is logged:** a product swapped in (Swap ingredient) becomes a new choice and next time's pick, an ingredient removed becomes optional and stays off next time, one added joins as an optional line, amounts follow what was used. Offline it learns the next time.
   - On a recipe's page: tap a line to remove a product from it or switch it between optional and required; rename and delete the recipe. **Save as recipe** on a dish cooked from a recipe offers **Update** (the same learning) or **Save as new recipe**. Saving and renaming need a connection.
 
@@ -38,7 +39,6 @@ Built for a two-person household: both members log their own meals, can see and 
 
 - One **Breakfast, Lunch, Dinner and Snacks** per person and day, with **day total** and per-meal totals. Unknown nutrients show as "–" instead of a misleading 0.
 - **Weight** next to the "Today" title (it costs no height): your current weight; tap to enter today's. On your partner's day it shows their weight.
-- Tapping an **empty meal opens Cook** already set to that person, day and meal.
 - In a meal, a food logged alone shows as a **plain row**: tap to change its amount, swipe to delete. Anything else is **one block** (its name, or "Pasta, Pesto +2"; "Shared" when you both ate it) with your share, opening to its ingredients and **Edit dish** (who eats, amounts, split, name, leftovers). Sharing a meal afterwards is simply adding your partner there.
 - Below a meal: **Copy to…** copies it to another day, meal or person (e.g. the same breakfast for your partner), each dish with exactly the logged amounts and values; **Save as recipe** keeps a meal of one dish as that whole dish (everyone who ate it), and merges a meal of several foods into one dish of what that person ate.
 - Either of you can change or delete a dish; all portions follow. Deleting a dish that has other portions **asks first**. If both of you changed it at the same time, the later save is refused instead of overwriting the other.
@@ -60,7 +60,7 @@ Built for a two-person household: both members log their own meals, can see and 
 - **Month calendar** (Monday first): every logged day is marked green (within that day's calorie goal), red (over) or neutral (logged, no goal yet). A cheat day has a dashed outline instead, a day with a cheat meal is neutral with a small dot. A past day since October 10 (when tracking started) without food at **lunch or dinner** is neutral with an **amber dot** ("lunch or dinner missing"), also when nothing was logged at all; breakfast and snacks may be empty. Opening it says which one ("Dinner missing").
 - **Which days count:** only complete past days: lunch and dinner logged, not a cheat day and no cheat meal. Today never counts, it isn't over yet. The same rule applies to the month summary and to Trends.
 - Month summary: days logged (those that count), average calories and protein, and how many days with food were left out (cheat days, days with a cheat meal, days missing lunch or dinner). The average shows "~" when a day in it had estimated calories.
-- **Tap any past day** to show its rings, totals and meals **right beneath the calendar**, and **edit it like today**. A forgotten dinner: tap the empty Dinner, which opens Cook for that day and comes back here after saving. Tap another day to switch, or the same day again to close it. The selected day is kept in the address (`/history/YYYY-MM-DD`), so reopening the app keeps it. Also for your partner's days.
+- **Tap any past day** to show its rings, totals and meals **right beneath the calendar**, and **edit it like today**. A forgotten dinner: tap the empty Dinner, which opens its Add food on top of that day; Back from the meal comes back here. Tap another day to switch, or the same day again to close it. The selected day is kept in the address (`/history/YYYY-MM-DD`), so reopening the app keeps it. Also for your partner's days.
 - Under the day's meals, its **weight**: the latest entry up to that day ("72.4 kg, since Mon, Oct 5"). Tap it to set that day's weight (also for past days) or delete the day's entry. Your partner's weight is shown, but only you change yours.
 - **Calendar | Trends** at the top switches to the trends:
   - **Range:** **Week** (a calendar week, Monday to Sunday, with weekday labels and compared with the week before; the default is the current one). **‹ ›** step to the previous or next week with at least one entry, and tapping **Week 43** lists every such week, newest first, with its Ø calories, to jump to one; 4 weeks, 3 months, 6 months or 1 year. **Chips** for what has a goal: Calories always, each nutrient with a target (protein, carbs, fat, fiber), and **Weight** once there is a target weight or an entry.
@@ -102,8 +102,8 @@ Built for a two-person household: both members log their own meals, can see and 
 
 ### Barcode scanner
 
-- A **barcode button** sits at the end of the search on **Cook › Add ingredient** and on the **Ingredients** tab.
-- **Already saved:** Cook goes straight to the amount; the Ingredients tab opens the ingredient.
+- A **barcode button** sits at the end of the search on **Add food › Add ingredient** and on the **Ingredients** tab.
+- **Already saved:** Add food goes straight to the amount; the Ingredients tab opens the ingredient.
 - **New package:** the New ingredient form opens **filled in from [Open Food Facts](https://world.openfoodfacts.org)**: name (each word capitalised, e.g. "Low Sugar Gummies"; the brand as it is), brand, and the values **per 100 g and per portion** (the portion's weight as grams per unit; the unit name is left for you, e.g. bar or pack). A product sold or portioned in **ml, cl or litres** (a drink) is filled in **in ml**: values per 100 ml and the portion in ml. Values the package states are used as they are; a missing side is worked out from the other with the portion weight (without a weight, per 100 g stays empty). A note shows the **product photo, pack size and portion** as printed, to tell it's the right product, and asks to check the values against the package; **Reset to the values from Open Food Facts** undoes your changes. Gaps in the product data (no calories, a portion bigger than the pack, per-portion values without a portion weight) are listed under **"Check the product data"**; the values themselves are checked live in the form (see Ingredient database). Nothing is saved before you tap Save. Unknown values stay empty instead of 0. Not found, offline or too slow (6 s): an empty form with the barcode (and on Cook the searched name) already in it.
 - **A package you already saved without its barcode:** above the new form, the saved ingredient it most likely is gets suggested ("Is this Skyr (Milbona)?", from the name and brand; only ingredients without a barcode). **Use it** saves the barcode on that ingredient and goes on as if it had been found (Cook: its amount; Ingredients: the ingredient). **Add to an existing ingredient** picks any saved one; replacing an ingredient's other barcode asks first. Ignoring both just leaves the new form as it is.
 - **Scanner page:** full-screen camera with a scan frame and a **torch** switch (where the phone offers one). It reads a few times a second and closes by itself. If the camera can't be used (permission off, no camera), it says so and offers the two fallbacks, which are always there: **Take photo** (the iOS camera, then the photo is read) and **Type number** (the check digit catches typos).
@@ -117,10 +117,10 @@ Built for a two-person household: both members log their own meals, can see and 
 - Signing out turns them off on that phone; signing in as the other person there and opening this page takes the phone over.
 - **What you are notified about** is saved to your account (only you see it), so all your phones follow it; each kind is on by default:
   - **Your partner changes your meals**: they log, change or delete food in one of your meals, mark it as a cheat meal, or log a dish you eat too. Told once they stopped for 3 minutes, as one notification ("baby changed your meals · Today: Lunch, Dinner"), using your nickname for them. It opens that day.
-  - **Meal reminders** for breakfast, lunch and dinner (10:00, 14:00, 20:00; each on or off, any time): only if that meal is still empty (or not marked as a cheat meal). It opens Cook for that meal.
+  - **Meal reminders** for breakfast, lunch and dinner (10:00, 14:00, 20:00; each on or off, any time): only if that meal is still empty (or not marked as a cheat meal). It opens that meal's Add food.
   - **Day summary**: calories and macros against your goal. By default the **next morning at 08:00 about the day before** (so late snacks count); it can be the **same day** at any time instead (e.g. 23:00). Days with nothing logged get none. It opens that day.
   - The times follow the time zone of the phone that last opened this page. A notification is sent at most once and up to 2 hours late (e.g. if the server was busy), never later.
-  - **A dish not logged yet**: a dish has waited on Cook without changes for 30 minutes (15 min, 1 h or 2 h instead); told once per change of the dish. It opens Cook. Only its name (or first ingredients) and when it last changed leave the phone; logging or discarding it forgets that at once.
+  - **A dish not logged yet**: a dish has waited on Add food without changes for 30 minutes (15 min, 1 h or 2 h instead); told once per change of the dish. It opens the meal the dish is for. Only its name (or first ingredients) and when it last changed leave the phone; logging or discarding it forgets that at once.
   - **Weekly review found something**: new open findings of the weekly review (point 20), once per review. It opens Ingredients.
 
 ### Works offline
@@ -146,7 +146,7 @@ Built for a two-person household: both members log their own meals, can see and 
 ### Look and feel
 
 - Rounded cards on a soft background, the Manrope font, meals as a 2×2 grid of cards, avatars (your initial on your accent color, your partner's symbol on a soft tint of its color) in the person switch and member list. Bottom sheets (drag down to close), segmented controls, switches and swipe actions.
-- **Floating tab bar** (Today · Cook · History · Ingredients · Settings): the active tab shows its label in an accent tint. **Swipe left and right** to switch tabs with an animated settle, and tap the active tab to scroll to the top. Dragging a slider or a draggable spot moves only that control, never the tabs or the page.
+- **Floating tab bar** (Today · History · Ingredients · Settings): the active tab shows its label in an accent tint. **Swipe left and right** to switch tabs with an animated settle, and tap the active tab to scroll to the top. Dragging a slider or a draggable spot moves only that control, never the tabs or the page.
 - **Pages inside Settings** (Appearance and its pages, Categories, your partner) behave like an iOS navigation stack: an opened page slides in over the one it came from, Back slides it away, and **swiping right drags it away with your finger** while the page below moves in from the left (let go past a third of the screen, or flick, to go back; otherwise it springs back). Each page keeps its scroll position. With Reduce Motion on, pages switch at once. Pages and sheets scroll without a visible scroll indicator.
 - Installable to the home screen (manifest, icons, safe areas, no zoom on input focus). Headers without buttons (Today, History, Settings) leave extra room at the top so titles stay clear of the fade iOS draws below the status bar.
 
@@ -193,7 +193,7 @@ Build plan with every decision: [`docs/plan-2026-10-20.md`](docs/plan-2026-10-20
 
 **Meals and Cook**
 
-- [ ] **40.** No Cook tab: tapping a meal on Today or in History opens it as a page with **Add food** (the Cook form, set to that person, day and meal; an empty meal opens it straight away); leftovers there and as the pill on Today; recipes via **Add from recipe**, managed under Ingredients; an unsaved dish shows on its meal
+- [x] **40.** No Cook tab: tapping a meal on Today or in History opens it as a page with **Add food** (the Cook form, set to that person, day and meal; an empty meal opens it straight away); leftovers there and as the pill on Today; recipes via **Add from recipe**, managed under Ingredients; an unsaved dish shows on its meal
 - [ ] **41.** Editing past meals without the Cook form: change amounts and remove foods right in the meal page; a dish in a compact view
 - [ ] **42.** **Move to…** next to Copy to…: a meal or a single food to another meal, day or person
 - [x] **43.** Today tidied: the day's kcal and macros under "Meals" go (the rings already show them); the layout stays
@@ -482,7 +482,7 @@ Next up is the list noted 2026-10-20 above. Recipes with choices, the notificati
 
 ```
 src/
-  app/            tab shell, swipe navigation, page stack (Settings sub-pages and Cook steps: push/pop and back swipe), current user, offline lifecycle, sync status, app version and update toasts
+  app/            tab shell, swipe navigation, page stack on every tab (a meal and its Add food steps, a recipe, Settings sub-pages: push/pop and back swipe), current user, offline lifecycle, sync status, app version and update toasts
   components/ios/ UI building blocks (Sheet, ListRow, TabBar, SegmentedControl, Avatar, …)
   features/
     appearance/   per-account theme, light/dark style, accent, goal and ring colors, progress style, category chips, app icon; Appearance pages
@@ -490,9 +490,9 @@ src/
     household/    profile, household, invite codes, onboarding
     ingredients/  ingredient database: API, form parsing, listing, category chips, screens
     categories/   Settings › Categories: broad categories and categories (create, rename, move, delete)
-    cook/         Cook tab: draft (kept on the phone), who/when, leftovers, links from an empty meal, recipe pages
+    cook/         Add food: the dish being put together (kept on the phone), who/when, its steps, Add from recipe, old /cook links
     recipes/      recipes: model (from a dish or meal, back to a dish at current values), API, list, page, save form
-    meals/        day model, meal sheet (show, change, delete), offline-capable day changes
+    meals/        day model, the meal page and its addresses (show, change, delete, leftovers), offline-capable day changes
     dishes/       dishes: share maths (portions.ts), composer and editor, dish API, offline dish changes (same queue as meal changes)
     goals/        goal history, goal form, progress card (rings / ring + bars / bars / compact)
     live/         live updates: the household's Realtime channel, hint → query mapping, batched refreshes

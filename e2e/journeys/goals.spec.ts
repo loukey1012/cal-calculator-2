@@ -1,5 +1,5 @@
 import { activePage, expect, logIn, test } from './backend.ts'
-import { addIngredient, cookFor } from './cook.ts'
+import { addIngredient, backToDay, cookFor } from './cook.ts'
 
 test('set a goal, see the rings, and log a meal for the partner', async ({ page, backend }) => {
   const me = await backend.user('Lukas')
@@ -33,6 +33,7 @@ test('set a goal, see the rings, and log a meal for the partner', async ({ page,
   await cookFor(today, page, /Lunch/)
   await addIngredient(page, 'Skyr', '500')
   await activePage(page).getByRole('button', { name: 'Save meal' }).click()
+  await backToDay(page)
 
   const goals = today.getByRole('list', { name: 'Goals' })
   await expect(goals).toContainText('315 / 2,000 kcal')
@@ -40,11 +41,12 @@ test('set a goal, see the rings, and log a meal for the partner', async ({ page,
 
   await today.getByRole('radio', { name: 'baby' }).click()
   await expect(today.getByText('baby hasn’t set a daily goal yet.')).toBeVisible()
-  // her empty breakfast opens Cook for her
+  // her empty breakfast opens its Add food, for her
   await cookFor(today, page, /Breakfast/)
   await expect(activePage(page).getByRole('button', { name: 'baby', pressed: true })).toBeVisible()
   await addIngredient(page, 'Haferflocken', '60')
   await activePage(page).getByRole('button', { name: 'Save meal' }).click()
+  await backToDay(page)
   await expect(today.getByRole('button', { name: /Breakfast/ })).toContainText('224 kcal')
 
   await expect

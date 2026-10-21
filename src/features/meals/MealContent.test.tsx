@@ -31,7 +31,7 @@ vi.mock('../ingredients/ingredientsApi', () => ({
 
 import { fetchIngredients } from '../ingredients/ingredientsApi'
 import { addMealItem, deleteMealItem, fetchDay, updateMealItem } from './mealsApi'
-import { MealSheet } from './MealSheet'
+import { MealContent } from './MealContent'
 
 const PROFILE = {
   id: 'u1',
@@ -60,27 +60,19 @@ const BAR = ingredient({
   unit_weight_g: 60,
 })
 
+/** The meal's content as its page shows it, inside a region named after the meal. */
 function renderSheet(staleTime = 0) {
-  const onClose = vi.fn()
-  const onCook = vi.fn()
   const { queryClient } = renderWithProviders(
     <CurrentUserContext value={{ profile: PROFILE, householdId: 'h1' }}>
-      <MealSheet
-        open
-        mealType="lunch"
-        userId="u1"
-        date="2026-10-01"
-        onClose={onClose}
-        onCook={onCook}
-      />
+      <section aria-label="Lunch">
+        <MealContent mealType="lunch" userId="u1" date="2026-10-01" />
+      </section>
     </CurrentUserContext>,
     { staleTime },
   )
   return {
-    onClose,
-    onCook,
     queryClient,
-    sheet: within(screen.getByRole('dialog', { name: 'Lunch' })),
+    sheet: within(screen.getByRole('region', { name: 'Lunch' })),
   }
 }
 
@@ -107,7 +99,7 @@ afterEach(() => {
   act(() => onlineManager.setOnline(true))
 })
 
-describe('MealSheet', () => {
+describe('MealContent', () => {
   test('lists the meal’s items with amount and calories, and the meal total', async () => {
     const { sheet } = renderSheet()
 
@@ -181,18 +173,12 @@ describe('MealSheet', () => {
     await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: ['month', 'u1'] }))
   })
 
-  test('offers no way to add food: an empty meal leads to Cook', async () => {
+  test('an empty meal says so; adding food is left to its page', async () => {
     vi.mocked(fetchDay).mockResolvedValue([dayMeal('m1', 'lunch', [])])
-    const user = userEvent.setup()
-    const { sheet, onCook } = renderSheet()
+    const { sheet } = renderSheet()
 
     expect(await sheet.findByText('Nothing logged yet.')).toBeInTheDocument()
-    expect(sheet.getByText('Meals are added on the Cook tab.')).toBeInTheDocument()
-    await user.click(sheet.getByRole('button', { name: 'Add on Cook' }))
-    expect(onCook).toHaveBeenCalledOnce()
-    expect(
-      sheet.queryByRole('button', { name: /Add food|Cook together|Share/ }),
-    ).not.toBeInTheDocument()
+    expect(sheet.queryByRole('button', { name: /Copy to|Save as recipe/ })).not.toBeInTheDocument()
   })
 
   test('a failed change is undone and explained', async () => {

@@ -59,6 +59,8 @@ type PageStackProps = {
   readonly container: HTMLElement | null
   readonly renderPage: () => ReactNode
   readonly onBack: (path: string) => void
+  /** the tab's own pages (e.g. History with a day picked or not): going between them moves nothing */
+  readonly isRoot?: (path: string) => boolean
 }
 
 // the shade over the page below, at its darkest
@@ -146,10 +148,16 @@ function isSwipeLocked(target: EventTarget | null): boolean {
 }
 
 /** The motion for a new address, given the one shown so far. */
-function motionFor(from: string, to: string, current: Motion, animated: boolean): Motion {
+function motionFor(
+  from: string,
+  to: string,
+  current: Motion,
+  animated: boolean,
+  isRoot: (path: string) => boolean,
+): Motion {
   // a swipe or Back that already slid the page away
   if (current.kind === 'gone' && current.under === to) return { kind: 'idle' }
-  const change = stackChange(from, to)
+  const change = isRoot(from) && isRoot(to) ? null : stackChange(from, to)
   if (!animated || !change || prefersReducedMotion()) return { kind: 'idle' }
   return change === 'push'
     ? { kind: 'slide', top: to, under: from, from: 1, to: 0, thenBack: false }
@@ -163,6 +171,7 @@ export function PageStack({
   container,
   renderPage,
   onBack,
+  isRoot = () => false,
 }: PageStackProps) {
   const [shownPath, setShownPath] = useState(path)
   const [motion, setMotion] = useState<Motion>({ kind: 'idle' })
@@ -179,7 +188,7 @@ export function PageStack({
   // the address changed: start the matching slide right away, in this render (no flash)
   if (path !== shownPath) {
     setShownPath(path)
-    setMotion(motionFor(shownPath, path, motion, animated))
+    setMotion(motionFor(shownPath, path, motion, animated, isRoot))
   }
 
   useEffect(() => {

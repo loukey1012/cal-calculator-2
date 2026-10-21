@@ -1,5 +1,5 @@
 import { activePage, expect, localDay, logIn, test } from './backend.ts'
-import { addIngredient, cookFor } from './cook.ts'
+import { addIngredient, backToDay, cookFor, openAddFood } from './cook.ts'
 
 /** name → amount of one person's items in a meal, as stored on the server */
 async function loggedItems(
@@ -15,13 +15,6 @@ async function loggedItems(
     .eq('meals.meal_type', mealType)
     .order('name')
   return data?.map((item) => `${item.name} ${item.entered_amount}`) ?? []
-}
-
-function openCook(page: import('@playwright/test').Page) {
-  return page
-    .getByRole('navigation', { name: 'Tabs' })
-    .getByRole('button', { name: 'Cook' })
-    .click()
 }
 
 test('cook together: one dish logged for both, edited, and a meal shared afterwards', async ({
@@ -52,10 +45,11 @@ test('cook together: one dish logged for both, edited, and a meal shared afterwa
     },
   ])
   await logIn(page, me)
-  const sheet = page.getByRole('dialog')
+  // a meal opens as a page of its own
+  const sheet = activePage(page)
 
   // a burger: shared patty, tomato only for her
-  await openCook(page)
+  await openAddFood(page, /Lunch/)
   const cook = activePage(page)
   await cook.getByRole('button', { name: 'baby', pressed: false }).click()
   await cook.getByRole('radio', { name: 'Lunch' }).click()
@@ -68,6 +62,7 @@ test('cook together: one dish logged for both, edited, and a meal shared afterwa
   await cook.getByRole('button', { name: 'Add to dish' }).click()
   await expect(cook.getByTestId('dish-totals')).toContainText('300 kcal')
   await cook.getByRole('button', { name: 'Save meal' }).click()
+  await backToDay(page)
 
   const today = activePage(page)
   await expect(today.getByRole('button', { name: /Lunch/ })).toContainText('1 item')
@@ -87,15 +82,12 @@ test('cook together: one dish logged for both, edited, and a meal shared afterwa
   await expect
     .poll(() => loggedItems(backend.admin, partner.id, 'lunch'))
     .toEqual(['Patty 150', 'Tomato 20'])
-  await sheet.getByRole('button', { name: 'Close' }).click()
+  await backToDay(page)
 
-  // dinner logged alone, then shared with her afterwards
+  // dinner logged alone, then shared with her afterwards (saving leads to the meal)
   await cookFor(activePage(page), page, /Dinner/)
   await addIngredient(page, 'Skyr', '400')
   await activePage(page).getByRole('button', { name: 'Save meal' }).click()
-  await activePage(page)
-    .getByRole('button', { name: /Dinner/ })
-    .click()
   await sheet.getByRole('button', { name: /Skyr.*400 g/ }).click()
   await sheet.getByRole('button', { name: 'Edit dish' }).click()
   await sheet.getByRole('combobox', { name: 'baby' }).selectOption('dinner')
@@ -125,15 +117,19 @@ test('leftovers: cook a portion more, see it on Today, eat it later', async ({ p
   await expect(cook.getByTestId('dish-totals')).toContainText(/Leftover.*900 kcal/)
   await cook.getByRole('button', { name: 'Save meal' }).click()
 
-  // the leftover shows on Today and opens Cook, where it is eaten for lunch
-  await activePage(page).getByRole('button', { name: 'Chili left' }).click()
+  // the leftover shows on Today; on a meal's page it is eaten there, here for lunch
+  await backToDay(page)
+  await expect(activePage(page).getByRole('button', { name: 'Chili left' })).toBeVisible()
+  await cookFor(activePage(page), page, /Lunch/)
+  await activePage(page).getByRole('button', { name: 'Back' }).click()
   await activePage(page)
     .getByRole('button', { name: /Chili.*900 kcal/ })
     .click()
   const leftover = page.getByRole('dialog', { name: 'Chili' })
-  await leftover.getByRole('radio', { name: 'Lunch' }).click()
-  await leftover.getByRole('button', { name: 'Add to meal' }).click()
-  await expect(activePage(page).getByRole('button', { name: /Chili.*900 kcal/ })).toBeHidden()
+  await leftover.getByRole('button', { name: 'Add to Lunch' }).click()
+  // no longer a leftover: now a dish of lunch
+  await expect(activePage(page).getByRole('button', { name: /Chili.*1 portion/ })).toBeHidden()
+  await expect(activePage(page).getByRole('button', { name: /Chili.*900 kcal/ })).toBeVisible()
 
   await expect
     .poll(async () => {
@@ -149,10 +145,7 @@ test('leftovers: cook a portion more, see it on Today, eat it later', async ({ p
       })
     })
     .toEqual(expect.arrayContaining(['dinner 600', 'lunch 600']))
-  await page
-    .getByRole('navigation', { name: 'Tabs' })
-    .getByRole('button', { name: 'Today' })
-    .click()
+  await backToDay(page)
   await expect(activePage(page).getByRole('button', { name: /Lunch/ })).toContainText('900 kcal')
 })
 
@@ -197,31 +190,31 @@ test('adding an ingredient: Back and the back swipe go one step at a time', asyn
     },
   ])
   await logIn(page, me)
-  await openCook(page)
+  await openAddFood(page)
   const cook = activePage(page)
 
   // the wrong ingredient picked: Back leads to the search, still filtered
   await cook.getByRole('button', { name: 'Add ingredient' }).click()
   await cook.getByLabel('Search ingredients').fill('pat')
   await cook.getByRole('button', { name: /Patty/ }).click()
-  await expect(page).toHaveURL(/\/cook\/add\/[^/]+$/)
+  await expect(page).toHaveURL(/\/food\/add\/[^/]+$/)
   await cook.getByRole('button', { name: 'Back' }).click()
-  await expect(page).toHaveURL(/\/cook\/add$/)
+  await expect(page).toHaveURL(/\/food\/add$/)
   await expect(cook.getByLabel('Search ingredients')).toHaveValue('pat')
 
   // a swipe on the amount goes back to the search too, not to another tab
   await cook.getByRole('button', { name: /Patty/ }).click()
   await expect(cook.getByLabel('Amount')).toBeVisible()
   await swipeBack(page)
-  await expect(page).toHaveURL(/\/cook\/add$/)
+  await expect(page).toHaveURL(/\/food\/add$/)
   await expect(cook.getByLabel('Search ingredients')).toBeVisible()
 
   // and from the search back to the dish
   await swipeBack(page)
-  await expect(page).toHaveURL(/\/cook$/)
+  await expect(page).toHaveURL(/\/food$/)
   await expect(cook.getByRole('button', { name: 'Add ingredient' })).toBeVisible()
   await addIngredient(page, 'Tomato', '50')
-  await expect(page).toHaveURL(/\/cook$/)
+  await expect(page).toHaveURL(/\/food$/)
   await expect(cook.getByRole('button', { name: /Tomato/ })).toBeVisible()
 })
 
@@ -249,7 +242,7 @@ test('the Cook search: category chips, and a missing ingredient created right th
     { household_id: household, name: 'Tomato', kcal_100: 18, category_id: categoryId('Veggies') },
   ])
   await logIn(page, me)
-  await openCook(page)
+  await openAddFood(page)
   const cook = activePage(page)
   await cook.getByRole('button', { name: 'Add ingredient' }).click()
 

@@ -124,13 +124,18 @@ export function resolvedDish(draft: CookDraft, today: string, mealOfDay: MealTyp
 }
 
 /**
- * Opened from an empty meal: a fresh draft becomes exactly that person, day and meal; a started
- * one keeps its people and ingredients and only adds the person.
+ * A meal's Add food opened: a fresh draft becomes exactly that person, day and meal; a started
+ * one keeps its people and ingredients and only adds the person. Opening it again for the same
+ * meal changes nothing (so the waiting dish isn't noted as changed).
  */
 export function withPrefill(draft: CookDraft, prefill: CookPrefill, today: string): CookDraft {
-  const base = hasContent(draft) ? draft : newCookDraft(prefill.userId)
+  const onlyThem = draftEaterIds(draft).join() === prefill.userId
+  const base = hasContent(draft) || onlyThem ? draft : newCookDraft(prefill.userId)
   const withPerson = withEater(base, prefill.userId, true)
-  return withMealType(withDate(withPerson, prefill.date, today), prefill.mealType)
+  const next = withMealType(withDate(withPerson, prefill.date, today), prefill.mealType)
+  const same =
+    next.dish === draft.dish && next.date === draft.date && next.mealType === draft.mealType
+  return same ? draft : next
 }
 
 /** People who left the household stop eating; with nobody left, the cook eats. */

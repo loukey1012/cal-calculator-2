@@ -1,5 +1,5 @@
 import { activePage, expect, logIn, test } from './backend.ts'
-import { addIngredient, cookFor } from './cook.ts'
+import { addIngredient, backToDay, cookFor } from './cook.ts'
 
 test('a meal logged offline is kept and sent exactly once when back online', async ({
   page,
@@ -21,6 +21,7 @@ test('a meal logged offline is kept and sent exactly once when back online', asy
 
   await context.setOffline(true)
   await activePage(page).getByRole('button', { name: 'Save meal' }).click()
+  await backToDay(page)
   await expect(activePage(page).getByRole('button', { name: /Lunch/ })).toContainText('158 kcal')
   await expect(
     page.getByRole('status').filter({ hasText: 'Offline · 1 change pending' }),

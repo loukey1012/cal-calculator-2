@@ -1,5 +1,12 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useCurrentUser } from '../../app/currentUser'
+import { usePagePath } from '../../app/pagePath'
+import { useStackNavigate } from '../../app/stackNavigate'
+import { BackButton } from '../../components/ios/BackButton'
+import { SegmentedControl } from '../../components/ios/SegmentedControl'
+import { recipePageOf, recipePath } from '../cook/recipePages'
+import { RecipePage } from '../recipes/RecipePage'
+import { RecipesList } from '../recipes/RecipesList'
 import { Button } from '../../components/ios/Button'
 import { EmptyState } from '../../components/ios/EmptyState'
 import { ErrorBanner } from '../../components/ios/ErrorBanner'
@@ -31,7 +38,47 @@ import { ALL_CATEGORIES, filterIngredients, groupByCategory, type CategoryFilter
 /** null ingredient = a new one, maybe for a scanned barcode */
 type Editing = { readonly ingredient: Ingredient | null; readonly barcode?: string } | null
 
+const INGREDIENTS_PATH = '/ingredients'
+const RECIPES_PATH = '/ingredients/recipes'
+const VIEW_OPTIONS = [
+  { value: 'ingredients', label: 'Ingredients' },
+  { value: 'recipes', label: 'Recipes' },
+] as const
+
+/** Ingredients or Recipes (the saved ones, managed here), and a recipe opened on top. */
 export function IngredientsPage() {
+  const recipePage = recipePageOf(usePagePath(), RECIPES_PATH)
+  const go = useStackNavigate()
+  if (recipePage?.kind === 'recipe') {
+    return (
+      <RecipePage
+        recipeId={recipePage.recipeId}
+        leading={<BackButton label="Recipes" onClick={() => go(RECIPES_PATH)} />}
+        onDeleted={() => go(RECIPES_PATH)}
+      />
+    )
+  }
+  const views = (
+    <div className="mb-3">
+      <SegmentedControl
+        label="Show"
+        options={VIEW_OPTIONS}
+        value={recipePage ? 'recipes' : 'ingredients'}
+        onChange={(view) => go(view === 'recipes' ? RECIPES_PATH : INGREDIENTS_PATH)}
+      />
+    </div>
+  )
+  if (!recipePage) return <IngredientList views={views} />
+  return (
+    <>
+      <PageHeader title="Recipes" />
+      {views}
+      <RecipesList leading={null} onOpen={(recipeId) => go(recipePath(RECIPES_PATH, recipeId))} />
+    </>
+  )
+}
+
+function IngredientList({ views }: { readonly views: ReactNode }) {
   const { householdId } = useCurrentUser()
   const ingredients = useIngredients(householdId)
   const categories = useCategories(householdId)
@@ -127,6 +174,7 @@ export function IngredientsPage() {
           </div>
         }
       />
+      {views}
       <SearchField
         label="Search ingredients"
         value={query}
