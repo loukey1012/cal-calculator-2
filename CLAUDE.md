@@ -26,8 +26,8 @@ Don't bump `CACHE_BUSTER` for that: it would also drop changes still waiting to 
 any of them; keep its status table and the README checkboxes current. Batch A (32–37, 43) is
 done; 38 (two-level categories, tree in `scripts/recategorize/tree.json`) is done (2026-10-21);
 45 (notes on days and meals, added 2026-10-21) and 39 (merging duplicates from the review) are
-built; batch C: 40 (meal pages, no Cook tab) is built, 41 (editing on the meal page) and 42
-(Move to…) are next.
+built; batch C: 40 (meal pages, no Cook tab) and 41 (compact dish editing) are built, 42 (Move to…)
+is next.
 
 **State (2026-10-20, evening):** items 1–31 are built; their build plan
 (`docs/plan-2026-10-15.md`) was removed at the user's request, its decisions live in README.md

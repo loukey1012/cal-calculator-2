@@ -29,6 +29,7 @@ import {
   withSwappedLine,
 } from './dishDraft'
 import { DishLineEditor, type PortionOption } from './DishLineEditor'
+import { CompactDish } from './CompactDish'
 import { DishSplitSection } from './DishSplitSection'
 import { DishTotals } from './DishTotals'
 import { LeftoverStepper } from './LeftoverStepper'
@@ -47,6 +48,8 @@ type DishComposerProps = {
   readonly error: string | null
   /** which step is shown, and moving between them */
   readonly steps: ComposerSteps
+  /** a logged dish: amounts changed in place, the rest only when opened (`header` goes there) */
+  readonly compact?: boolean
 }
 
 /**
@@ -62,6 +65,7 @@ export function DishComposer({
   actions,
   error,
   steps,
+  compact = false,
 }: DishComposerProps) {
   const top = useRef<HTMLDivElement>(null)
   const { step } = steps
@@ -87,7 +91,19 @@ export function DishComposer({
 
   return (
     <div ref={top} className="scroll-mt-4">
-      {step.kind === 'main' ? (
+      {step.kind === 'main' && compact && (
+        <CompactDish
+          dish={dish}
+          onChange={onChange}
+          nameOf={nameOf}
+          whoEats={header}
+          estimateNote={estimatedNames.length > 0 ? estimatedNoteText(estimatedNames) : null}
+          actions={actions}
+          error={error}
+          steps={steps}
+        />
+      )}
+      {step.kind === 'main' && !compact && (
         <>
           {header}
           <GroupedSection header="Ingredients">
@@ -130,7 +146,8 @@ export function DishComposer({
           {error && <ErrorBanner message={error} />}
           <div className="mt-6 flex flex-col gap-3">{actions}</div>
         </>
-      ) : (
+      )}
+      {step.kind !== 'main' && (
         <StepView
           step={step}
           steps={steps}

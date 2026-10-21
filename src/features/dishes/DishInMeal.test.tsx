@@ -160,6 +160,8 @@ describe('a shared dish in the meal', () => {
 
     await user.click(await sheet.findByRole('button', { name: /Chili/ }))
     await user.click(sheet.getByRole('button', { name: 'Edit dish' }))
+    await user.click(await sheet.findByRole('button', { name: /^Name, leftovers, estimate/ }))
+    await user.click(await sheet.findByRole('button', { name: /^Who ate it, split/ }))
     expect(await sheet.findByLabelText('Dish name (optional)')).toHaveValue('Chili')
     expect(sheet.getByRole('combobox', { name: 'Schatz' })).toHaveValue('lunch')
     await user.click(sheet.getByRole('button', { name: /Mince/ }))
@@ -173,12 +175,27 @@ describe('a shared dish in the meal', () => {
     expect(sentDish().lines[0]?.item).toMatchObject({ entered_amount: 600, basis_multiplier: 6 })
   })
 
+  test('an amount is changed right in the list, without opening the ingredient', async () => {
+    const user = userEvent.setup()
+    const sheet = renderSheet()
+
+    await user.click(await sheet.findByRole('button', { name: /Chili/ }))
+    await user.click(sheet.getByRole('button', { name: 'Edit dish' }))
+    const amount = await sheet.findByRole('textbox', { name: 'Mince, amount' })
+    await user.clear(amount)
+    await user.type(amount, '550')
+    await user.click(sheet.getByRole('button', { name: 'Save dish' }))
+
+    expect(sentDish().lines[0]?.item).toMatchObject({ entered_amount: 550, basis_multiplier: 5.5 })
+  })
+
   test('it can be marked as an estimate afterwards', async () => {
     const user = userEvent.setup()
     const sheet = renderSheet()
 
     await user.click(await sheet.findByRole('button', { name: /Chili/ }))
     await user.click(sheet.getByRole('button', { name: 'Edit dish' }))
+    await user.click(await sheet.findByRole('button', { name: /^Name, leftovers, estimate/ }))
     const estimate = await sheet.findByRole('switch', { name: 'Calories are an estimate' })
     expect(estimate).not.toBeChecked()
     await user.click(estimate)
@@ -208,6 +225,7 @@ describe('a shared dish in the meal', () => {
     const sheet = within(getByRole('region', { name: 'Lunch' }))
     await user.click(await sheet.findByRole('button', { name: /Chili/ }))
     await user.click(sheet.getByRole('button', { name: 'Edit dish' }))
+    await user.click(await sheet.findByRole('button', { name: /^Name, leftovers, estimate/ }))
     const name = await sheet.findByLabelText('Dish name (optional)')
     await user.clear(name)
     await user.type(name, 'My chili')
@@ -228,6 +246,7 @@ describe('a shared dish in the meal', () => {
     const sheet = within(getByRole('region', { name: 'Lunch' }))
     await user.click(await sheet.findByRole('button', { name: /Chili/ }))
     await user.click(sheet.getByRole('button', { name: 'Edit dish' }))
+    await user.click(await sheet.findByRole('button', { name: /^Name, leftovers, estimate/ }))
     const name = await sheet.findByLabelText('Dish name (optional)')
     await user.clear(name)
     await user.type(name, 'My chili')
@@ -251,6 +270,7 @@ describe('a shared dish in the meal', () => {
     const sheet = within(getByRole('region', { name: 'Lunch' }))
     await user.click(await sheet.findByRole('button', { name: /Chili/ }))
     await user.click(sheet.getByRole('button', { name: 'Edit dish' }))
+    await user.click(await sheet.findByRole('button', { name: /^Name, leftovers, estimate/ }))
     await sheet.findByLabelText('Dish name (optional)')
     vi.mocked(fetchDish).mockResolvedValue({ ...CHILI, name: 'Her chili', revision: 'rev-2' })
     await queryClient.invalidateQueries({ queryKey: ['dish', 'dish-1'] })
@@ -259,6 +279,8 @@ describe('a shared dish in the meal', () => {
     await user.click(await sheet.findByRole('button', { name: 'Load changes' }))
 
     // Assert
+    // the form starts over, with its rows closed
+    await user.click(await sheet.findByRole('button', { name: /^Name, leftovers, estimate/ }))
     expect(sheet.getByLabelText('Dish name (optional)')).toHaveValue('Her chili')
     expect(sheet.queryByText('Updated on another phone')).not.toBeInTheDocument()
     await user.click(sheet.getByRole('button', { name: 'Save dish' }))
@@ -272,6 +294,7 @@ describe('a shared dish in the meal', () => {
 
     await user.click(await sheet.findByRole('button', { name: /Chili/ }))
     await user.click(sheet.getByRole('button', { name: 'Edit dish' }))
+    await user.click(await sheet.findByRole('button', { name: /^Who ate it, split/ }))
     await user.selectOptions(await sheet.findByRole('combobox', { name: 'Schatz' }), 'dinner')
     await user.click(sheet.getByRole('button', { name: 'Save dish' }))
 
@@ -291,7 +314,7 @@ describe('a shared dish in the meal', () => {
     const sheet = renderSheet()
     await user.click(await sheet.findByRole('button', { name: /Chili/ }))
     await user.click(sheet.getByRole('button', { name: 'Edit dish' }))
-    await user.click(await sheet.findByRole('button', { name: 'Add ingredient' }))
+    await user.click(await sheet.findByRole('button', { name: '+ Add ingredient' }))
     await user.type(sheet.getByLabelText('Search ingredients'), 'ric')
     await user.click(await sheet.findByRole('button', { name: /Rice/ }))
 
@@ -302,6 +325,8 @@ describe('a shared dish in the meal', () => {
 
     // Act + Assert: back to the dish
     await user.click(sheet.getByRole('button', { name: 'Back' }))
+    // the form starts over, with its rows closed
+    await user.click(await sheet.findByRole('button', { name: /^Name, leftovers, estimate/ }))
     expect(sheet.getByLabelText('Dish name (optional)')).toHaveValue('Chili')
   })
 
@@ -405,6 +430,7 @@ describe('a single food logged alone', () => {
 
     await user.click(await sheet.findByRole('button', { name: /Banana/ }))
     await user.click(await sheet.findByRole('button', { name: 'Edit dish' }))
+    await user.click(await sheet.findByRole('button', { name: /^Who ate it, split/ }))
     await user.selectOptions(await sheet.findByRole('combobox', { name: 'Schatz' }), 'lunch')
     await user.click(sheet.getByRole('button', { name: 'Save dish' }))
 

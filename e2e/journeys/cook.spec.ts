@@ -90,6 +90,7 @@ test('cook together: one dish logged for both, edited, and a meal shared afterwa
   await activePage(page).getByRole('button', { name: 'Save meal' }).click()
   await sheet.getByRole('button', { name: /Skyr.*400 g/ }).click()
   await sheet.getByRole('button', { name: 'Edit dish' }).click()
+  await sheet.getByRole('button', { name: /^Who ate it, split/ }).click()
   await sheet.getByRole('combobox', { name: 'baby' }).selectOption('dinner')
   await sheet.getByRole('button', { name: 'Save dish' }).click()
 

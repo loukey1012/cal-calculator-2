@@ -151,26 +151,25 @@ function DishForm({
   }
 
   return (
-    <DishComposer
-      dish={draft}
-      onChange={change}
-      nameOf={nameOf}
-      error={error}
-      steps={steps}
-      header={
-        <>
-          {hasNewerVersion && !isSaved && <NewerVersionNotice onLoad={onLoadNewerVersion} />}
-          <WhoEatsSection dish={draft} people={people} date={date} onChange={change} />
-        </>
-      }
-      actions={
-        <>
-          <Button onClick={save}>Save dish</Button>
-          <Button variant="destructive" onClick={remove}>
-            Delete dish
-          </Button>
-        </>
-      }
-    />
+    <>
+      {hasNewerVersion && !isSaved && <NewerVersionNotice onLoad={onLoadNewerVersion} />}
+      <DishComposer
+        compact
+        dish={draft}
+        onChange={change}
+        nameOf={nameOf}
+        error={error}
+        steps={steps}
+        header={<WhoEatsSection dish={draft} people={people} date={date} onChange={change} />}
+        actions={
+          <>
+            <Button onClick={save}>Save dish</Button>
+            <Button variant="destructive" onClick={remove}>
+              Delete dish
+            </Button>
+          </>
+        }
+      />
+    </>
   )
 }

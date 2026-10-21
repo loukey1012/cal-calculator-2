@@ -39,7 +39,7 @@ Built for a two-person household: both members log their own meals, can see and 
 
 - One **Breakfast, Lunch, Dinner and Snacks** per person and day, with **day total** and per-meal totals. Unknown nutrients show as "–" instead of a misleading 0.
 - **Weight** next to the "Today" title (it costs no height): your current weight; tap to enter today's. On your partner's day it shows their weight.
-- In a meal, a food logged alone shows as a **plain row**: tap to change its amount, swipe to delete. Anything else is **one block** (its name, or "Pasta, Pesto +2"; "Shared" when you both ate it) with your share, opening to its ingredients and **Edit dish** (who eats, amounts, split, name, leftovers). Sharing a meal afterwards is simply adding your partner there.
+- In a meal, a food logged alone shows as a **plain row**: tap to change its amount, swipe to delete. Anything else is **one block** (its name, or "Pasta, Pesto +2"; "Shared" when you both ate it) with your share, opening to its ingredients and **Edit dish**: a compact view with what everyone got, **each ingredient's amount to change right in the list**, **+ Add ingredient** (just the search), and **Who ate it, split** and **Name, leftovers, estimate** only when tapped; tapping an ingredient's name still opens it (own amounts per person, swap, remove). Sharing a meal afterwards is simply adding your partner there.
 - Below a meal: **Copy to…** copies it to another day, meal or person (e.g. the same breakfast for your partner), each dish with exactly the logged amounts and values; **Save as recipe** keeps a meal of one dish as that whole dish (everyone who ate it), and merges a meal of several foods into one dish of what that person ate.
 - Either of you can change or delete a dish; all portions follow. Deleting a dish that has other portions **asks first**. If both of you changed it at the same time, the later save is refused instead of overwriting the other.
 - On the Today cards a dish counts as **one item**. The whole page (person switch, goal card and all four meals) **fits an iPhone screen without scrolling**.
@@ -194,7 +194,7 @@ Build plan with every decision: [`docs/plan-2026-10-20.md`](docs/plan-2026-10-20
 **Meals and Cook**
 
 - [x] **40.** No Cook tab: tapping a meal on Today or in History opens it as a page with **Add food** (the Cook form, set to that person, day and meal; an empty meal opens it straight away); leftovers there and as the pill on Today; recipes via **Add from recipe**, managed under Ingredients; an unsaved dish shows on its meal
-- [ ] **41.** Editing past meals without the Cook form: change amounts and remove foods right in the meal page; a dish in a compact view
+- [x] **41.** Editing past meals without the Cook form: change amounts and remove foods right in the meal page; a dish in a compact view
 - [ ] **42.** **Move to…** next to Copy to…: a meal or a single food to another meal, day or person
 - [x] **43.** Today tidied: the day's kcal and macros under "Meals" go (the rings already show them); the layout stays
 
