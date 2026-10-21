@@ -12,12 +12,12 @@ export async function addIngredient(page: Page, name: RegExp | string, amount: s
   await cook.getByRole('button', { name: 'Add to dish' }).click()
 }
 
-/** Opens an empty meal on the shown day, which opens its Add food straight away. */
+/** Opens an empty meal on the shown day, then its Add food. */
 export async function cookFor(day: Locator, page: Page, meal: RegExp) {
   const card = day.getByRole('button', { name: meal })
-  // once loaded, an empty meal goes straight to Add food
   await expect(card).toContainText('Nothing logged')
   await card.click()
+  await activePage(page).getByRole('button', { name: '+ Add food' }).click()
   await activePage(page).getByRole('heading', { level: 1, name: 'Add food' }).waitFor()
 }
 
@@ -36,12 +36,10 @@ export async function openAddFood(page: Page, meal: RegExp = /Snacks/) {
   await expect(page).toHaveURL(/\/today$/)
   const card = activePage(page).getByRole('button', { name: meal })
   await expect(card).not.toContainText(/Loading|not loaded/)
-  const empty = ((await card.textContent()) ?? '').includes('Nothing logged')
   await card.click()
-  if (!empty)
-    await activePage(page)
-      .getByRole('button', { name: /Add food|Continue/ })
-      .click()
+  await activePage(page)
+    .getByRole('button', { name: /Add food|Continue/ })
+    .click()
   await activePage(page).getByRole('heading', { level: 1, name: 'Add food' }).waitFor()
 }
 

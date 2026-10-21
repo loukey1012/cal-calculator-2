@@ -19,7 +19,7 @@ import type { Profile } from '../household/householdApi'
 import { useLookOf } from '../household/usePersonLook'
 import { cheatMeals, itemsByMeal, mealEntries, MEAL_TYPES, type MealType } from '../meals/dayModel'
 import { useDay, useDayNote, useLatestDayChangeError, useCheatDay } from '../meals/hooks'
-import { foodPath, mealPath } from '../meals/mealPages'
+import { mealPath } from '../meals/mealPages'
 import { isDraftFor } from '../meals/unsavedDish'
 import { formatKcalTotal } from '../nutrition/format'
 import type { NutritionTotals } from '../nutrition/types'
@@ -85,10 +85,12 @@ type MealCardProps = {
   readonly label: string
   readonly subtitle: string
   readonly note: string | null
+  /** a dish for it is waiting, not logged yet: a dot by its name */
+  readonly unsaved: boolean
   readonly onOpen: () => void
 }
 
-function MealCard({ type, label, subtitle, note, onOpen }: MealCardProps) {
+function MealCard({ type, label, subtitle, note, unsaved, onOpen }: MealCardProps) {
   const MealIcon = MEAL_ICONS[type]
   return (
     <button
@@ -102,6 +104,13 @@ function MealCard({ type, label, subtitle, note, onOpen }: MealCardProps) {
           <MealIcon className="h-4 w-4" />
         </span>
         <span className="text-[16px] font-extrabold">{label}</span>
+        {unsaved && (
+          <span
+            data-testid="unsaved-dot"
+            aria-hidden="true"
+            className="h-2.5 w-2.5 shrink-0 rounded-full bg-accent"
+          />
+        )}
       </span>
       <span className="block truncate px-0.5 text-[13px] font-semibold text-label-secondary">
         {subtitle}
@@ -120,10 +129,7 @@ type DayViewProps = {
   readonly date: string
 }
 
-/**
- * A person's day: goal progress, total and the four meals. A meal opens as a page of its own;
- * an empty one straight at its Add food.
- */
+/** A person's day: goal progress, total and the four meals, each opening as a page of its own. */
 export function DayView({ person, isOwnDay, date }: DayViewProps) {
   const day = useDay(person.id, date)
   const cheatDay = useCheatDay(person.id, date).data === true
@@ -140,10 +146,8 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
   const { draft } = useCookSession()
   const mealOfDay = useMealOfDay()
   const mealOf = (mealType: MealType) => ({ userId: person.id, date, mealType })
-  const openMeal = (mealType: MealType, toFood: boolean) => {
-    const path = mealPath(mealOf(mealType), from)
-    navigate(toFood ? foodPath(path) : path, { person: person.id })
-  }
+  const openMeal = (mealType: MealType) =>
+    navigate(mealPath(mealOf(mealType), from), { person: person.id })
 
   const byMeal = itemsByMeal(day.data ?? [])
   const cheatMealTypes = cheatMeals(day.data ?? [])
@@ -203,7 +207,7 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
                 <h2 className="font-display text-[20px] font-bold">Meals</h2>
                 {/* in the heading row, so Today still fits the screen */}
                 <span className="flex min-w-0 flex-1">
-                  <LeftoversPill onOpen={() => openMeal(mealOfDay, false)} />
+                  <LeftoversPill onOpen={() => openMeal(mealOfDay)} />
                 </span>
                 <button
                   type="button"
@@ -235,9 +239,8 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
                   label={label}
                   note={note}
                   subtitle={mealSubtitle(day.isPending, day.fetchStatus === 'paused', summary)}
-                  onOpen={() =>
-                    openMeal(type, !day.isPending && (summary.count === 0 || summary.unsaved))
-                  }
+                  unsaved={summary.unsaved}
+                  onOpen={() => openMeal(type)}
                 />
               ))}
             </div>

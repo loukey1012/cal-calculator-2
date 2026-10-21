@@ -52,7 +52,6 @@ test('cook together: one dish logged for both, edited, and a meal shared afterwa
   await openAddFood(page, /Lunch/)
   const cook = activePage(page)
   await cook.getByRole('button', { name: 'baby', pressed: false }).click()
-  await cook.getByRole('radio', { name: 'Lunch' }).click()
   await cook.getByLabel('Dish name (optional)').fill('Burger')
   await addIngredient(page, 'Patty', '250')
   await cook.getByRole('button', { name: 'Add ingredient' }).click()

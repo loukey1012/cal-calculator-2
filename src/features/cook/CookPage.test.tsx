@@ -283,14 +283,13 @@ describe('swapping an ingredient', () => {
 })
 
 describe('cooking alone', () => {
-  test('one food for me, saved as a dish into the chosen meal of today', async () => {
+  test('one food for me, saved as a dish into the meal it was opened for', async () => {
     // Arrange
     const user = userEvent.setup()
-    renderCook()
+    renderCook(food({ ...mealNow(), mealType: 'snack' }))
 
     // Act
     expect(await screen.findByRole('button', { name: 'Lukas', pressed: true })).toBeInTheDocument()
-    await user.click(screen.getByRole('radio', { name: 'Snacks' }))
     await addIngredient(user, 'Tomato', '150')
     await user.click(screen.getByRole('button', { name: 'Save meal' }))
 
@@ -311,15 +310,6 @@ describe('cooking alone', () => {
     )
   })
 
-  test('the meal follows the time of day until one is chosen', async () => {
-    vi.useFakeTimers({ toFake: ['Date'] })
-    vi.setSystemTime(new Date(2026, 9, 6, 19, 0))
-    renderCook()
-
-    expect(await screen.findByRole('radio', { name: 'Dinner' })).toBeChecked()
-    vi.useRealTimers()
-  })
-
   test('a dish needs at least one ingredient', async () => {
     const user = userEvent.setup()
     renderCook()
@@ -333,7 +323,7 @@ describe('cooking alone', () => {
   test('an earlier day can be chosen, but not a future one', async () => {
     // Arrange
     const user = userEvent.setup()
-    renderCook()
+    renderCook(food({ ...mealNow(), mealType: 'breakfast' }))
     const day = await screen.findByLabelText('Day')
     expect(day).toHaveValue(today())
     expect(day).toHaveAttribute('max', today())
@@ -342,7 +332,6 @@ describe('cooking alone', () => {
     fireEvent.change(day, { target: { value: '2999-01-01' } })
     expect(day).toHaveValue(today())
     fireEvent.change(day, { target: { value: '2026-10-02' } })
-    await user.click(screen.getByRole('radio', { name: 'Breakfast' }))
     await addIngredient(user, 'Patty', '100')
     await user.click(screen.getByRole('button', { name: 'Save meal' }))
 
@@ -485,11 +474,10 @@ describe('cooking together', () => {
   test('a burger: shared patty, tomato only for her, saved for both', async () => {
     // Arrange
     const user = userEvent.setup()
-    renderCook()
+    renderCook(food({ ...mealNow(), mealType: 'lunch' }))
 
     // Act
     await cookWithHer(user)
-    await user.click(screen.getByRole('radio', { name: 'Lunch' }))
     await user.type(screen.getByLabelText('Dish name (optional)'), 'Burger')
     await addIngredient(user, 'Patty', '250')
     await user.click(screen.getByRole('button', { name: 'Add ingredient' }))
@@ -1008,7 +996,6 @@ describe('opened from an empty meal', () => {
     expect(await screen.findByRole('button', { name: 'Schatz', pressed: true })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Lukas', pressed: false })).toBeInTheDocument()
     expect(screen.getByLabelText('Day')).toHaveValue('2026-10-04')
-    expect(screen.getByRole('radio', { name: 'Dinner' })).toBeChecked()
 
     // Act
     await addIngredient(user, 'Patty', '100')

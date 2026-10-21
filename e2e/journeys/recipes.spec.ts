@@ -37,7 +37,6 @@ test('a dish saved as a recipe is cooked again at the ingredient’s new values'
   await openAddFood(page, /Lunch/)
   const cook = activePage(page)
   await cook.getByRole('button', { name: 'baby', pressed: false }).click()
-  await cook.getByRole('radio', { name: 'Lunch' }).click()
   await addIngredient(page, 'Patty', '300')
   await cook.getByRole('button', { name: 'Save as recipe' }).click()
   const sheet = page.getByRole('dialog', { name: 'Save as recipe' })
@@ -64,7 +63,6 @@ test('a dish saved as a recipe is cooked again at the ingredient’s new values'
   await expect(again.getByRole('button', { name: 'baby', pressed: true })).toBeVisible()
   // 300 g at 200 kcal per 100 g, halved (the old value would give 360 each)
   await expect(again.getByTestId('dish-totals')).toContainText(/Lukas.*300 kcal.*baby.*300 kcal/)
-  await again.getByRole('radio', { name: 'Dinner' }).click()
   await again.getByRole('button', { name: 'Save meal' }).click()
 
   await expect.poll(() => loggedItems(backend.admin, me.id, 'dinner')).toEqual(['Patty 150 (200)'])

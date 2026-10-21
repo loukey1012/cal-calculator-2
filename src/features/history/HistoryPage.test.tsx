@@ -178,8 +178,8 @@ describe('HistoryPage', () => {
 
     // the forgotten dinner is added on its own page, on top of this day
     await user.click(screen.getByRole('button', { name: /Dinner/ }))
-    expect(screen.getByTestId('path')).toHaveTextContent(
-      '/history/2026-10-01/meal-dinner-2026-10-01-u1/food',
+    expect(screen.getByTestId('path').textContent).toBe(
+      '/history/2026-10-01/meal-dinner-2026-10-01-u1',
     )
   })
 

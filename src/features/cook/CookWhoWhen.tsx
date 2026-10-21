@@ -1,33 +1,20 @@
 import { InputRow } from '../../components/ios/FormRows'
 import { GroupedSection } from '../../components/ios/GroupedSection'
-import { SegmentedControl } from '../../components/ios/SegmentedControl'
 import type { Profile } from '../household/householdApi'
 import { PersonBadge } from '../household/PersonBadge'
 import { useLookOf } from '../household/usePersonLook'
-import { MEAL_TYPES, type MealType } from '../meals/dayModel'
-import {
-  draftEaterIds,
-  linesOnlyFor,
-  withDate,
-  withEater,
-  withMealType,
-  type CookDraft,
-} from './cookDraft'
+import { draftEaterIds, linesOnlyFor, withDate, withEater, type CookDraft } from './cookDraft'
 
 type CookWhoWhenProps = {
   readonly draft: CookDraft
   readonly people: readonly Profile[]
   /** local YYYY-MM-DD */
   readonly today: string
-  /** the meal for the time of day, until one is chosen */
-  readonly mealOfDay: MealType
   readonly onChange: (draft: CookDraft) => void
 }
 
-const MEAL_OPTIONS = MEAL_TYPES.map(({ type, label }) => ({ value: type, label }))
-
-/** Who eats (anyone in the household), on which day and in which meal. */
-export function CookWhoWhen({ draft, people, today, mealOfDay, onChange }: CookWhoWhenProps) {
+/** Who eats (anyone in the household) and on which day; the meal is the one it was opened for. */
+export function CookWhoWhen({ draft, people, today, onChange }: CookWhoWhenProps) {
   const lookOf = useLookOf()
   const eaters = draftEaterIds(draft)
 
@@ -91,14 +78,6 @@ export function CookWhoWhen({ draft, people, today, mealOfDay, onChange }: CookW
           className="w-40 bg-transparent text-right text-[17px] text-label outline-none"
         />
       </GroupedSection>
-      <div className="mt-3">
-        <SegmentedControl
-          label="Meal"
-          options={MEAL_OPTIONS}
-          value={draft.mealType ?? mealOfDay}
-          onChange={(mealType) => onChange(withMealType(draft, mealType))}
-        />
-      </div>
     </>
   )
 }

@@ -352,29 +352,31 @@ describe('TodayPage', () => {
     )
   })
 
-  test('a dish being added shows on its meal, which opens its Add food to continue', async () => {
+  test('a dish being added shows on its meal, with a dot by its name', async () => {
     const draft = { ...newCookDraft('u1'), mealType: 'dinner' as const }
     saveCookDraft('u1', withDish(draft, { ...draft.dish, name: 'Chili' }))
     const user = userEvent.setup()
     renderPage()
 
     const dinner = await screen.findByRole('button', { name: /Dinner.*Unsaved dish/ })
+    expect(within(dinner).getByTestId('unsaved-dot')).toBeInTheDocument()
+    expect(
+      within(screen.getByRole('button', { name: /Lunch/ })).queryByTestId('unsaved-dot'),
+    ).toBeNull()
     await user.click(dinner)
 
-    expect(screen.getByTestId('location')).toHaveTextContent(
-      '/today/meal-dinner-2026-10-01-u1/food',
-    )
+    // its page offers to continue it
+    expect(await screen.findByRole('button', { name: 'Continue unsaved dish' })).toBeVisible()
   })
 
-  test('an empty meal opens straight at its Add food', async () => {
+  test('an empty meal opens its page too (e.g. to cook a recipe)', async () => {
     const user = userEvent.setup()
     renderPage()
 
     await user.click(await screen.findByRole('button', { name: /Dinner.*Nothing logged/ }))
 
-    expect(screen.getByTestId('location')).toHaveTextContent(
-      '/today/meal-dinner-2026-10-01-u1/food',
-    )
+    expect(screen.getByTestId('location').textContent).toBe('/today/meal-dinner-2026-10-01-u1')
+    expect(screen.getByRole('button', { name: 'Add from recipe' })).toBeVisible()
   })
   test('shows rings for the goal valid today', async () => {
     renderPage()

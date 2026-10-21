@@ -132,13 +132,7 @@ export function CookPage({ page }: { readonly page: MealPageRef }) {
         steps={steps}
         header={
           <>
-            <CookWhoWhen
-              draft={draft}
-              people={people}
-              today={today}
-              mealOfDay={mealOfDay}
-              onChange={change}
-            />
+            <CookWhoWhen draft={draft} people={people} today={today} onChange={change} />
             <RecipeChoices draft={draft} onChange={change} />
           </>
         }

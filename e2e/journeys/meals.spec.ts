@@ -31,7 +31,6 @@ test('log a meal on Cook: from the database and as a custom item, then change an
   // an empty meal opens its Add food
   await cookFor(activePage(page), page, /Lunch/)
   const cook = activePage(page)
-  await expect(cook.getByRole('radio', { name: 'Lunch' })).toBeChecked()
   await cook.getByRole('button', { name: 'Add ingredient' }).click()
   await cook.getByRole('button', { name: /Skyr/ }).click()
   await cook.getByLabel('Amount').fill('200')
