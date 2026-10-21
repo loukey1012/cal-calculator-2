@@ -11,6 +11,8 @@ const AMOUNT_DECIMALS = 2
 
 type AmountEditorProps = {
   readonly title: string
+  /** e.g. "92 kcal / 100 g · 210 kcal / bar", under the name */
+  readonly calories?: string
   readonly units: readonly AmountUnit[]
   /** shown instead of "Units", e.g. "Riegel" */
   readonly unitLabel?: string | null
@@ -23,6 +25,7 @@ type AmountEditorProps = {
 
 export function AmountEditor({
   title,
+  calories,
   units,
   unitLabel,
   initialAmount = '',
@@ -55,6 +58,11 @@ export function AmountEditor({
   return (
     <form noValidate onSubmit={handleSubmit} className="mt-2">
       <h3 className="text-[20px] font-semibold">{title}</h3>
+      {calories && (
+        <p data-testid="calories" className="mt-0.5 text-[15px] font-semibold text-label-secondary">
+          {calories}
+        </p>
+      )}
       {units.length > 1 && (
         <div className="mt-4">
           <SegmentedControl

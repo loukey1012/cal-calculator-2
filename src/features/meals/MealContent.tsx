@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react'
+import { useCurrentUser } from '../../app/currentUser'
 import { BackButton } from '../../components/ios/BackButton'
 import { Button } from '../../components/ios/Button'
 import { ErrorBanner } from '../../components/ios/ErrorBanner'
@@ -8,6 +9,8 @@ import { lineWho, rescaledLine } from '../dishes/dishDraft'
 import { DishEditor } from '../dishes/DishEditor'
 import { useDeleteDish, useDish, useLatestDishChangeError, useSaveDish } from '../dishes/hooks'
 import type { Dish } from '../dishes/portions'
+import { useIngredients } from '../ingredients/hooks'
+import { nutritionSummary } from '../ingredients/listing'
 import { MealRecipeForm } from '../recipes/MealRecipeForm'
 import { AmountEditor } from './AmountEditor'
 import { CopyMealForm } from './CopyMealForm'
@@ -64,6 +67,7 @@ export function MealContent({ mealType, userId, date, actions }: MealContentProp
   const latestDishError = useLatestDishChangeError()
   const items = itemsByMeal(day.data ?? [])[mealType]
   const editedItem = editedItemOf(requestedView, items)
+  const calories = useCaloriesOf(editedItem)
   // an item deleted meanwhile (e.g. by a partner) sends the editor back to the list
   const view: View =
     (requestedView.kind === 'edit' || requestedView.kind === 'food') && !editedItem
@@ -179,6 +183,7 @@ export function MealContent({ mealType, userId, date, actions }: MealContentProp
           <BackButton onClick={showItems} />
           <AmountEditor
             title={item.name}
+            calories={calories}
             units={[item.entered_unit]}
             initialAmount={String(item.entered_amount)}
             confirmLabel="Save"
@@ -240,6 +245,7 @@ function FoodEditor({
 }: FoodEditorProps) {
   const dish = useDish(dishId)
   const saveDish = useSaveDish()
+  const calories = useCaloriesOf(item)
   const [error, setError] = useState<string | null>(null)
 
   if (dish.isError) return <ErrorBanner message={toUserMessage(dish.error)} />
@@ -255,6 +261,7 @@ function FoodEditor({
     <>
       <AmountEditor
         title={item.name}
+        calories={calories}
         units={[item.entered_unit]}
         initialAmount={String(item.entered_amount)}
         confirmLabel="Save"
@@ -289,4 +296,12 @@ function FoodEditor({
 /** This meal's items of one dish (its portion here). */
 function itemIdsOfDish(items: readonly MealItem[], dishId: string): string[] {
   return items.filter((item) => item.dish?.id === dishId).map((item) => item.id)
+}
+
+/** The calories of the saved ingredient an item was logged from, e.g. "92 kcal / 100 g". */
+function useCaloriesOf(item: MealItem | undefined): string | undefined {
+  const { householdId } = useCurrentUser()
+  const ingredients = useIngredients(householdId)
+  const ingredient = ingredients.data?.find((candidate) => candidate.id === item?.ingredient_id)
+  return ingredient && nutritionSummary(ingredient)
 }

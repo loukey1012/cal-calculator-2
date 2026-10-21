@@ -1,5 +1,6 @@
 import { useId, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes } from 'react'
-import { ClearIcon } from './icons'
+import { ClearButton } from './ClearButton'
+import { useClearable } from './clearable'
 
 function FieldError({ id, error }: { readonly id: string; readonly error?: string }) {
   if (!error) return null
@@ -36,7 +37,16 @@ export function InputRow({
   ...inputProps
 }: InputRowProps) {
   const id = useId()
-  const hasValue = String(inputProps.value ?? '').trim() !== ''
+  const {
+    ref: clearRef,
+    clearable: canClear,
+    hasValue: hasText,
+    onChange: onTextChange,
+    clear,
+  } = useClearable(inputProps)
+  // an own clear (e.g. for a value that lives elsewhere) wins over emptying the field
+  const showsClear = onClear !== undefined || canClear
+  const hasValue = onClear ? String(inputProps.value ?? '').trim() !== '' : hasText
   return (
     <div className={`py-2.5 pr-4 ${indent ? 'pl-8' : 'pl-4'}`}>
       <div className="flex items-center gap-2">
@@ -52,21 +62,18 @@ export function InputRow({
             flagged ? 'font-semibold text-destructive' : 'text-label'
           }`}
           {...inputProps}
+          ref={clearRef}
+          onChange={onTextChange}
         />
         {suffix && <span className="w-8 text-[15px] text-label-secondary">{suffix}</span>}
         {/* the space stays when empty, so the values of all rows line up */}
-        {onClear && (
+        {showsClear && (
           <span className="flex w-6 shrink-0 justify-center">
             {hasValue && (
-              <button
-                type="button"
-                aria-label={`Clear ${accessibleLabel ?? label}`}
-                onClick={onClear}
-                // a 44 pt tap target around the small icon
-                className="-m-2.5 p-2.5 text-label-secondary/50 active:opacity-60"
-              >
-                <ClearIcon className="h-[18px] w-[18px]" />
-              </button>
+              <ClearButton
+                label={onClear ? (accessibleLabel ?? label) : undefined}
+                onClick={onClear ?? clear}
+              />
             )}
           </span>
         )}

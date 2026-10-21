@@ -8,6 +8,8 @@ import { ListRow } from '../../components/ios/ListRow'
 import { TextField } from '../../components/ios/TextField'
 import { toUserMessage } from '../../lib/errors'
 import { useIngredients } from '../ingredients/hooks'
+import type { Ingredient } from '../ingredients/ingredientsApi'
+import { nutritionSummary } from '../ingredients/listing'
 import { NewIngredientForm } from '../ingredients/NewIngredientForm'
 import { CustomItemForm } from '../meals/CustomItemForm'
 import { FoodPicker } from '../meals/FoodPicker'
@@ -254,6 +256,15 @@ type NewLineStepProps = {
   readonly onAdd: (line: DishLine) => void
 }
 
+/** The calories of a saved ingredient (a custom item has none to show). */
+function caloriesOf(
+  ingredientId: string | null,
+  ingredients: readonly Ingredient[] | undefined,
+): string | undefined {
+  const ingredient = ingredients?.find((candidate) => candidate.id === ingredientId)
+  return ingredient && nutritionSummary(ingredient)
+}
+
 /** The amount of a picked ingredient. */
 function NewLineStep({ ingredientId, portions, onAdd }: NewLineStepProps) {
   const { householdId } = useCurrentUser()
@@ -267,6 +278,7 @@ function NewLineStep({ ingredientId, portions, onAdd }: NewLineStepProps) {
   return (
     <DishLineEditor
       title={ingredient.name}
+      calories={nutritionSummary(ingredient)}
       units={availableUnits(ingredientNutrition(ingredient))}
       unitLabel={ingredient.unit_label}
       portions={portions}
@@ -301,6 +313,7 @@ function EditLineStep({ lineId, dish, portions, steps, onSave, onChange }: EditL
   return (
     <DishLineEditor
       title={line.item.name}
+      calories={caloriesOf(line.item.ingredient_id, ingredients.data)}
       units={[line.item.entered_unit]}
       portions={portions}
       initialWho={who}
@@ -379,6 +392,7 @@ function SwapStep({ step, steps, dish, portions, onSwap }: SwapStepProps) {
   return (
     <DishLineEditor
       title={ingredient.name}
+      calories={nutritionSummary(ingredient)}
       units={availableUnits(ingredientNutrition(ingredient))}
       unitLabel={ingredient.unit_label}
       portions={portions}

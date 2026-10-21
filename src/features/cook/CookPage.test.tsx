@@ -222,6 +222,37 @@ describe('the dish waiting on Cook', () => {
   })
 })
 
+describe('choosing an amount', () => {
+  test('shows the ingredient’s calories per 100 g and per unit under its name', async () => {
+    vi.mocked(fetchIngredients).mockResolvedValue([
+      ingredient({
+        id: 'bar',
+        name: 'Protein bar',
+        kcal_100: 350,
+        kcal_unit: 210,
+        unit_label: 'bar',
+      }),
+    ])
+    const user = userEvent.setup()
+    renderCook()
+
+    await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
+    await user.click(await screen.findByRole('button', { name: /Protein bar/ }))
+
+    expect(screen.getByTestId('calories')).toHaveTextContent('350 kcal / 100 g · 210 kcal / bar')
+  })
+
+  test('a line of the dish shows them when its amount is changed', async () => {
+    const user = userEvent.setup()
+    renderCook()
+    await addIngredient(user, 'Patty', '100')
+
+    await user.click(screen.getByRole('button', { name: /^Patty/ }))
+
+    expect(screen.getByTestId('calories')).toHaveTextContent('240 kcal / 100 g')
+  })
+})
+
 describe('swapping an ingredient', () => {
   const VEGGIE = ingredient({
     id: 'veggie',

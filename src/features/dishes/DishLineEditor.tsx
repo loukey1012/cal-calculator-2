@@ -22,6 +22,8 @@ type WhoValue = 'shared' | 'own' | `only:${string}`
 
 type DishLineEditorProps = {
   readonly title: string
+  /** e.g. "92 kcal / 100 g · 210 kcal / bar", under the name */
+  readonly calories?: string
   readonly units: readonly AmountUnit[]
   readonly unitLabel?: string | null
   readonly portions: readonly PortionOption[]
@@ -69,6 +71,7 @@ function tryBuild(build: DishLineEditorProps['build'], input: LineInput | null):
 /** One ingredient of a dish: its unit, who has it and how much. */
 export function DishLineEditor({
   title,
+  calories,
   units,
   unitLabel,
   portions,
@@ -117,6 +120,11 @@ export function DishLineEditor({
   return (
     <form noValidate onSubmit={handleSubmit} className="mt-2">
       <h3 className="text-[20px] font-semibold">{title}</h3>
+      {calories && (
+        <p data-testid="calories" className="mt-0.5 text-[15px] font-semibold text-label-secondary">
+          {calories}
+        </p>
+      )}
       {portions.length > 1 && (
         <div className="mt-4">
           <SegmentedControl label="Who" options={whoOptions} value={who} onChange={setWho} />

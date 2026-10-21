@@ -30,6 +30,15 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-21T15:02',
+    kind: 'new',
+    title: 'Calories while choosing an amount, and a clear button in every field',
+    items: [
+      'When choosing how much of an ingredient, its calories per 100 g and per unit show right under its name',
+      'Every text and number field has a small × to empty it, e.g. the weight, goals, amounts, names and notes',
+    ],
+  },
+  {
     at: '2026-10-21T14:26',
     kind: 'fix',
     title: 'Add food no longer asks for the day',

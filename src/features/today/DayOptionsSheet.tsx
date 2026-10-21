@@ -1,6 +1,8 @@
 import { useId } from 'react'
 import { GroupedSection } from '../../components/ios/GroupedSection'
 import { ToggleRow } from '../../components/ios/FormRows'
+import { ClearButton } from '../../components/ios/ClearButton'
+import { useClearable } from '../../components/ios/clearable'
 import { Sheet } from '../../components/ios/Sheet'
 import { cheatMeals, MEAL_TYPES } from '../meals/dayModel'
 import {
@@ -92,16 +94,25 @@ type NoteFieldProps = {
 }
 
 /** A note row, its name on the left; saved when the field is left (or Return), only if it changed. */
-function NoteField({ label, note, onSave }: NoteFieldProps) {
+function NoteField(props: NoteFieldProps) {
+  // starts over from the saved note whenever that changes, e.g. after the partner's edit
+  return <NoteInput key={props.note ?? ''} {...props} />
+}
+
+function NoteInput({ label, note, onSave }: NoteFieldProps) {
   const id = useId()
+  const {
+    ref: clearRef,
+    hasValue: hasText,
+    onChange: onTextChange,
+    clear,
+  } = useClearable({ defaultValue: note ?? '' })
   return (
     <div className="flex items-center gap-3 px-4 py-3">
       <label htmlFor={id} className="w-24 shrink-0 text-[17px]">
         {label}
       </label>
       <input
-        // starts over from the saved note whenever that changes, e.g. after the partner's edit
-        key={note ?? ''}
         id={id}
         aria-label={`${label} note`}
         defaultValue={note ?? ''}
@@ -115,7 +126,11 @@ function NoteField({ label, note, onSave }: NoteFieldProps) {
         onBlur={(event) => {
           if (event.target.value.trim() !== (note ?? '')) onSave(event.target.value)
         }}
+        ref={clearRef}
+        onChange={onTextChange}
       />
+      {/* emptied, the note goes once the field is left */}
+      {hasText && <ClearButton onClick={clear} />}
     </div>
   )
 }

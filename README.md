@@ -204,8 +204,8 @@ Build plan with every decision: [`docs/plan-2026-10-20.md`](docs/plan-2026-10-20
 
 **Added 2026-10-21 (later)**
 
-- [ ] **46.** When choosing an ingredient's amount, its calories per 100 g and per unit show under its name, without scrolling
-- [ ] **47.** A clear (×) button in every input field (weight, goals, amounts, names, …), like the search fields
+- [x] **46.** When choosing an ingredient's amount, its calories per 100 g and per unit show under its name, without scrolling
+- [x] **47.** A clear (×) button in every input field (weight, goals, amounts, names, …), like the search fields
 
 **Clean-up**
 
