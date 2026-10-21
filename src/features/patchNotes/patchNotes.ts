@@ -30,6 +30,16 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-21T14:06',
+    kind: 'new',
+    title: 'Move to…',
+    items: [
+      'Next to Copy to…, Move to… moves a meal to another meal, day or person',
+      'A single food or a dish moves the same way from its page',
+      'A dish shared with your partner stays one dish: only your portion moves',
+    ],
+  },
+  {
     at: '2026-10-21T14:00',
     kind: 'new',
     title: 'Editing a logged dish is quicker',

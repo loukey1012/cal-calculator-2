@@ -22,6 +22,8 @@ type DishEditorProps = {
   readonly date: string
   /** saved, deleted, or Back on the dish itself */
   readonly onDone: () => void
+  /** this meal's portion to another meal, day or person */
+  readonly onMove?: () => void
 }
 
 function Message({ text }: { readonly text: string }) {
@@ -32,12 +34,12 @@ function Message({ text }: { readonly text: string }) {
  * A saved dish, loaded for editing from one of its meals. Its Back goes one step at a time:
  * amount → search → the dish → out of the editor.
  */
-export function DishEditor({ dishId, date, onDone }: DishEditorProps) {
+export function DishEditor({ dishId, date, onDone, onMove }: DishEditorProps) {
   const steps = useLocalComposerSteps()
   return (
     <>
       <ComposerBar steps={steps} onBack={steps.step.kind === 'main' ? onDone : steps.back} />
-      <LoadedDish dishId={dishId} date={date} onDone={onDone} steps={steps} />
+      <LoadedDish dishId={dishId} date={date} onDone={onDone} onMove={onMove} steps={steps} />
     </>
   )
 }
@@ -46,6 +48,7 @@ function LoadedDish({
   dishId,
   date,
   onDone,
+  onMove,
   steps,
 }: DishEditorProps & { readonly steps: ComposerSteps }) {
   const { profile, householdId } = useCurrentUser()
@@ -75,6 +78,7 @@ function LoadedDish({
       people={people}
       date={date}
       onDone={onDone}
+      onMove={onMove}
     />
   )
 }
@@ -87,6 +91,7 @@ type DishFormProps = {
   readonly people: readonly Profile[]
   readonly date: string
   readonly onDone: () => void
+  readonly onMove?: () => void
   readonly steps: ComposerSteps
 }
 
@@ -114,6 +119,7 @@ function DishForm({
   people,
   date,
   onDone,
+  onMove,
   steps,
 }: DishFormProps) {
   const [draft, setDraft] = useState(initial)
@@ -164,6 +170,11 @@ function DishForm({
         actions={
           <>
             <Button onClick={save}>Save dish</Button>
+            {onMove && (
+              <Button variant="secondary" onClick={onMove}>
+                Move to…
+              </Button>
+            )}
             <Button variant="destructive" onClick={remove}>
               Delete dish
             </Button>

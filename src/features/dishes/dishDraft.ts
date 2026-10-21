@@ -129,8 +129,13 @@ export function withLeftoverRemoved(dish: Dish): Dish {
   return last ? withoutPortion(dish, last.id) : dish
 }
 
-export function takeLeftover(dish: Dish, portionId: string, eater: Eater): Dish {
+/** The portion is eaten by someone else, or on another day or at another meal. */
+export function withPortionEater(dish: Dish, portionId: string, eater: Eater): Dish {
   return withPortionChange(dish, portionId, (portion) => ({ ...portion, eater }))
+}
+
+export function takeLeftover(dish: Dish, portionId: string, eater: Eater): Dish {
+  return withPortionEater(dish, portionId, eater)
 }
 
 /** Keeps the portion (and its share), so the eaten portions stay as they are. */

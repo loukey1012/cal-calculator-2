@@ -14,6 +14,7 @@ import { CopyMealForm } from './CopyMealForm'
 import { itemsByMeal, mealLabel, scaleItemAmount, type MealItem, type MealType } from './dayModel'
 import { useDay, useDeleteMealItem, useLatestDayChangeError, useUpdateMealItem } from './hooks'
 import { MealItemsView } from './MealItemsView'
+import { useMoveEntries } from './moveMeal'
 import { previewChangedItem } from './preview'
 
 /** Items are looked up live by id, so a partner's change or delete is noticed. */
@@ -26,6 +27,8 @@ type View =
   | { readonly kind: 'dish'; readonly dishId: string }
   | { readonly kind: 'saveRecipe' }
   | { readonly kind: 'copy' }
+  /** the whole meal (null), or the items of one dish or food */
+  | { readonly kind: 'move'; readonly itemIds: readonly string[] | null }
 
 type MealContentProps = {
   readonly mealType: MealType
@@ -56,6 +59,7 @@ export function MealContent({ mealType, userId, date, actions }: MealContentProp
   const update = useUpdateMealItem(userId, date)
   const remove = useDeleteMealItem(userId, date)
   const deleteDish = useDeleteDish()
+  const move = useMoveEntries(userId, date)
   const latestChangeError = useLatestDayChangeError(userId, date)
   const latestDishError = useLatestDishChangeError()
   const items = itemsByMeal(day.data ?? [])[mealType]
@@ -98,6 +102,7 @@ export function MealContent({ mealType, userId, date, actions }: MealContentProp
           actions={actions}
           onSaveRecipe={() => open({ kind: 'saveRecipe' })}
           onCopy={() => open({ kind: 'copy' })}
+          onMove={() => open({ kind: 'move', itemIds: null })}
         />
       )
     case 'saveRecipe':
@@ -123,10 +128,32 @@ export function MealContent({ mealType, userId, date, actions }: MealContentProp
           />
         </>
       )
+    case 'move': {
+      const ids = view.itemIds
+      const moved = ids ? items.filter((item) => ids.includes(item.id)) : items
+      return (
+        <>
+          <BackButton onClick={showItems} />
+          <CopyMealForm
+            items={moved}
+            userId={userId}
+            mealType={mealType}
+            date={date}
+            move={(eater) => move(moved, eater)}
+            onCopied={showItemsWith}
+          />
+        </>
+      )
+    }
     case 'dish':
       return (
         // its own Back: one step at a time, from the dish back to the meal
-        <DishEditor dishId={view.dishId} date={date} onDone={showItems} />
+        <DishEditor
+          dishId={view.dishId}
+          date={date}
+          onDone={showItems}
+          onMove={() => open({ kind: 'move', itemIds: itemIdsOfDish(items, view.dishId) })}
+        />
       )
     case 'food':
       if (!editedItem) return null
@@ -139,6 +166,7 @@ export function MealContent({ mealType, userId, date, actions }: MealContentProp
             label={label}
             onDone={showItems}
             onEditDish={() => setView({ kind: 'dish', dishId: view.dishId })}
+            onMove={() => open({ kind: 'move', itemIds: itemIdsOfDish(items, view.dishId) })}
             onRemove={() => removeDish(view.dishId, editedItem.dish?.portionCount)}
           />
         </>
@@ -196,10 +224,20 @@ type FoodEditorProps = {
   readonly onDone: () => void
   /** the whole dish: who eats, name, leftovers */
   readonly onEditDish: () => void
+  /** to another meal, day or person */
+  readonly onMove: () => void
   readonly onRemove: () => void
 }
 
-function FoodEditor({ item, dishId, label, onDone, onEditDish, onRemove }: FoodEditorProps) {
+function FoodEditor({
+  item,
+  dishId,
+  label,
+  onDone,
+  onEditDish,
+  onMove,
+  onRemove,
+}: FoodEditorProps) {
   const dish = useDish(dishId)
   const saveDish = useSaveDish()
   const [error, setError] = useState<string | null>(null)
@@ -234,6 +272,9 @@ function FoodEditor({ item, dishId, label, onDone, onEditDish, onRemove }: FoodE
             <Button variant="secondary" onClick={onEditDish}>
               Edit dish
             </Button>
+            <Button variant="secondary" onClick={onMove}>
+              Move to…
+            </Button>
             <Button variant="destructive" onClick={onRemove}>
               Remove from {label}
             </Button>
@@ -243,4 +284,9 @@ function FoodEditor({ item, dishId, label, onDone, onEditDish, onRemove }: FoodE
       {error && <ErrorBanner message={error} />}
     </>
   )
+}
+
+/** This meal's items of one dish (its portion here). */
+function itemIdsOfDish(items: readonly MealItem[], dishId: string): string[] {
+  return items.filter((item) => item.dish?.id === dishId).map((item) => item.id)
 }

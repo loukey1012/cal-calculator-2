@@ -175,3 +175,39 @@ test('a meal eaten out is logged as an estimate and the day shows ~', async ({ p
     activePage(page).getByRole('button', { name: /Pizza.*Estimate · 1 unit.*~900 kcal/ }),
   ).toBeVisible()
 })
+
+test('a logged meal is moved to another meal; the dish stays one', async ({ page, backend }) => {
+  const me = await backend.user('Mo')
+  const household = await backend.household([me])
+  await backend.admin.from('ingredients').insert({
+    household_id: household,
+    category_id: await backend.category(household),
+    name: 'Skyr',
+    kcal_100: 63,
+  })
+  await logIn(page, me)
+
+  await cookFor(activePage(page), page, /Lunch/)
+  await addIngredient(page, 'Skyr', '200')
+  await activePage(page).getByRole('button', { name: 'Save meal' }).click()
+  const meal = activePage(page)
+  await meal.getByRole('button', { name: 'Move to…' }).click()
+  await meal.getByRole('radio', { name: 'Dinner' }).click()
+  await meal.getByRole('button', { name: 'Move' }).click()
+  await expect(meal.getByRole('status')).toContainText('Moved to Dinner')
+
+  await expect
+    .poll(async () => {
+      const { data } = await backend.admin
+        .from('meal_items')
+        .select('name, meals!inner(user_id, meal_type)')
+        .eq('meals.user_id', me.id)
+      return data?.map((item) => (item.meals as unknown as { meal_type: string }).meal_type)
+    })
+    .toEqual(['dinner'])
+  const { count } = await backend.admin
+    .from('dishes')
+    .select('id', { count: 'exact', head: true })
+    .eq('household_id', household)
+  expect(count).toBe(1)
+})

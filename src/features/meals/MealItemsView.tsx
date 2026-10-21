@@ -28,6 +28,7 @@ type MealItemsViewProps = {
   readonly onSaveRecipe: () => void
   /** to another day, meal or person */
   readonly onCopy: () => void
+  readonly onMove: () => void
 }
 
 function FoodRow({ item, onClick }: { readonly item: MealItem; readonly onClick: () => void }) {
@@ -58,6 +59,7 @@ export function MealItemsView({
   actions,
   onSaveRecipe,
   onCopy,
+  onMove,
 }: MealItemsViewProps) {
   const totals = mealTotals(items)
 
@@ -121,9 +123,14 @@ export function MealItemsView({
       {actions && <div className="mt-6 flex flex-col gap-3">{actions}</div>}
       {items.length > 0 && (
         <div className="mt-3 flex flex-col gap-3">
-          <Button variant="secondary" onClick={onCopy}>
-            Copy to…
-          </Button>
+          <div className="grid grid-cols-2 gap-3">
+            <Button variant="secondary" onClick={onMove}>
+              Move to…
+            </Button>
+            <Button variant="secondary" onClick={onCopy}>
+              Copy to…
+            </Button>
+          </div>
           <Button variant="secondary" onClick={onSaveRecipe}>
             Save as recipe
           </Button>

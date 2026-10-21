@@ -6,7 +6,9 @@ import { InputRow } from '../../components/ios/FormRows'
 import { GroupedSection } from '../../components/ios/GroupedSection'
 import { SegmentedControl } from '../../components/ios/SegmentedControl'
 import { fromLocalDateString } from '../../lib/dates'
+import { toUserMessage } from '../../lib/errors'
 import { useSaveDish } from '../dishes/hooks'
+import type { Eater } from '../dishes/portions'
 import { usePeople } from '../household/hooks'
 import { PersonSwitch } from '../household/PersonSwitch'
 import { useLookOf } from '../household/usePersonLook'
@@ -24,40 +26,60 @@ type CopyMealFormProps = {
   readonly mealType: MealType
   /** e.g. "Copied to Lunch, Tue 20 Oct" */
   readonly onCopied: (message: string) => void
+  /** given: the form moves the meal instead (see moveMeal.ts) */
+  readonly move?: (eater: Eater) => Promise<void>
+  /** the day the meal is on (a move to the very same meal is refused) */
+  readonly date?: string
 }
 
-/** Copies the meal as it was logged to another day, meal or person. */
-export function CopyMealForm({ items, userId, mealType, onCopied }: CopyMealFormProps) {
+/** Copies (or moves) the meal as it was logged to another day, meal or person. */
+export function CopyMealForm({
+  items,
+  userId,
+  mealType,
+  onCopied,
+  move,
+  date: mealDate,
+}: CopyMealFormProps) {
   const { profile, householdId } = useCurrentUser()
   const people = usePeople(profile, householdId)
   const lookOf = useLookOf()
   const today = useToday()
   const saveDish = useSaveDish()
   const [personId, setPersonId] = useState(userId)
-  const [date, setDate] = useState(today)
+  // a move starts on the meal's own day, a copy on today
+  const [date, setDate] = useState(move ? (mealDate ?? today) : today)
   const [targetMeal, setTargetMeal] = useState(mealType)
   const [error, setError] = useState<string | null>(null)
 
-  function copy() {
+  async function copy() {
     const eater = { userId: personId, date, mealType: targetMeal }
+    if (move && personId === userId && date === mealDate && targetMeal === mealType) {
+      return setError('Pick another meal, day or person.')
+    }
     try {
-      for (const dish of copiedDishes(items, eater)) saveDish.save({ dish })
+      if (move) await move(eater)
+      else for (const dish of copiedDishes(items, eater)) saveDish.save({ dish })
     } catch (failure) {
-      return setError(failure instanceof Error ? failure.message : 'This meal can’t be copied.')
+      return setError(
+        failure instanceof Error ? toUserMessage(failure) : 'This meal can’t be copied.',
+      )
     }
     const day = new Intl.DateTimeFormat(undefined, DAY_FORMAT).format(fromLocalDateString(date))
     const person = people.find((candidate) => candidate.id === personId)
     const forWhom = personId === userId || !person ? '' : ` for ${lookOf(person).name}`
-    onCopied(`Copied to ${mealLabel(targetMeal)}, ${day}${forWhom}`)
+    onCopied(`${move ? 'Moved' : 'Copied'} to ${mealLabel(targetMeal)}, ${day}${forWhom}`)
   }
 
   return (
     <>
       <p className="text-[15px] text-label-secondary">
-        The copy keeps the amounts and values as they were logged.
+        {move
+          ? 'Everything moves as it was logged; a dish shared with your partner keeps their portion.'
+          : 'The copy keeps the amounts and values as they were logged.'}
       </p>
       <PersonSwitch people={people} selectedId={personId} onChange={setPersonId} />
-      <GroupedSection header="Copy to">
+      <GroupedSection header={move ? 'Move to' : 'Copy to'}>
         <InputRow
           label="Day"
           type="date"
@@ -81,7 +103,7 @@ export function CopyMealForm({ items, userId, mealType, onCopied }: CopyMealForm
       </div>
       {error && <ErrorBanner message={error} />}
       <div className="mt-6">
-        <Button onClick={copy}>Copy meal</Button>
+        <Button onClick={() => void copy()}>{move ? 'Move' : 'Copy meal'}</Button>
       </div>
     </>
   )

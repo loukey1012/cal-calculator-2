@@ -35,7 +35,7 @@ import { gramsItem } from '../dishes/testData'
 import { fetchMembers } from '../household/householdApi'
 import { saveRecipe } from '../recipes/recipesApi'
 import { pickedChoice, type Recipe } from '../recipes/recipeModel'
-import { fetchDay } from './mealsApi'
+import { deleteMealItem, fetchDay } from './mealsApi'
 import { MealContent } from './MealContent'
 
 function profile(id: string, name: string) {
@@ -144,6 +144,56 @@ describe('copying a meal', () => {
     expect(sentDishes()[0]?.portions[0]?.eater?.userId).toBe('u2')
     expect(sentDishes()[0]?.lines[0]?.item.entered_amount).toBe(60)
     expect(await sheet.findByRole('status')).toHaveTextContent(/for baby$/)
+  })
+})
+
+describe('moving a meal', () => {
+  test('a shared dish moves only my portion, and stays one dish with hers', async () => {
+    // Arrange
+    vi.mocked(fetchDay).mockResolvedValue([dayMeal('m1', 'lunch', [CHILI_ITEM])])
+    vi.mocked(fetchDish).mockResolvedValue(CHILI)
+    const user = userEvent.setup()
+    const sheet = renderSheet()
+
+    // Act
+    await user.click(await sheet.findByRole('button', { name: 'Move to…' }))
+    await user.click(sheet.getByRole('radio', { name: 'Dinner' }))
+    await user.click(sheet.getByRole('button', { name: 'Move' }))
+
+    // Assert
+    expect(await sheet.findByRole('status')).toHaveTextContent(/^Moved to Dinner, /)
+    const [moved] = sentDishes()
+    expect(moved?.id).toBe('d-chili')
+    expect(moved?.portions.map((portion) => portion.eater)).toEqual([
+      { userId: 'u1', date: DAY, mealType: 'dinner' },
+      { userId: 'u2', date: DAY, mealType: 'lunch' },
+    ])
+  })
+
+  test('older plain items are copied there, then removed here', async () => {
+    const user = userEvent.setup()
+    const sheet = renderSheet()
+
+    await user.click(await sheet.findByRole('button', { name: 'Move to…' }))
+    await user.click(sheet.getByRole('radio', { name: 'Snacks' }))
+    await user.click(sheet.getByRole('button', { name: 'Move' }))
+
+    await vi.waitFor(() => expect(deleteMealItem).toHaveBeenCalledTimes(2))
+    expect(sentDishes().map((dish) => dish.portions[0]?.eater)).toEqual([
+      { userId: 'u1', date: DAY, mealType: 'snack' },
+      { userId: 'u1', date: DAY, mealType: 'snack' },
+    ])
+  })
+
+  test('moving to the very same meal is refused', async () => {
+    const user = userEvent.setup()
+    const sheet = renderSheet()
+
+    await user.click(await sheet.findByRole('button', { name: 'Move to…' }))
+    await user.click(sheet.getByRole('button', { name: 'Move' }))
+
+    expect(sheet.getByText('Pick another meal, day or person.')).toBeInTheDocument()
+    expect(saveDish).not.toHaveBeenCalled()
   })
 })
 
