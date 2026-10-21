@@ -28,7 +28,12 @@ test('a dish saved as a recipe is cooked again at the ingredient’s new values'
   const household = await backend.household([me, partner])
   const { data: patty } = await backend.admin
     .from('ingredients')
-    .insert({ household_id: household, name: 'Patty', kcal_100: 240 })
+    .insert({
+      household_id: household,
+      category_id: await backend.category(household),
+      name: 'Patty',
+      kcal_100: 240,
+    })
     .select('id')
     .single()
   await logIn(page, me)
@@ -81,8 +86,18 @@ test('a logged meal is copied to another meal and saved as a recipe', async ({ p
   const partner = await backend.user('Lisa')
   const household = await backend.household([me, partner])
   await backend.admin.from('ingredients').insert([
-    { household_id: household, name: 'Toast', kcal_100: 260 },
-    { household_id: household, name: 'Jam', kcal_100: 250 },
+    {
+      household_id: household,
+      category_id: await backend.category(household),
+      name: 'Toast',
+      kcal_100: 260,
+    },
+    {
+      household_id: household,
+      category_id: await backend.category(household),
+      name: 'Jam',
+      kcal_100: 250,
+    },
   ])
   await logIn(page, me)
 
@@ -126,13 +141,23 @@ test('a logged meal is copied to another meal and saved as a recipe', async ({ p
 test('a recipe learns a swapped product and offers both next time', async ({ page, backend }) => {
   const me = await backend.user('Lukas')
   const household = await backend.household([me])
+  const { data: fridge } = await backend.admin
+    .from('category_groups')
+    .insert({ household_id: household, name: 'Fridge' })
+    .select('id')
+    .single()
   const { data: dairy } = await backend.admin
     .from('categories')
-    .insert({ household_id: household, name: 'Cheese' })
+    .insert({ household_id: household, name: 'Cheese', group_id: fridge?.id })
     .select('id')
     .single()
   await backend.admin.from('ingredients').insert([
-    { household_id: household, name: 'Toastbrot', kcal_100: 260 },
+    {
+      household_id: household,
+      category_id: await backend.category(household),
+      name: 'Toastbrot',
+      kcal_100: 260,
+    },
     {
       household_id: household,
       name: 'Gouda',

@@ -88,9 +88,7 @@ describe('packed chip order', () => {
     fakeLayout()
     const categories = GROUPS.map((group) => category(group.name, group.name))
 
-    render(
-      <CategoryChips layout="wrap" categories={categories} selectedId={null} onSelect={() => {}} />,
-    )
+    render(<CategoryChips layout="wrap" items={categories} selectedId={null} onSelect={() => {}} />)
 
     const labels = chipLabels(screen.getByRole('group', { name: 'Categories' }))
     expect(labels[0]).toBe('All')
@@ -101,9 +99,7 @@ describe('packed chip order', () => {
     fakeLayout()
     const categories = GROUPS.map((group) => category(group.name, group.name))
 
-    render(
-      <CategoryChips layout="line" categories={categories} selectedId={null} onSelect={() => {}} />,
-    )
+    render(<CategoryChips layout="line" items={categories} selectedId={null} onSelect={() => {}} />)
 
     expect(chipLabels(screen.getByRole('group', { name: 'Categories' }))).toEqual(
       Object.keys(WIDTHS),

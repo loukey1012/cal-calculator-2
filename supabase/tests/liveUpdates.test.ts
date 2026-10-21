@@ -1,6 +1,6 @@
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
-import { createTestUser, deleteTestUsers, type TestUser } from './helpers'
+import { createTestUser, deleteTestUsers, type TestUser, testCategory } from './helpers'
 
 // Alice and Bob share a household; Carol is in another one.
 let alice: TestUser
@@ -95,11 +95,15 @@ describe('live updates', () => {
   test('a changed ingredient is announced to the household', async () => {
     // Arrange
     expect(await bobListens.status).toBe('SUBSCRIBED')
+    const categoryId = await testCategory(householdId)
 
     // Act
-    const { error } = await alice.client
-      .from('ingredients')
-      .insert({ household_id: householdId, name: 'Live rice', kcal_100: 130 })
+    const { error } = await alice.client.from('ingredients').insert({
+      household_id: householdId,
+      category_id: categoryId,
+      name: 'Live rice',
+      kcal_100: 130,
+    })
 
     // Assert
     expect(error).toBeNull()

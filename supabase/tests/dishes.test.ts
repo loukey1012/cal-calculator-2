@@ -7,7 +7,7 @@ import {
   type DishPortion,
 } from '../../src/features/dishes/portions'
 import { values } from '../../src/features/nutrition/testData'
-import { anonClient, createTestUser, deleteTestUsers, type TestUser } from './helpers'
+import { anonClient, createTestUser, deleteTestUsers, type TestUser, testCategory } from './helpers'
 
 // Alice and Bob cook together; Carol is in another household.
 let alice: TestUser
@@ -168,14 +168,24 @@ beforeAll(async () => {
 
   const mine = await alice.client
     .from('ingredients')
-    .insert({ household_id: household.data.id, name: 'Patty', kcal_100: 240 })
+    .insert({
+      household_id: household.data.id,
+      category_id: await testCategory(household.data.id),
+      name: 'Patty',
+      kcal_100: 240,
+    })
     .select('id')
     .single()
   if (mine.error) throw new Error(mine.error.message)
   aliceIngredientId = mine.data.id
   const theirs = await carol.client
     .from('ingredients')
-    .insert({ household_id: other.data.id, name: 'Secret', kcal_100: 100 })
+    .insert({
+      household_id: other.data.id,
+      category_id: await testCategory(other.data.id),
+      name: 'Secret',
+      kcal_100: 100,
+    })
     .select('id')
     .single()
   if (theirs.error) throw new Error(theirs.error.message)
@@ -799,7 +809,12 @@ describe('ingredients deleted meanwhile', () => {
       .single()
     const created = await alice.client
       .from('ingredients')
-      .insert({ household_id: ingredient!.household_id, name: 'Gone soon', kcal_100: 100 })
+      .insert({
+        household_id: ingredient!.household_id,
+        category_id: await testCategory(ingredient!.household_id),
+        name: 'Gone soon',
+        kcal_100: 100,
+      })
       .select('id')
       .single()
     await bob.client.from('ingredients').delete().eq('id', created.data!.id)

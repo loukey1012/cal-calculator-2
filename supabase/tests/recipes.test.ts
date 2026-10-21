@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
-import { anonClient, createTestUser, deleteTestUsers, type TestUser } from './helpers'
+import { anonClient, createTestUser, deleteTestUsers, type TestUser, testCategory } from './helpers'
 
 // Alice and Bob share a household; Carol is in another one.
 let alice: TestUser
@@ -119,14 +119,24 @@ beforeAll(async () => {
 
   const mine = await alice.client
     .from('ingredients')
-    .insert({ household_id: household.data.id, name: 'Patty', kcal_100: 240 })
+    .insert({
+      household_id: household.data.id,
+      category_id: await testCategory(household.data.id),
+      name: 'Patty',
+      kcal_100: 240,
+    })
     .select('id')
     .single()
   if (mine.error) throw new Error(mine.error.message)
   aliceIngredientId = mine.data.id
   const theirs = await carol.client
     .from('ingredients')
-    .insert({ household_id: other.data.id, name: 'Secret', kcal_100: 100 })
+    .insert({
+      household_id: other.data.id,
+      category_id: await testCategory(other.data.id),
+      name: 'Secret',
+      kcal_100: 100,
+    })
     .select('id')
     .single()
   if (theirs.error) throw new Error(theirs.error.message)
@@ -369,7 +379,12 @@ describe('deleting a recipe', () => {
       .single()
     const onion = await alice.client
       .from('ingredients')
-      .insert({ household_id: household.data?.household_id, name: 'Onion', kcal_100: 40 })
+      .insert({
+        household_id: household.data?.household_id,
+        category_id: await testCategory(household.data?.household_id as string),
+        name: 'Onion',
+        kcal_100: 40,
+      })
       .select('id')
       .single()
     if (onion.error) throw new Error(onion.error.message)

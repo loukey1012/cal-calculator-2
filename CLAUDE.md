@@ -24,8 +24,8 @@ Don't bump `CACHE_BUSTER` for that: it would also drop changes still waiting to 
 **Current work:** `docs/plan-2026-10-20.md` has the build plan for items 32–44 (the user's list of
 2026-10-20): every decision, the approach per item and a status table. Read it before working on
 any of them; keep its status table and the README checkboxes current. Batch A (32–37, 43) is
-built (2026-10-20, user tests it); next is batch B: 38 (categories, starts with a draft tree for
-the user to review) and 39 (merge duplicates).
+done; 38 (two-level categories, tree in `scripts/recategorize/tree.json`) is built (2026-10-21);
+next is 39 (merge duplicates).
 
 **State (2026-10-20, evening):** items 1–31 are built; their build plan
 (`docs/plan-2026-10-15.md`) was removed at the user's request, its decisions live in README.md

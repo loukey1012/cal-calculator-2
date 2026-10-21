@@ -2,11 +2,11 @@ import { formatKcal } from '../nutrition/format'
 import { measureOf } from '../nutrition/unitNames'
 import type { Category, CategoryGroup, Ingredient } from './ingredientsApi'
 
-/** Which ingredients the category chips let through. A broad category id of null is "Other". */
+/** Which ingredients the category chips let through. */
 export type CategoryFilter =
   | { readonly kind: 'all' }
   | { readonly kind: 'category'; readonly id: string }
-  | { readonly kind: 'group'; readonly id: string | null }
+  | { readonly kind: 'group'; readonly id: string }
 
 export const ALL_CATEGORIES: CategoryFilter = { kind: 'all' }
 
@@ -17,10 +17,9 @@ export type IngredientFilter = {
   readonly brand: string | null
 }
 
-/** A broad category with its categories, as the grouped chips show it. */
+/** A broad category with its categories, as the chips show it. */
 export type ChipGroup = {
-  /** null = "Other": ungrouped categories and ingredients without a category */
-  readonly id: string | null
+  readonly id: string
   readonly name: string
   readonly categories: readonly Category[]
 }
@@ -31,8 +30,8 @@ export type IngredientSection = {
   readonly ingredients: readonly Ingredient[]
 }
 
+// an ingredient whose category isn't in the (cached) list yet
 const UNCATEGORIZED = { id: 'uncategorized', title: 'Other' } as const
-const OTHER_GROUP_NAME = 'Other'
 const DEFAULT_UNIT_LABEL = 'unit'
 
 /** Lowercase without accents, so "kase" finds "Käse". */
@@ -46,20 +45,19 @@ export function searchable(text: string): string {
 
 const byName = (a: Ingredient, b: Ingredient) => a.name.localeCompare(b.name)
 
-/** The broad category of each known category (null when ungrouped). */
-function groupIdsByCategory(categories: readonly Category[]): ReadonlyMap<string, string | null> {
+/** The broad category of each known category. */
+function groupIdsByCategory(categories: readonly Category[]): ReadonlyMap<string, string> {
   return new Map(categories.map((category) => [category.id, category.group_id]))
 }
 
 function matchesCategory(
   ingredient: Ingredient,
   filter: CategoryFilter,
-  groupIds: ReadonlyMap<string, string | null>,
+  groupIds: ReadonlyMap<string, string>,
 ): boolean {
   if (filter.kind === 'all') return true
   if (filter.kind === 'category') return ingredient.category_id === filter.id
-  const groupId = ingredient.category_id === null ? null : groupIds.get(ingredient.category_id)
-  return (groupId ?? null) === filter.id
+  return groupIds.get(ingredient.category_id) === filter.id
 }
 
 function matchesBrand(ingredient: Ingredient, brand: string | null): boolean {
@@ -83,18 +81,13 @@ export function filterIngredients(
   )
 }
 
-/**
- * Broad categories by name, each with its categories by name. Broad categories without any are
- * hidden; "Other" comes last and only when something ends up in it.
- */
+/** Broad categories by name, each with its categories by name; empty ones are hidden. */
 export function chipGroups(
   groups: readonly CategoryGroup[],
   categories: readonly Category[],
-  ingredients: readonly Ingredient[],
 ): readonly ChipGroup[] {
   const sortedCategories = [...categories].sort((a, b) => a.name.localeCompare(b.name))
-  const knownGroupIds = new Set(groups.map((group) => group.id))
-  const named = [...groups]
+  return [...groups]
     .sort((a, b) => a.name.localeCompare(b.name))
     .map((group) => ({
       id: group.id,
@@ -102,15 +95,20 @@ export function chipGroups(
       categories: sortedCategories.filter((category) => category.group_id === group.id),
     }))
     .filter((group) => group.categories.length > 0)
-  const ungrouped = sortedCategories.filter(
-    (category) => category.group_id === null || !knownGroupIds.has(category.group_id),
-  )
-  const hasUncategorized = ingredients.some((ingredient) => ingredient.category_id === null)
-  const other = { id: null, name: OTHER_GROUP_NAME, categories: ungrouped }
-  return ungrouped.length > 0 || hasUncategorized ? [...named, other] : named
 }
 
-/** Sections sorted by category name; ingredients without a (known) category come last. */
+/** The broad category the filter is in: the picked one, or the one holding the picked category. */
+export function groupOfFilter(
+  groups: readonly ChipGroup[],
+  filter: CategoryFilter,
+): ChipGroup | undefined {
+  if (filter.kind === 'group') return groups.find((group) => group.id === filter.id)
+  if (filter.kind === 'category')
+    return groups.find((group) => group.categories.some((category) => category.id === filter.id))
+  return undefined
+}
+
+/** Sections sorted by category name; ingredients of a category not known yet come last. */
 export function groupByCategory(
   ingredients: readonly Ingredient[],
   categories: readonly Category[],
@@ -125,9 +123,7 @@ export function groupByCategory(
   const knownIds = new Set(categories.map((category) => category.id))
   const uncategorized = {
     ...UNCATEGORIZED,
-    ingredients: ingredients
-      .filter((item) => item.category_id === null || !knownIds.has(item.category_id))
-      .sort(byName),
+    ingredients: ingredients.filter((item) => !knownIds.has(item.category_id)).sort(byName),
   }
   return [...named, uncategorized].filter((section) => section.ingredients.length > 0)
 }

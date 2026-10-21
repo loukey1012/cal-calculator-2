@@ -5,6 +5,7 @@ import { Route, Routes, useLocation } from 'react-router'
 import { CurrentUserContext } from '../../app/currentUser'
 import { toLocalDateString } from '../../lib/dates'
 import { renderWithProviders } from '../../test/render'
+import { pickCategory } from '../ingredients/pickCategory'
 import { category, categoryGroup, ingredient } from '../ingredients/testData'
 
 vi.mock('./draftNotice', async (importOriginal) => ({
@@ -755,6 +756,7 @@ describe('the ingredient search', () => {
     await user.click(screen.getByRole('button', { name: /New ingredient/ }))
     expect(currentPath()).toBe('/cook/add/new')
     expect(screen.getByLabelText('Name')).toHaveValue('Feta')
+    await pickCategory(user, 'g-fresh', 'c-veg')
     await user.click(screen.getByRole('switch', { name: 'Per 100 g' }))
     await user.type(screen.getByLabelText('Calories per 100 g'), '264')
     await user.click(screen.getByRole('button', { name: 'Save ingredient' }))
@@ -778,6 +780,7 @@ describe('the ingredient search', () => {
     await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
     await user.click(screen.getByRole('button', { name: /New ingredient/ }))
     await user.type(screen.getByLabelText('Name'), 'Feta')
+    await pickCategory(user, 'g-fresh', 'c-veg')
     await user.click(screen.getByRole('switch', { name: 'Per 100 g' }))
     await user.type(screen.getByLabelText('Calories per 100 g'), '264')
     await user.click(screen.getByRole('button', { name: 'Save ingredient' }))
@@ -842,6 +845,7 @@ describe('the ingredient search', () => {
     expect(currentPath()).toBe('/cook/add/new-3017620422003')
     expect(screen.getByLabelText('Name')).toHaveValue('Nutella')
     expect(screen.getByLabelText('Barcode')).toHaveValue('3017620422003')
+    await pickCategory(user, 'g-fresh', 'c-veg')
     await user.click(screen.getByRole('button', { name: 'Save ingredient' }))
     expect(createIngredient).toHaveBeenCalledWith(
       'h1',
@@ -893,6 +897,7 @@ describe('the ingredient search', () => {
     const chips = within(await screen.findByRole('group', { name: 'Categories' }))
 
     // Act
+    await user.click(chips.getByRole('button', { name: 'Fresh' }))
     await user.click(chips.getByRole('button', { name: 'Veggies' }))
 
     // Assert
@@ -962,6 +967,7 @@ describe('the ingredient search', () => {
     renderCook()
     await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
     const chips = within(await screen.findByRole('group', { name: 'Categories' }))
+    await user.click(chips.getByRole('button', { name: 'Fresh' }))
     await user.click(chips.getByRole('button', { name: 'Veggies' }))
     await user.click(screen.getByRole('button', { name: 'Back' }))
 

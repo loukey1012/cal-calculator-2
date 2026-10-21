@@ -6,7 +6,7 @@ import { values } from './testData'
 const ROW: Tables<'ingredients'> = {
   id: 'i1',
   household_id: 'h1',
-  category_id: null,
+  category_id: 'c1',
   name: 'Protein bar',
   brand: 'Brand X',
   note: null,

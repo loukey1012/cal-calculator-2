@@ -17,7 +17,7 @@ import {
 import { category, categoryGroup, ingredient } from './testData'
 
 const CREAM = ingredient({ id: 'i1', name: 'Cream', kcal_100: 92 })
-const INPUT = { name: 'Cream', kcal_100: 92, category_id: null }
+const INPUT = { name: 'Cream', kcal_100: 92, category_id: 'c1' }
 const DB_ERROR = { message: 'permission denied', code: '42501' }
 
 beforeEach(() => vi.clearAllMocks())
@@ -97,7 +97,7 @@ describe('ingredientsApi', () => {
     ['createIngredient', () => createIngredient('h1', INPUT)],
     ['updateIngredient', () => updateIngredient('i1', INPUT)],
     ['deleteIngredient', () => deleteIngredient('i1')],
-    ['createCategory', () => createCategory('h1', 'x', null)],
+    ['createCategory', () => createCategory('h1', 'x', 'g1')],
   ])('%s turns database errors into ApiError', async (_name, call) => {
     supabaseMock.from.mockReturnValueOnce(fakeQuery({ data: null, error: DB_ERROR }))
 

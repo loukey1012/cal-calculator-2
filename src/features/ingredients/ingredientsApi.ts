@@ -95,11 +95,10 @@ export async function deleteIngredient(id: string): Promise<void> {
   if (error) throw ApiError.from(error)
 }
 
-/** `groupId` null leaves the category ungrouped ("Other"). */
 export async function createCategory(
   householdId: string,
   name: string,
-  groupId: string | null,
+  groupId: string,
 ): Promise<Category> {
   const { data, error } = await supabase
     .from('categories')

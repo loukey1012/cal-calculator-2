@@ -17,21 +17,21 @@ export type Database = {
       categories: {
         Row: {
           created_at: string
-          group_id: string | null
+          group_id: string
           household_id: string
           id: string
           name: string
         }
         Insert: {
           created_at?: string
-          group_id?: string | null
+          group_id: string
           household_id: string
           id?: string
           name: string
         }
         Update: {
           created_at?: string
-          group_id?: string | null
+          group_id?: string
           household_id?: string
           id?: string
           name?: string
@@ -436,7 +436,7 @@ export type Database = {
           brand: string | null
           carbs_100: number | null
           carbs_unit: number | null
-          category_id: string | null
+          category_id: string
           created_at: string
           created_by: string | null
           fat_100: number | null
@@ -469,7 +469,7 @@ export type Database = {
           brand?: string | null
           carbs_100?: number | null
           carbs_unit?: number | null
-          category_id?: string | null
+          category_id: string
           created_at?: string
           created_by?: string | null
           fat_100?: number | null
@@ -502,7 +502,7 @@ export type Database = {
           brand?: string | null
           carbs_100?: number | null
           carbs_unit?: number | null
-          category_id?: string | null
+          category_id?: string
           created_at?: string
           created_by?: string | null
           fat_100?: number | null

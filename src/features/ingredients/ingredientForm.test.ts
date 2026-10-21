@@ -9,7 +9,7 @@ import {
 import { ingredient } from './testData'
 
 function form(overrides: Partial<IngredientFormValues>): IngredientFormValues {
-  return { ...EMPTY_INGREDIENT_FORM, name: 'Cream', ...overrides }
+  return { ...EMPTY_INGREDIENT_FORM, name: 'Cream', categoryId: 'c1', ...overrides }
 }
 
 const per100g = (values: Partial<IngredientFormValues['per100g']>) => ({
@@ -49,7 +49,7 @@ describe('parseIngredientForm', () => {
       unit_label: null,
       unit_weight_g: null,
     })
-    expect(data.category).toEqual({ kind: 'none' })
+    expect(data.category).toEqual({ kind: 'existing', id: 'c1' })
   })
 
   test('accepts comma decimals and rounds calories up to whole numbers', () => {
@@ -153,7 +153,7 @@ describe('parseIngredientForm', () => {
     expect(errors).toEqual({ name: 'Enter a name', unitWeightG: 'Must be more than 0' })
   })
 
-  test('category: existing, or a new one that needs a name', () => {
+  test('category: an existing one, or a new one with a name inside a broad category', () => {
     const base = { per100gEnabled: true, per100g: per100g({ kcal: '1' }) }
 
     expect(parsed(form({ ...base, categoryId: 'c1' })).category).toEqual({
@@ -161,21 +161,19 @@ describe('parseIngredientForm', () => {
       id: 'c1',
     })
     expect(
-      parsed(form({ ...base, categoryId: NEW_CATEGORY, newCategoryName: ' Dairy ' })).category,
-    ).toEqual({ kind: 'new', name: 'Dairy', groupId: null })
-    expect(
-      parsed(
-        form({
-          ...base,
-          categoryId: NEW_CATEGORY,
-          newCategoryName: 'Dairy',
-          newCategoryGroupId: 'g1',
-        }),
-      ).category,
+      parsed(form({ ...base, categoryId: NEW_CATEGORY, newCategoryName: ' Dairy ', groupId: 'g1' }))
+        .category,
     ).toEqual({ kind: 'new', name: 'Dairy', groupId: 'g1' })
     expect(errorsOf(form({ ...base, categoryId: NEW_CATEGORY }))).toEqual({
       newCategoryName: 'Enter a category name',
+      groupId: 'Choose a broad category',
     })
+  })
+
+  test('every ingredient needs a category', () => {
+    expect(
+      errorsOf(form({ categoryId: '', per100gEnabled: true, per100g: per100g({ kcal: '1' }) })),
+    ).toEqual({ categoryId: 'Choose a category' })
   })
 })
 

@@ -81,7 +81,7 @@ Built for a two-person household: both members log their own meals, can see and 
 
 ### Ingredient database (Ingredients tab)
 
-- Shared per household, with **accent-insensitive search** (`kase` finds `Käse`) and category filter chips: one sideways-scrolling line, all on screen, or **grouped** into broad categories that open their categories when tapped (Settings › Appearance).
+- Shared per household, with **accent-insensitive search** (`kase` finds `Käse`) and category filter chips: **broad categories first** (Meat, Snacks, …); tapping one filters by it and shows its categories (Wurst, Leberkäse, …). As one sideways-scrolling line, all on screen, or **grouped** with the categories opening below (Settings › Appearance).
 - **Sorting** (the button at the right, under the category chips): **Newest first** (default: the ingredient added last is on top), **A–Z** (grouped by category, as before), **Most used** (how often it went into a dish or was logged on its own; a dish eaten by two counts once) or **Fewest calories** (per 100 g or ml; ingredients with values per unit only come after them). The same order applies to the Ingredients tab and the Cook search, and is saved to your account, like Appearance (`appearance.ingredientSort`).
 - **Brands stand out:** each ingredient's brand is a small label in the accent color above its name (in the Ingredients tab, the Cook search and Copy from an ingredient), so a list can be read for brands alone.
 - **Filter by brand** (under the category chips, on the Ingredients tab and in the Cook search): a list of the saved brands with how many ingredients each has, searchable; the chosen brand works together with the search and the category, and ⓧ shows every brand again. On Cook it stays chosen while you look at an ingredient's amount and come back.
@@ -95,7 +95,7 @@ Built for a two-person household: both members log their own meals, can see and 
 - **Check these values:** while you type, values that look wrong are listed above the values and shown in red: per unit not matching per 100 g and the grams per unit, calories that don't fit protein, carbs and fat, more than 100 g of nutrients per 100 g (not per 100 ml: 100 ml of honey or syrup weighs more than 100 g) or over 900 kcal, more sugar than carbs or saturated fat than fat (per 100 g and per unit). They go away once fixed; saving is never blocked. Ingredients already saved are checked by the weekly review (point 20).
 - **Values are an estimate:** a switch for values you guessed, e.g. a dish from your favorite restaurant saved as an ingredient. Lists show its calories with "~" (e.g. "~900 kcal / pizza"), and dishes with it are marked as an estimate.
 - **Brand** with suggestions: typing shows the brands already saved (those starting with the text first, then those containing it; case and accents don't matter, each brand once in its usual spelling). Tap one to take it exactly as saved; a new brand can still be typed.
-- Category (created on the fly, optionally inside a **broad category** such as Fresh › Meat & Fish), note.
+- **Category, in two steps:** first the broad category (Meat), then a category inside it (Wurst), or a new one created on the fly inside it. Every ingredient has one; saving without is refused. Note.
 - Categories are **deleted automatically** once their last ingredient leaves them.
 - **Barcodes:** each ingredient can carry its package's barcode (EAN-8, EAN-13, UPC-A, ITF-14; one ingredient per barcode in a household). Type it or scan it in the ingredient form. For a saved ingredient with a barcode, **Fill empty values from Open Food Facts** looks it up and fills in only what is still empty.
 
@@ -107,7 +107,7 @@ Built for a two-person household: both members log their own meals, can see and 
 - **A package you already saved without its barcode:** above the new form, the saved ingredient it most likely is gets suggested ("Is this Skyr (Milbona)?", from the name and brand; only ingredients without a barcode). **Use it** saves the barcode on that ingredient and goes on as if it had been found (Cook: its amount; Ingredients: the ingredient). **Add to an existing ingredient** picks any saved one; replacing an ingredient's other barcode asks first. Ignoring both just leaves the new form as it is.
 - **Scanner page:** full-screen camera with a scan frame and a **torch** switch (where the phone offers one). It reads a few times a second and closes by itself. If the camera can't be used (permission off, no camera), it says so and offers the two fallbacks, which are always there: **Take photo** (the iOS camera, then the photo is read) and **Type number** (the check digit catches typos).
 - iPhone browsers have no built-in barcode reader, so the app ships ZXing (WebAssembly, ~1 MB, via `barcode-detector`). It is loaded only when you scan, served by the app itself (no CDN) and stored for offline use. The camera is turned off as soon as a code is read or the page closes, and restarted when the app comes back from the background.
-- **Settings › Categories** manages them: add, rename and delete broad categories (their categories move to Other); add, rename, move between broad categories and delete categories (their ingredients stay, without a category). Swipe right to go back to Settings.
+- **Settings › Categories** manages them: add, rename and delete broad categories; add, rename, move between broad categories and delete categories. Only an empty one can be deleted (it says what to move first). Swipe right to go back to Settings.
 
 ### Notifications (Settings › Notifications)
 
@@ -166,7 +166,7 @@ Everything here is saved **to your account**, never to the device: you get the s
   - **Ring colors:** give Calories, Protein, Carbs, Fat or Fiber **its own color**; the others keep the palette's. "Use palette color" undoes one, and choosing a palette resets them all. A custom color stays the same in every theme, except that a White ring is darkened just enough to show on light cards.
   - **When over:** calories, carbs and fat change color once full: one color up to 10 % over, another above (protein and fiber keep theirs). **Signal** (amber, then red; default), **Ember**, **Neon**, your own two colors, or **Off**; a second preview shows a day that's over.
 - **Choosing a color** works the same everywhere (accent, ring colors, your partner's and your own symbol color): **35 preset colors** in one list by hue (every color the separate lists offered before, plus **White**), and **Custom** (the rainbow circle) for any color with the system color picker: moving through the picker only previews the color, **Use this color** saves it (saving every color passed on the way would close the picker on the iPhone).
-- **Category chips** (with a preview): **One line** (default, scrolls sideways), **All on screen** (slimmer chips wrapping into rows) or **Grouped** (broad categories such as Fresh; tapping one filters by it and opens its categories below) for the category filter on the Ingredients page. Wrapped chips are **arranged automatically to fill as few rows as possible** ("All" stays first; alphabetical within each row), measured on the device and re-arranged when the width or fonts change.
+- **Category chips** (with a preview): **One line** (default, scrolls sideways), **All on screen** (slimmer chips wrapping into rows) or **Grouped** (tapping a broad category opens its categories below; in the other two, its categories take the place of the broad ones until All is tapped) for the category filter on the Ingredients page. Wrapped chips are **arranged automatically to fill as few rows as possible** ("All" stays first; alphabetical within each row), measured on the device and re-arranged when the width or fonts change.
 - **Patch notes:** tap the version line at the bottom of Settings to see every change with its day and hour, newest first.
 - **App icon:** eight versions of the C-ring icon: **Graphite** (default), Classic, Pink, Sunset, Progress, Ember, Leaf and Violet. Used when you add the app to the home screen (also before signing in, on a phone you used before) and in the browser tab. Picking a new icon **copies the app's link** (a short message confirms it), ready to paste into Safari when adding the app again. To change an installed icon, see [Installing on the iPhone](#installing-on-the-iphone).
 
@@ -187,7 +187,7 @@ Build plan with every decision: [`docs/plan-2026-10-20.md`](docs/plan-2026-10-20
 
 **Categories and duplicates**
 
-- [ ] **38.** Categories redone in two levels: broad ones like Meat & Fish, specific ones inside like Leberkäse; every ingredient must have one, and only a specific one (a draft of the new tree with every ingredient placed comes first, for review)
+- [x] **38.** Categories redone in two levels: broad ones like Meat, specific ones inside like Leberkäse; every ingredient must have one, and only a specific one; picked in two steps (the new tree, reviewed: `scripts/recategorize/tree.json`)
 - [ ] **39.** The review merges duplicates: both side by side with their differences, pick which one stays (and single values from the other); everything logged with the other moves over
 
 **Meals and Cook**
@@ -507,14 +507,15 @@ supabase/
                   _shared: web push sending, plus plain-TypeScript settings and scheduling that the
                   app's tests cover and Settings › Notifications reuses
 scripts/
-  migrate-firebase/  one-off import of the old Firebase `foods` collection
+  recategorize/   the category tree of 2026-10-21 and the SQL that applies it to a household
+  review/         the weekly review routine's instructions
 ```
 
 ### Data model (Supabase)
 
 - `households`, `profiles` (one per auth user, created by a trigger; holds the name, accent color and `appearance` JSON, up to 4 KB)
 - `goal_history` (goal valid from a date; calories, and optionally protein, carbs, fat, fiber and a target weight), `weight_entries` (one weight per person and day, counting until the next; the household reads them, only you write yours)
-- `category_groups` (the household's broad categories), `categories` (optionally in a group; deleting a group leaves its categories ungrouped), `ingredients` (per-100 g and/or per-unit columns; `measure` `g` or `ml`: for ml the `_100` columns are per 100 ml and `unit_weight_g` is the ml per unit, and the at-most-100-g-per-100-g check doesn't apply; at least one calorie value required; optional `barcode`, 8–14 digits, unique per household; `kcal_estimated` for guessed values)
+- `category_groups` (the household's broad categories), `categories` (each in a group; a group with categories can't be deleted), `ingredients` (each in a category, which can't be deleted while it has any; per-100 g and/or per-unit columns; `measure` `g` or `ml`: for ml the `_100` columns are per 100 ml and `unit_weight_g` is the ml per unit, and the at-most-100-g-per-100-g check doesn't apply; at least one calorie value required; optional `barcode`, 8–14 digits, unique per household; `kcal_estimated` for guessed values)
 - `meals` (unique per user, local date and meal type; `cheat_meal`), `cheat_days` (a person's cheat days; the household manages them like meals), `meal_items` (nutrition snapshot plus a basis multiplier; amounts in `g`, `ml` or `unit`, where `per_100g` means per 100 ml for an amount in ml)
 - `meal_items` of a cooked dish point to their `dish_portions` row and `dish_lines` row; plain items leave both empty
 - `dishes` (a cooking; split mode equal / count / percent / weight, cooked weight, `kcal_estimated` when its calories are only roughly known, a revision changed by every save), `dish_portions` (who ate it on which day and meal, or nobody yet = a leftover; split value; `discarded` for a thrown-away leftover, which keeps its share), `dish_lines` (ingredient snapshot like `meal_items`, either `shared` or `per_portion`), `dish_line_amounts` (own amount of a `per_portion` line per portion)
@@ -550,12 +551,11 @@ scripts/
 
 ### Environment files (all git-ignored)
 
-| File                                    | Contents                                                                                               |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `.env.local`                            | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` of the project the app talks to                          |
-| `.env.test.local`                       | `SUPABASE_TEST_URL`, `SUPABASE_TEST_ANON_KEY`, `SUPABASE_TEST_SERVICE_ROLE_KEY` (**dev project only**) |
-| `.env.secrets.local`                    | `PROD_DB_PASSWORD`, `DEV_DB_PASSWORD` for `supabase link` / `db push`                                  |
-| `secrets/firebase-service-account.json` | only for the Firebase import                                                                           |
+| File                 | Contents                                                                                               |
+| -------------------- | ------------------------------------------------------------------------------------------------------ |
+| `.env.local`         | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` of the project the app talks to                          |
+| `.env.test.local`    | `SUPABASE_TEST_URL`, `SUPABASE_TEST_ANON_KEY`, `SUPABASE_TEST_SERVICE_ROLE_KEY` (**dev project only**) |
+| `.env.secrets.local` | `PROD_DB_PASSWORD`, `DEV_DB_PASSWORD` for `supabase link` / `db push`                                  |
 
 See `.env.example` for the app variables.
 
@@ -618,14 +618,13 @@ pnpm exec supabase db query --linked \
 echo "$KEY"   # goes into the routine's environment as REVIEW_KEY, nowhere else
 ```
 
-### Importing the old Firebase data
+### Re-sorting the categories
 
-`scripts/migrate-firebase/migrate.ts` reads the Firebase `foods` collection (read-only) and imports it into a household's ingredients. It does a dry run by default and is safe to re-run (upserts on `household_id + legacy_id`). Known errors in the source data are fixed on the way in by `corrections.ts` (Firebase itself is never changed); the dry run lists every correction.
+`scripts/recategorize/tree.json` holds broad categories → categories → products ("Name (Brand)"). `print.ts` turns it into one SQL block for a household: it creates what is missing, moves every ingredient to its place, removes the categories the tree no longer has, and changes nothing if a product and the ingredients don't match.
 
 ```bash
-MIGRATION_SUPABASE_URL=... MIGRATION_SUPABASE_SERVICE_ROLE_KEY=... \
-  node scripts/migrate-firebase/migrate.ts --household <uuid>          # dry run
-  node scripts/migrate-firebase/migrate.ts --household <uuid> --apply  # import
+node scripts/recategorize/print.ts <household-id> > tree.sql
+pnpm exec supabase db query --linked -f tree.sql   # dev first, then production
 ```
 
 ## Deployment

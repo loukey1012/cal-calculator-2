@@ -11,9 +11,13 @@ test('the live camera reads a package on Cook and goes straight to its amount', 
 }) => {
   const me = await backend.user('Cam')
   const household = await backend.household([me])
-  await backend.admin
-    .from('ingredients')
-    .insert({ household_id: household, name: 'Nutella', kcal_100: 539, barcode: '3017620422003' })
+  await backend.admin.from('ingredients').insert({
+    household_id: household,
+    category_id: await backend.category(household),
+    name: 'Nutella',
+    kcal_100: 539,
+    barcode: '3017620422003',
+  })
   // the "camera" films the barcode: a canvas stream, read by the real scanner like a camera
   const picture = `data:image/png;base64,${readFileSync(NUTELLA_PHOTO).toString('base64')}`
   await page.addInitScript({ content: `window.__fakeCameraPicture = ${JSON.stringify(picture)}` })

@@ -1,4 +1,4 @@
-import { expect, test as base, type Page } from '@playwright/test'
+import { expect, test as base, type Locator, type Page } from '@playwright/test'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
 /**
@@ -57,6 +57,28 @@ export class DevBackend {
     return data.id
   }
 
+  private readonly categoryIds = new Map<string, string>()
+
+  /** The household's "Pantry › Basics" category, made on first use: every ingredient needs one. */
+  async category(householdId: string): Promise<string> {
+    const known = this.categoryIds.get(householdId)
+    if (known) return known
+    const group = await this.admin
+      .from('category_groups')
+      .insert({ household_id: householdId, name: 'Pantry' })
+      .select('id')
+      .single()
+    if (group.error) throw new Error(`category group failed: ${group.error.message}`)
+    const category = await this.admin
+      .from('categories')
+      .insert({ household_id: householdId, name: 'Basics', group_id: group.data.id })
+      .select('id')
+      .single()
+    if (category.error) throw new Error(`category failed: ${category.error.message}`)
+    this.categoryIds.set(householdId, category.data.id)
+    return category.data.id
+  }
+
   async cleanup(): Promise<void> {
     for (const id of this.userIds) await this.admin.auth.admin.deleteUser(id)
     if (this.householdIds.length)
@@ -77,6 +99,12 @@ export const test = base.extend<{ backend: DevBackend }>({
 test.skip(!hasDevBackend, 'needs SUPABASE_TEST_* and an app built against the dev project')
 
 export { expect }
+
+/** Picks "Pantry › Basics" (see `DevBackend.category`) in an ingredient form: broad first. */
+export async function pickBasics(form: Locator): Promise<void> {
+  await form.getByLabel('Broad category').selectOption({ label: 'Pantry' })
+  await form.getByLabel('Category', { exact: true }).selectOption({ label: 'Basics' })
+}
 
 export async function logIn(page: Page, user: JourneyUser): Promise<void> {
   await page.goto('/')

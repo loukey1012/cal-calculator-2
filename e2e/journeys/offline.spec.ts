@@ -9,9 +9,12 @@ test('a meal logged offline is kept and sent exactly once when back online', asy
 }) => {
   const me = await backend.user('Otto')
   const household = await backend.household([me])
-  await backend.admin
-    .from('ingredients')
-    .insert({ household_id: household, name: 'Skyr', kcal_100: 63 })
+  await backend.admin.from('ingredients').insert({
+    household_id: household,
+    category_id: await backend.category(household),
+    name: 'Skyr',
+    kcal_100: 63,
+  })
   await logIn(page, me)
   await cookFor(activePage(page), page, /Lunch/)
   await addIngredient(page, 'Skyr', '250')

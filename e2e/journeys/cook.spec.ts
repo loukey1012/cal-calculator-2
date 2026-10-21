@@ -32,9 +32,24 @@ test('cook together: one dish logged for both, edited, and a meal shared afterwa
   const partner = await backend.user('Lisa')
   const household = await backend.household([me, partner])
   await backend.admin.from('ingredients').insert([
-    { household_id: household, name: 'Patty', kcal_100: 240 },
-    { household_id: household, name: 'Tomato', kcal_100: 18 },
-    { household_id: household, name: 'Skyr', kcal_100: 63 },
+    {
+      household_id: household,
+      category_id: await backend.category(household),
+      name: 'Patty',
+      kcal_100: 240,
+    },
+    {
+      household_id: household,
+      category_id: await backend.category(household),
+      name: 'Tomato',
+      kcal_100: 18,
+    },
+    {
+      household_id: household,
+      category_id: await backend.category(household),
+      name: 'Skyr',
+      kcal_100: 63,
+    },
   ])
   await logIn(page, me)
   const sheet = page.getByRole('dialog')
@@ -94,9 +109,12 @@ test('leftovers: cook a portion more, see it on Today, eat it later', async ({ p
   const me = await backend.user('Lukas')
   const partner = await backend.user('Lisa')
   const household = await backend.household([me, partner])
-  await backend.admin
-    .from('ingredients')
-    .insert({ household_id: household, name: 'Chili', kcal_100: 150 })
+  await backend.admin.from('ingredients').insert({
+    household_id: household,
+    category_id: await backend.category(household),
+    name: 'Chili',
+    kcal_100: 150,
+  })
   await logIn(page, me)
 
   await cookFor(activePage(page), page, /Dinner/)
@@ -165,8 +183,18 @@ test('adding an ingredient: Back and the back swipe go one step at a time', asyn
   const me = await backend.user('Lukas')
   const household = await backend.household([me])
   await backend.admin.from('ingredients').insert([
-    { household_id: household, name: 'Patty', kcal_100: 240 },
-    { household_id: household, name: 'Tomato', kcal_100: 18 },
+    {
+      household_id: household,
+      category_id: await backend.category(household),
+      name: 'Patty',
+      kcal_100: 240,
+    },
+    {
+      household_id: household,
+      category_id: await backend.category(household),
+      name: 'Tomato',
+      kcal_100: 18,
+    },
   ])
   await logIn(page, me)
   await openCook(page)
@@ -203,11 +231,16 @@ test('the Cook search: category chips, and a missing ingredient created right th
 }) => {
   const me = await backend.user('Lukas')
   const household = await backend.household([me])
+  const { data: fresh } = await backend.admin
+    .from('category_groups')
+    .insert({ household_id: household, name: 'Fresh' })
+    .select('id')
+    .single()
   const { data: categories } = await backend.admin
     .from('categories')
     .insert([
-      { household_id: household, name: 'Meat' },
-      { household_id: household, name: 'Veggies' },
+      { household_id: household, name: 'Meat', group_id: fresh?.id },
+      { household_id: household, name: 'Veggies', group_id: fresh?.id },
     ])
     .select('id, name')
   const categoryId = (name: string) => categories?.find((row) => row.name === name)?.id
@@ -220,20 +253,21 @@ test('the Cook search: category chips, and a missing ingredient created right th
   const cook = activePage(page)
   await cook.getByRole('button', { name: 'Add ingredient' }).click()
 
-  // the chips filter the search
-  await cook
-    .getByRole('group', { name: 'Categories' })
-    .getByRole('button', { name: 'Veggies' })
-    .click()
+  // the chips filter the search: broad category first, then one inside it
+  const chips = cook.getByRole('group', { name: 'Categories' })
+  await chips.getByRole('button', { name: 'Fresh' }).click()
+  await chips.getByRole('button', { name: 'Veggies' }).click()
   await expect(cook.getByRole('button', { name: /Tomato/ })).toBeVisible()
   await expect(cook.getByRole('button', { name: /Patty/ })).toHaveCount(0)
 
   // not there yet: create it with the name searched for, then straight to its amount
-  await cook.getByRole('group', { name: 'Categories' }).getByRole('button', { name: 'All' }).click()
+  await chips.getByRole('button', { name: 'All' }).click()
   await cook.getByLabel('Search ingredients').fill('Feta')
   await expect(cook.getByText('No matches.')).toBeVisible()
   await cook.getByRole('button', { name: 'New ingredient' }).click()
   await expect(cook.getByLabel('Name', { exact: true })).toHaveValue('Feta')
+  await cook.getByLabel('Broad category').selectOption({ label: 'Fresh' })
+  await cook.getByLabel('Category', { exact: true }).selectOption({ label: 'Veggies' })
   await cook.getByRole('switch', { name: 'Per 100 g' }).click()
   await cook.getByLabel('Calories per 100 g').fill('264')
   await cook.getByRole('button', { name: 'Save ingredient' }).click()

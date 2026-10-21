@@ -119,23 +119,29 @@ export function ToggleRow({ label, checked, onChange, error }: ToggleRowProps) {
 type SelectRowProps = SelectHTMLAttributes<HTMLSelectElement> & {
   readonly label: string
   readonly children: ReactNode
+  readonly error?: string
 }
 
 /** Row with a native select, which iOS shows as its wheel picker. */
-export function SelectRow({ label, children, ...selectProps }: SelectRowProps) {
+export function SelectRow({ label, children, error, ...selectProps }: SelectRowProps) {
   const id = useId()
   return (
-    <div className="flex items-center gap-3 px-4 py-2.5">
-      <label htmlFor={id} className="flex-1 text-[17px]">
-        {label}
-      </label>
-      <select
-        id={id}
-        className="max-w-[60%] bg-transparent text-right text-[17px] text-label-secondary outline-none"
-        {...selectProps}
-      >
-        {children}
-      </select>
+    <div className="px-4 py-2.5">
+      <div className="flex items-center gap-3">
+        <label htmlFor={id} className="flex-1 text-[17px]">
+          {label}
+        </label>
+        <select
+          id={id}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${id}-error` : undefined}
+          className="max-w-[60%] bg-transparent text-right text-[17px] text-label-secondary outline-none"
+          {...selectProps}
+        >
+          {children}
+        </select>
+      </div>
+      <FieldError id={`${id}-error`} error={error} />
     </div>
   )
 }

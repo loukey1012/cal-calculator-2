@@ -72,7 +72,7 @@ describe('categoriesApi', () => {
     ['createCategoryGroup', () => createCategoryGroup('h1', 'x')],
     ['renameCategoryGroup', () => renameCategoryGroup('g1', 'x')],
     ['deleteCategoryGroup', () => deleteCategoryGroup('g1')],
-    ['updateCategory', () => updateCategory('c1', { name: 'x', groupId: null })],
+    ['updateCategory', () => updateCategory('c1', { name: 'x', groupId: 'g1' })],
     ['deleteCategory', () => deleteCategory('c1')],
   ])('%s turns database errors into ApiError', async (_name, call) => {
     supabaseMock.from.mockReturnValueOnce(fakeQuery({ data: null, error: DB_ERROR }))

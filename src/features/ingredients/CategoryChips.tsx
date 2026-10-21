@@ -1,13 +1,16 @@
 import type { CategoryLayout } from '../appearance/appearance'
 import { FilterChip } from './FilterChip'
 import { arrange, usePackedOrder } from './usePackedOrder'
-import type { Category } from './ingredientsApi'
+
+/** a broad category or a category: chips only need its id and name */
+type ChipItem = { readonly id: string; readonly name: string }
 
 type CategoryChipsProps = {
   readonly layout: FlatLayout
-  readonly categories: readonly Category[]
+  readonly items: readonly ChipItem[]
   readonly selectedId: string | null
-  readonly onSelect: (categoryId: string | null) => void
+  /** null = "All" */
+  readonly onSelect: (id: string | null) => void
 }
 
 /** the wrapped layouts: slimmer chips flowing into rows */
@@ -31,9 +34,9 @@ const LAYOUT_CLASSES: Record<FlatLayout, { readonly group: string; readonly chip
 
 const ALL_KEY = 'all'
 
-/** Filter chips for the ingredient categories, with "All" first. */
-export function CategoryChips({ layout, categories, selectedId, onSelect }: CategoryChipsProps) {
-  const chips = [{ id: null, name: 'All' }, ...categories]
+/** Filter chips in one line or wrapped, with "All" first. */
+export function CategoryChips({ layout, items, selectedId, onSelect }: CategoryChipsProps) {
+  const chips = [{ id: null, name: 'All' }, ...items]
   const classes = LAYOUT_CLASSES[layout]
   const keyOf = (chip: { readonly id: string | null }) => chip.id ?? ALL_KEY
   // the line scrolls, so only the wrapped chips are rearranged to fill fewer rows

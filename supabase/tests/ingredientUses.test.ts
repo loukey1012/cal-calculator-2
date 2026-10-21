@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
-import { createTestUser, deleteTestUsers, type TestUser } from './helpers'
+import { createTestUser, deleteTestUsers, type TestUser, testCategory } from './helpers'
 
 // Alice and Bob share a household; Carol is in another one.
 let alice: TestUser
@@ -61,8 +61,18 @@ beforeAll(async () => {
   const created = await alice.client
     .from('ingredients')
     .insert([
-      { household_id: household.data.id, name: 'Patty', kcal_100: 240 },
-      { household_id: household.data.id, name: 'Salad', kcal_100: 15 },
+      {
+        household_id: household.data.id,
+        category_id: await testCategory(household.data.id),
+        name: 'Patty',
+        kcal_100: 240,
+      },
+      {
+        household_id: household.data.id,
+        category_id: await testCategory(household.data.id),
+        name: 'Salad',
+        kcal_100: 15,
+      },
     ])
     .select('id, name')
   if (created.error) throw new Error(created.error.message)

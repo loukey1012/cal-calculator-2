@@ -9,9 +9,15 @@ test('the weekly review: an ingredient fix applied, one ignored, a meal finding 
   const { data: ingredients } = await backend.admin
     .from('ingredients')
     .insert([
-      { household_id: household, name: 'Buter', kcal_100: 740 },
       {
         household_id: household,
+        category_id: await backend.category(household),
+        name: 'Buter',
+        kcal_100: 740,
+      },
+      {
+        household_id: household,
+        category_id: await backend.category(household),
         name: 'Milk',
         kcal_100: 64,
         unit_label: 'glass',

@@ -3,7 +3,8 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { CurrentUserContext } from '../../app/currentUser'
 import { renderWithProviders } from '../../test/render'
-import { category, ingredient } from './testData'
+import { pickCategory } from './pickCategory'
+import { category, categoryGroup, ingredient } from './testData'
 
 vi.mock('./ingredientsApi', () => ({
   fetchIngredients: vi.fn(),
@@ -38,7 +39,7 @@ const PROFILE = {
   created_at: '',
   updated_at: '',
 }
-const CATEGORIES = [category('c1', 'Dairy')]
+const CATEGORIES = [category('c1', 'Dairy', 'g1')]
 const SKYR = ingredient({
   id: 'skyr',
   name: 'Skyr',
@@ -63,7 +64,7 @@ function renderSheet({
         ingredient={editing}
         barcode={barcode}
         categories={CATEGORIES}
-        groups={[]}
+        groups={[categoryGroup('g1', 'Fridge')]}
         onClose={vi.fn()}
         onOpenIngredient={onOpenIngredient}
       />
@@ -195,6 +196,7 @@ describe('millilitres', () => {
     const user = userEvent.setup()
     renderSheet()
     await user.type(screen.getByLabelText('Name'), 'Oat drink')
+    await pickCategory(user, 'g1', 'c1')
 
     await user.click(screen.getByRole('radio', { name: 'Millilitres' }))
     await user.click(screen.getByRole('switch', { name: 'Per 100 ml' }))
@@ -361,6 +363,7 @@ describe('estimates', () => {
     const user = userEvent.setup()
     renderSheet()
     await user.type(screen.getByLabelText('Name'), 'Döner')
+    await pickCategory(user, 'g1', 'c1')
     await user.click(screen.getByRole('switch', { name: 'Per 100 g' }))
     await user.type(screen.getByLabelText('Protein per 100 g'), '10')
     await user.type(screen.getByLabelText('Carbs per 100 g'), '20')

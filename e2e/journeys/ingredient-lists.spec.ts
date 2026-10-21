@@ -1,4 +1,4 @@
-import { activePage, expect, logIn, test } from './backend.ts'
+import { activePage, expect, logIn, pickBasics, test } from './backend.ts'
 import { addIngredient } from './cook.ts'
 
 function openTab(page: import('@playwright/test').Page, tab: string) {
@@ -7,7 +7,7 @@ function openTab(page: import('@playwright/test').Page, tab: string) {
 
 test('a drink saved in ml is logged in ml', async ({ page, backend }) => {
   const me = await backend.user('Mila')
-  await backend.household([me])
+  await backend.category(await backend.household([me]))
   await logIn(page, me)
   const sheet = page.getByRole('dialog')
 
@@ -19,6 +19,7 @@ test('a drink saved in ml is logged in ml', async ({ page, backend }) => {
   await sheet.getByLabel('Calories per 100 ml').fill('46')
   await sheet.getByLabel('Unit name').fill('glass')
   await sheet.getByLabel('Millilitres per unit', { exact: true }).fill('250')
+  await pickBasics(sheet)
   await sheet.getByRole('button', { name: 'Save' }).click()
   await expect(sheet).toBeHidden()
   await expect(activePage(page).getByRole('button', { name: /Hafer Drink/ })).toContainText(
@@ -58,9 +59,14 @@ test('the newest ingredient is on top, brands can be filtered, and the order is 
     ['Apfel', null, '2026-10-03T10:00:00Z'],
     ['Quark', 'Milbona', '2026-10-02T10:00:00Z'],
   ] as const) {
-    await backend.admin
-      .from('ingredients')
-      .insert({ household_id: household, name, brand, kcal_100: 60, created_at: createdAt })
+    await backend.admin.from('ingredients').insert({
+      household_id: household,
+      category_id: await backend.category(household),
+      name,
+      brand,
+      kcal_100: 60,
+      created_at: createdAt,
+    })
   }
   await logIn(page, me)
   await openTab(page, 'Ingredients')

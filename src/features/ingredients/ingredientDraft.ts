@@ -7,7 +7,7 @@ import type { IngredientFormValues } from './ingredientForm'
  * ingredient ("new" for a new one); removed once saved or discarded.
  */
 
-const VERSION = 1
+const VERSION = 2
 
 const basis = z.record(z.string(), z.string())
 
@@ -16,7 +16,7 @@ const draftSchema = z.object({
   brand: z.string(),
   categoryId: z.string(),
   newCategoryName: z.string(),
-  newCategoryGroupId: z.string(),
+  groupId: z.string(),
   note: z.string(),
   barcode: z.string(),
   per100gEnabled: z.boolean(),

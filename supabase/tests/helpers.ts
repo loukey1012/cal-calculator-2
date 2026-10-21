@@ -72,3 +72,21 @@ export async function deleteTestUsers(users: readonly TestUser[]): Promise<void>
     if (error) throw new Error(`household cleanup failed: ${error.message}`)
   }
 }
+
+/** A fresh broad category with one category in it: every test ingredient needs a category. */
+export async function testCategory(householdId: string): Promise<string> {
+  const suffix = crypto.randomUUID().slice(0, 8)
+  const group = await admin
+    .from('category_groups')
+    .insert({ household_id: householdId, name: `Test ${suffix}` })
+    .select('id')
+    .single()
+  if (group.error) throw new Error(`testCategory group failed: ${group.error.message}`)
+  const category = await admin
+    .from('categories')
+    .insert({ household_id: householdId, name: `Test ${suffix}`, group_id: group.data.id })
+    .select('id')
+    .single()
+  if (category.error) throw new Error(`testCategory failed: ${category.error.message}`)
+  return category.data.id
+}

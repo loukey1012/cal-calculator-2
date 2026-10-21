@@ -2,6 +2,7 @@ import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { renderWithProviders } from '../../test/render'
+import { pickCategory } from './pickCategory'
 import { category, categoryGroup, ingredient } from './testData'
 
 vi.mock('./ingredientsApi', () => ({
@@ -14,6 +15,7 @@ vi.mock('./ingredientsApi', () => ({
 }))
 
 import { IngredientSheet } from './IngredientSheet'
+import { NEW_CATEGORY } from './ingredientForm'
 import { ApiError } from '../../lib/errors'
 import {
   createCategory,
@@ -62,6 +64,7 @@ describe('IngredientSheet', () => {
 
     await user.type(screen.getByLabelText('Name'), 'Cream')
     await user.type(screen.getByLabelText('Brand'), 'Milbona')
+    await pickCategory(user, 'g1', 'c1')
     await user.click(screen.getByRole('switch', { name: 'Per 100 g' }))
     await user.type(screen.getByLabelText('Calories per 100 g'), '92,4')
     await user.type(screen.getByLabelText('Protein per 100 g'), '1,3')
@@ -73,7 +76,7 @@ describe('IngredientSheet', () => {
       expect.objectContaining({
         name: 'Cream',
         brand: 'Milbona',
-        category_id: null,
+        category_id: 'c1',
         kcal_100: 93,
         protein_100: 1.3,
         kcal_unit: null,
@@ -86,6 +89,7 @@ describe('IngredientSheet', () => {
     renderSheet()
 
     await user.type(screen.getByLabelText('Name'), 'Protein bar')
+    await pickCategory(user, 'g1', 'c1')
     await user.click(screen.getByRole('switch', { name: 'Per unit' }))
     await user.type(screen.getByLabelText('Calories per unit'), '210')
     await user.type(screen.getByLabelText('Unit name'), 'bar')
@@ -132,6 +136,7 @@ describe('IngredientSheet', () => {
 
     expect(screen.getByText('Enter a name')).toBeInTheDocument()
     expect(screen.getByText('Add calories per 100 g or per unit')).toBeInTheDocument()
+    expect(screen.getByText('Choose a category')).toBeInTheDocument()
     expect(createIngredient).not.toHaveBeenCalled()
   })
 
@@ -158,6 +163,7 @@ describe('IngredientSheet', () => {
     const user = userEvent.setup()
     const first = renderSheet()
     await user.type(screen.getByLabelText('Name'), 'Cream')
+    await pickCategory(user, 'g1', 'c1')
     await user.click(screen.getByRole('switch', { name: 'Per 100 g' }))
     await user.type(screen.getByLabelText('Calories per 100 g'), '92')
     await user.click(screen.getByRole('button', { name: 'Save' }))
@@ -170,14 +176,15 @@ describe('IngredientSheet', () => {
     expect(screen.getByLabelText('Name')).toHaveValue('')
   })
 
-  test('creates a new category on the fly', async () => {
-    vi.mocked(createCategory).mockResolvedValue(category('c9', 'Snacks'))
+  test('creates a new category on the fly, inside the chosen broad category', async () => {
+    vi.mocked(createCategory).mockResolvedValue(category('c9', 'Chips', 'g2'))
     const user = userEvent.setup()
     renderSheet()
 
     await user.type(screen.getByLabelText('Name'), 'Chips')
-    await user.selectOptions(screen.getByLabelText('Category'), 'New category…')
-    await user.type(screen.getByLabelText('New category name'), 'Snacks')
+    // by value: user-event compares labels as HTML, where "&" is escaped
+    await pickCategory(user, 'g2', NEW_CATEGORY)
+    await user.type(screen.getByLabelText('New category name'), 'Chips')
     await user.click(screen.getByRole('switch', { name: 'Per 100 g' }))
     await user.type(screen.getByLabelText('Calories per 100 g'), '540')
     await user.click(screen.getByRole('button', { name: 'Save' }))
@@ -188,33 +195,29 @@ describe('IngredientSheet', () => {
         expect.objectContaining({ category_id: 'c9' }),
       ),
     )
-    expect(createCategory).toHaveBeenCalledWith('h1', 'Snacks', null)
+    expect(createCategory).toHaveBeenCalledWith('h1', 'Chips', 'g2')
   })
 
-  test('a new category goes into the chosen broad category', async () => {
-    vi.mocked(createCategory).mockResolvedValue(category('c9', 'Chips', 'g2'))
+  test('the broad category comes first; its categories show only after picking it', async () => {
     const user = userEvent.setup()
     renderSheet()
 
-    await user.type(screen.getByLabelText('Name'), 'Chips')
-    await user.selectOptions(screen.getByLabelText('Category'), 'New category…')
-    await user.type(screen.getByLabelText('New category name'), 'Chips')
-    // by value: user-event compares labels as HTML, where "&" is escaped
+    expect(screen.getByLabelText('Broad category')).toHaveDisplayValue('Choose')
+    expect(screen.queryByLabelText('Category')).not.toBeInTheDocument()
+    await user.selectOptions(screen.getByLabelText('Broad category'), 'g1')
+    const options = [...screen.getByLabelText<HTMLSelectElement>('Category').options]
+    expect(options.map((option) => option.text)).toEqual(['Choose', 'Dairy', 'New category…'])
+
+    await user.selectOptions(screen.getByLabelText('Category'), 'c1')
     await user.selectOptions(screen.getByLabelText('Broad category'), 'g2')
-    await user.click(screen.getByRole('switch', { name: 'Per 100 g' }))
-    await user.type(screen.getByLabelText('Calories per 100 g'), '540')
-    await user.click(screen.getByRole('button', { name: 'Save' }))
-
-    await waitFor(() => expect(createCategory).toHaveBeenCalledWith('h1', 'Chips', 'g2'))
+    expect(screen.getByLabelText('Category')).toHaveDisplayValue('Choose')
   })
 
-  test('the broad category picker only shows for a new category', async () => {
-    const user = userEvent.setup()
-    renderSheet()
+  test('editing shows the broad category of the saved category', () => {
+    renderSheet(CREAM)
 
-    expect(screen.queryByLabelText('Broad category')).not.toBeInTheDocument()
-    await user.selectOptions(screen.getByLabelText('Category'), 'New category…')
-    expect(screen.getByLabelText('Broad category')).toHaveDisplayValue('None (Other)')
+    expect(screen.getByLabelText('Broad category')).toHaveValue('g1')
+    expect(screen.getByLabelText('Category')).toHaveValue('c1')
   })
 
   test('a "new" category that already exists is reused', async () => {
@@ -222,7 +225,7 @@ describe('IngredientSheet', () => {
     renderSheet()
 
     await user.type(screen.getByLabelText('Name'), 'Milk')
-    await user.selectOptions(screen.getByLabelText('Category'), 'New category…')
+    await pickCategory(user, 'g1', NEW_CATEGORY)
     await user.type(screen.getByLabelText('New category name'), 'dairy')
     await user.click(screen.getByRole('switch', { name: 'Per 100 g' }))
     await user.type(screen.getByLabelText('Calories per 100 g'), '64')
@@ -239,12 +242,12 @@ describe('IngredientSheet', () => {
 
   test('a new category that already exists in the database (e.g. after a failed save) is reused', async () => {
     vi.mocked(createCategory).mockRejectedValue(new ApiError('duplicate key', '23505'))
-    vi.mocked(fetchCategories).mockResolvedValue([...CATEGORIES, category('c7', 'Snacks')])
+    vi.mocked(fetchCategories).mockResolvedValue([...CATEGORIES, category('c7', 'Snacks', 'g2')])
     const user = userEvent.setup()
     renderSheet()
 
     await user.type(screen.getByLabelText('Name'), 'Chips')
-    await user.selectOptions(screen.getByLabelText('Category'), 'New category…')
+    await pickCategory(user, 'g2', NEW_CATEGORY)
     await user.type(screen.getByLabelText('New category name'), 'snacks')
     await user.click(screen.getByRole('switch', { name: 'Per 100 g' }))
     await user.type(screen.getByLabelText('Calories per 100 g'), '540')

@@ -12,7 +12,6 @@ const GROUPS: readonly ChipGroup[] = [
     categories: [category('c1', 'Dairy', 'g1'), category('c2', 'Spreads', 'g1')],
   },
   { id: 'g2', name: 'Fresh', categories: [category('c3', 'Meat & Fish', 'g2')] },
-  { id: null, name: 'Other', categories: [] },
 ]
 
 function renderChips(filter: CategoryFilter = ALL_CATEGORIES) {
@@ -37,7 +36,7 @@ describe('GroupedCategoryChips', () => {
       broad()
         .getAllByRole('button')
         .map((chip) => chip.textContent),
-    ).toEqual(['All', 'Dairy & Spreads', 'Fresh', 'Other'])
+    ).toEqual(['All', 'Dairy & Spreads', 'Fresh'])
     expect(broad().getByRole('button', { name: 'All' })).toHaveAttribute('aria-pressed', 'true')
   })
 
@@ -112,16 +111,6 @@ describe('GroupedCategoryChips', () => {
 
     expect(onChange).toHaveBeenLastCalledWith(ALL_CATEGORIES)
     expect(panel('Fresh')).not.toBeInTheDocument()
-  })
-
-  test('a broad category without categories (Other, only uncategorized) opens no panel', async () => {
-    const user = userEvent.setup()
-    const { onChange } = renderChips()
-
-    await user.click(broad().getByRole('button', { name: 'Other' }))
-
-    expect(onChange).toHaveBeenCalledWith({ kind: 'group', id: null })
-    expect(panel('Other')).not.toBeInTheDocument()
   })
 
   test('can start with a panel open (for the Appearance preview)', () => {

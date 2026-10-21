@@ -51,12 +51,16 @@ const ME = {
   created_at: '',
   updated_at: '',
 }
-const GROUPS = [categoryGroup('g2', 'Pantry'), categoryGroup('g1', 'Fresh')]
+const GROUPS = [
+  categoryGroup('g2', 'Pantry'),
+  categoryGroup('g1', 'Fresh'),
+  categoryGroup('g3', 'Empty'),
+]
 const CATEGORIES = [
   category('c1', 'Meat', 'g1'),
   category('c2', 'Veggies', 'g1'),
   category('c3', 'Sauces', 'g2'),
-  category('c4', 'Misc', null),
+  category('c4', 'Misc', 'g2'),
 ]
 const INGREDIENTS = [
   ingredient({ id: 'i1', name: 'Steak', category_id: 'c1', kcal_100: 1 }),
@@ -86,7 +90,7 @@ beforeEach(() => {
   vi.mocked(createCategoryGroup).mockResolvedValue(categoryGroup('g9', 'New'))
   vi.mocked(renameCategoryGroup).mockResolvedValue()
   vi.mocked(deleteCategoryGroup).mockResolvedValue()
-  vi.mocked(createCategory).mockResolvedValue(category('c9', 'New'))
+  vi.mocked(createCategory).mockResolvedValue(category('c9', 'New', 'g2'))
   vi.mocked(updateCategory).mockResolvedValue()
   vi.mocked(deleteCategory).mockResolvedValue()
 })
@@ -96,20 +100,20 @@ afterEach(() => {
 })
 
 describe('CategoriesPage', () => {
-  test('lists the broad categories, then each one with its categories, Other last', async () => {
+  test('lists the broad categories, then each one with its categories', async () => {
     renderPage()
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Categories' })).toBeInTheDocument()
     const broad = await section('Broad categories')
     expect(broad.getByRole('button', { name: /^Fresh/ })).toHaveTextContent('2 categories')
-    expect(broad.getByRole('button', { name: /^Pantry/ })).toHaveTextContent('1 category')
+    expect(broad.getByRole('button', { name: /^Empty/ })).toHaveTextContent('0 categories')
     expect(
       screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent),
-    ).toEqual(['Broad categories', 'Fresh', 'Pantry', 'Other'])
+    ).toEqual(['Broad categories', 'Empty', 'Fresh', 'Pantry'])
     expect((await section('Fresh')).getByRole('button', { name: /^Meat/ })).toHaveTextContent(
       '2 ingredients',
     )
-    expect((await section('Other')).getByRole('button', { name: /^Misc/ })).toHaveTextContent(
+    expect((await section('Pantry')).getByRole('button', { name: /^Misc/ })).toHaveTextContent(
       '0 ingredients',
     )
   })
@@ -140,16 +144,30 @@ describe('CategoriesPage', () => {
     await waitFor(() => expect(renameCategoryGroup).toHaveBeenCalledWith('g1', 'Fresh Food'))
   })
 
-  test('deleting a broad category asks first and says its categories move to Other', async () => {
+  test('an empty broad category can be deleted, after asking', async () => {
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
     const user = userEvent.setup()
     renderPage()
 
-    await user.click((await section('Broad categories')).getByRole('button', { name: /^Fresh/ }))
+    await user.click((await section('Broad categories')).getByRole('button', { name: /^Empty/ }))
     await user.click(dialog().getByRole('button', { name: 'Delete Broad Category' }))
 
-    expect(confirm).toHaveBeenCalledWith(expect.stringContaining('2 categories move to Other'))
-    await waitFor(() => expect(deleteCategoryGroup).toHaveBeenCalledWith('g1'))
+    expect(confirm).toHaveBeenCalledWith('Delete “Empty”?')
+    await waitFor(() => expect(deleteCategoryGroup).toHaveBeenCalledWith('g3'))
+  })
+
+  test('a broad category with categories in it says to move them first, instead of deleting', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click((await section('Broad categories')).getByRole('button', { name: /^Fresh/ }))
+
+    expect(
+      dialog().getByText('To delete it, first move or delete its 2 categories.'),
+    ).toBeInTheDocument()
+    expect(
+      dialog().queryByRole('button', { name: 'Delete Broad Category' }),
+    ).not.toBeInTheDocument()
   })
 
   test('nothing is deleted when the confirmation is cancelled', async () => {
@@ -157,7 +175,7 @@ describe('CategoriesPage', () => {
     const user = userEvent.setup()
     renderPage()
 
-    await user.click((await section('Broad categories')).getByRole('button', { name: /^Fresh/ }))
+    await user.click((await section('Broad categories')).getByRole('button', { name: /^Empty/ }))
     await user.click(dialog().getByRole('button', { name: 'Delete Broad Category' }))
 
     expect(deleteCategoryGroup).not.toHaveBeenCalled()
@@ -169,8 +187,12 @@ describe('CategoriesPage', () => {
     renderPage()
 
     await user.click(await screen.findByRole('button', { name: 'Add Category' }))
-    expect(dialog().getByLabelText('Broad category')).toHaveDisplayValue('None (Other)')
+    expect(dialog().getByLabelText('Broad category')).toHaveDisplayValue('Choose')
     await user.type(dialog().getByLabelText('Name'), 'Spices')
+    await user.click(dialog().getByRole('button', { name: 'Save' }))
+    expect(dialog().getByText('Choose a broad category')).toBeInTheDocument()
+    expect(createCategory).not.toHaveBeenCalled()
+
     await user.selectOptions(dialog().getByLabelText('Broad category'), 'g2')
     await user.click(dialog().getByRole('button', { name: 'Save' }))
 
@@ -191,16 +213,28 @@ describe('CategoriesPage', () => {
     )
   })
 
-  test('deleting a category asks first and says how many ingredients lose it', async () => {
+  test('an empty category can be deleted, after asking', async () => {
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
     const user = userEvent.setup()
     renderPage()
 
-    await user.click((await section('Fresh')).getByRole('button', { name: /^Meat/ }))
+    await user.click((await section('Pantry')).getByRole('button', { name: /^Misc/ }))
     await user.click(dialog().getByRole('button', { name: 'Delete Category' }))
 
-    expect(confirm).toHaveBeenCalledWith(expect.stringContaining('2 ingredients'))
-    await waitFor(() => expect(deleteCategory).toHaveBeenCalledWith('c1'))
+    expect(confirm).toHaveBeenCalledWith('Delete “Misc”?')
+    await waitFor(() => expect(deleteCategory).toHaveBeenCalledWith('c4'))
+  })
+
+  test('a category with ingredients says to move them first, instead of deleting', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click((await section('Fresh')).getByRole('button', { name: /^Meat/ }))
+
+    expect(
+      dialog().getByText('To delete it, first move its 2 ingredients to another category.'),
+    ).toBeInTheDocument()
+    expect(dialog().queryByRole('button', { name: 'Delete Category' })).not.toBeInTheDocument()
   })
 
   test('an empty name is rejected without saving', async () => {

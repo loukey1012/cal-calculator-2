@@ -1,6 +1,13 @@
 import { createHash, randomBytes } from 'node:crypto'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
-import { admin, anonClient, createTestUser, deleteTestUsers, type TestUser } from './helpers'
+import {
+  admin,
+  anonClient,
+  createTestUser,
+  deleteTestUsers,
+  type TestUser,
+  testCategory,
+} from './helpers'
 
 // Alice and Bob share a household; Carol is in another one. The review routine only has the
 // public anon key and its household's review key.
@@ -41,14 +48,25 @@ beforeAll(async () => {
 
   const butter = await alice.client
     .from('ingredients')
-    .insert({ household_id: householdId, name: 'Buter', brand: 'Kerrygold', kcal_100: 740 })
+    .insert({
+      household_id: householdId,
+      category_id: await testCategory(householdId),
+      name: 'Buter',
+      brand: 'Kerrygold',
+      kcal_100: 740,
+    })
     .select('id')
     .single()
   if (butter.error) throw new Error(butter.error.message)
   butterId = butter.data.id
   const cheese = await carol.client
     .from('ingredients')
-    .insert({ household_id: other.data.id, name: 'Cheese', kcal_100: 400 })
+    .insert({
+      household_id: other.data.id,
+      category_id: await testCategory(other.data.id),
+      name: 'Cheese',
+      kcal_100: 400,
+    })
     .select('id')
     .single()
   if (cheese.error) throw new Error(cheese.error.message)

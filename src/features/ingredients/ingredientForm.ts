@@ -30,11 +30,11 @@ export type BasisKey = 'per100g' | 'perUnit'
 export type IngredientFormValues = {
   readonly name: string
   readonly brand: string
-  /** '' = no category, NEW_CATEGORY = create `newCategoryName` */
+  /** '' = not chosen yet, NEW_CATEGORY = create `newCategoryName` in `groupId` */
   readonly categoryId: string
   readonly newCategoryName: string
-  /** broad category of a new category; '' = none ("Other") */
-  readonly newCategoryGroupId: string
+  /** the broad category picked first; '' = not chosen yet */
+  readonly groupId: string
   readonly note: string
   /** the package's barcode, typed or scanned; '' = none */
   readonly barcode: string
@@ -57,7 +57,7 @@ export const EMPTY_INGREDIENT_FORM: IngredientFormValues = {
   brand: '',
   categoryId: '',
   newCategoryName: '',
-  newCategoryGroupId: '',
+  groupId: '',
   note: '',
   barcode: '',
   per100gEnabled: false,
@@ -71,9 +71,8 @@ export const EMPTY_INGREDIENT_FORM: IngredientFormValues = {
 }
 
 export type CategoryChoice =
-  | { readonly kind: 'none' }
   | { readonly kind: 'existing'; readonly id: string }
-  | { readonly kind: 'new'; readonly name: string; readonly groupId: string | null }
+  | { readonly kind: 'new'; readonly name: string; readonly groupId: string }
 
 export type ParsedIngredientForm = {
   /** category_id is resolved separately, since a new category may need creating first */
@@ -136,7 +135,7 @@ const ingredientFormSchema = (measure: Measure) =>
         .string()
         .trim()
         .max(MAX_CATEGORY, `Use at most ${MAX_CATEGORY} characters`),
-      newCategoryGroupId: z.string(),
+      groupId: z.string(),
       note: optionalText(MAX_NOTE),
       barcode: z.string().transform((raw, ctx) => {
         if (raw.trim() === '') return null
@@ -173,12 +172,18 @@ const ingredientFormSchema = (measure: Measure) =>
       if (form.perUnitEnabled && form.perUnit.kcal === null) {
         ctx.addIssue({ code: 'custom', path: ['perUnit', 'kcal'], message: 'Enter the calories' })
       }
+      if (form.categoryId === '') {
+        ctx.addIssue({ code: 'custom', path: ['categoryId'], message: 'Choose a category' })
+      }
       if (form.categoryId === NEW_CATEGORY && form.newCategoryName === '') {
         ctx.addIssue({
           code: 'custom',
           path: ['newCategoryName'],
           message: 'Enter a category name',
         })
+      }
+      if (form.categoryId === NEW_CATEGORY && form.groupId === '') {
+        ctx.addIssue({ code: 'custom', path: ['groupId'], message: 'Choose a broad category' })
       }
     })
 
@@ -210,19 +215,12 @@ function perUnitColumns(basis: ParsedBasis | null) {
   }
 }
 
-type CategoryFields = Pick<
-  IngredientFormValues,
-  'categoryId' | 'newCategoryName' | 'newCategoryGroupId'
->
+type CategoryFields = Pick<IngredientFormValues, 'categoryId' | 'newCategoryName' | 'groupId'>
 
-function categoryChoice({
-  categoryId,
-  newCategoryName,
-  newCategoryGroupId,
-}: CategoryFields): CategoryChoice {
-  if (categoryId === NEW_CATEGORY)
-    return { kind: 'new', name: newCategoryName, groupId: newCategoryGroupId || null }
-  return categoryId === '' ? { kind: 'none' } : { kind: 'existing', id: categoryId }
+function categoryChoice({ categoryId, newCategoryName, groupId }: CategoryFields): CategoryChoice {
+  return categoryId === NEW_CATEGORY
+    ? { kind: 'new', name: newCategoryName, groupId }
+    : { kind: 'existing', id: categoryId }
 }
 
 export function parseIngredientForm(values: IngredientFormValues): IngredientFormResult {
@@ -257,9 +255,9 @@ export function toFormValues(ingredient: Ingredient): IngredientFormValues {
   return {
     name: ingredient.name,
     brand: asText(ingredient.brand),
-    categoryId: ingredient.category_id ?? '',
+    categoryId: ingredient.category_id,
     newCategoryName: '',
-    newCategoryGroupId: '',
+    groupId: '',
     note: asText(ingredient.note),
     barcode: asText(ingredient.barcode),
     per100gEnabled: ingredient.kcal_100 !== null,

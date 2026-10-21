@@ -8,8 +8,7 @@ import { BrandField } from './BrandField'
 import { NEW_CATEGORY, type IngredientFormValues } from './ingredientForm'
 import type { Category, CategoryGroup, Ingredient } from './ingredientsApi'
 
-type IdentityKey =
-  'name' | 'brand' | 'barcode' | 'categoryId' | 'newCategoryName' | 'newCategoryGroupId'
+type IdentityKey = 'name' | 'brand' | 'barcode' | 'categoryId' | 'newCategoryName' | 'groupId'
 
 type IdentitySectionProps = {
   readonly values: IngredientFormValues
@@ -22,7 +21,7 @@ type IdentitySectionProps = {
   readonly barcodeAction?: ReactNode
 }
 
-/** What the ingredient is: name, brand, barcode and category. */
+/** What the ingredient is: name, brand, barcode and category (broad first, then one in it). */
 export function IdentitySection({
   values,
   errors,
@@ -32,6 +31,21 @@ export function IdentitySection({
   onChange,
   barcodeAction,
 }: IdentitySectionProps) {
+  const chosen = categories.find((category) => category.id === values.categoryId)
+  const groupId = chosen?.group_id ?? values.groupId
+
+  function pickGroup(id: string) {
+    onChange('groupId', id)
+    // the category is picked again inside the new broad category
+    if (id !== groupId) onChange('categoryId', '')
+  }
+
+  function pickCategory(id: string) {
+    // keeps the broad category when "New category…" replaces a saved one
+    onChange('groupId', groupId)
+    onChange('categoryId', id)
+  }
+
   return (
     <GroupedSection>
       <TextField
@@ -53,39 +67,50 @@ export function IdentitySection({
       />
       {barcodeAction}
       <SelectRow
-        label="Category"
-        value={values.categoryId}
-        onChange={(event) => onChange('categoryId', event.target.value)}
+        label="Broad category"
+        value={groupId}
+        onChange={(event) => pickGroup(event.target.value)}
+        error={errors.groupId}
       >
-        <option value="">None</option>
-        {categories.map((category) => (
-          <option key={category.id} value={category.id}>
-            {category.name}
+        <option value="" disabled>
+          {groups.length === 0 ? 'Add one in Settings' : 'Choose'}
+        </option>
+        {groups.map((group) => (
+          <option key={group.id} value={group.id}>
+            {group.name}
           </option>
         ))}
-        <option value={NEW_CATEGORY}>New category…</option>
       </SelectRow>
-      {values.categoryId === NEW_CATEGORY && (
-        <>
-          <TextField
-            label="New category name"
-            value={values.newCategoryName}
-            onChange={(event) => onChange('newCategoryName', event.target.value)}
-            error={errors.newCategoryName}
-          />
-          <SelectRow
-            label="Broad category"
-            value={values.newCategoryGroupId}
-            onChange={(event) => onChange('newCategoryGroupId', event.target.value)}
-          >
-            <option value="">None (Other)</option>
-            {groups.map((group) => (
-              <option key={group.id} value={group.id}>
-                {group.name}
+      {groupId !== '' && (
+        <SelectRow
+          label="Category"
+          value={values.categoryId}
+          onChange={(event) => pickCategory(event.target.value)}
+          error={errors.categoryId}
+        >
+          <option value="" disabled>
+            Choose
+          </option>
+          {categories
+            .filter((category) => category.group_id === groupId)
+            .map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
               </option>
             ))}
-          </SelectRow>
-        </>
+          <option value={NEW_CATEGORY}>New category…</option>
+        </SelectRow>
+      )}
+      {values.categoryId === NEW_CATEGORY && (
+        <TextField
+          label="New category name"
+          value={values.newCategoryName}
+          onChange={(event) => onChange('newCategoryName', event.target.value)}
+          error={errors.newCategoryName}
+        />
+      )}
+      {groupId === '' && errors.categoryId && (
+        <p className="px-4 pb-2.5 text-[13px] text-destructive">{errors.categoryId}</p>
       )}
     </GroupedSection>
   )

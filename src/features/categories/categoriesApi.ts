@@ -22,15 +22,15 @@ export async function renameCategoryGroup(id: string, name: string): Promise<voi
   if (error) throw ApiError.from(error)
 }
 
-/** Its categories stay, ungrouped ("Other"): the foreign key sets their group_id to null. */
+/** Only an empty one: the database refuses while categories are still in it. */
 export async function deleteCategoryGroup(id: string): Promise<void> {
   const { error } = await supabase.from('category_groups').delete().eq('id', id)
   if (error) throw ApiError.from(error)
 }
 
-export type CategoryChange = { readonly name: string; readonly groupId: string | null }
+export type CategoryChange = { readonly name: string; readonly groupId: string }
 
-/** Renames a category and/or moves it to another broad category (null = "Other"). */
+/** Renames a category and/or moves it to another broad category. */
 export async function updateCategory(id: string, { name, groupId }: CategoryChange): Promise<void> {
   const { error } = await supabase
     .from('categories')
@@ -39,7 +39,7 @@ export async function updateCategory(id: string, { name, groupId }: CategoryChan
   if (error) throw ApiError.from(error)
 }
 
-/** Its ingredients stay, without a category: the foreign key sets their category_id to null. */
+/** Only an empty one: the database refuses while ingredients are still in it. */
 export async function deleteCategory(id: string): Promise<void> {
   const { error } = await supabase.from('categories').delete().eq('id', id)
   if (error) throw ApiError.from(error)

@@ -30,6 +30,18 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-21T10:15',
+    kind: 'new',
+    title: 'Categories in two levels',
+    items: [
+      'Every ingredient now sits in a category inside a broad category, e.g. Meat › Wurst or Snacks › Protein Bars',
+      'The ingredients are sorted into the new categories; Snacks and Drinks are separate now',
+      'Picking a category is two steps: first the broad category, then one inside it; every ingredient needs one',
+      'The category chips show the broad categories first; tapping one shows its categories',
+      'Settings › Categories deletes a category or broad category only once it is empty and says what to move first',
+    ],
+  },
+  {
     at: '2026-10-20T19:03',
     kind: 'fix',
     title: 'Swipes at the bottom no longer close pages, and other small fixes',

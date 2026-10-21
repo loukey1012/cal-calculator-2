@@ -2,29 +2,19 @@ import { useState } from 'react'
 import { SLIM_CHIP_CLASSES, WRAPPED_ROW_CLASSES } from './CategoryChips'
 import { FilterChip } from './FilterChip'
 import { arrange, usePackedOrder } from './usePackedOrder'
-import { ALL_CATEGORIES, type CategoryFilter, type ChipGroup } from './listing'
+import { ALL_CATEGORIES, groupOfFilter, type CategoryFilter, type ChipGroup } from './listing'
 
 type GroupedCategoryChipsProps = {
   readonly groups: readonly ChipGroup[]
   readonly filter: CategoryFilter
   readonly onChange: (filter: CategoryFilter) => void
   /** broad category whose panel starts open (the Appearance preview); undefined = none */
-  readonly initialOpenId?: string | null
+  readonly initialOpenId?: string
 }
 
-// "no panel open"; null can't mean that, it is the id of "Other"
-const CLOSED = undefined
 // chip keys that can't clash with database ids (uuids)
 const ALL_KEY = 'all'
-const OTHER_KEY = 'other'
 const WHOLE_GROUP_KEY = 'whole-group'
-
-function groupOfFilter(groups: readonly ChipGroup[], filter: CategoryFilter) {
-  if (filter.kind === 'group') return groups.find((group) => group.id === filter.id)
-  if (filter.kind === 'category')
-    return groups.find((group) => group.categories.some((category) => category.id === filter.id))
-  return undefined
-}
 
 type PanelProps = {
   readonly group: ChipGroup
@@ -87,7 +77,7 @@ function GroupPanel({ group, filter, onChange }: PanelProps) {
   return (
     <PackedRow
       // a new broad category is measured afresh
-      key={group.id ?? OTHER_KEY}
+      key={group.id}
       label={`${group.name} categories`}
       chips={chips}
       className={`mt-2 animate-fade-in rounded-2xl bg-bg-elevated/60 p-2 ${WRAPPED_ROW_CLASSES}`}
@@ -100,20 +90,20 @@ export function GroupedCategoryChips({
   groups,
   filter,
   onChange,
-  initialOpenId = CLOSED,
+  initialOpenId,
 }: GroupedCategoryChipsProps) {
-  const [openId, setOpenId] = useState<string | null | undefined>(initialOpenId)
+  const [openId, setOpenId] = useState(initialOpenId)
   const selectedGroup = groupOfFilter(groups, filter)
   const openGroup = groups.find((group) => group.id === openId && group.categories.length > 0)
 
   function selectAll() {
-    setOpenId(CLOSED)
+    setOpenId(undefined)
     onChange(ALL_CATEGORIES)
   }
 
   function toggleGroup(group: ChipGroup) {
     if (openGroup === group) {
-      setOpenId(CLOSED)
+      setOpenId(undefined)
       return
     }
     setOpenId(group.id)
@@ -123,7 +113,7 @@ export function GroupedCategoryChips({
   const chips: readonly ChipSpec[] = [
     { key: ALL_KEY, label: 'All', selected: filter.kind === 'all', onClick: selectAll },
     ...groups.map((group) => ({
-      key: group.id ?? OTHER_KEY,
+      key: group.id,
       label: group.name,
       selected: selectedGroup === group,
       expanded: group.categories.length > 0 ? openGroup === group : undefined,

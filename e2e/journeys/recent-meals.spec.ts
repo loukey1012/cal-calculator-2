@@ -30,7 +30,12 @@ test('editing an ingredient updates the last two weeks’ meals of both, not old
   const household = await backend.household([me, partner])
   const { data: skyr } = await backend.admin
     .from('ingredients')
-    .insert({ household_id: household, name: 'Skyr', kcal_100: 60 })
+    .insert({
+      household_id: household,
+      category_id: await backend.category(household),
+      name: 'Skyr',
+      kcal_100: 60,
+    })
     .select('id')
     .single()
   const skyrId = skyr?.id ?? ''

@@ -86,8 +86,7 @@ async function resolveCategoryId(
   householdId: string,
   choice: CategoryChoice,
   categories: readonly Category[],
-): Promise<string | null> {
-  if (choice.kind === 'none') return null
+): Promise<string> {
   if (choice.kind === 'existing') return choice.id
   const known = findByName(categories, choice.name)
   if (known) return known.id

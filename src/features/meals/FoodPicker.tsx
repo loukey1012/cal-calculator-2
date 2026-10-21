@@ -69,7 +69,6 @@ export function FoodPicker({ filter, onFilterChange, onPick, onNew }: FoodPicker
           layout={categoryLayout}
           categories={categoryList}
           groups={groups.data ?? []}
-          ingredients={ingredients.data ?? []}
           filter={filter.category}
           onChange={(category) => onFilterChange({ ...filter, category })}
         />

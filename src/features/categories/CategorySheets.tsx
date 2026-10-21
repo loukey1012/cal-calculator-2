@@ -23,6 +23,8 @@ type NameSheetProps = {
   readonly deletion?: {
     readonly label: string
     readonly question: string
+    /** why it can't be deleted yet (it isn't empty); shown instead of the button */
+    readonly blockedBy?: string
     readonly deleting: boolean
     readonly onDelete: () => void
   }
@@ -85,7 +87,10 @@ function NameSheet({
         </GroupedSection>
       </form>
       {error && <ErrorBanner message={categoryErrorMessage(error)} />}
-      {deletion && (
+      {deletion?.blockedBy && (
+        <p className="mt-6 px-4 text-[13px] text-label-secondary">{deletion.blockedBy}</p>
+      )}
+      {deletion && !deletion.blockedBy && (
         <div className="mt-6">
           <Button
             variant="destructive"
@@ -124,7 +129,11 @@ export function GroupSheet({ householdId, group, categoryCount, onClose }: Group
         group
           ? {
               label: 'Delete Broad Category',
-              question: `Delete “${group.name}”? Its ${plural(categoryCount, 'category moves', 'categories move')} to Other.`,
+              question: `Delete “${group.name}”?`,
+              blockedBy:
+                categoryCount > 0
+                  ? `To delete it, first move or delete its ${plural(categoryCount, 'category', 'categories')}.`
+                  : undefined,
               deleting: remove.isPending,
               onDelete: () => remove.mutate(group.id, { onSuccess: onClose }),
             }
@@ -152,26 +161,33 @@ export function CategorySheet({
 }: CategorySheetProps) {
   const save = useSaveCategory(householdId)
   const remove = useDeleteCategory(householdId)
-  // '' = none ("Other")
+  // '' = not chosen yet
   const [groupId, setGroupId] = useState(category?.group_id ?? '')
+  const [groupError, setGroupError] = useState<string>()
+
+  function handleSave(name: string) {
+    setGroupError(groupId === '' ? 'Choose a broad category' : undefined)
+    if (groupId !== '')
+      save.mutate({ id: category?.id ?? null, name, groupId }, { onSuccess: onClose })
+  }
+
   return (
     <NameSheet
       title={category ? 'Edit Category' : 'New Category'}
       initialName={category?.name ?? ''}
       saving={save.isPending}
       error={save.error ?? remove.error}
-      onSave={(name) =>
-        save.mutate(
-          { id: category?.id ?? null, name, groupId: groupId || null },
-          { onSuccess: onClose },
-        )
-      }
+      onSave={handleSave}
       onClose={onClose}
       deletion={
         category
           ? {
               label: 'Delete Category',
-              question: `Delete “${category.name}”? Its ${plural(ingredientCount, 'ingredient stays', 'ingredients stay')}, without a category.`,
+              question: `Delete “${category.name}”?`,
+              blockedBy:
+                ingredientCount > 0
+                  ? `To delete it, first move its ${plural(ingredientCount, 'ingredient', 'ingredients')} to another category.`
+                  : undefined,
               deleting: remove.isPending,
               onDelete: () => remove.mutate(category.id, { onSuccess: onClose }),
             }
@@ -182,8 +198,11 @@ export function CategorySheet({
         label="Broad category"
         value={groupId}
         onChange={(event) => setGroupId(event.target.value)}
+        error={groupError}
       >
-        <option value="">None (Other)</option>
+        <option value="" disabled>
+          Choose
+        </option>
         {groups.map((group) => (
           <option key={group.id} value={group.id}>
             {group.name}

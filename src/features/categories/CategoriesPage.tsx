@@ -39,16 +39,12 @@ type ListsProps = {
   readonly onEdit: (editing: Editing) => void
 }
 
-/** The broad categories, then each with its categories; ungrouped ones under "Other". */
+/** The broad categories, then each with its categories. */
 function CategoryLists({ groups, categories, ingredients, onEdit }: ListsProps) {
   const sortedGroups = [...groups].sort(byName)
   const sortedCategories = [...categories].sort(byName)
   const categoriesPerGroup = countBy(categories, (category) => category.group_id)
   const ingredientsPerCategory = countBy(ingredients, (ingredient) => ingredient.category_id)
-  const knownGroupIds = new Set(groups.map((group) => group.id))
-  const ungrouped = sortedCategories.filter(
-    (category) => category.group_id === null || !knownGroupIds.has(category.group_id),
-  )
 
   const categoryRow = (category: Category) => (
     <ListRow
@@ -89,9 +85,6 @@ function CategoryLists({ groups, categories, ingredients, onEdit }: ListsProps) 
           </GroupedSection>
         )
       })}
-      {ungrouped.length > 0 && (
-        <GroupedSection header="Other">{ungrouped.map(categoryRow)}</GroupedSection>
-      )}
       <div className="mt-2">
         <Button variant="plain" onClick={() => onEdit({ kind: 'category', category: null })}>
           Add Category
@@ -143,8 +136,8 @@ export function CategoriesPage() {
         }
       />
       <p className="text-[14px] font-medium text-label-secondary">
-        Broad categories hold your categories, e.g. Fresh › Meat & Fish. The Grouped category chips
-        on the Ingredients page show them.
+        Every ingredient has a category, and every category sits in a broad category, e.g. Meat ›
+        Wurst. The Ingredients page filters by them.
       </p>
       {renderContent()}
       {editing?.kind === 'group' && (

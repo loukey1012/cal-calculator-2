@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test'
-import { activePage, expect, logIn, test } from './backend.ts'
+import { activePage, expect, logIn, pickBasics, test } from './backend.ts'
 
 const BARCODE = '3017620422003'
 
@@ -24,6 +24,7 @@ test('a scanned portion of 3 biscuits is split into single units; a wrong value 
 }) => {
   const me = await backend.user('Bea')
   const household = await backend.household([me])
+  await backend.category(household)
   await offAnswers(page, {
     product_name: 'Butterkeks',
     brands: 'Leibniz',
@@ -51,6 +52,7 @@ test('a scanned portion of 3 biscuits is split into single units; a wrong value 
   await expect(sheet.getByLabel('Calories per unit', { exact: true })).toHaveValue('44')
   await expect(sheet.getByLabel('Grams per unit', { exact: true })).toHaveValue('10')
   await sheet.getByRole('button', { name: 'Clear Sugar per 100 g' }).click()
+  await pickBasics(sheet)
   await sheet.getByRole('button', { name: 'Save' }).click()
   await expect(sheet).toBeHidden()
 
@@ -74,11 +76,16 @@ test('on Cook, an unknown package goes to the saved ingredient it is; an estimat
   const me = await backend.user('Cleo')
   const household = await backend.household([me])
   // one insert each: a bulk insert sends null for the keys a row leaves out
-  await backend.admin
-    .from('ingredients')
-    .insert({ household_id: household, name: 'Skyr', brand: 'Milbona', kcal_100: 63 })
   await backend.admin.from('ingredients').insert({
     household_id: household,
+    category_id: await backend.category(household),
+    name: 'Skyr',
+    brand: 'Milbona',
+    kcal_100: 63,
+  })
+  await backend.admin.from('ingredients').insert({
+    household_id: household,
+    category_id: await backend.category(household),
     name: 'Pizza from Luigi',
     kcal_unit: 900,
     unit_label: 'pizza',
@@ -132,6 +139,7 @@ test('food without a label gets the values of a similar product found by name', 
 }) => {
   const me = await backend.user('Dora')
   const household = await backend.household([me])
+  await backend.category(household)
   // the app searches through its own address; answered here instead of by Open Food Facts
   await page.route('**/off/search?*', (route) =>
     route.fulfill({
@@ -161,6 +169,7 @@ test('food without a label gets the values of a similar product found by name', 
   await sheet.getByRole('button', { name: 'Search', exact: true }).click()
   await sheet.getByRole('button', { name: /Laugenbrezel/ }).click()
   await expect(sheet.getByLabel('Calories per 100 g', { exact: true })).toHaveValue('376')
+  await pickBasics(sheet)
   await sheet.getByRole('button', { name: 'Save' }).click()
   await expect(sheet).toBeHidden()
 

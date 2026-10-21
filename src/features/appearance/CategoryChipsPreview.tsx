@@ -4,7 +4,7 @@ import type { Category } from '../ingredients/ingredientsApi'
 import type { ChipGroup } from '../ingredients/listing'
 import type { CategoryLayout } from './appearance'
 
-const sampleCategory = (name: string, groupId: string | null = null): Category => ({
+const sampleCategory = (name: string, groupId: string): Category => ({
   id: name,
   name,
   group_id: groupId,
@@ -12,26 +12,19 @@ const sampleCategory = (name: string, groupId: string | null = null): Category =
   created_at: '',
 })
 
-const SAMPLE_CATEGORIES = [
-  'Bread',
-  'Dairy',
-  'Drinks',
-  'Meat & Fish',
-  'Sauces',
-  'Snacks',
-  'Spreads',
-  'Veggies & Fruit',
-].map((name) => sampleCategory(name))
+const sampleGroup = (name: string, categories: readonly string[]): ChipGroup => ({
+  id: name,
+  name,
+  categories: categories.map((category) => sampleCategory(category, name)),
+})
 
 const SAMPLE_GROUPS: readonly ChipGroup[] = [
-  { id: 'carbs', name: 'Bread & Carbs', categories: [sampleCategory('Bread', 'carbs')] },
-  {
-    id: 'dairy',
-    name: 'Dairy & Spreads',
-    categories: [sampleCategory('Dairy', 'dairy'), sampleCategory('Spreads', 'dairy')],
-  },
-  { id: 'fresh', name: 'Fresh', categories: [sampleCategory('Meat & Fish', 'fresh')] },
-  { id: 'snacks', name: 'Snacks & Drinks', categories: [sampleCategory('Snacks', 'snacks')] },
+  sampleGroup('Bread', ['Brot & Gebäck', 'Toast & Buns']),
+  sampleGroup('Carbs', ['Pasta']),
+  sampleGroup('Dairy & Alternatives', ['Cheese', 'Joghurt & Topfen', 'Milk', 'Oat Milk']),
+  sampleGroup('Drinks', ['Energy Drinks']),
+  sampleGroup('Meat', ['Wurst']),
+  sampleGroup('Snacks', ['Chocolate']),
 ]
 
 const ignore = () => {}
@@ -49,17 +42,12 @@ export function CategoryChipsPreview({ layout }: { readonly layout: CategoryLayo
       {layout === 'grouped' ? (
         <GroupedCategoryChips
           groups={SAMPLE_GROUPS}
-          filter={{ kind: 'group', id: 'dairy' }}
+          filter={{ kind: 'group', id: 'Dairy & Alternatives' }}
           onChange={ignore}
-          initialOpenId="dairy"
+          initialOpenId="Dairy & Alternatives"
         />
       ) : (
-        <CategoryChips
-          layout={layout}
-          categories={SAMPLE_CATEGORIES}
-          selectedId={null}
-          onSelect={ignore}
-        />
+        <CategoryChips layout={layout} items={SAMPLE_GROUPS} selectedId={null} onSelect={ignore} />
       )}
     </div>
   )

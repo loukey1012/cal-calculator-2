@@ -6,8 +6,21 @@ test('set a goal, see the rings, and log a meal for the partner', async ({ page,
   const partner = await backend.user('Anna')
   const household = await backend.household([me, partner])
   await backend.admin.from('ingredients').insert([
-    { household_id: household, name: 'Skyr', kcal_100: 63, protein_100: 11, carbs_100: 4 },
-    { household_id: household, name: 'Haferflocken', kcal_100: 372, protein_100: 13.5 },
+    {
+      household_id: household,
+      category_id: await backend.category(household),
+      name: 'Skyr',
+      kcal_100: 63,
+      protein_100: 11,
+      carbs_100: 4,
+    },
+    {
+      household_id: household,
+      category_id: await backend.category(household),
+      name: 'Haferflocken',
+      kcal_100: 372,
+      protein_100: 13.5,
+    },
   ])
   await logIn(page, me)
   const today = activePage(page)

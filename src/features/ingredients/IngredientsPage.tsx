@@ -148,7 +148,6 @@ export function IngredientsPage() {
           layout={categoryLayout}
           categories={categoryList}
           groups={groups.data ?? []}
-          ingredients={ingredients.data ?? []}
           filter={categoryFilter}
           onChange={setCategoryFilter}
         />

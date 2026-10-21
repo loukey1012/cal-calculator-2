@@ -1,43 +1,44 @@
 import type { CategoryLayout } from '../appearance/appearance'
 import { CategoryChips } from './CategoryChips'
 import { GroupedCategoryChips } from './GroupedCategoryChips'
-import type { Category, CategoryGroup, Ingredient } from './ingredientsApi'
-import { ALL_CATEGORIES, chipGroups, type CategoryFilter } from './listing'
+import type { Category, CategoryGroup } from './ingredientsApi'
+import { ALL_CATEGORIES, chipGroups, groupOfFilter, type CategoryFilter } from './listing'
 
 type CategoryFilterChipsProps = {
   readonly layout: CategoryLayout
   readonly categories: readonly Category[]
   readonly groups: readonly CategoryGroup[]
-  readonly ingredients: readonly Ingredient[]
   readonly filter: CategoryFilter
   readonly onChange: (filter: CategoryFilter) => void
 }
 
-/** The category filter of the Ingredients page, in the user's chosen layout. */
+/**
+ * The category filter of the Ingredients page, in the user's chosen layout: broad categories
+ * first, then the categories of the picked one.
+ */
 export function CategoryFilterChips({
   layout,
   categories,
   groups,
-  ingredients,
   filter,
   onChange,
 }: CategoryFilterChipsProps) {
+  const chips = chipGroups(groups, categories)
   if (layout === 'grouped') {
-    return (
-      <GroupedCategoryChips
-        groups={chipGroups(groups, categories, ingredients)}
-        filter={filter}
-        onChange={onChange}
-      />
-    )
+    return <GroupedCategoryChips groups={chips} filter={filter} onChange={onChange} />
   }
+  // a picked broad category takes the place of the others, followed by its categories
+  const open = groupOfFilter(chips, filter)
   return (
     <CategoryChips
       layout={layout}
-      categories={categories}
-      // a broad category picked in the grouped layout shows as "All" here
-      selectedId={filter.kind === 'category' ? filter.id : null}
-      onSelect={(id) => onChange(id === null ? ALL_CATEGORIES : { kind: 'category', id })}
+      items={open ? [open, ...open.categories] : chips}
+      selectedId={filter.kind === 'all' ? null : filter.id}
+      onSelect={(id) => {
+        if (id === null) onChange(ALL_CATEGORIES)
+        else if (chips.some((group) => group.id === id)) onChange({ kind: 'group', id })
+        else onChange({ kind: 'category', id })
+      }}
     />
   )
 }

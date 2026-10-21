@@ -1,5 +1,12 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
-import { admin, anonClient, createTestUser, deleteTestUsers, type TestUser } from './helpers'
+import {
+  admin,
+  anonClient,
+  createTestUser,
+  deleteTestUsers,
+  testCategory,
+  type TestUser,
+} from './helpers'
 
 // Alice and Bob share a household; Carol is in another household; Dave has no household.
 let alice: TestUser
@@ -238,10 +245,30 @@ describe('goals', () => {
 })
 
 describe('ingredients', () => {
-  test('per-100g only ingredient with only calories is valid', async () => {
+  let categoryId: string
+  let carolCategoryId: string
+
+  beforeAll(async () => {
+    categoryId = await testCategory(householdId)
+    carolCategoryId = await testCategory(carolHouseholdId)
+  })
+
+  test('every ingredient needs a category', async () => {
     const { error } = await alice.client
       .from('ingredients')
-      .insert({ household_id: householdId, name: '7% cream', brand: 'Milbona', kcal_100: 92 })
+      .insert({ household_id: householdId, name: 'Loose', kcal_100: 1 } as never)
+
+    expect(error?.code).toBe('23502')
+  })
+
+  test('per-100g only ingredient with only calories is valid', async () => {
+    const { error } = await alice.client.from('ingredients').insert({
+      household_id: householdId,
+      category_id: categoryId,
+      name: '7% cream',
+      brand: 'Milbona',
+      kcal_100: 92,
+    })
 
     expect(error).toBeNull()
   })
@@ -249,6 +276,7 @@ describe('ingredients', () => {
   test('per-unit only ingredient with grams per unit is valid', async () => {
     const { error } = await bob.client.from('ingredients').insert({
       household_id: householdId,
+      category_id: categoryId,
       name: 'Protein bar',
       unit_label: 'bar',
       unit_weight_g: 60,
@@ -260,41 +288,59 @@ describe('ingredients', () => {
   })
 
   test('an ingredient without any calorie value is rejected', async () => {
-    const { error } = await alice.client
-      .from('ingredients')
-      .insert({ household_id: householdId, name: 'No kcal', protein_100: 5 })
+    const { error } = await alice.client.from('ingredients').insert({
+      household_id: householdId,
+      category_id: categoryId,
+      name: 'No kcal',
+      protein_100: 5,
+    })
 
     expect(error?.code).toBe('23514')
   })
 
   test('per-unit nutrients without per-unit calories are rejected', async () => {
-    const { error } = await alice.client
-      .from('ingredients')
-      .insert({ household_id: householdId, name: 'Half unit', kcal_100: 100, protein_unit: 3 })
+    const { error } = await alice.client.from('ingredients').insert({
+      household_id: householdId,
+      category_id: categoryId,
+      name: 'Half unit',
+      kcal_100: 100,
+      protein_unit: 3,
+    })
 
     expect(error?.code).toBe('23514')
   })
 
   test('calories must be whole numbers', async () => {
-    const { error } = await alice.client
-      .from('ingredients')
-      .insert({ household_id: householdId, name: 'Decimal', kcal_100: 92.5 })
+    const { error } = await alice.client.from('ingredients').insert({
+      household_id: householdId,
+      category_id: categoryId,
+      name: 'Decimal',
+      kcal_100: 92.5,
+    })
 
     expect(error?.code).toBe('22P02')
   })
 
   test('negative nutrient values are rejected', async () => {
-    const { error } = await alice.client
-      .from('ingredients')
-      .insert({ household_id: householdId, name: 'Negative', kcal_100: 10, fat_100: -1 })
+    const { error } = await alice.client.from('ingredients').insert({
+      household_id: householdId,
+      category_id: categoryId,
+      name: 'Negative',
+      kcal_100: 10,
+      fat_100: -1,
+    })
 
     expect(error?.code).toBe('23514')
   })
 
   test('more than 100 g of a nutrient per 100 g is rejected', async () => {
-    const { error } = await alice.client
-      .from('ingredients')
-      .insert({ household_id: householdId, name: 'Typo', kcal_100: 400, protein_100: 250 })
+    const { error } = await alice.client.from('ingredients').insert({
+      household_id: householdId,
+      category_id: categoryId,
+      name: 'Typo',
+      kcal_100: 400,
+      protein_100: 250,
+    })
 
     expect(error?.code).toBe('23514')
   })
@@ -303,12 +349,18 @@ describe('ingredients', () => {
     // one insert each: a bulk insert sends NULL for keys only some rows have
     const milk = await alice.client
       .from('ingredients')
-      .insert({ household_id: householdId, name: 'Milk', kcal_100: 64, measure: 'ml' })
+      .insert({
+        household_id: householdId,
+        category_id: categoryId,
+        name: 'Milk',
+        kcal_100: 64,
+        measure: 'ml',
+      })
       .select('measure')
       .single()
     const rice = await alice.client
       .from('ingredients')
-      .insert({ household_id: householdId, name: 'Rice', kcal_100: 350 })
+      .insert({ household_id: householdId, category_id: categoryId, name: 'Rice', kcal_100: 350 })
       .select('measure')
       .single()
 
@@ -319,6 +371,7 @@ describe('ingredients', () => {
   test('per 100 ml, more than 100 g of a nutrient is possible (e.g. honey)', async () => {
     const { error } = await alice.client.from('ingredients').insert({
       household_id: householdId,
+      category_id: categoryId,
       name: 'Honey',
       kcal_100: 435,
       carbs_100: 116,
@@ -332,13 +385,13 @@ describe('ingredients', () => {
     const legacy = { legacy_id: 'firebase-doc-1', name: 'Imported', kcal_100: 50 }
     const mine = await alice.client
       .from('ingredients')
-      .insert({ ...legacy, household_id: householdId })
+      .insert({ ...legacy, household_id: householdId, category_id: categoryId })
     const dupe = await bob.client
       .from('ingredients')
-      .insert({ ...legacy, household_id: householdId })
+      .insert({ ...legacy, household_id: householdId, category_id: categoryId })
     const other = await carol.client
       .from('ingredients')
-      .insert({ ...legacy, household_id: carolHouseholdId })
+      .insert({ ...legacy, household_id: carolHouseholdId, category_id: carolCategoryId })
 
     expect(mine.error).toBeNull()
     expect(dupe.error?.code).toBe('23505')
@@ -349,13 +402,16 @@ describe('ingredients', () => {
     const skyr = { barcode: '4014500513102', kcal_100: 63 }
     const mine = await alice.client
       .from('ingredients')
-      .insert({ ...skyr, name: 'Skyr', household_id: householdId })
+      .insert({ ...skyr, name: 'Skyr', household_id: householdId, category_id: categoryId })
     const dupe = await bob.client
       .from('ingredients')
-      .insert({ ...skyr, name: 'Skyr again', household_id: householdId })
-    const other = await carol.client
-      .from('ingredients')
-      .insert({ ...skyr, name: 'Skyr', household_id: carolHouseholdId })
+      .insert({ ...skyr, name: 'Skyr again', household_id: householdId, category_id: categoryId })
+    const other = await carol.client.from('ingredients').insert({
+      ...skyr,
+      name: 'Skyr',
+      household_id: carolHouseholdId,
+      category_id: carolCategoryId,
+    })
 
     expect(mine.error).toBeNull()
     expect(dupe.error?.code).toBe('23505')
@@ -365,7 +421,7 @@ describe('ingredients', () => {
   test('an ingredient is not an estimate unless marked as one', async () => {
     const plain = await alice.client
       .from('ingredients')
-      .insert({ name: 'Bread', kcal_100: 250, household_id: householdId })
+      .insert({ name: 'Bread', kcal_100: 250, household_id: householdId, category_id: categoryId })
       .select('kcal_estimated')
       .single()
     const guessed = await alice.client
@@ -375,6 +431,7 @@ describe('ingredients', () => {
         kcal_unit: 900,
         kcal_estimated: true,
         household_id: householdId,
+        category_id: categoryId,
       })
       .select('kcal_estimated')
       .single()
@@ -386,9 +443,13 @@ describe('ingredients', () => {
   test.each(['123', '4014500513102x', '123456789012345', ' 40145005'])(
     'a barcode must be 8 to 14 digits (%s is rejected)',
     async (barcode) => {
-      const { error } = await alice.client
-        .from('ingredients')
-        .insert({ barcode, name: 'Odd code', kcal_100: 1, household_id: householdId })
+      const { error } = await alice.client.from('ingredients').insert({
+        barcode,
+        name: 'Odd code',
+        kcal_100: 1,
+        household_id: householdId,
+        category_id: categoryId,
+      })
 
       expect(error?.code).toBe('23514')
     },
@@ -401,19 +462,21 @@ describe('ingredients', () => {
       .eq('household_id', householdId)
     const { error } = await carol.client
       .from('ingredients')
-      .insert({ household_id: householdId, name: 'Intruder', kcal_100: 1 })
+      .insert({ household_id: householdId, category_id: categoryId, name: 'Intruder', kcal_100: 1 })
 
     expect(data).toEqual([])
     expect(error?.code).toBe('42501')
   })
 
   test('category names are unique per household, case-insensitively', async () => {
+    const { data } = await admin.from('categories').select('group_id').eq('id', categoryId).single()
+    const groupId = data?.group_id as string
     const first = await alice.client
       .from('categories')
-      .insert({ household_id: householdId, name: 'Dairy' })
+      .insert({ household_id: householdId, name: 'Dairy', group_id: groupId })
     const dupe = await bob.client
       .from('categories')
-      .insert({ household_id: householdId, name: 'dairy' })
+      .insert({ household_id: householdId, name: 'dairy', group_id: groupId })
 
     expect(first.error).toBeNull()
     expect(dupe.error?.code).toBe('23505')
@@ -471,7 +534,15 @@ describe('category groups', () => {
     expect(crossed.error?.code).toBe('23503')
   })
 
-  test('deleting a broad category keeps its categories, ungrouped', async () => {
+  test('every category sits in a broad category', async () => {
+    const { error } = await alice.client
+      .from('categories')
+      .insert({ household_id: householdId, name: 'Loose' } as never)
+
+    expect(error?.code).toBe('23502')
+  })
+
+  test('a broad category with categories in it cannot be deleted; an empty one can', async () => {
     const group = await groupNamed(alice.client, householdId, 'Short-lived')
     const { data: category } = await alice.client
       .from('categories')
@@ -479,22 +550,34 @@ describe('category groups', () => {
       .select('id')
       .single()
 
-    await bob.client.from('category_groups').delete().eq('id', group.id)
-
-    const { data } = await alice.client
+    const refused = await bob.client.from('category_groups').delete().eq('id', group.id)
+    await alice.client
       .from('categories')
-      .select('group_id')
+      .delete()
       .eq('id', category?.id as string)
-      .single()
-    expect(data).toEqual({ group_id: null })
+    const emptied = await bob.client.from('category_groups').delete().eq('id', group.id)
+
+    expect(refused.error?.code).toBe('23503')
+    expect(emptied.error).toBeNull()
   })
 })
 
 describe('empty categories', () => {
+  let groupId: string
+
+  beforeAll(async () => {
+    const { data } = await alice.client
+      .from('category_groups')
+      .insert({ household_id: householdId, name: 'Temp group' })
+      .select('id')
+      .single()
+    groupId = data?.id as string
+  })
+
   async function categoryNamed(name: string) {
     const { data } = await alice.client
       .from('categories')
-      .insert({ household_id: householdId, name })
+      .insert({ household_id: householdId, name, group_id: groupId })
       .select('id')
       .single()
     return data?.id as string
@@ -542,6 +625,16 @@ describe('empty categories', () => {
 
     expect(await categoryExists(from)).toBe(false)
     expect(await categoryExists(to)).toBe(true)
+  })
+
+  test('a category that still has ingredients cannot be deleted', async () => {
+    const categoryId = await categoryNamed('Temp E')
+    await ingredientIn(categoryId, 'Keeper')
+
+    const { error } = await bob.client.from('categories').delete().eq('id', categoryId)
+
+    expect(error?.code).toBe('23503')
+    expect(await categoryExists(categoryId)).toBe(true)
   })
 })
 
@@ -704,7 +797,12 @@ describe('meals', () => {
   test('meal items cannot reference another household’s ingredient', async () => {
     const { data: carolsIngredient } = await carol.client
       .from('ingredients')
-      .insert({ household_id: carolHouseholdId, name: 'Carol secret', kcal_100: 10 })
+      .insert({
+        household_id: carolHouseholdId,
+        category_id: await testCategory(carolHouseholdId),
+        name: 'Carol secret',
+        kcal_100: 10,
+      })
       .select('id')
       .single()
     const { error } = await alice.client.from('meal_items').insert({

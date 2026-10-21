@@ -8,9 +8,16 @@ test('log a meal on Cook: from the database and as a custom item, then change an
   const me = await backend.user('Mia')
   const household = await backend.household([me])
   await backend.admin.from('ingredients').insert([
-    { household_id: household, name: 'Skyr', kcal_100: 63, protein_100: 11 },
     {
       household_id: household,
+      category_id: await backend.category(household),
+      name: 'Skyr',
+      kcal_100: 63,
+      protein_100: 11,
+    },
+    {
+      household_id: household,
+      category_id: await backend.category(household),
       name: 'Protein Riegel',
       kcal_unit: 210,
       unit_label: 'Riegel',
@@ -96,9 +103,12 @@ test('a single food logged alone shows like an item, changes in place and is rem
 }) => {
   const me = await backend.user('Mia')
   const household = await backend.household([me])
-  await backend.admin
-    .from('ingredients')
-    .insert({ household_id: household, name: 'Apple', kcal_100: 52 })
+  await backend.admin.from('ingredients').insert({
+    household_id: household,
+    category_id: await backend.category(household),
+    name: 'Apple',
+    kcal_100: 52,
+  })
   await logIn(page, me)
   const sheet = page.getByRole('dialog')
 

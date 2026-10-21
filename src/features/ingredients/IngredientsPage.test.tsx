@@ -46,6 +46,7 @@ import {
   updateIngredient,
 } from './ingredientsApi'
 import { IngredientsPage } from './IngredientsPage'
+import { pickCategory } from './pickCategory'
 
 const PROFILE = {
   id: 'u1',
@@ -56,7 +57,8 @@ const PROFILE = {
   created_at: '',
   updated_at: '',
 }
-const CATEGORIES = [category('c1', 'Dairy'), category('c2', 'Bakery')]
+const CATEGORIES = [category('c1', 'Dairy', 'g1'), category('c2', 'Bakery', 'g2')]
+const GROUPS = [categoryGroup('g1', 'Fridge'), categoryGroup('g2', 'Pantry')]
 const INGREDIENTS = [
   ingredient({
     id: 'cream',
@@ -94,7 +96,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(fetchIngredients).mockResolvedValue(INGREDIENTS)
   vi.mocked(fetchCategories).mockResolvedValue(CATEGORIES)
-  vi.mocked(fetchCategoryGroups).mockResolvedValue([])
+  vi.mocked(fetchCategoryGroups).mockResolvedValue(GROUPS)
   vi.mocked(fetchIngredientUses).mockResolvedValue({})
   vi.mocked(updateProfile).mockResolvedValue()
 })
@@ -306,19 +308,33 @@ describe('IngredientsPage', () => {
     expect(screen.queryByText('Cream 7%')).not.toBeInTheDocument()
   })
 
-  test('category chips filter the list and can be reset', async () => {
+  test('category chips: broad categories first, then the categories of the picked one', async () => {
     const user = userEvent.setup()
     renderPage()
     const chips = within(await screen.findByRole('group', { name: 'Categories' }))
+    expect(chips.getAllByRole('button').map((chip) => chip.textContent)).toEqual([
+      'All',
+      'Fridge',
+      'Pantry',
+    ])
 
-    await user.click(chips.getByRole('button', { name: 'Bakery' }))
+    await user.click(chips.getByRole('button', { name: 'Pantry' }))
 
-    expect(chips.getByRole('button', { name: 'Bakery' })).toHaveAttribute('aria-pressed', 'true')
+    expect(chips.getAllByRole('button').map((chip) => chip.textContent)).toEqual([
+      'All',
+      'Pantry',
+      'Bakery',
+    ])
+    expect(chips.getByRole('button', { name: 'Pantry' })).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByText('Bread')).toBeInTheDocument()
     expect(screen.queryByText('Käse')).not.toBeInTheDocument()
 
+    await user.click(chips.getByRole('button', { name: 'Bakery' }))
+    expect(chips.getByRole('button', { name: 'Bakery' })).toHaveAttribute('aria-pressed', 'true')
+
     await user.click(chips.getByRole('button', { name: 'All' }))
     expect(screen.getByText('Käse')).toBeInTheDocument()
+    expect(chips.getByRole('button', { name: 'Fridge' })).toBeInTheDocument()
   })
 
   test('rapidly switching categories always keeps the header, search and results', async () => {
@@ -326,7 +342,7 @@ describe('IngredientsPage', () => {
     renderPage()
     const chips = within(await screen.findByRole('group', { name: 'Categories' }))
 
-    for (const name of ['Dairy', 'Bakery', 'All', 'Bakery', 'Dairy', 'Bakery']) {
+    for (const name of ['Fridge', 'Dairy', 'All', 'Pantry', 'All', 'Pantry', 'Bakery']) {
       await user.click(chips.getByRole('button', { name }))
     }
 
@@ -355,7 +371,7 @@ describe('IngredientsPage', () => {
     expect(group).not.toHaveClass('overflow-x-auto')
     expect(group).not.toHaveAttribute('data-swipe-lock')
 
-    await user.click(within(group).getByRole('button', { name: 'Bakery' }))
+    await user.click(within(group).getByRole('button', { name: 'Pantry' }))
     expect(screen.getByText('Bread')).toBeInTheDocument()
     expect(screen.queryByText('Käse')).not.toBeInTheDocument()
   })
@@ -522,6 +538,7 @@ describe('editing an ingredient updates recent meals', () => {
     renderPage()
     await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
     await user.type(screen.getByLabelText('Name'), 'Milk')
+    await pickCategory(user, 'g1', 'c1')
     await user.click(screen.getByRole('switch', { name: 'Per 100 g' }))
     await user.type(screen.getByLabelText('Calories per 100 g'), '64')
     await user.click(screen.getByRole('button', { name: 'Save' }))

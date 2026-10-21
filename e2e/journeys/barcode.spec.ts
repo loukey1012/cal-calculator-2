@@ -1,5 +1,5 @@
 import { fileURLToPath } from 'node:url'
-import { activePage, expect, logIn, test } from './backend.ts'
+import { activePage, expect, logIn, pickBasics, test } from './backend.ts'
 
 const NUTELLA_PHOTO = fileURLToPath(new URL('../fixtures/ean13-nutella.png', import.meta.url))
 const NUTELLA = '3017620422003'
@@ -10,6 +10,7 @@ test('scan a package: a photo is read, filled in from Open Food Facts, saved; fo
 }) => {
   const me = await backend.user('Ben')
   const household = await backend.household([me])
+  await backend.category(household)
   // Open Food Facts answers from here, so the journey doesn't depend on it being up
   await page.route('https://world.openfoodfacts.org/api/v2/product/**', (route) =>
     route.fulfill({
@@ -42,6 +43,7 @@ test('scan a package: a photo is read, filled in from Open Food Facts, saved; fo
   await expect(sheet.getByLabel('Name', { exact: true })).toHaveValue('Nutella')
   await expect(sheet.getByLabel('Barcode', { exact: true })).toHaveValue(NUTELLA)
   await expect(sheet.getByLabel('Calories per 100 g', { exact: true })).toHaveValue('539')
+  await pickBasics(sheet)
   await sheet.getByRole('button', { name: 'Save' }).click()
   await expect(sheet).toBeHidden()
   await expect

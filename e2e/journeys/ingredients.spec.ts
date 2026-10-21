@@ -1,4 +1,4 @@
-import { activePage, expect, logIn, test } from './backend.ts'
+import { activePage, expect, logIn, pickBasics, test } from './backend.ts'
 
 test('add an ingredient in a new category of a broad category; find, edit and delete it; its empty category goes with it', async ({
   page,
@@ -21,9 +21,9 @@ test('add an ingredient in a new category of a broad category; find, edit and de
 
   await ingredients.getByRole('button', { name: 'Add ingredient' }).click()
   await sheet.getByLabel('Name', { exact: true }).fill('Käse gerieben')
-  await sheet.getByLabel('Category').selectOption({ label: 'New category…' })
-  await sheet.getByLabel('New category name').fill('Dairy')
   await sheet.getByLabel('Broad category').selectOption({ label: 'Dairy & Spreads' })
+  await sheet.getByLabel('Category', { exact: true }).selectOption({ label: 'New category…' })
+  await sheet.getByLabel('New category name').fill('Dairy')
   await sheet.getByRole('switch', { name: 'Per 100 g' }).click()
   await sheet.getByLabel('Calories per 100 g').fill('350,4')
   await sheet.getByRole('button', { name: 'Save' }).click()
@@ -62,9 +62,13 @@ test('add an ingredient in a new category of a broad category; find, edit and de
 test('a new ingredient takes a saved brand from the suggestions', async ({ page, backend }) => {
   const me = await backend.user('Ingrid')
   const household = await backend.household([me])
-  await backend.admin
-    .from('ingredients')
-    .insert({ household_id: household, name: 'Milch', brand: 'Clever', kcal_100: 64 })
+  await backend.admin.from('ingredients').insert({
+    household_id: household,
+    category_id: await backend.category(household),
+    name: 'Milch',
+    brand: 'Clever',
+    kcal_100: 64,
+  })
   await logIn(page, me)
   await page
     .getByRole('navigation', { name: 'Tabs' })
@@ -79,6 +83,7 @@ test('a new ingredient takes a saved brand from the suggestions', async ({ page,
   await expect(sheet.getByRole('combobox', { name: 'Brand' })).toHaveValue('Clever')
   await sheet.getByRole('switch', { name: 'Per 100 g' }).click()
   await sheet.getByLabel('Calories per 100 g').fill('59')
+  await pickBasics(sheet)
   await sheet.getByRole('button', { name: 'Save' }).click()
   await expect(sheet).toBeHidden()
 

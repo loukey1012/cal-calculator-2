@@ -3,7 +3,8 @@ import type { Category, CategoryGroup, Ingredient } from './ingredientsApi'
 const EMPTY_INGREDIENT: Ingredient = {
   id: 'i0',
   household_id: 'h1',
-  category_id: null,
+  // a category no test list knows, unless a test sets one
+  category_id: 'c0',
   name: '',
   brand: null,
   note: null,
@@ -38,7 +39,7 @@ export function ingredient(overrides: Partial<Ingredient>): Ingredient {
   return { ...EMPTY_INGREDIENT, ...overrides }
 }
 
-export function category(id: string, name: string, groupId: string | null = null): Category {
+export function category(id: string, name: string, groupId = 'g0'): Category {
   return { id, name, group_id: groupId, household_id: 'h1', created_at: '' }
 }
 
