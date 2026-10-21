@@ -136,6 +136,19 @@ describe('live updates', () => {
     expect(hint).toMatchObject({ table: 'meals', user_id: alice.id, date: otherDay })
   })
 
+  test("a day note is announced as that person's day", async () => {
+    expect(await bobListens.status).toBe('SUBSCRIBED')
+    const noteDay = '2026-10-06'
+
+    const { error } = await alice.client
+      .from('day_notes')
+      .insert({ user_id: alice.id, date: noteDay, note: 'Birthday' })
+
+    expect(error).toBeNull()
+    const hint = await waitFor(bobListens.hints, (h) => h.table === 'meals' && h.date === noteDay)
+    expect(hint).toMatchObject({ table: 'meals', user_id: alice.id, date: noteDay })
+  })
+
   test('a saved recipe is announced to the household', async () => {
     expect(await bobListens.status).toBe('SUBSCRIBED')
 

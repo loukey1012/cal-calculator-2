@@ -45,6 +45,7 @@ Built for a two-person household: both members log their own meals, can see and 
 - On the Today cards a dish counts as **one item**. The whole page (person switch, goal card and all four meals) **fits an iPhone screen without scrolling**.
 - "Today" moves on at midnight, and when the app comes back to the foreground on a later day.
 - **Cheat days and cheat meals** (the **…** next to the day total, on Today and on any day in History): mark the whole day as a **cheat day**, or single meals as **cheat meals** (also an empty one). Either leaves the whole day out of the History averages and Trends, the rings show no over colors that day and the weekly review skips it. The food still counts in the day's totals. The day shows a "Cheat day" or "Cheat meal" label, a cheat meal's card says "Cheat meal". Either of you can set or remove them on any day; they work offline like meals.
+- **Notes** (same sheet, on any day, cheat or not): a short note for the day and for each meal ("Birthday at Oma's", "Pizza with colleagues"), up to 500 characters, saved when you leave the field; clearing it removes the note. The day's note shows under the Meals heading, a meal's note as a line on its card. Either of you can write them; they work offline like meals.
 
 ### Daily goals and progress
 
@@ -196,6 +197,10 @@ Build plan with every decision: [`docs/plan-2026-10-20.md`](docs/plan-2026-10-20
 - [ ] **41.** Editing past meals without the Cook form: change amounts and remove foods right in the meal page; a dish in a compact view
 - [ ] **42.** **Move to…** next to Copy to…: a meal or a single food to another meal, day or person
 - [x] **43.** Today tidied: the day's kcal and macros under "Meals" go (the rings already show them); the layout stays
+
+**Added 2026-10-21**
+
+- [x] **45.** Notes on any day and meal (e.g. why it was a cheat day), written in the day options, shown on Today and History
 
 **Clean-up**
 
@@ -516,7 +521,7 @@ scripts/
 - `households`, `profiles` (one per auth user, created by a trigger; holds the name, accent color and `appearance` JSON, up to 4 KB)
 - `goal_history` (goal valid from a date; calories, and optionally protein, carbs, fat, fiber and a target weight), `weight_entries` (one weight per person and day, counting until the next; the household reads them, only you write yours)
 - `category_groups` (the household's broad categories), `categories` (each in a group; a group with categories can't be deleted), `ingredients` (each in a category, which can't be deleted while it has any; per-100 g and/or per-unit columns; `measure` `g` or `ml`: for ml the `_100` columns are per 100 ml and `unit_weight_g` is the ml per unit, and the at-most-100-g-per-100-g check doesn't apply; at least one calorie value required; optional `barcode`, 8–14 digits, unique per household; `kcal_estimated` for guessed values)
-- `meals` (unique per user, local date and meal type; `cheat_meal`), `cheat_days` (a person's cheat days; the household manages them like meals), `meal_items` (nutrition snapshot plus a basis multiplier; amounts in `g`, `ml` or `unit`, where `per_100g` means per 100 ml for an amount in ml)
+- `meals` (unique per user, local date and meal type; `cheat_meal`, `note` set via `set_meal_note`), `cheat_days` (a person's cheat days; the household manages them like meals), `day_notes` (a note per person and day, managed the same way), `meal_items` (nutrition snapshot plus a basis multiplier; amounts in `g`, `ml` or `unit`, where `per_100g` means per 100 ml for an amount in ml)
 - `meal_items` of a cooked dish point to their `dish_portions` row and `dish_lines` row; plain items leave both empty
 - `dishes` (a cooking; split mode equal / count / percent / weight, cooked weight, `kcal_estimated` when its calories are only roughly known, a revision changed by every save), `dish_portions` (who ate it on which day and meal, or nobody yet = a leftover; split value; `discarded` for a thrown-away leftover, which keeps its share), `dish_lines` (ingredient snapshot like `meal_items`, either `shared` or `per_portion`), `dish_line_amounts` (own amount of a `per_portion` line per portion)
 - `recipes` (name, split, cooked weight, estimate flag; shared by the household), `recipe_portions` (who eats, or nobody = a leftover; split value), `recipe_lines` (one row per product of a line: ingredient link plus a snapshot like `dish_lines`, used for custom items and deleted ingredients; rows of one line share `slot_id`, with `optional`, `picked` = used last time, `left_out` = an optional line left out last time), `recipe_line_amounts` (own amounts per portion). Written only through `save_recipe` (create or replace, the last save wins) and `delete_recipe`

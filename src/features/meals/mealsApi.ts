@@ -1,7 +1,7 @@
 import { ApiError } from '../../lib/errors'
 import { supabase } from '../../lib/supabase'
 import type { MealItemDraft } from '../nutrition/fromIngredient'
-import type { AmountPatch, DayMeal, DishRef, MealType } from './dayModel'
+import { noteOf, type AmountPatch, type DayMeal, type DishRef, type MealType } from './dayModel'
 
 export type AddMealItemInput = {
   /** generated on the device, so retrying the same add can never create a duplicate */
@@ -38,7 +38,7 @@ export async function fetchDay(userId: string, date: string): Promise<DayMeal[]>
   const { data, error } = await supabase
     .from('meals')
     .select(
-      'id, meal_type, cheat_meal, meal_items(*, dish_portions(dish_id, dishes(name, kcal_estimated, dish_portions(user_id))))',
+      'id, meal_type, cheat_meal, note, meal_items(*, dish_portions(dish_id, dishes(name, kcal_estimated, dish_portions(user_id))))',
     )
     .eq('user_id', userId)
     .eq('date', date)
@@ -93,6 +93,48 @@ export async function setCheatMeal({
     p_meal_type: mealType,
     p_cheat_meal: cheatMeal,
   })
+  if (error) throw ApiError.from(error)
+}
+
+export type MealNoteInput = {
+  readonly userId: string
+  readonly date: string
+  readonly mealType: MealType
+  /** an empty one removes the note */
+  readonly note: string
+}
+
+/** Sets a meal's note (an empty meal is created for it) or removes it. */
+export async function setMealNote({ userId, date, mealType, note }: MealNoteInput): Promise<void> {
+  const { error } = await supabase.rpc('set_meal_note', {
+    p_user_id: userId,
+    p_date: date,
+    p_meal_type: mealType,
+    p_note: note,
+  })
+  if (error) throw ApiError.from(error)
+}
+
+/** The day's note, or null. */
+export async function fetchDayNote(userId: string, date: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('day_notes')
+    .select('note')
+    .eq('user_id', userId)
+    .eq('date', date)
+    .maybeSingle()
+  if (error) throw ApiError.from(error)
+  return data?.note ?? null
+}
+
+/** Sets the day's note, or removes it when empty; both can be sent again safely. */
+export async function setDayNote(userId: string, date: string, text: string): Promise<void> {
+  const note = noteOf(text)
+  const { error } = note
+    ? await supabase
+        .from('day_notes')
+        .upsert({ user_id: userId, date, note }, { onConflict: 'user_id,date' })
+    : await supabase.from('day_notes').delete().eq('user_id', userId).eq('date', date)
   if (error) throw ApiError.from(error)
 }
 

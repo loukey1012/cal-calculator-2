@@ -20,6 +20,7 @@ vi.mock('./mealsApi', () => ({
   updateMealItem: vi.fn(),
   deleteMealItem: vi.fn(),
   fetchCheatDay: vi.fn().mockResolvedValue(false),
+  fetchDayNote: vi.fn().mockResolvedValue(null),
   setCheatMeal: vi.fn(),
   setCheatDay: vi.fn(),
 }))

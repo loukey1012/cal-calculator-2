@@ -137,6 +137,35 @@ export type Database = {
           },
         ]
       }
+      day_notes: {
+        Row: {
+          date: string
+          note: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          date: string
+          note: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          date?: string
+          note?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "day_notes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dish_line_amounts: {
         Row: {
           amount: number
@@ -669,6 +698,7 @@ export type Database = {
           date: string
           id: string
           meal_type: Database["public"]["Enums"]["meal_type"]
+          note: string | null
           updated_at: string
           user_id: string
         }
@@ -678,6 +708,7 @@ export type Database = {
           date: string
           id?: string
           meal_type: Database["public"]["Enums"]["meal_type"]
+          note?: string | null
           updated_at?: string
           user_id: string
         }
@@ -687,6 +718,7 @@ export type Database = {
           date?: string
           id?: string
           meal_type?: Database["public"]["Enums"]["meal_type"]
+          note?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -1393,6 +1425,15 @@ export type Database = {
           p_cheat_meal: boolean
           p_date: string
           p_meal_type: Database["public"]["Enums"]["meal_type"]
+          p_user_id: string
+        }
+        Returns: undefined
+      }
+      set_meal_note: {
+        Args: {
+          p_date: string
+          p_meal_type: Database["public"]["Enums"]["meal_type"]
+          p_note: string
           p_user_id: string
         }
         Returns: undefined

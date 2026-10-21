@@ -8,9 +8,20 @@ vi.mock('../meals/mealsApi', () => ({
   fetchCheatDay: vi.fn(),
   setCheatMeal: vi.fn(),
   setCheatDay: vi.fn(),
+  fetchDayNote: vi.fn(),
+  setDayNote: vi.fn(),
+  setMealNote: vi.fn(),
 }))
 
-import { fetchDay, fetchCheatDay, setCheatMeal, setCheatDay } from '../meals/mealsApi'
+import {
+  fetchDay,
+  fetchCheatDay,
+  fetchDayNote,
+  setCheatMeal,
+  setCheatDay,
+  setDayNote,
+  setMealNote,
+} from '../meals/mealsApi'
 import type { MealType } from '../meals/dayModel'
 import { dayMeal, mealItem } from '../meals/testData'
 import { DayOptionsSheet } from './DayOptionsSheet'
@@ -24,13 +35,20 @@ beforeEach(() => {
   cheatDayOnServer = false
   cheatMealsOnServer = new Set(['dinner'])
   vi.mocked(fetchDay).mockImplementation(async () => [
-    { ...dayMeal('m1', 'dinner', []), cheat_meal: cheatMealsOnServer.has('dinner') },
+    {
+      ...dayMeal('m1', 'dinner', []),
+      cheat_meal: cheatMealsOnServer.has('dinner'),
+      note: 'Pizza with colleagues',
+    },
     {
       ...dayMeal('m2', 'lunch', [mealItem({ id: 'pasta' })]),
       cheat_meal: cheatMealsOnServer.has('lunch'),
     },
   ])
   vi.mocked(fetchCheatDay).mockImplementation(async () => cheatDayOnServer)
+  vi.mocked(fetchDayNote).mockResolvedValue('Birthday')
+  vi.mocked(setDayNote).mockResolvedValue()
+  vi.mocked(setMealNote).mockResolvedValue()
   vi.mocked(setCheatMeal).mockImplementation(async ({ mealType, cheatMeal }) => {
     cheatMealsOnServer = new Set(
       cheatMeal
@@ -105,5 +123,47 @@ describe('DayOptionsSheet', () => {
     await user.click(screen.getByRole('button', { name: 'Close' }))
 
     expect(onClose).toHaveBeenCalled()
+  })
+
+  test('shows the notes of the day and its meals', async () => {
+    renderSheet()
+
+    expect(await screen.findByDisplayValue('Birthday')).toHaveAccessibleName('Day note')
+    expect(await screen.findByDisplayValue('Pizza with colleagues')).toHaveAccessibleName(
+      'Dinner note',
+    )
+    expect(screen.getByRole('textbox', { name: 'Lunch note' })).toHaveValue('')
+  })
+
+  test('a note is saved when its field is left, only if it changed', async () => {
+    const user = userEvent.setup()
+    renderSheet()
+    const lunch = screen.getByRole('textbox', { name: 'Lunch note' })
+    await screen.findByDisplayValue('Birthday')
+
+    await user.click(screen.getByRole('textbox', { name: 'Day note' }))
+    await user.click(lunch)
+    expect(setDayNote).not.toHaveBeenCalled()
+    await user.type(lunch, 'Leftovers at work{Enter}')
+
+    await waitFor(() =>
+      expect(setMealNote).toHaveBeenCalledWith({
+        userId: 'u1',
+        date: '2026-10-02',
+        mealType: 'lunch',
+        note: 'Leftovers at work',
+      }),
+    )
+  })
+
+  test('clearing the day note removes it', async () => {
+    const user = userEvent.setup()
+    renderSheet()
+    const day = await screen.findByDisplayValue('Birthday')
+
+    await user.clear(day)
+    await user.tab()
+
+    await waitFor(() => expect(setDayNote).toHaveBeenCalledWith('u1', '2026-10-02', ''))
   })
 })

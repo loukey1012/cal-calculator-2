@@ -27,6 +27,8 @@ export type DayMeal = {
   readonly meal_items: readonly MealItem[]
   /** its calories are unknown (missing in data cached by older versions) */
   readonly cheat_meal?: boolean
+  /** a short note on the meal, e.g. "Pizza with colleagues" (missing in older cached data) */
+  readonly note?: string | null
 }
 
 export type AmountPatch = { readonly entered_amount: number; readonly basis_multiplier: number }
@@ -157,21 +159,43 @@ export function withItemUpdated(
   }))
 }
 
+type MealMarks = Pick<DayMeal, 'cheat_meal' | 'note'>
+
+/** One meal's mark or note changed; a meal that isn't there yet is added when `adds`. */
+function withMealMarks(
+  meals: readonly DayMeal[],
+  mealType: MealType,
+  marks: MealMarks,
+  adds: boolean,
+): DayMeal[] {
+  const existing = meals.find((meal) => meal.meal_type === mealType)
+  if (existing) return meals.map((meal) => (meal === existing ? { ...meal, ...marks } : meal))
+  if (!adds) return [...meals]
+  return [...meals, { id: `pending-${mealType}`, meal_type: mealType, meal_items: [], ...marks }]
+}
+
 /** A meal marked as a cheat meal or not; marking an empty meal that isn't there yet adds it. */
 export function withCheatMeal(
   meals: readonly DayMeal[],
   mealType: MealType,
   cheatMeal: boolean,
 ): DayMeal[] {
-  const existing = meals.find((meal) => meal.meal_type === mealType)
-  if (existing) {
-    return meals.map((meal) => (meal === existing ? { ...meal, cheat_meal: cheatMeal } : meal))
-  }
-  if (!cheatMeal) return [...meals]
-  return [
-    ...meals,
-    { id: `pending-${mealType}`, meal_type: mealType, meal_items: [], cheat_meal: true },
-  ]
+  return withMealMarks(meals, mealType, { cheat_meal: cheatMeal }, cheatMeal)
+}
+
+/** A note as saved: trimmed, and null when nothing is left. */
+export function noteOf(text: string): string | null {
+  return text.trim() || null
+}
+
+/** A meal's note set (an empty meal is added for it) or removed. */
+export function withMealNote(
+  meals: readonly DayMeal[],
+  mealType: MealType,
+  text: string,
+): DayMeal[] {
+  const note = noteOf(text)
+  return withMealMarks(meals, mealType, { note }, note !== null)
 }
 
 /** The day's cheat meals. */

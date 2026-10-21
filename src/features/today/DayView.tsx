@@ -16,7 +16,7 @@ import { LeftoversPill } from '../dishes/LeftoversPill'
 import type { Profile } from '../household/householdApi'
 import { useLookOf } from '../household/usePersonLook'
 import { cheatMeals, itemsByMeal, mealEntries, MEAL_TYPES, type MealType } from '../meals/dayModel'
-import { useDay, useLatestDayChangeError, useCheatDay } from '../meals/hooks'
+import { useDay, useDayNote, useLatestDayChangeError, useCheatDay } from '../meals/hooks'
 import { MealSheet } from '../meals/MealSheet'
 import { formatKcalTotal } from '../nutrition/format'
 import type { NutritionTotals } from '../nutrition/types'
@@ -77,10 +77,11 @@ type MealCardProps = {
   readonly type: MealType
   readonly label: string
   readonly subtitle: string
+  readonly note: string | null
   readonly onOpen: () => void
 }
 
-function MealCard({ type, label, subtitle, onOpen }: MealCardProps) {
+function MealCard({ type, label, subtitle, note, onOpen }: MealCardProps) {
   const MealIcon = MEAL_ICONS[type]
   return (
     <button
@@ -98,6 +99,9 @@ function MealCard({ type, label, subtitle, onOpen }: MealCardProps) {
       <span className="block truncate px-0.5 text-[13px] font-semibold text-label-secondary">
         {subtitle}
       </span>
+      {note && (
+        <span className="-mt-1 block truncate px-0.5 text-[12px] text-label-secondary">{note}</span>
+      )}
     </button>
   )
 }
@@ -116,6 +120,7 @@ type DayViewProps = {
 export function DayView({ person, isOwnDay, date }: DayViewProps) {
   const day = useDay(person.id, date)
   const cheatDay = useCheatDay(person.id, date).data === true
+  const dayNote = useDayNote(person.id, date).data ?? null
   const today = useToday()
   const lookOf = useLookOf()
   const [optionsOpen, setOptionsOpen] = useState(false)
@@ -141,6 +146,7 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
     count: mealEntries(byMeal[type]).length,
     totals: mealTotals(byMeal[type]),
     cheatMeal: cheatMealTypes.has(type),
+    note: day.data?.find((meal) => meal.meal_type === type)?.note ?? null,
   }))
   const dayTotals = sumTotals(meals.map((meal) => meal.totals))
   const hasCheatMeal = cheatMealTypes.size > 0
@@ -208,13 +214,17 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
                   {missing.length > 0 && <DayBadge label={missingLabel(missing)} />}
                 </div>
               )}
+              {dayNote && (
+                <p className="mt-1.5 truncate text-[13px] text-label-secondary">{dayNote}</p>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
-              {meals.map(({ type, label, ...summary }) => (
+              {meals.map(({ type, label, note, ...summary }) => (
                 <MealCard
                   key={type}
                   type={type}
                   label={label}
+                  note={note}
                   subtitle={mealSubtitle(day.isPending, day.fetchStatus === 'paused', summary)}
                   onOpen={() =>
                     !day.isPending && summary.count === 0

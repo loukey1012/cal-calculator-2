@@ -17,13 +17,14 @@ import {
   dayChangeKey,
   type DayChange,
 } from './dayChanges'
-import type { AmountPatch, DayMeal, MealType } from './dayModel'
-import { fetchDay, fetchCheatDay } from './mealsApi'
+import { noteOf, type AmountPatch, type DayMeal, type MealType } from './dayModel'
+import { fetchDay, fetchCheatDay, fetchDayNote } from './mealsApi'
 
 const dayKeys = {
   day: (userId: string, date: string) => ['day', userId, date] as const,
   // under the day's key, so everything that refreshes the day refreshes the mark too
   cheatDay: (userId: string, date: string) => ['day', userId, date, 'cheatDay'] as const,
+  dayNote: (userId: string, date: string) => ['day', userId, date, 'note'] as const,
 }
 
 export function useDay(userId: string, date: string): UseQueryResult<DayMeal[]> {
@@ -35,6 +36,14 @@ export function useCheatDay(userId: string, date: string): UseQueryResult<boolea
   return useQuery({
     queryKey: dayKeys.cheatDay(userId, date),
     queryFn: () => fetchCheatDay(userId, date),
+  })
+}
+
+/** The day's note, or null. */
+export function useDayNote(userId: string, date: string): UseQueryResult<string | null> {
+  return useQuery({
+    queryKey: dayKeys.dayNote(userId, date),
+    queryFn: () => fetchDayNote(userId, date),
   })
 }
 
@@ -149,5 +158,30 @@ export function useSetCheatDay(userId: string, date: string): DayChangeActions<b
   return {
     ...change,
     mutate: (cheatDay) => change.mutate({ kind: 'cheatDay', userId, date, cheatDay }),
+  }
+}
+
+export type MealNoteChange = { readonly mealType: MealType; readonly note: string }
+
+/** Sets a meal's note, or removes it when empty. */
+export function useSetMealNote(userId: string, date: string): DayChangeActions<MealNoteChange> {
+  const change = useDayChange(userId, date)
+  return {
+    ...change,
+    mutate: (input) => change.mutate({ kind: 'mealNote', userId, date, ...input }),
+  }
+}
+
+/** Sets the day's note, or removes it when empty. */
+export function useSetDayNote(userId: string, date: string): DayChangeActions<string> {
+  const change = useCachedDayChange<string | null>(
+    userId,
+    date,
+    dayKeys.dayNote(userId, date),
+    (cached, next) => (next.kind === 'dayNote' ? noteOf(next.note) : (cached ?? null)),
+  )
+  return {
+    ...change,
+    mutate: (note) => change.mutate({ kind: 'dayNote', userId, date, note }),
   }
 }

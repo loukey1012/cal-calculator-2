@@ -73,3 +73,41 @@ test('a cheat meal today, and a past cheat day in History', async ({ page, backe
     })
     .toEqual([{ date: yesterday }])
 })
+
+test('a note on a cheat meal and on the day, shown on Today, then one cleared', async ({
+  page,
+  backend,
+}) => {
+  const me = await backend.user('Nora')
+  await backend.household([me])
+  await logIn(page, me)
+  const today = activePage(page)
+  const notes = async () => {
+    const meals = await backend.admin
+      .from('meals')
+      .select('meal_type, cheat_meal, note')
+      .eq('user_id', me.id)
+      .eq('date', localDay())
+    const day = await backend.admin.from('day_notes').select('note').eq('user_id', me.id)
+    return { meals: meals.data, day: day.data }
+  }
+
+  await today.getByRole('button', { name: 'Day options' }).click()
+  const options = page.getByRole('dialog', { name: 'Day' })
+  await options.getByRole('switch', { name: 'Dinner' }).click()
+  await options.getByRole('textbox', { name: 'Dinner note' }).fill('Pizza with colleagues')
+  await options.getByRole('textbox', { name: 'Day note' }).fill('Birthday at work')
+  await options.getByRole('textbox', { name: 'Day note' }).press('Enter')
+  await expect.poll(notes).toEqual({
+    meals: [{ meal_type: 'dinner', cheat_meal: true, note: 'Pizza with colleagues' }],
+    day: [{ note: 'Birthday at work' }],
+  })
+  await options.getByRole('button', { name: 'Close' }).click()
+  await expect(today.getByRole('button', { name: /Dinner/ })).toContainText('Pizza with colleagues')
+  await expect(today.getByTestId('day-total')).toContainText('Birthday at work')
+
+  await today.getByRole('button', { name: 'Day options' }).click()
+  await options.getByRole('textbox', { name: 'Day note' }).clear()
+  await options.getByRole('textbox', { name: 'Day note' }).press('Enter')
+  await expect.poll(async () => (await notes()).day).toEqual([])
+})

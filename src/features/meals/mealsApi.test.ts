@@ -10,8 +10,11 @@ import {
   deleteMealItem,
   fetchDay,
   fetchCheatDay,
+  fetchDayNote,
   setCheatMeal,
   setCheatDay,
+  setDayNote,
+  setMealNote,
   updateMealItem,
 } from './mealsApi'
 import { dayMeal, mealItem } from './testData'
@@ -75,7 +78,7 @@ describe('mealsApi', () => {
     ])
     expect(supabaseMock.from).toHaveBeenCalledWith('meals')
     expect(query.select).toHaveBeenCalledWith(
-      'id, meal_type, cheat_meal, meal_items(*, dish_portions(dish_id, dishes(name, kcal_estimated, dish_portions(user_id))))',
+      'id, meal_type, cheat_meal, note, meal_items(*, dish_portions(dish_id, dishes(name, kcal_estimated, dish_portions(user_id))))',
     )
     expect(query.eq).toHaveBeenCalledWith('user_id', 'u1')
     expect(query.eq).toHaveBeenCalledWith('date', '2026-10-01')
@@ -136,6 +139,46 @@ describe('mealsApi', () => {
     expect(unmark.eq).toHaveBeenCalledWith('user_id', 'u1')
     expect(unmark.eq).toHaveBeenCalledWith('date', '2026-10-01')
     await expect(setCheatDay('u1', '2026-10-01', true)).rejects.toBeInstanceOf(ApiError)
+  })
+
+  test('setMealNote sends the note to set_meal_note', async () => {
+    supabaseMock.rpc.mockResolvedValueOnce({ data: null, error: null })
+
+    await setMealNote({ userId: 'u1', date: '2026-10-01', mealType: 'dinner', note: 'Pizza' })
+
+    expect(supabaseMock.rpc).toHaveBeenCalledWith('set_meal_note', {
+      p_user_id: 'u1',
+      p_date: '2026-10-01',
+      p_meal_type: 'dinner',
+      p_note: 'Pizza',
+    })
+  })
+
+  test('fetchDayNote returns the note, or null without one', async () => {
+    const noted = fakeQuery({ data: { note: 'Birthday' }, error: null })
+    const none = fakeQuery({ data: null, error: null })
+    supabaseMock.from.mockReturnValueOnce(noted).mockReturnValueOnce(none)
+
+    await expect(fetchDayNote('u1', '2026-10-01')).resolves.toBe('Birthday')
+    await expect(fetchDayNote('u1', '2026-10-02')).resolves.toBeNull()
+    expect(supabaseMock.from).toHaveBeenCalledWith('day_notes')
+    expect(noted.eq).toHaveBeenCalledWith('date', '2026-10-01')
+  })
+
+  test('setDayNote saves the trimmed note, and an empty one deletes it', async () => {
+    const save = fakeQuery({ data: null, error: null })
+    const remove = fakeQuery({ data: null, error: null })
+    supabaseMock.from.mockReturnValueOnce(save).mockReturnValueOnce(remove)
+
+    await setDayNote('u1', '2026-10-01', '  Birthday ')
+    await setDayNote('u1', '2026-10-01', '  ')
+
+    expect(save.upsert).toHaveBeenCalledWith(
+      { user_id: 'u1', date: '2026-10-01', note: 'Birthday' },
+      { onConflict: 'user_id,date' },
+    )
+    expect(remove.delete).toHaveBeenCalled()
+    expect(remove.eq).toHaveBeenCalledWith('user_id', 'u1')
   })
 
   test('addMealItem makes sure the meal exists, then inserts the item under its client id', async () => {

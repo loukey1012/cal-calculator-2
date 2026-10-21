@@ -30,6 +30,16 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-21T10:36',
+    kind: 'new',
+    title: 'Notes on days and meals',
+    items: [
+      'The … day options have a Notes section: a note for the day and for each meal, e.g. why it was a cheat day',
+      'It is saved when you leave the field; clearing it removes the note',
+      'The day note shows under Meals, a meal note on its card, on Today and in History',
+    ],
+  },
+  {
     at: '2026-10-21T10:15',
     kind: 'new',
     title: 'Categories in two levels',

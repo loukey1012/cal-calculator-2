@@ -19,6 +19,7 @@ vi.mock('../meals/mealsApi', () => ({
   updateMealItem: vi.fn(),
   deleteMealItem: vi.fn(),
   fetchCheatDay: vi.fn().mockResolvedValue(false),
+  fetchDayNote: vi.fn().mockResolvedValue(null),
   setCheatMeal: vi.fn(),
   setCheatDay: vi.fn(),
 }))
@@ -36,7 +37,13 @@ vi.mock('../ingredients/ingredientsApi', () => ({
 
 import { fetchGoals } from '../goals/goalsApi'
 import { fetchMembers } from '../household/householdApi'
-import { fetchDay, fetchCheatDay, setCheatDay, updateMealItem } from '../meals/mealsApi'
+import {
+  fetchDay,
+  fetchCheatDay,
+  fetchDayNote,
+  setCheatDay,
+  updateMealItem,
+} from '../meals/mealsApi'
 import { fetchWeights, saveWeight } from '../weight/weightApi'
 import { TodayPage } from './TodayPage'
 
@@ -220,6 +227,21 @@ describe('TodayPage', () => {
     expect(goals).toHaveTextContent('2,438 / 2,000 kcal')
     const ring = within(goals).getAllByTestId('ring')[0]
     expect(ring?.querySelectorAll('circle')[1]?.style.stroke).toBe('var(--goal-kcal)')
+  })
+
+  test('the day note shows under the meals heading, a meal note on its card', async () => {
+    vi.mocked(fetchDayNote).mockResolvedValue('Birthday at Oma’s')
+    vi.mocked(fetchDay).mockResolvedValue([
+      LUNCH,
+      { ...dayMeal('m2', 'dinner', []), cheat_meal: true, note: 'Pizza with colleagues' },
+    ])
+
+    renderPage()
+
+    expect(await screen.findByText('Birthday at Oma’s')).toBeInTheDocument()
+    expect(
+      await screen.findByRole('button', { name: /Dinner.*Pizza with colleagues/ }),
+    ).toBeVisible()
   })
 
   test('Day options marks the day, also for the partner', async () => {

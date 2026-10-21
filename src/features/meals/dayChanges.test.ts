@@ -7,6 +7,8 @@ vi.mock('./mealsApi', () => ({
   deleteMealItem: vi.fn(),
   setCheatMeal: vi.fn(),
   setCheatDay: vi.fn(),
+  setMealNote: vi.fn(),
+  setDayNote: vi.fn(),
 }))
 
 import { createQueryClient } from '../../lib/queryClient'
@@ -21,7 +23,15 @@ import {
   retryNetworkErrors,
   type DayChange,
 } from './dayChanges'
-import { addMealItem, deleteMealItem, setCheatMeal, setCheatDay, updateMealItem } from './mealsApi'
+import {
+  addMealItem,
+  deleteMealItem,
+  setCheatMeal,
+  setCheatDay,
+  setDayNote,
+  setMealNote,
+  updateMealItem,
+} from './mealsApi'
 import { dayMeal, mealItem } from './testData'
 
 const DRAFT = {
@@ -80,6 +90,14 @@ describe('applyDayChange', () => {
       cheatMeal: true,
     })
     await applyDayChange({ kind: 'cheatDay', userId: 'u1', date: '2026-10-01', cheatDay: true })
+    await applyDayChange({
+      kind: 'mealNote',
+      userId: 'u1',
+      date: '2026-10-01',
+      mealType: 'dinner',
+      note: 'Pizza',
+    })
+    await applyDayChange({ kind: 'dayNote', userId: 'u1', date: '2026-10-01', note: 'Birthday' })
 
     expect(addMealItem).toHaveBeenCalledWith({
       id: 'item-1',
@@ -100,6 +118,13 @@ describe('applyDayChange', () => {
       cheatMeal: true,
     })
     expect(setCheatDay).toHaveBeenCalledWith('u1', '2026-10-01', true)
+    expect(setMealNote).toHaveBeenCalledWith({
+      userId: 'u1',
+      date: '2026-10-01',
+      mealType: 'dinner',
+      note: 'Pizza',
+    })
+    expect(setDayNote).toHaveBeenCalledWith('u1', '2026-10-01', 'Birthday')
   })
 })
 
@@ -158,6 +183,18 @@ describe('applyDayChangeLocally', () => {
       ['dinner', true],
     ])
     expect(back[0]).toMatchObject({ cheat_meal: false })
+  })
+
+  test('a meal note is set trimmed (adding an empty meal for it) and removed when empty', () => {
+    const mealNote = { kind: 'mealNote', userId: 'u1', date: '2026-10-01' } as const
+
+    const dinner = applyDayChangeLocally(DAY, { ...mealNote, mealType: 'dinner', note: ' Pizza ' })
+    const removed = applyDayChangeLocally(dinner, { ...mealNote, mealType: 'dinner', note: ' ' })
+    const nothing = applyDayChangeLocally(DAY, { ...mealNote, mealType: 'snack', note: '' })
+
+    expect(dinner.at(-1)).toMatchObject({ meal_type: 'dinner', note: 'Pizza', meal_items: [] })
+    expect(removed.at(-1)).toMatchObject({ meal_type: 'dinner', note: null })
+    expect(nothing).toEqual(DAY)
   })
 
   test('a cheat day leaves the meals as they are', () => {

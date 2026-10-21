@@ -4,6 +4,7 @@ import { monthKeys } from '../history/hooks'
 import type { MealItemDraft } from '../nutrition/fromIngredient'
 import {
   withCheatMeal,
+  withMealNote,
   withItemAdded,
   withItemRemoved,
   withItemUpdated,
@@ -12,7 +13,15 @@ import {
   type MealItem,
   type MealType,
 } from './dayModel'
-import { addMealItem, deleteMealItem, setCheatMeal, setCheatDay, updateMealItem } from './mealsApi'
+import {
+  addMealItem,
+  deleteMealItem,
+  setCheatMeal,
+  setCheatDay,
+  setDayNote,
+  setMealNote,
+  updateMealItem,
+} from './mealsApi'
 
 /**
  * One change to a user's day. It carries everything needed to send it, so a change queued
@@ -49,6 +58,20 @@ export type DayChange =
       readonly date: string
       readonly cheatDay: boolean
     }
+  | {
+      readonly kind: 'mealNote'
+      readonly userId: string
+      readonly date: string
+      readonly mealType: MealType
+      /** as typed; an empty one removes the note */
+      readonly note: string
+    }
+  | {
+      readonly kind: 'dayNote'
+      readonly userId: string
+      readonly date: string
+      readonly note: string
+    }
 
 /** Prefix of every day change's mutation key. */
 export const DAY_CHANGES_KEY = ['day'] as const
@@ -83,6 +106,15 @@ export async function applyDayChange(change: DayChange): Promise<void> {
       })
     case 'cheatDay':
       return setCheatDay(change.userId, change.date, change.cheatDay)
+    case 'mealNote':
+      return setMealNote({
+        userId: change.userId,
+        date: change.date,
+        mealType: change.mealType,
+        note: change.note,
+      })
+    case 'dayNote':
+      return setDayNote(change.userId, change.date, change.note)
   }
 }
 
@@ -110,8 +142,11 @@ export function applyDayChangeLocally(meals: readonly DayMeal[], change: DayChan
       return withItemRemoved(meals, change.id)
     case 'cheatMeal':
       return withCheatMeal(meals, change.mealType, change.cheatMeal)
-    // a mark on the whole day, cached apart from the meals (see useCheatDay)
+    case 'mealNote':
+      return withMealNote(meals, change.mealType, change.note)
+    // marks on the whole day, cached apart from the meals (see useCheatDay, useDayNote)
     case 'cheatDay':
+    case 'dayNote':
       return [...meals]
   }
 }
