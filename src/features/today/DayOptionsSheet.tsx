@@ -1,7 +1,7 @@
+import { useId } from 'react'
 import { GroupedSection } from '../../components/ios/GroupedSection'
 import { ToggleRow } from '../../components/ios/FormRows'
 import { Sheet } from '../../components/ios/Sheet'
-import { TextField } from '../../components/ios/TextField'
 import { cheatMeals, MEAL_TYPES } from '../meals/dayModel'
 import {
   useDay,
@@ -91,24 +91,31 @@ type NoteFieldProps = {
   readonly onSave: (note: string) => void
 }
 
-/** A note saved when the field is left (or Return is tapped), only if it changed. */
+/** A note row, its name on the left; saved when the field is left (or Return), only if it changed. */
 function NoteField({ label, note, onSave }: NoteFieldProps) {
+  const id = useId()
   return (
-    <TextField
-      // starts over from the saved note whenever that changes, e.g. after the partner's edit
-      key={note ?? ''}
-      label={label}
-      aria-label={`${label} note`}
-      defaultValue={note ?? ''}
-      placeholder="Add a note"
-      maxLength={MAX_NOTE}
-      enterKeyHint="done"
-      onKeyDown={(event) => {
-        if (event.key === 'Enter') event.currentTarget.blur()
-      }}
-      onBlur={(event) => {
-        if (event.target.value.trim() !== (note ?? '')) onSave(event.target.value)
-      }}
-    />
+    <div className="flex items-center gap-3 px-4 py-3">
+      <label htmlFor={id} className="w-24 shrink-0 text-[17px]">
+        {label}
+      </label>
+      <input
+        // starts over from the saved note whenever that changes, e.g. after the partner's edit
+        key={note ?? ''}
+        id={id}
+        aria-label={`${label} note`}
+        defaultValue={note ?? ''}
+        placeholder="Add a note"
+        maxLength={MAX_NOTE}
+        enterKeyHint="done"
+        className="min-w-0 flex-1 bg-transparent text-[17px] text-label outline-none placeholder:text-label-secondary/60"
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') event.currentTarget.blur()
+        }}
+        onBlur={(event) => {
+          if (event.target.value.trim() !== (note ?? '')) onSave(event.target.value)
+        }}
+      />
+    </div>
   )
 }

@@ -133,6 +133,9 @@ describe('DayOptionsSheet', () => {
       'Dinner note',
     )
     expect(screen.getByRole('textbox', { name: 'Lunch note' })).toHaveValue('')
+    // each row says what it is for, also once it has a note
+    expect(screen.getByText('Day', { selector: 'label' })).toBeVisible()
+    expect(screen.getByText('Dinner', { selector: 'label' })).toBeVisible()
   })
 
   test('a note is saved when its field is left, only if it changed', async () => {
