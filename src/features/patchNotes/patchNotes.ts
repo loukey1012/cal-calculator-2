@@ -30,6 +30,14 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-21T14:26',
+    kind: 'fix',
+    title: 'Add food no longer asks for the day',
+    items: [
+      'The day and the meal are the ones you opened Add food from; only who eats is chosen there',
+    ],
+  },
+  {
     at: '2026-10-21T14:17',
     kind: 'fix',
     title: 'Meal pages: smaller changes',

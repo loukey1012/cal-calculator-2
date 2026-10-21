@@ -52,7 +52,6 @@ test('select a past day in History and add a forgotten dinner beneath the calend
   // the empty dinner opens its Add food on top of that day; Back from the meal returns here
   await cookFor(day, page, /Dinner/)
   const cook = activePage(page)
-  await expect(cook.getByRole('textbox', { name: 'Day' })).toHaveValue(localDay(1))
   await cook.getByRole('button', { name: 'Add ingredient' }).click()
   await cook.getByRole('button', { name: 'Custom item' }).click()
   await cook.getByLabel('Name', { exact: true }).fill('Forgotten pizza')

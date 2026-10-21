@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent, { type UserEvent } from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { Route, Routes, useLocation } from 'react-router'
@@ -318,28 +318,6 @@ describe('cooking alone', () => {
 
     expect(screen.getByText('Add at least one ingredient')).toBeInTheDocument()
     expect(saveDish).not.toHaveBeenCalled()
-  })
-
-  test('an earlier day can be chosen, but not a future one', async () => {
-    // Arrange
-    const user = userEvent.setup()
-    renderCook(food({ ...mealNow(), mealType: 'breakfast' }))
-    const day = await screen.findByLabelText('Day')
-    expect(day).toHaveValue(today())
-    expect(day).toHaveAttribute('max', today())
-
-    // Act: a future day is ignored, an earlier one taken
-    fireEvent.change(day, { target: { value: '2999-01-01' } })
-    expect(day).toHaveValue(today())
-    fireEvent.change(day, { target: { value: '2026-10-02' } })
-    await addIngredient(user, 'Patty', '100')
-    await user.click(screen.getByRole('button', { name: 'Save meal' }))
-
-    // Assert
-    expect(sentDish().portions[0]?.eater).toMatchObject({
-      date: '2026-10-02',
-      mealType: 'breakfast',
-    })
   })
 
   test('a custom one-off food can be added without touching the ingredients', async () => {
@@ -995,7 +973,6 @@ describe('opened from an empty meal', () => {
     // Assert: set up for her dinner on that day
     expect(await screen.findByRole('button', { name: 'Schatz', pressed: true })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Lukas', pressed: false })).toBeInTheDocument()
-    expect(screen.getByLabelText('Day')).toHaveValue('2026-10-04')
 
     // Act
     await addIngredient(user, 'Patty', '100')

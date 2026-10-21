@@ -1,20 +1,16 @@
-import { InputRow } from '../../components/ios/FormRows'
-import { GroupedSection } from '../../components/ios/GroupedSection'
 import type { Profile } from '../household/householdApi'
 import { PersonBadge } from '../household/PersonBadge'
 import { useLookOf } from '../household/usePersonLook'
-import { draftEaterIds, linesOnlyFor, withDate, withEater, type CookDraft } from './cookDraft'
+import { draftEaterIds, linesOnlyFor, withEater, type CookDraft } from './cookDraft'
 
 type CookWhoWhenProps = {
   readonly draft: CookDraft
   readonly people: readonly Profile[]
-  /** local YYYY-MM-DD */
-  readonly today: string
   readonly onChange: (draft: CookDraft) => void
 }
 
-/** Who eats (anyone in the household) and on which day; the meal is the one it was opened for. */
-export function CookWhoWhen({ draft, people, today, onChange }: CookWhoWhenProps) {
+/** Who eats (anyone in the household); the day and meal are the ones Add food was opened for. */
+export function CookWhoWhen({ draft, people, onChange }: CookWhoWhenProps) {
   const lookOf = useLookOf()
   const eaters = draftEaterIds(draft)
 
@@ -64,20 +60,6 @@ export function CookWhoWhen({ draft, people, today, onChange }: CookWhoWhenProps
           </div>
         </section>
       )}
-      <GroupedSection header="When">
-        <InputRow
-          label="Day"
-          type="date"
-          max={today}
-          value={draft.date ?? today}
-          onChange={(event) => {
-            const day = event.target.value
-            // cleared or in the future: keep the day as it was
-            if (day && day <= today) onChange(withDate(draft, day, today))
-          }}
-          className="w-40 bg-transparent text-right text-[17px] text-label outline-none"
-        />
-      </GroupedSection>
     </>
   )
 }
