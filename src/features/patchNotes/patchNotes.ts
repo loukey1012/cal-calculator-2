@@ -30,6 +30,14 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-21T11:49',
+    kind: 'fix',
+    title: 'Merging duplicates: every name and value shown in full',
+    items: [
+      'Long names, brands and values wrap onto more lines instead of being cut off, in clearer colors',
+    ],
+  },
+  {
     at: '2026-10-21T11:12',
     kind: 'new',
     title: 'Merging duplicate ingredients',

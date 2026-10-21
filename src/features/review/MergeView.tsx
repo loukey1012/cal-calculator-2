@@ -23,7 +23,7 @@ type MergeViewProps = {
   readonly onIgnore: () => void
 }
 
-const GRID = 'grid grid-cols-[6.5rem_minmax(0,1fr)_minmax(0,1fr)] items-center gap-2 px-3 py-2.5'
+const GRID = 'grid grid-cols-[6.5rem_minmax(0,1fr)_minmax(0,1fr)] items-start gap-2 px-3 py-2.5'
 
 function brandAndUses(ingredient: Ingredient, uses: Readonly<Record<string, number>>) {
   return [ingredient.brand, `used ${uses[ingredient.id] ?? 0}×`].filter(Boolean).join(' · ')
@@ -97,8 +97,10 @@ export function MergeView({
               >
                 {kept ? 'KEEP' : 'MERGE IN'}
               </span>
-              <span className="truncate text-[15px] font-extrabold">{ingredient.name}</span>
-              <span className="truncate text-[12px] font-semibold text-label-secondary">
+              <span className="text-[15px] font-extrabold [overflow-wrap:anywhere]">
+                {ingredient.name}
+              </span>
+              <span className="text-[13px] font-semibold text-label-secondary [overflow-wrap:anywhere]">
                 {brandAndUses(ingredient, uses)}
               </span>
             </button>
@@ -107,22 +109,22 @@ export function MergeView({
       </div>
       <div className="glass-surface overflow-hidden rounded-[20px] bg-bg-elevated text-[14px] font-semibold shadow-card">
         <div
-          className={`${GRID} border-b border-separator text-[12px] font-bold text-label-secondary`}
+          className={`${GRID} border-b border-separator text-[13px] font-bold text-label-secondary`}
         >
           <span />
-          <span className="truncate">{keep.name}</span>
-          <span className="truncate">{other.name}</span>
+          <span className="text-label [overflow-wrap:anywhere]">{keep.name}</span>
+          <span className="text-label [overflow-wrap:anywhere]">{other.name}</span>
         </div>
         {rows.map(({ field, label, keep: kept, other: theirs, differs }) => {
           const isTaken = taken.has(field)
           return (
             <div
               key={field}
-              className={`${GRID} border-b border-separator last:border-b-0 ${differs ? 'bg-accent-soft/50' : ''}`}
+              className={`${GRID} border-b border-separator last:border-b-0 ${differs ? 'bg-fill' : ''}`}
             >
               <span className="text-label-secondary">{label}</span>
               <span
-                className={`truncate ${isTaken ? 'text-label-secondary line-through' : 'font-bold'}`}
+                className={`[overflow-wrap:anywhere] ${isTaken ? 'text-label-secondary line-through' : 'font-bold'}`}
               >
                 {kept}
               </span>
@@ -132,12 +134,12 @@ export function MergeView({
                   aria-pressed={isTaken}
                   aria-label={`Take ${label} from ${other.name}: ${theirs}`}
                   onClick={() => toggle(field)}
-                  className={`min-w-0 truncate text-left ${isTaken ? 'font-bold text-accent-ink' : 'text-accent-ink/80'}`}
+                  className={`min-w-0 text-left text-accent-ink [overflow-wrap:anywhere] ${isTaken ? 'font-extrabold' : ''}`}
                 >
                   {isTaken ? `${theirs} ✓` : theirs}
                 </button>
               ) : (
-                <span className="truncate text-label-secondary">{theirs}</span>
+                <span className="[overflow-wrap:anywhere]">{theirs}</span>
               )}
             </div>
           )
