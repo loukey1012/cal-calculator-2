@@ -16,6 +16,7 @@ vi.mock('../review/reviewApi', () => ({
   fetchOpenFindings: vi.fn(),
   decideFinding: vi.fn(),
   patchIngredient: vi.fn(),
+  mergeIngredients: vi.fn(),
 }))
 vi.mock('./applyToRecentMeals', () => ({ applyToRecentMeals: vi.fn() }))
 vi.mock('../household/householdApi', () => ({
@@ -23,11 +24,16 @@ vi.mock('../household/householdApi', () => ({
   fetchMembers: vi.fn(),
 }))
 
-import { decideFinding, fetchOpenFindings, patchIngredient } from '../review/reviewApi'
+import {
+  decideFinding,
+  fetchOpenFindings,
+  mergeIngredients,
+  patchIngredient,
+} from '../review/reviewApi'
 import { applyToRecentMeals } from './applyToRecentMeals'
 import { fetchMembers } from '../household/householdApi'
 import { useLocation } from 'react-router'
-import { fetchIngredients } from './ingredientsApi'
+import { fetchIngredients, fetchIngredientUses } from './ingredientsApi'
 import { IngredientsPage } from './IngredientsPage'
 
 const PROFILE = {
@@ -267,5 +273,96 @@ describe('Ingredients › Review', () => {
 
       expect(within(sheet).queryByRole('heading', { name: 'Meals' })).not.toBeInTheDocument()
     })
+  })
+})
+
+describe('Ingredients › Review › merging a duplicate', () => {
+  const WHOLE_MILK_ID = '8e4d6a9f-2c3b-4d4e-8f9a-1b2c3d4e5f6a'
+  const WHOLE_MILK = ingredient({
+    id: WHOLE_MILK_ID,
+    name: 'Whole milk',
+    kcal_100: 66,
+    unit_label: 'glass',
+    unit_weight_g: 250,
+    barcode: '4012345678901',
+  })
+  const SAME_MILK = finding({
+    id: 'f4',
+    ingredient_id: 'milk',
+    kind: 'duplicate',
+    message: 'Looks like the same product as Whole milk.',
+    suggestion: { duplicate_of: WHOLE_MILK_ID },
+  })
+
+  beforeEach(() => {
+    vi.mocked(fetchIngredients).mockResolvedValue([BUTTER, MILK, WHOLE_MILK])
+    vi.mocked(fetchOpenFindings).mockResolvedValue([SAME_MILK])
+    vi.mocked(fetchIngredientUses).mockResolvedValue({ milk: 2, [WHOLE_MILK_ID]: 9 })
+    vi.mocked(mergeIngredients).mockResolvedValue()
+  })
+
+  test('compares both: the one used more is kept, the rows that differ can be taken over', async () => {
+    // Arrange
+    const { user, sheet } = await openReview(1)
+
+    // Act
+    await user.click(within(card(sheet, 'Milk')).getByRole('button', { name: 'Compare' }))
+
+    // Assert
+    const keep = within(sheet).getByRole('group', { name: 'Which one to keep' })
+    await waitFor(() =>
+      expect(within(keep).getByRole('button', { name: /Keep Whole milk/ })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      ),
+    )
+    expect(within(keep).getByRole('button', { name: 'Keep Milk, used 2×' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+    expect(
+      within(sheet).getByRole('button', { name: 'Take kcal / 100 from Milk: 64' }),
+    ).toBeVisible()
+    expect(within(sheet).queryByRole('button', { name: /Take Category/ })).not.toBeInTheDocument()
+  })
+
+  test('merges into the kept one with the values taken over, then the finding is gone', async () => {
+    const { user, sheet } = await openReview(1)
+    await user.click(within(card(sheet, 'Milk')).getByRole('button', { name: 'Compare' }))
+    const keep = within(sheet).getByRole('group', { name: 'Which one to keep' })
+
+    // keep the other one this time, and take its barcode
+    await user.click(within(keep).getByRole('button', { name: 'Keep Milk, used 2×' }))
+    await user.click(within(sheet).getByRole('button', { name: /Take Barcode from Whole milk/ }))
+    // the server has the finding decided once merged
+    vi.mocked(fetchOpenFindings).mockResolvedValue([])
+    await user.click(within(sheet).getByRole('button', { name: 'Merge into Milk' }))
+
+    await waitFor(() =>
+      expect(mergeIngredients).toHaveBeenCalledWith({
+        keepId: 'milk',
+        dropId: WHOLE_MILK_ID,
+        patch: { barcode: '4012345678901' },
+        findingId: 'f4',
+      }),
+    )
+    expect(await within(sheet).findByText('Nothing left to review.')).toBeInTheDocument()
+  })
+
+  test('not duplicates: the finding is ignored', async () => {
+    const { user, sheet } = await openReview(1)
+    await user.click(within(card(sheet, 'Milk')).getByRole('button', { name: 'Compare' }))
+
+    await user.click(within(sheet).getByRole('button', { name: 'Not duplicates: ignore' }))
+
+    await waitFor(() => expect(decideFinding).toHaveBeenCalledWith('f4', 'ignored', 'u1'))
+    expect(mergeIngredients).not.toHaveBeenCalled()
+  })
+
+  test('a duplicate without the other ingredient has no Compare', async () => {
+    vi.mocked(fetchOpenFindings).mockResolvedValue([DUPLICATE])
+    const { sheet } = await openReview(1)
+
+    expect(within(card(sheet, 'Milk')).queryByRole('button', { name: 'Compare' })).toBeNull()
   })
 })

@@ -12,6 +12,8 @@ type FindingCardProps = {
   readonly onApply: (patch: IngredientPatch) => void
   readonly onIgnore: () => void
   readonly onOpen: () => void
+  /** a duplicate whose other ingredient is known: compares the two to merge them */
+  readonly onCompare?: () => void
 }
 
 /** An ingredient finding: the ingredient, why it was flagged, the suggested change, the decision. */
@@ -22,6 +24,7 @@ export function FindingCard({
   onApply,
   onIgnore,
   onOpen,
+  onCompare,
 }: FindingCardProps) {
   const name = ingredient.brand ? `${ingredient.name} · ${ingredient.brand}` : ingredient.name
   const patch = suggestionPatch(finding.suggestion) ?? {}
@@ -59,13 +62,19 @@ export function FindingCard({
         <Button variant="plain" disabled={busy} onClick={onIgnore}>
           Ignore
         </Button>
-        <Button
-          variant="plain"
-          disabled={busy}
-          onClick={() => onApply(changes.length > 0 ? patch : {})}
-        >
-          {changes.length > 0 ? 'Apply fix' : 'Done'}
-        </Button>
+        {onCompare ? (
+          <Button variant="plain" disabled={busy} onClick={onCompare}>
+            Compare
+          </Button>
+        ) : (
+          <Button
+            variant="plain"
+            disabled={busy}
+            onClick={() => onApply(changes.length > 0 ? patch : {})}
+          >
+            {changes.length > 0 ? 'Apply fix' : 'Done'}
+          </Button>
+        )}
       </div>
     </article>
   )

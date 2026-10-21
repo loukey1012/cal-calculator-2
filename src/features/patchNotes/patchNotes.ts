@@ -30,6 +30,16 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-21T11:12',
+    kind: 'new',
+    title: 'Merging duplicate ingredients',
+    items: [
+      'A duplicate found by the weekly review has Compare: both ingredients side by side, the rows that differ highlighted',
+      'Pick the one to keep and tap values of the other one to take them over',
+      'Merge moves every meal, dish and recipe of the other one to the kept one and deletes it; logged food keeps its calories',
+    ],
+  },
+  {
     at: '2026-10-21T10:40',
     kind: 'fix',
     title: 'Each note says what it is for',

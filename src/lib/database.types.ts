@@ -1397,6 +1397,15 @@ export type Database = {
         }
       }
       keep_alive: { Args: never; Returns: boolean }
+      merge_ingredients: {
+        Args: {
+          p_drop: string
+          p_finding: string
+          p_keep: string
+          p_patch: Json
+        }
+        Returns: undefined
+      }
       review_ingredients: { Args: { p_key: string }; Returns: Json }
       review_meals: {
         Args: { p_from: string; p_key: string; p_to: string }

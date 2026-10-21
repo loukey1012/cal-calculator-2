@@ -107,3 +107,85 @@ test('the weekly review: an ingredient fix applied, one ignored, a meal finding 
       { kind: 'missing_meal', status: 'applied', decided_by: me.id },
     ])
 })
+
+test('a duplicate from the review is compared and merged; its meal moves over', async ({
+  page,
+  backend,
+}) => {
+  const me = await backend.user('Mara')
+  const household = await backend.household([me])
+  const categoryId = await backend.category(household)
+  const { data: ingredients } = await backend.admin
+    .from('ingredients')
+    .insert([
+      { household_id: household, category_id: categoryId, name: 'Toastkäse', kcal_100: 300 },
+      {
+        household_id: household,
+        category_id: categoryId,
+        name: 'Toast-Käsescheiben',
+        kcal_100: 310,
+        unit_label: 'slice',
+        unit_weight_g: 20,
+      },
+    ])
+    .select('id, name')
+  const idOf = (name: string) => ingredients?.find((row) => row.name === name)?.id ?? ''
+  const { data: meal } = await backend.admin
+    .from('meals')
+    .insert({ user_id: me.id, date: localDay(1), meal_type: 'lunch' })
+    .select('id')
+    .single()
+  await backend.admin.from('meal_items').insert({
+    meal_id: meal?.id,
+    ingredient_id: idOf('Toast-Käsescheiben'),
+    name: 'Toast-Käsescheiben',
+    entered_amount: 40,
+    entered_unit: 'g',
+    basis: 'per_100g',
+    basis_multiplier: 0.4,
+    kcal: 124,
+  })
+  const seeded = await backend.admin.from('review_findings').insert({
+    household_id: household,
+    ingredient_id: idOf('Toastkäse'),
+    kind: 'duplicate',
+    message: 'Same as "Toast-Käsescheiben".',
+    suggestion: { duplicate_of: idOf('Toast-Käsescheiben') },
+    run_id: 'journey',
+  })
+  expect(seeded.error).toBeNull()
+  await logIn(page, me)
+  await page
+    .getByRole('navigation', { name: 'Tabs' })
+    .getByRole('button', { name: 'Ingredients' })
+    .click()
+  const list = activePage(page)
+
+  await list.getByRole('button', { name: 'Review: 1' }).click()
+  const review = page.getByRole('dialog', { name: 'Review' })
+  await review
+    .getByRole('article', { name: /Toastkäse/ })
+    .getByRole('button', { name: 'Compare' })
+    .click()
+  await review.getByRole('button', { name: /^Keep Toastkäse/ }).click()
+  await review.getByRole('button', { name: /Take Unit weight from Toast-Käsescheiben/ }).click()
+  await review.getByRole('button', { name: 'Merge into Toastkäse' }).click()
+  await expect(review).toContainText('Nothing left to review.')
+
+  await expect
+    .poll(async () => {
+      const { data: left } = await backend.admin
+        .from('ingredients')
+        .select('name, unit_weight_g')
+        .eq('household_id', household)
+      const { data: item } = await backend.admin
+        .from('meal_items')
+        .select('ingredient_id, kcal')
+        .eq('meal_id', meal?.id ?? '')
+      return { left, item }
+    })
+    .toEqual({
+      left: [{ name: 'Toastkäse', unit_weight_g: 20 }],
+      item: [{ ingredient_id: idOf('Toastkäse'), kcal: 124 }],
+    })
+})

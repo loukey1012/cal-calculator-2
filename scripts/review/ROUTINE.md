@@ -47,7 +47,7 @@ translations, no reordering of words.
 | `brand`       | the same brand written differently across ingredients (e.g. "Ja! Natürlich", "ja natürlich"): suggest the spelling most ingredients use, or the official one                                                                                        |
 | `unit_name`   | the same unit named differently (e.g. "Stk", "Stück", "piece" in one household): suggest the name most ingredients use                                                                                                                              |
 | `unit_weight` | a unit weight that can't fit the unit (e.g. 1 slice of bread = 400 g, 1 egg = 6 g)                                                                                                                                                                  |
-| `duplicate`   | the same product twice (same name and brand, or clearly the same thing): no suggestion, name the other one in the message                                                                                                                           |
+| `duplicate`   | the same product twice (same name and brand, or clearly the same thing): the suggestion is `{"duplicate_of": "<id of the other one>"}` (the app offers to merge them), and the message names the other one                                          |
 | `values`      | values that don't fit the product or each other: calories far from 4 × carbs + 4 × protein + 9 × fat (+ 2 × fiber, ± 15 %), sugar above carbs, saturated fat above fat, more than 100 g of nutrients per 100 g, a decimal slip (74 kcal for butter) |
 | `other`       | anything else that is clearly wrong                                                                                                                                                                                                                 |
 
@@ -104,8 +104,10 @@ and meal findings (no `suggestion`; `meal_type` and `meal_item_id` only where th
   `unit_label`, `unit_weight_g`, `kcal_100`, `fat_100`, `sat_fat_100`, `carbs_100`, `sugar_100`,
   `fiber_100`, `protein_100`, `salt_100`, and the same nutrients with `_unit`. Calories are whole
   numbers; other values have at most two decimals; `null` clears a field.
-- Leave `suggestion` empty (`{}`) when there is nothing to apply (e.g. a duplicate) or when you
-  aren't sure of the right value: the message then says what to check.
+- A `duplicate` is the exception: its suggestion is only `{"duplicate_of": "<id>"}`, the other
+  ingredient's id. Report a pair once, on one of the two.
+- Leave `suggestion` empty (`{}`) when there is nothing to apply or when you aren't sure of the
+  right value: the message then says what to check.
 - Messages are neutral and short, in English.
 
 ## 4. Send them

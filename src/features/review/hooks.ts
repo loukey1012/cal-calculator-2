@@ -6,13 +6,16 @@ import {
   type UseQueryResult,
 } from '@tanstack/react-query'
 import type { Ingredient } from '../ingredients/ingredientsApi'
-import { useInvalidateIngredients } from '../ingredients/hooks'
+import { ingredientKeys, useInvalidateIngredients } from '../ingredients/hooks'
+import { recipeKeys } from '../recipes/hooks'
 import {
   decideFinding,
   fetchOpenFindings,
+  mergeIngredients,
   patchIngredient,
   type Finding,
   type FindingDecision,
+  type MergeInput,
 } from './reviewApi'
 import type { IngredientPatch } from './suggestion'
 
@@ -85,5 +88,29 @@ export function useApplyFinding(
     onMutate: decided.onMutate,
     onError: decided.onError,
     onSettled: () => Promise.all([decided.onSettled(), invalidateIngredients()]),
+  })
+}
+
+export type MergeFindingInput = Omit<MergeInput, 'findingId'> & { readonly finding: Finding }
+
+/** Merges a duplicate into the one kept and marks its finding applied. */
+export function useMergeIngredients(
+  householdId: string,
+): UseMutationResult<void, Error, MergeFindingInput, DecidedContext> {
+  const queryClient = useQueryClient()
+  const invalidateIngredients = useInvalidateIngredients(householdId)
+  const decided = useDecidedLocally<MergeFindingInput>(householdId)
+  return useMutation({
+    mutationFn: ({ finding, ...merge }) => mergeIngredients({ ...merge, findingId: finding.id }),
+    onMutate: decided.onMutate,
+    onError: decided.onError,
+    // its uses and recipes moved to the kept one
+    onSettled: () =>
+      Promise.all([
+        decided.onSettled(),
+        invalidateIngredients(),
+        queryClient.invalidateQueries({ queryKey: ingredientKeys.uses(householdId) }),
+        queryClient.invalidateQueries({ queryKey: recipeKeys.recipes(householdId) }),
+      ]),
   })
 }

@@ -97,6 +97,7 @@ function ingredientProblems(finding: Record<string, unknown>, context: ReviewCon
   }
   problems.push(...messageProblems(message))
   if (!isRecord(suggestion)) return [...problems, 'suggestion must be an object']
+  if (kind === 'duplicate') return [...problems, ...duplicateProblems(finding, suggestion, context)]
   for (const [field, fix] of Object.entries(suggestion)) {
     if (!SUGGESTABLE_FIELDS.includes(field)) {
       problems.push(`suggestion field ${field} can’t be changed`)
@@ -105,6 +106,23 @@ function ingredientProblems(finding: Record<string, unknown>, context: ReviewCon
     }
   }
   return problems
+}
+
+/** A duplicate names the other ingredient, so the app can offer to merge the two. */
+function duplicateProblems(
+  { ingredient_id }: Record<string, unknown>,
+  suggestion: Record<string, unknown>,
+  context: ReviewContext,
+): string[] {
+  const other = suggestion.duplicate_of
+  const valid =
+    Object.keys(suggestion).length === 1 &&
+    typeof other === 'string' &&
+    other !== ingredient_id &&
+    context.ingredientIds.has(other)
+  return valid
+    ? []
+    : ['a duplicate’s suggestion is { "duplicate_of": "<id of the other ingredient>" }']
 }
 
 function dayProblems(finding: Record<string, unknown>, context: ReviewContext): string[] {

@@ -2,12 +2,13 @@ import { describe, expect, test } from 'vitest'
 import { checkFindings, reviewContext, type ReviewData } from './findings'
 
 const BUTTER = '7d3c5f8e-1b2a-4c3d-9e8f-0a1b2c3d4e5f'
+const OTHER_BUTTER = '8e4d6a9f-2c3b-4d4e-8f9a-1b2c3d4e5f6a'
 const ALICE = '11111111-1111-4111-8111-111111111111'
 const BOB = '22222222-2222-4222-8222-222222222222'
 const ITEM = '33333333-3333-4333-8333-333333333333'
 
 const DATA: ReviewData = {
-  ingredients: [{ id: BUTTER }],
+  ingredients: [{ id: BUTTER }, { id: OTHER_BUTTER }],
   meals: {
     from: '2026-10-04',
     to: '2026-10-10',
@@ -41,9 +42,31 @@ describe('checkFindings', () => {
   test('an ingredient finding without a fix gets an empty one', () => {
     const { suggestion: _, ...noFix } = TYPO
 
-    expect(checkFindings([{ ...noFix, kind: 'duplicate' }], context)[0]).toMatchObject({
+    expect(checkFindings([{ ...noFix, kind: 'other' }], context)[0]).toMatchObject({
       suggestion: {},
     })
+  })
+
+  test('a duplicate names the other ingredient of the household', () => {
+    const duplicate = {
+      ...TYPO,
+      kind: 'duplicate',
+      message: 'Same as "Butter" (Kerrygold).',
+      suggestion: { duplicate_of: OTHER_BUTTER },
+    }
+    const problem = 'a duplicate’s suggestion is { "duplicate_of": "<id of the other ingredient>" }'
+
+    expect(checkFindings([duplicate], context)).toEqual([duplicate])
+    expect(() =>
+      checkFindings(
+        [
+          { ...duplicate, suggestion: {} },
+          { ...duplicate, suggestion: { duplicate_of: BUTTER } },
+          { ...duplicate, suggestion: { duplicate_of: 'not-ours' } },
+        ],
+        context,
+      ),
+    ).toThrow([`#1: ${problem}`, `#2: ${problem}`, `#3: ${problem}`].join('\n'))
   })
 
   test('lists every problem with an ingredient finding at once, by position', () => {

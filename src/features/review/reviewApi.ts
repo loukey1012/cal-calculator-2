@@ -47,3 +47,27 @@ export async function patchIngredient(id: string, patch: IngredientPatch): Promi
   if (error) throw ApiError.from(error)
   return data
 }
+
+export type MergeInput = {
+  readonly keepId: string
+  readonly dropId: string
+  /** values taken over from the dropped one */
+  readonly patch: IngredientPatch
+  readonly findingId: string
+}
+
+/** Folds one ingredient into the other in one step (see the merge_ingredients migration). */
+export async function mergeIngredients({
+  keepId,
+  dropId,
+  patch,
+  findingId,
+}: MergeInput): Promise<void> {
+  const { error } = await supabase.rpc('merge_ingredients', {
+    p_keep: keepId,
+    p_drop: dropId,
+    p_patch: patch,
+    p_finding: findingId,
+  })
+  if (error) throw ApiError.from(error)
+}
