@@ -10,7 +10,7 @@ export type CategoryGroup = Tables<'category_groups'>
 /** The columns a user edits; ownership and bookkeeping columns are set by the database. */
 export type IngredientInput = Omit<
   TablesInsert<'ingredients'>,
-  'id' | 'household_id' | 'created_by' | 'created_at' | 'updated_at' | 'legacy_id'
+  'id' | 'household_id' | 'created_by' | 'created_at' | 'updated_at'
 >
 
 export async function fetchIngredients(householdId: string): Promise<Ingredient[]> {

@@ -29,7 +29,6 @@ const ROW: Tables<'ingredients'> = {
   sat_fat_unit: null,
   fiber_unit: null,
   salt_unit: 0.2,
-  legacy_id: null,
   barcode: null,
   kcal_estimated: false,
   created_by: null,

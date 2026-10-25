@@ -477,7 +477,6 @@ export type Database = {
           kcal_100: number | null
           kcal_estimated: boolean
           kcal_unit: number | null
-          legacy_id: string | null
           measure: Database["public"]["Enums"]["ingredient_measure"]
           name: string
           note: string | null
@@ -510,7 +509,6 @@ export type Database = {
           kcal_100?: number | null
           kcal_estimated?: boolean
           kcal_unit?: number | null
-          legacy_id?: string | null
           measure?: Database["public"]["Enums"]["ingredient_measure"]
           name: string
           note?: string | null
@@ -543,7 +541,6 @@ export type Database = {
           kcal_100?: number | null
           kcal_estimated?: boolean
           kcal_unit?: number | null
-          legacy_id?: string | null
           measure?: Database["public"]["Enums"]["ingredient_measure"]
           name?: string
           note?: string | null

@@ -30,6 +30,15 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-25T12:54',
+    kind: 'internal',
+    title: 'Clean-up: leftovers of finished one-off work removed',
+    items: [
+      'The database no longer keeps the ids from the old Firebase import',
+      'The script that sorted the ingredients into the two-level categories is gone (it has done its job)',
+    ],
+  },
+  {
     at: '2026-10-25T12:45',
     kind: 'new',
     title: 'More values while choosing an amount',

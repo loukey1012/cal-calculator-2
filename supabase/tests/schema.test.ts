@@ -381,21 +381,10 @@ describe('ingredients', () => {
     expect(error).toBeNull()
   })
 
-  test('legacy ids are unique per household, not globally', async () => {
-    const legacy = { legacy_id: 'firebase-doc-1', name: 'Imported', kcal_100: 50 }
-    const mine = await alice.client
-      .from('ingredients')
-      .insert({ ...legacy, household_id: householdId, category_id: categoryId })
-    const dupe = await bob.client
-      .from('ingredients')
-      .insert({ ...legacy, household_id: householdId, category_id: categoryId })
-    const other = await carol.client
-      .from('ingredients')
-      .insert({ ...legacy, household_id: carolHouseholdId, category_id: carolCategoryId })
+  test('ingredients no longer keep the id of the old Firebase import', async () => {
+    const { error } = await alice.client.from('ingredients').select('legacy_id').limit(1)
 
-    expect(mine.error).toBeNull()
-    expect(dupe.error?.code).toBe('23505')
-    expect(other.error).toBeNull()
+    expect(error?.code).toBe('42703')
   })
 
   test('a barcode belongs to one ingredient per household, not globally', async () => {

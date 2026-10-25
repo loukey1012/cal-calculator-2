@@ -188,7 +188,7 @@ Build plan with every decision: [`docs/plan-2026-10-20.md`](docs/plan-2026-10-20
 
 **Categories and duplicates**
 
-- [x] **38.** Categories redone in two levels: broad ones like Meat, specific ones inside like Leberkäse; every ingredient must have one, and only a specific one; picked in two steps (the new tree, reviewed: `scripts/recategorize/tree.json`)
+- [x] **38.** Categories redone in two levels: broad ones like Meat, specific ones inside like Leberkäse; every ingredient must have one, and only a specific one; picked in two steps (the new tree, reviewed with you and applied on 2026-10-21)
 - [x] **39.** The review merges duplicates: both side by side with their differences, pick which one stays (and single values from the other); everything logged with the other moves over
 
 **Meals and Cook**
@@ -517,7 +517,6 @@ supabase/
                   _shared: web push sending, plus plain-TypeScript settings and scheduling that the
                   app's tests cover and Settings › Notifications reuses
 scripts/
-  recategorize/   the category tree of 2026-10-21 and the SQL that applies it to a household
   review/         the weekly review routine's instructions
 ```
 
@@ -626,15 +625,6 @@ pnpm exec supabase db query --linked \
   "insert into public.review_keys (household_id, key_hash) values ('<household-id>', decode('$HASH', 'hex'))
    on conflict (household_id) do update set key_hash = excluded.key_hash"
 echo "$KEY"   # goes into the routine's environment as REVIEW_KEY, nowhere else
-```
-
-### Re-sorting the categories
-
-`scripts/recategorize/tree.json` holds broad categories → categories → products ("Name (Brand)"). `print.ts` turns it into one SQL block for a household: it creates what is missing, moves every ingredient to its place, removes the categories the tree no longer has, and changes nothing if a product and the ingredients don't match.
-
-```bash
-node scripts/recategorize/print.ts <household-id> > tree.sql
-pnpm exec supabase db query --linked -f tree.sql   # dev first, then production
 ```
 
 ## Deployment
