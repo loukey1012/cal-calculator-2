@@ -5,7 +5,7 @@ import { loggedWeeks, type LoggedWeek } from './trendWeeks'
 import { fetchNutritionDays } from './trendsApi'
 
 /** Under the person's month queries, so every meal change refreshes the trends as well. */
-export function trendKey(userId: string, first: string, last: string) {
+function trendKey(userId: string, first: string, last: string) {
   return [...monthKeys.person(userId), 'trend', first, last] as const
 }
 

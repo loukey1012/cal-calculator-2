@@ -68,7 +68,7 @@ export type PortionItems = {
 
 type LineBase = { readonly id: string; readonly source: MealItemSource; readonly unit: AmountUnit }
 
-export type DishLineInput =
+type DishLineInput =
   | (LineBase & { readonly allocation: 'shared'; readonly amount: number })
   | (LineBase & {
       readonly allocation: 'per_portion'

@@ -52,7 +52,7 @@ function useDecidedLocally<TInput extends { readonly finding: Finding }>(househo
   }
 }
 
-export type DecideInput = { readonly finding: Finding; readonly decision: FindingDecision }
+type DecideInput = { readonly finding: Finding; readonly decision: FindingDecision }
 
 export function useDecideFinding(
   householdId: string,
@@ -64,7 +64,7 @@ export function useDecideFinding(
   })
 }
 
-export type ApplyInput = { readonly finding: Finding; readonly patch: IngredientPatch }
+type ApplyInput = { readonly finding: Finding; readonly patch: IngredientPatch }
 
 /**
  * Applies a finding's fix to its ingredient, then marks the finding applied. Resolves with the
@@ -91,7 +91,7 @@ export function useApplyFinding(
   })
 }
 
-export type MergeFindingInput = Omit<MergeInput, 'findingId'> & { readonly finding: Finding }
+type MergeFindingInput = Omit<MergeInput, 'findingId'> & { readonly finding: Finding }
 
 /** Merges a duplicate into the one kept and marks its finding applied. */
 export function useMergeIngredients(

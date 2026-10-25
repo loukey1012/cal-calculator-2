@@ -1,8 +1,8 @@
 import { vi, type Mock } from 'vitest'
 
-export type QueryResult = { readonly data: unknown; readonly error: unknown }
+type QueryResult = { readonly data: unknown; readonly error: unknown }
 
-export type FakeQuery = {
+type FakeQuery = {
   readonly select: Mock
   readonly insert: Mock
   readonly upsert: Mock

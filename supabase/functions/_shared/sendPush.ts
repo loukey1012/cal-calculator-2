@@ -3,7 +3,7 @@ import type { SupabaseClient } from 'npm:@supabase/supabase-js@2'
 import { pushOutcome, tally, type PushOutcome, type PushTally } from './pushOutcome.ts'
 
 /** What a notification shows; read by the app's service worker (src/sw/pushMessage.ts). */
-export type PushMessage = {
+type PushMessage = {
   readonly title: string
   readonly body?: string
   /** an address inside the app, e.g. /today */

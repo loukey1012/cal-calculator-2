@@ -5,7 +5,7 @@ import type { Eater } from '../dishes/portions'
 import type { MealItemDraft } from '../nutrition/fromIngredient'
 
 /** A plain food (not from a dish) logged with an ingredient, and the meal it is in. */
-export type RecentItem = {
+type RecentItem = {
   readonly id: string
   readonly item: MealItemDraft
   readonly meal: Eater

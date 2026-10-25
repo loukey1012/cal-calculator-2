@@ -21,7 +21,7 @@ export type AddFoodDraft = {
 }
 
 /** Who to pre-select when Add food is opened from an empty meal. */
-export type AddFoodPrefill = {
+type AddFoodPrefill = {
   readonly userId: string
   readonly date: string
   readonly mealType: MealType

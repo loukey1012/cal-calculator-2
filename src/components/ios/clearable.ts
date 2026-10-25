@@ -4,7 +4,7 @@ import { useRef, useState, type ChangeEvent, type InputHTMLAttributes } from 're
 const NOT_CLEARABLE = new Set(['date', 'time', 'datetime-local', 'month', 'week', 'range', 'file'])
 
 /** Empties an input the way typing would, so its onChange follows (controlled or not); keeps focus. */
-export function clearInput(input: HTMLInputElement | null): void {
+function clearInput(input: HTMLInputElement | null): void {
   if (!input) return
   Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(input, '')
   input.dispatchEvent(new Event('input', { bubbles: true }))

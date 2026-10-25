@@ -3,7 +3,7 @@ import { searchable } from './listing'
 
 const MAX_SUGGESTIONS = 6
 
-export type BrandCount = { readonly brand: string; readonly count: number }
+type BrandCount = { readonly brand: string; readonly count: number }
 
 /** Each saved brand once, in the spelling used most often (ties: the first one seen). */
 function savedBrands(ingredients: readonly Ingredient[]): string[] {

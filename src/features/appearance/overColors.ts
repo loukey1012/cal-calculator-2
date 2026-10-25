@@ -7,8 +7,8 @@ import type { GoalProgress, RingKey } from '../nutrition/goals'
  * the account in profiles.appearance.overColors; painted as --goal-over-full / --goal-over-well.
  */
 
-export const OVER_PRESETS = ['signal', 'ember', 'neon'] as const
-export type OverPreset = (typeof OVER_PRESETS)[number]
+const OVER_PRESETS = ['signal', 'ember', 'neon'] as const
+type OverPreset = (typeof OVER_PRESETS)[number]
 export const OVER_MODES = ['off', ...OVER_PRESETS, 'custom'] as const
 export type OverMode = (typeof OVER_MODES)[number]
 
@@ -27,11 +27,11 @@ export const OVER_PRESET_COLORS: Record<OverPreset, OverColorPair> = {
 export const DEFAULT_OVER_COLORS: OverColors = { mode: 'signal', ...OVER_PRESET_COLORS.signal }
 
 /** Only these change: for them, over the goal is too much. */
-export const OVER_RING_KEYS: readonly RingKey[] = ['kcal', 'carbs', 'fat']
+const OVER_RING_KEYS: readonly RingKey[] = ['kcal', 'carbs', 'fat']
 /** Above this share of the goal, a ring is "well over" (the second color). */
 export const WELL_OVER_RATIO = 1.1
 
-export type OverLevel = 'none' | 'full' | 'well'
+type OverLevel = 'none' | 'full' | 'well'
 
 export function overLevel(goal: GoalProgress): OverLevel {
   if (!OVER_RING_KEYS.includes(goal.key)) return 'none'

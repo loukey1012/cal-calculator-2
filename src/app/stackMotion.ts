@@ -16,7 +16,7 @@ const MIN_SIDEWAYS_RATIO = 1.2
 const COMPLETE_DISTANCE = 1 / 3
 const COMPLETE_VELOCITY = 0.5
 
-export type DragDirection = 'back' | 'other'
+type DragDirection = 'back' | 'other'
 
 // the strip above the screen's bottom edge where iOS's own swipes start (home indicator: to
 // another app, or up into the app switcher); the user's iPhone has a 34 px bottom inset
@@ -51,7 +51,7 @@ export function stackChange(from: string, to: string): 'push' | 'pop' | null {
   return null
 }
 
-export type LayerTransforms = {
+type LayerTransforms = {
   readonly top: string
   readonly under: string
   /** opacity of the shade over the page below */

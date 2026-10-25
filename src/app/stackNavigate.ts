@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from 'react-router'
 
 /** Navigation state naming whose day a page shows, e.g. `{ person: id }` (a meal of the partner). */
-export type PersonState = { readonly person: string }
+type PersonState = { readonly person: string }
 
 export function personOf(state: unknown): string | null {
   if (typeof state !== 'object' || state === null || !('person' in state)) return null

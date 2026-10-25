@@ -5,7 +5,7 @@ const envSchema = z.object({
   VITE_SUPABASE_ANON_KEY: z.string().min(1),
 })
 
-export type AppEnv = {
+type AppEnv = {
   readonly supabaseUrl: string
   readonly supabaseAnonKey: string
 }

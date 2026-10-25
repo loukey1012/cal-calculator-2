@@ -209,7 +209,7 @@ const capitalized = (part: string) =>
   part.charAt(0).toLocaleUpperCase() + part.slice(1).toLocaleLowerCase()
 
 /** e.g. "LOW SUGAR gummies coca-cola" → "Low Sugar Gummies Coca-Cola" */
-export function titleCase(name: string): string {
+function titleCase(name: string): string {
   return name
     .split(/\s+/)
     .filter(Boolean)

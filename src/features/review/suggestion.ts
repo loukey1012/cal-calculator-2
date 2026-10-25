@@ -80,7 +80,7 @@ export function suggestionPatch(suggestion: Json): IngredientPatch | null {
   return patch as IngredientPatch
 }
 
-export type Change = { readonly label: string; readonly from: string; readonly to: string }
+type Change = { readonly label: string; readonly from: string; readonly to: string }
 
 /** What applying the fix would change, e.g. "Name: Buter → Butter". */
 export function describeChanges(ingredient: Ingredient, patch: IngredientPatch): Change[] {

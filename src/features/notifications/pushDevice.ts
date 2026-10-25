@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase'
 import { keyBytes } from './pushSupport'
 
 /** Public by design (it only proves pushes come from this app); the private key is a secret. */
-export const VAPID_PUBLIC_KEY =
+const VAPID_PUBLIC_KEY =
   'BKHxxQ-c9HKxfYv1KmsnHOA10zUG9suN0fwkcDzsiV-sSHqY0bH3Mgcgv3m5Kiku-HRG4YUQ6y2h7dy0u3TXvII'
 
 /** on: this phone gets them; blocked: turned off in the phone's settings for the app */

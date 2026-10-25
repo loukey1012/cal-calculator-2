@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 
 // long enough to notice a mistake, short enough not to undo much later typing
-export const UNDO_MS = 8000
+const UNDO_MS = 8000
 
 /** What was just changed, shown next to the button that did it (e.g. "per100g"). */
 export type UndoOffer = { readonly where: string; readonly message: string }
 
-export type Undo<T> = {
+type Undo<T> = {
   readonly offer: UndoOffer | null
   readonly offerUndo: (where: string, message: string, previous: T) => void
   readonly undo: () => void

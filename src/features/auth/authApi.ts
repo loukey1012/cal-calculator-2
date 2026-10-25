@@ -2,7 +2,7 @@ import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../../lib/supabase'
 import type { LoginInput, SignUpInput } from './validation'
 
-export type SignUpResult = { readonly needsEmailConfirmation: boolean }
+type SignUpResult = { readonly needsEmailConfirmation: boolean }
 
 export async function signIn(credentials: LoginInput): Promise<void> {
   const { error } = await supabase.auth.signInWithPassword(credentials)

@@ -10,13 +10,13 @@ import {
   type CategoryChange,
 } from './categoriesApi'
 
-export type SaveGroupInput = {
+type SaveGroupInput = {
   /** null creates a new broad category */
   readonly id: string | null
   readonly name: string
 }
 
-export type SaveCategoryInput = CategoryChange & {
+type SaveCategoryInput = CategoryChange & {
   /** null creates a new category */
   readonly id: string | null
 }

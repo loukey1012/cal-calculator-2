@@ -35,7 +35,7 @@ const hintSchema = z.discriminatedUnion('table', [
   z.object({ table: z.enum(['goal_history', 'profiles', 'weight_entries']), user_id: id, actor }),
 ])
 
-export type LiveHint = z.infer<typeof hintSchema>
+type LiveHint = z.infer<typeof hintSchema>
 
 /** Messages come from outside the app: anything unexpected is ignored, never trusted. */
 export function parseHint(payload: unknown): LiveHint | null {

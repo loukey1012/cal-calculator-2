@@ -10,7 +10,7 @@ export type Box = {
   readonly x1: number
   readonly y1: number
 }
-export type Size = { readonly width: number; readonly height: number }
+type Size = { readonly width: number; readonly height: number }
 export type PlacedWord = {
   readonly text: string
   readonly bbox: Box
@@ -42,7 +42,7 @@ const MAX_ENLARGEMENT = 2.5
 // letters of 100 px (a close-up) aren't read at all: made smaller, down to this
 const MIN_ENLARGEMENT = 0.4
 /** the longest side of what is read: bigger takes long on a phone */
-export const MAX_READ_SIDE_PX = 2500
+const MAX_READ_SIDE_PX = 2500
 
 const LUMA = { r: 0.299, g: 0.587, b: 0.114 } as const
 const LOW_PERCENTILE = 0.02
@@ -57,7 +57,7 @@ function normalize(text: string): string {
     .toLowerCase()
 }
 
-export function isNutritionWord(text: string): boolean {
+function isNutritionWord(text: string): boolean {
   return NUTRITION_WORD.test(normalize(text))
 }
 

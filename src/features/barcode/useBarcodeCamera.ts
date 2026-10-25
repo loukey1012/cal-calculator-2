@@ -10,11 +10,11 @@ const CAMERA_CONSTRAINTS: MediaStreamConstraints = {
   video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
 }
 
-export const NO_CAMERA = 'No camera available. Take a photo of the barcode or type its number.'
-export const CAMERA_BLOCKED =
+const NO_CAMERA = 'No camera available. Take a photo of the barcode or type its number.'
+const CAMERA_BLOCKED =
   'Camera access is off. Allow it for this app, or take a photo or type the number instead.'
 const CAMERA_FAILED = 'Couldn’t start the camera. Take a photo or type the number instead.'
-export const SCANNER_FAILED =
+const SCANNER_FAILED =
   'Couldn’t start the scanner. Check your connection, or type the number instead.'
 
 export type CameraState =

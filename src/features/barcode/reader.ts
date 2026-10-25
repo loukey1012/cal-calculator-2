@@ -10,7 +10,7 @@ const FORMATS = ['ean_13', 'ean_8', 'upc_a', 'itf'] as const
 // big enough for a barcode across part of the photo, small enough to read quickly
 const MAX_PHOTO_EDGE_PX = 1600
 
-export type BarcodeReader = {
+type BarcodeReader = {
   /** the first valid package barcode in the image, or null */
   readonly read: (source: ImageBitmapSource) => Promise<string | null>
 }

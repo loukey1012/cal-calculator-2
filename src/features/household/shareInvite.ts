@@ -1,6 +1,6 @@
 import { formatInviteCode } from './inviteCode'
 
-export type ShareOutcome = 'shared' | 'copied' | 'cancelled'
+type ShareOutcome = 'shared' | 'copied' | 'cancelled'
 
 /** Opens the iOS share sheet, or copies the code where sharing isn't available. */
 export async function shareInviteCode(code: string): Promise<ShareOutcome> {

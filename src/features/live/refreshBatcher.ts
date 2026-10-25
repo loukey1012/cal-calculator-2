@@ -12,7 +12,7 @@ type BatcherOptions = {
   readonly hasPendingChanges: () => boolean
 }
 
-export type RefreshBatcher = {
+type RefreshBatcher = {
   readonly add: (keys: readonly QueryKey[]) => void
   readonly stop: () => void
 }

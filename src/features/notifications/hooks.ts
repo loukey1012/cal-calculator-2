@@ -9,7 +9,7 @@ import { fetchPreferences, savePreferences, type Preferences } from './preferenc
 import { deviceState, refreshSubscription, sendTest, turnOff, turnOn } from './pushDevice'
 import type { DeviceState, TestResult } from './pushDevice'
 
-export const notificationKeys = {
+const notificationKeys = {
   device: ['pushDevice'] as const,
   preferences: (userId: string) => ['notificationPreferences', userId] as const,
 }

@@ -16,7 +16,7 @@ export const INGREDIENT_SORT_OPTIONS: readonly {
 ]
 
 /** How often each ingredient was used, by ingredient id; unused ones are missing. */
-export type IngredientUses = Readonly<Record<string, number>>
+type IngredientUses = Readonly<Record<string, number>>
 
 type Compare = (a: Ingredient, b: Ingredient) => number
 

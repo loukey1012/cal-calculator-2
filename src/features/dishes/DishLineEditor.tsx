@@ -18,7 +18,7 @@ import type { DishLine } from './portions'
 /** An eating portion as the editor shows it. */
 export type PortionOption = { readonly id: string; readonly name: string }
 
-export type LineInput = LineAmounts & { readonly unit: AmountUnit }
+type LineInput = LineAmounts & { readonly unit: AmountUnit }
 
 type WhoValue = 'shared' | 'own' | `only:${string}`
 

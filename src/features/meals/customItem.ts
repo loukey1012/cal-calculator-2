@@ -35,7 +35,7 @@ export type ParsedCustomItem = {
   readonly unit: AmountUnit
 }
 
-export type CustomItemResult =
+type CustomItemResult =
   | { readonly success: true; readonly data: ParsedCustomItem }
   | { readonly success: false; readonly errors: FieldErrors }
 

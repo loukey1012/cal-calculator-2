@@ -85,7 +85,7 @@ export function availableMetrics(goal: Goal | null, hasWeights: boolean): TrendM
   return ['kcal', ...nutrients, ...weight]
 }
 
-export function goalOf(goal: Goal | null, metric: NutritionMetric): number | null {
+function goalOf(goal: Goal | null, metric: NutritionMetric): number | null {
   if (!goal) return null
   return metric === 'kcal' ? goal.kcal : (goal[GOAL_FIELDS[metric]] as number | null)
 }
@@ -183,7 +183,7 @@ export function nutritionBars(
   )
 }
 
-export type NutritionSummary = {
+type NutritionSummary = {
   readonly average: number | null
   /** counted days (see dayCounting) */
   readonly loggedDays: number
@@ -231,7 +231,7 @@ export function weightPoints(
   return [{ date: first, weightKg: before.weightKg, carried: true }, ...inRange]
 }
 
-export type WeightSummary = {
+type WeightSummary = {
   readonly current: number | null
   /** since the range's first day (negative: lost) */
   readonly change: number | null

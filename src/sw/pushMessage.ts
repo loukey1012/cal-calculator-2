@@ -3,7 +3,7 @@
  * a tap on it opens. Anything unexpected still shows a plain notification, since iOS ends the
  * subscription of an app that receives a push without showing one.
  */
-export type PushMessage = {
+type PushMessage = {
   readonly title: string
   readonly body: string
   /** an address inside the app, e.g. /today */
@@ -28,7 +28,7 @@ const APP_PATH = /^\/(?!\/)/
 const textOf = (value: unknown, max: number): string | undefined =>
   typeof value === 'string' && value.length <= max ? value : undefined
 
-export function parsePushMessage(data: unknown): PushMessage {
+function parsePushMessage(data: unknown): PushMessage {
   if (typeof data !== 'object' || data === null) return FALLBACK_MESSAGE
   const fields = data as Record<string, unknown>
   const title = textOf(fields.title, MAX_TITLE)

@@ -6,7 +6,7 @@ import { dayChangeKey } from '../meals/dayChanges'
 import { applyToRecentMeals } from './applyToRecentMeals'
 import type { Ingredient } from './ingredientsApi'
 
-export type ApplyToRecentMealsInput = { readonly ingredient: Ingredient; readonly since: string }
+type ApplyToRecentMealsInput = { readonly ingredient: Ingredient; readonly since: string }
 
 /** Gives recent meals an edited ingredient's values, then refreshes the days it changed. */
 export function useApplyToRecentMeals(): UseMutationResult<

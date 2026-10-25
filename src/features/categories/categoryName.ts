@@ -4,7 +4,7 @@ import { ApiError, toUserMessage } from '../../lib/errors'
 const MAX_NAME = 40
 const UNIQUE_VIOLATION = '23505'
 
-export type NameResult =
+type NameResult =
   | { readonly success: true; readonly name: string }
   | { readonly success: false; readonly error: string }
 

@@ -80,7 +80,7 @@ export type ParsedIngredientForm = {
   readonly category: CategoryChoice
 }
 
-export type IngredientFormResult =
+type IngredientFormResult =
   | { readonly success: true; readonly data: ParsedIngredientForm }
   | { readonly success: false; readonly errors: FieldErrors }
 

@@ -51,7 +51,7 @@ const AMOUNT_DECIMALS = 2
  * What a meal lists: plain items (logged before the Cook tab), single foods (a dish of one
  * unnamed food logged alone, shown like a plain item) and each other dish's portion as one entry.
  */
-export type MealEntry =
+type MealEntry =
   | { readonly kind: 'item'; readonly item: MealItem }
   | { readonly kind: 'food'; readonly item: MealItem; readonly dishId: string }
   | { readonly kind: 'dish'; readonly portionId: string; readonly items: readonly MealItem[] }

@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import type { IngredientFormValues } from '../ingredients/ingredientForm'
 import { lookupProduct, type ProductInfo, type ProductLookup } from './openFoodFacts'
 
-export type ProductPrefill =
+type ProductPrefill =
   | { readonly status: 'loading' }
   | {
       readonly status: 'ready'

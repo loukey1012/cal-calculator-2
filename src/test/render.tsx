@@ -3,7 +3,7 @@ import { render, type RenderResult } from '@testing-library/react'
 import type { ReactElement } from 'react'
 import { MemoryRouter } from 'react-router'
 
-export type RenderWithProvidersResult = RenderResult & { readonly queryClient: QueryClient }
+type RenderWithProvidersResult = RenderResult & { readonly queryClient: QueryClient }
 
 type RenderOptions = {
   readonly route?: string

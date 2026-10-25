@@ -12,7 +12,7 @@ type DishRow = Tables<'dishes'> & {
   readonly dish_lines: readonly LineRow[]
 }
 
-export type SaveDishInput = {
+type SaveDishInput = {
   /** carries the new revision */
   readonly dish: Dish
   /** the revision the edit started from; null for a new dish */

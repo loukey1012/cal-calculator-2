@@ -7,7 +7,7 @@ const AMOUNT_PER_BASIS = 100
 const MULTIPLIER_DECIMALS = 4
 const UNIT_NAMES: Record<AmountUnit, string> = { g: 'grams', ml: 'millilitres', unit: 'units' }
 
-export type ResolvedAmount = {
+type ResolvedAmount = {
   readonly basis: NutritionBasis
   /** How many bases the amount is: 150 g on per_100g → 1.5, 2 bars on per_unit → 2. */
   readonly multiplier: number

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "src/sw/sw.ts",
+    "supabase/functions/*/index.ts",
+    "scripts/review/review.ts",
+    "pwa-assets*.config.ts"
+  ],
+  "project": ["src/**/*.{ts,tsx}", "supabase/**/*.ts", "scripts/**/*.ts", "e2e/**/*.ts"],
+  "ignore": ["src/lib/database.types.ts", "src/app/env.d.ts"],
+  "ignoreDependencies": [
+    "@tesseract.js-data/deu",
+    "@tesseract.js-data/eng",
+    "@fontsource-variable/manrope",
+    "@fontsource-variable/space-grotesk",
+    "tailwindcss",
+    "npm"
+  ]
+}

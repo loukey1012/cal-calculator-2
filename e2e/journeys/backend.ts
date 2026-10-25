@@ -14,7 +14,7 @@ const hasDevBackend = Boolean(
 
 const PASSWORD = 'journey-test-Pa55word!'
 
-export type JourneyUser = { readonly id: string; readonly email: string; readonly name: string }
+type JourneyUser = { readonly id: string; readonly email: string; readonly name: string }
 
 export class DevBackend {
   readonly admin: SupabaseClient

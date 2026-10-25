@@ -16,7 +16,7 @@ import { MergeView } from './MergeView'
 import type { Finding } from './reviewApi'
 
 /** History opens this person's day when navigated to with this state (see HistoryPage). */
-export type OpenDayState = { readonly person: string }
+type OpenDayState = { readonly person: string }
 
 type ReviewSheetProps = {
   readonly open: boolean

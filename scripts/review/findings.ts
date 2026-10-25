@@ -1,7 +1,7 @@
 // Checks the review routine's findings before they are sent, with every problem listed at once,
 // so the routine can correct its file. The database checks again (submit_review_findings).
 
-export const INGREDIENT_KINDS = [
+const INGREDIENT_KINDS = [
   'typo',
   'brand',
   'unit_name',
@@ -10,13 +10,7 @@ export const INGREDIENT_KINDS = [
   'values',
   'other',
 ] as const
-export const DAY_KINDS = [
-  'missing_meal',
-  'low_day',
-  'odd_amount',
-  'double_entry',
-  'zero_kcal',
-] as const
+const DAY_KINDS = ['missing_meal', 'low_day', 'odd_amount', 'double_entry', 'zero_kcal'] as const
 const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack']
 
 const NUTRIENTS = ['fat', 'sat_fat', 'carbs', 'sugar', 'fiber', 'protein', 'salt']
@@ -33,7 +27,7 @@ export const SUGGESTABLE_FIELDS: readonly string[] = [
   ...NUTRIENTS.map((nutrient) => `${nutrient}_unit`),
 ]
 
-export const MAX_FINDINGS = 100
+const MAX_FINDINGS = 100
 const MAX_MESSAGE = 500
 
 /** What `review.ts fetch` wrote (review-data.json), as far as the checks need it. */
@@ -51,7 +45,7 @@ export type ReviewData = {
   }
 }
 
-export type ReviewContext = {
+type ReviewContext = {
   readonly ingredientIds: ReadonlySet<string>
   readonly memberIds: ReadonlySet<string>
   readonly from: string
@@ -75,7 +69,7 @@ export function reviewContext(data: ReviewData): ReviewContext {
   }
 }
 
-export type Finding = Readonly<Record<string, unknown>>
+type Finding = Readonly<Record<string, unknown>>
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)

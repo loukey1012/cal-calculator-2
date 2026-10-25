@@ -33,7 +33,7 @@ function isMealType(value: string): value is MealType {
   return MEAL_TYPES.some((meal) => meal.type === value)
 }
 
-export function mealSegment({ userId, date, mealType }: MealRef): string {
+function mealSegment({ userId, date, mealType }: MealRef): string {
   return `meal-${mealType}-${date}-${encodeURIComponent(userId)}`
 }
 

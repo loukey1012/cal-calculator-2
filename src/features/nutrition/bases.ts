@@ -19,8 +19,6 @@ export function mapBasis(pick: (field: NutritionField) => number | null): Nutrit
   >
 }
 
-export const EMPTY_BASIS: NutritionBasis = mapBasis(() => null)
-
 /** Known values stay; a missing one is worked out from the other basis when the weight is known. */
 function filledIn(known: NutritionBasis, other: NutritionBasis, factor: number | null) {
   return mapBasis((field) => {
@@ -31,7 +29,7 @@ function filledIn(known: NutritionBasis, other: NutritionBasis, factor: number |
   })
 }
 
-export type BothBases = { readonly per100g: NutritionBasis; readonly perUnit: NutritionBasis }
+type BothBases = { readonly per100g: NutritionBasis; readonly perUnit: NutritionBasis }
 
 /** Each basis completed from the other; without a weight (null or ≤ 0) nothing is worked out. */
 export function completeBases(

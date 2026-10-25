@@ -100,7 +100,7 @@ async function resolveCategoryId(
   }
 }
 
-export type SaveIngredientInput = {
+type SaveIngredientInput = {
   /** null creates a new ingredient */
   readonly id: string | null
   readonly form: ParsedIngredientForm
@@ -144,7 +144,7 @@ export function useSaveIngredient(
   })
 }
 
-export type LinkBarcodeInput = { readonly id: string; readonly barcode: string }
+type LinkBarcodeInput = { readonly id: string; readonly barcode: string }
 
 /** Saves a scanned barcode on an existing ingredient, so scanning finds it from then on. */
 export function useLinkBarcode(

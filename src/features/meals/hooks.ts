@@ -121,7 +121,7 @@ type DayChangeActions<TInput> = Omit<DayChangeMutation, 'mutate'> & {
   readonly mutate: (input: TInput) => void
 }
 
-export type MealItemAmountChange = { readonly id: string; readonly patch: AmountPatch }
+type MealItemAmountChange = { readonly id: string; readonly patch: AmountPatch }
 
 export function useUpdateMealItem(
   userId: string,
@@ -136,7 +136,7 @@ export function useDeleteMealItem(userId: string, date: string): DayChangeAction
   return { ...change, mutate: (id) => change.mutate({ kind: 'delete', userId, date, id }) }
 }
 
-export type CheatMealChange = { readonly mealType: MealType; readonly cheatMeal: boolean }
+type CheatMealChange = { readonly mealType: MealType; readonly cheatMeal: boolean }
 
 /** Marks a meal of the day as a cheat meal, or takes the mark back. */
 export function useSetCheatMeal(userId: string, date: string): DayChangeActions<CheatMealChange> {
@@ -161,7 +161,7 @@ export function useSetCheatDay(userId: string, date: string): DayChangeActions<b
   }
 }
 
-export type MealNoteChange = { readonly mealType: MealType; readonly note: string }
+type MealNoteChange = { readonly mealType: MealType; readonly note: string }
 
 /** Sets a meal's note, or removes it when empty. */
 export function useSetMealNote(userId: string, date: string): DayChangeActions<MealNoteChange> {

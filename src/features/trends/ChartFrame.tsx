@@ -41,7 +41,7 @@ export function ChartFrame({ scale, formatTick, children }: ChartFrameProps) {
   )
 }
 
-export type GoalSegment = { readonly x1: number; readonly x2: number; readonly y: number }
+type GoalSegment = { readonly x1: number; readonly x2: number; readonly y: number }
 
 /** The goal as dashed lines over the bars (or across the chart), each at its own height. */
 export function GoalLine({ segments }: { readonly segments: readonly GoalSegment[] }) {

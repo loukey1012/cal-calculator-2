@@ -1,7 +1,7 @@
 import { mapNutrients, NUTRIENT_KEYS, type NutritionTotals, type NutritionValues } from './types'
 
 /** The nutrition columns of a meal_items row, and whether its dish is marked as an estimate. */
-export type MealItemNutrition = { readonly basis_multiplier: number } & NutritionValues & {
+type MealItemNutrition = { readonly basis_multiplier: number } & NutritionValues & {
     readonly dish?: { readonly kcalEstimated?: boolean } | null
   }
 

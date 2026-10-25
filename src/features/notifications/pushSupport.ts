@@ -2,7 +2,7 @@
  * Whether this phone can get push notifications from the app. On iPhone that needs iOS 16.4+
  * and the app opened from the Home Screen (Safari tabs never get them).
  */
-export type PushAvailability = 'available' | 'installFirst' | 'unsupported'
+type PushAvailability = 'available' | 'installFirst' | 'unsupported'
 
 export type PushEnvironment = {
   readonly hasServiceWorker: boolean

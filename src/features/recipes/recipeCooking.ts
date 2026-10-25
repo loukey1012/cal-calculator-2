@@ -41,7 +41,7 @@ export function currentItem(
  * A choice as a line of the dish: its own amounts go to the dish's portions (people no longer
  * eating are dropped), at current values. null when nobody who has it eats.
  */
-export function choiceLine(
+function choiceLine(
   choice: DishLine,
   lineId: string,
   link: RecipeLink,

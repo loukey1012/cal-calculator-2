@@ -6,7 +6,7 @@ import type { AddFoodDraft } from './addFoodDraft'
  * What the Add food pages share: each step is a page of its own (the page below shows while a
  * swipe goes back), so the dish and the search live above them, once for the app.
  */
-export type AddFoodSessionValue = {
+type AddFoodSessionValue = {
   readonly draft: AddFoodDraft
   readonly setDraft: Dispatch<SetStateAction<AddFoodDraft>>
   /** a fresh draft, e.g. after saving */

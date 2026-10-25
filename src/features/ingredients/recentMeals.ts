@@ -6,7 +6,7 @@ import { addDays } from '../trends/trends'
  * Editing an ingredient also updates the food logged with it in the last two weeks (today and the
  * 13 days before), for both people. Older meals keep the values they were logged with.
  */
-export const RECENT_DAYS = 14
+const RECENT_DAYS = 14
 
 /** The first day whose meals take an ingredient's new values. */
 export function recentWindowStart(today: string): string {

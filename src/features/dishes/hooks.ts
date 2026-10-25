@@ -126,7 +126,7 @@ export function useLatestDishChangeError(): Error | null {
   return latest?.status === 'error' ? latest.error : null
 }
 
-export type SaveDishRequest = {
+type SaveDishRequest = {
   /** the edited dish; it gets a new revision when saved */
   readonly dish: Dish
   /**

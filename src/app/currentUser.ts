@@ -2,7 +2,7 @@ import { createContext, use } from 'react'
 import type { Profile } from '../features/household/householdApi'
 
 /** The signed-in household member; provided once the profile has loaded. */
-export type CurrentUser = { readonly profile: Profile; readonly householdId: string }
+type CurrentUser = { readonly profile: Profile; readonly householdId: string }
 
 export const CurrentUserContext = createContext<CurrentUser | null>(null)
 

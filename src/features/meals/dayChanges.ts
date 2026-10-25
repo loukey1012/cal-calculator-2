@@ -74,7 +74,7 @@ export type DayChange =
     }
 
 /** Prefix of every day change's mutation key. */
-export const DAY_CHANGES_KEY = ['day'] as const
+const DAY_CHANGES_KEY = ['day'] as const
 const FIRST_RETRY_DELAY_MS = 1000
 const MAX_RETRY_DELAY_MS = 30_000
 

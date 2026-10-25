@@ -1,7 +1,7 @@
 import { ApiError } from './errors'
 
 // the API returns at most this many rows per request (supabase/config.toml max_rows)
-export const PAGE_SIZE = 1000
+const PAGE_SIZE = 1000
 
 type Page<T> = PromiseLike<{
   data: T[] | null

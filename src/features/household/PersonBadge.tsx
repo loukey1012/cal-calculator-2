@@ -15,7 +15,7 @@ const TINT_ALPHA = '33'
 const HEART_EDGE = 'rgb(0 0 0 / 0.25)'
 
 /** A filled heart in the given color. */
-export function HeartGlyph({ color, className }: { color: string; className?: string }) {
+function HeartGlyph({ color, className }: { color: string; className?: string }) {
   return (
     <svg
       viewBox="0 0 24 24"

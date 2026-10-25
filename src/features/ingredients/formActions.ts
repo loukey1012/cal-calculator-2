@@ -117,7 +117,7 @@ export function portionCount(portionText: string | null | undefined): number | n
 
 // ─── "Calculate missing values" ──────────────────────────────────────────────────────────────
 
-export type MissingValuesResult =
+type MissingValuesResult =
   | {
       readonly kind: 'filled'
       readonly values: IngredientFormValues

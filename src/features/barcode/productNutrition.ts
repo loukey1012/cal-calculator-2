@@ -7,7 +7,7 @@ import type { Measure } from '../nutrition/types'
  * The values themselves are checked live in the form (see ingredients/valueChecks).
  */
 
-export type ReportedNutrition = {
+type ReportedNutrition = {
   /** what the amounts below are in (g when left out); per100g is then per 100 ml */
   readonly measure?: Measure
   readonly per100g: NutritionBasis
@@ -18,7 +18,7 @@ export type ReportedNutrition = {
   readonly packG: number | null
 }
 
-export type ResolvedNutrition = {
+type ResolvedNutrition = {
   readonly per100g: NutritionBasis
   readonly perPortion: NutritionBasis
 }

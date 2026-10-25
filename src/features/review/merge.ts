@@ -12,7 +12,7 @@ export function duplicateOf(suggestion: Json): string | null {
 /** A field the merge can take over from the other ingredient. */
 export type MergeField = keyof IngredientInput & keyof Ingredient
 
-export type MergeRow = {
+type MergeRow = {
   readonly field: MergeField
   readonly label: string
   /** shown for the kept one and for the other one */

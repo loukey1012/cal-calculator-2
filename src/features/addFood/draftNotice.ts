@@ -6,7 +6,7 @@ import { hasContent, type AddFoodDraft } from './addFoodDraft'
  * What the server learns of a dish waiting in Add food, so it can tell about it later (Settings ›
  * Notifications › Unsaved dish). The draft itself stays on the phone.
  */
-export type DraftNotice = { readonly label: string; readonly lineCount: number }
+type DraftNotice = { readonly label: string; readonly lineCount: number }
 
 // matches cook_drafts.label
 const MAX_LABEL = 120

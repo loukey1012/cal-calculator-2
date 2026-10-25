@@ -1,4 +1,4 @@
-export const LINK_COPIED = 'Link copied. Paste it in Safari to add CALculator again.'
+const LINK_COPIED = 'Link copied. Paste it in Safari to add CALculator again.'
 
 /**
  * Copies the app's address, for adding it to the home screen again. Must be started from a tap:

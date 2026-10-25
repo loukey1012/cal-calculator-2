@@ -5,7 +5,7 @@ import type { Category, Ingredient } from '../ingredients/ingredientsApi'
 import { mergeRows, takenValues, type MergeField } from './merge'
 import type { IngredientPatch } from './suggestion'
 
-export type MergeChoice = {
+type MergeChoice = {
   readonly keepId: string
   readonly dropId: string
   readonly patch: IngredientPatch

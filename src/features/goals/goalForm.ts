@@ -30,7 +30,7 @@ export const EMPTY_GOAL_FORM: GoalFormValues = {
 
 export type GoalInput = Omit<Goal, 'validFrom'>
 
-export type GoalFormResult =
+type GoalFormResult =
   | { readonly success: true; readonly data: GoalInput }
   | { readonly success: false; readonly errors: FieldErrors }
 

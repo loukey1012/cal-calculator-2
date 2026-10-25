@@ -2,7 +2,7 @@
  * The recipe pages below a base address: a meal's Add from recipe (to cook one) or Ingredients ›
  * Recipes (to manage them). The list is the base itself, a recipe one level below.
  */
-export type RecipePageRef =
+type RecipePageRef =
   { readonly kind: 'list' } | { readonly kind: 'recipe'; readonly recipeId: string }
 
 export function recipePath(base: string, recipeId: string): string {

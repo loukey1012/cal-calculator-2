@@ -9,7 +9,7 @@ import { mealEntries, type MealItem } from './dayModel'
 import { useDeleteMealItem } from './hooks'
 
 /** What a move does to one entry of a meal. */
-export type MoveStep =
+type MoveStep =
   /** a dish (or a food logged alone): its portion is eaten elsewhere, the dish stays one */
   | { readonly kind: 'portion'; readonly dishId: string; readonly portionId: string }
   /** a plain item of an older version: copied there as a dish of its own, then deleted */

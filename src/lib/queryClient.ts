@@ -1,6 +1,6 @@
 import { QueryClient } from '@tanstack/react-query'
 
-export const STALE_TIME_MS = 30_000
+const STALE_TIME_MS = 30_000
 /** how long data is kept, also on the phone for offline use (see persistence.ts) */
 export const CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
 

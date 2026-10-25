@@ -22,11 +22,11 @@ export type PushMessage = {
 }
 
 /** local YYYY-MM-DD and minutes since local midnight */
-export type LocalNow = { readonly date: string; readonly minutes: number }
+type LocalNow = { readonly date: string; readonly minutes: number }
 
-export const DEFAULT_TIME_ZONE = 'Europe/Vienna'
+const DEFAULT_TIME_ZONE = 'Europe/Vienna'
 // a tick missed (e.g. the server was busy) still sends, but nothing arrives hours late
-export const DUE_WINDOW_MINUTES = 120
+const DUE_WINDOW_MINUTES = 120
 
 export function localNow(now: Date, timeZone: string | null): LocalNow {
   let parts: Intl.DateTimeFormatPart[]
@@ -119,7 +119,7 @@ export type DaySummary = {
   readonly kcalEstimated: boolean
 }
 
-export type SummaryGoal = {
+type SummaryGoal = {
   readonly kcal: number
   readonly protein: number | null
   readonly carbs: number | null
@@ -155,7 +155,7 @@ export function summaryMessage(
   }
 }
 
-export type PartnerChange = { readonly date: string; readonly mealType: MealType }
+type PartnerChange = { readonly date: string; readonly mealType: MealType }
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -203,7 +203,7 @@ export function partnerName(recipientAppearance: unknown, partnerId: string): st
 }
 
 // partner changes are told once nothing new came for a few minutes (one notice, not one per food)
-export const PARTNER_QUIET_MINUTES = 3
+const PARTNER_QUIET_MINUTES = 3
 
 export function isQuiet(changedAt: readonly string[], now: Date): boolean {
   const latest = Math.max(...changedAt.map((time) => Date.parse(time)))
@@ -226,7 +226,7 @@ export function unsavedDishMessage(label: string): PushMessage {
 }
 
 // findings older than this were seen in the app already, or are left on purpose
-export const REVIEW_NOTICE_MAX_DAYS = 3
+const REVIEW_NOTICE_MAX_DAYS = 3
 
 export function isRecentFinding(createdAt: string, now: Date): boolean {
   return now.getTime() - Date.parse(createdAt) <= REVIEW_NOTICE_MAX_DAYS * 86_400_000

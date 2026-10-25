@@ -481,7 +481,7 @@ Next up is the list noted 2026-10-20 above. Recipes with choices, the notificati
 | Backend            | Supabase: Postgres, Auth, Row Level Security                                             |
 | Hosting            | Vercel (deploys on push to `main`)                                                       |
 | Tests              | Vitest + Testing Library, Supabase integration tests, Playwright (WebKit / iPhone)       |
-| Lint / format      | oxlint, Prettier                                                                         |
+| Lint / format      | oxlint, Prettier, knip (unused code)                                                     |
 
 ## Architecture
 
@@ -581,6 +581,7 @@ pnpm coverage       # with coverage (80% minimum enforced)
 pnpm test:db        # schema/RLS integration tests against the DEV Supabase project
 pnpm e2e            # Playwright (iPhone profile): smoke tests; journeys need the dev project, see below
 pnpm lint && pnpm typecheck && pnpm format:check
+pnpm knip           # unused files, exports and dependencies (knip.json; also in CI)
 
 pnpm db:types       # regenerate src/lib/database.types.ts from the linked project
 pnpm icons          # regenerate the icon PNGs: the default set from public/icon.svg (Graphite)

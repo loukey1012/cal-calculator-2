@@ -15,7 +15,7 @@ export type PatchNote = {
   readonly items?: readonly string[]
 }
 
-export type PatchNoteDay = { readonly day: string; readonly notes: readonly PatchNote[] }
+type PatchNoteDay = { readonly day: string; readonly notes: readonly PatchNote[] }
 
 /** The entries of each day together, in the order given (newest first). */
 export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[] {
@@ -29,6 +29,15 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 }
 
 export const PATCH_NOTES: readonly PatchNote[] = [
+  {
+    at: '2026-10-25T13:02',
+    kind: 'internal',
+    title: 'Clean-up: unused code removed',
+    items: [
+      'Names only used inside their own file are no longer shared, and one unused value and one unused package are gone',
+      'A check for unused files, code and packages now runs with every change',
+    ],
+  },
   {
     at: '2026-10-25T12:58',
     kind: 'fix',

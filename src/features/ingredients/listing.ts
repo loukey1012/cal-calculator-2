@@ -24,7 +24,7 @@ export type ChipGroup = {
   readonly categories: readonly Category[]
 }
 
-export type IngredientSection = {
+type IngredientSection = {
   readonly id: string
   readonly title: string
   readonly ingredients: readonly Ingredient[]

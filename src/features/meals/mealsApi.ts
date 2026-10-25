@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase'
 import type { MealItemDraft } from '../nutrition/fromIngredient'
 import { noteOf, type AmountPatch, type DayMeal, type DishRef, type MealType } from './dayModel'
 
-export type AddMealItemInput = {
+type AddMealItemInput = {
   /** generated on the device, so retrying the same add can never create a duplicate */
   readonly id: string
   readonly userId: string
@@ -73,7 +73,7 @@ export async function addMealItem({
   if (error) throw ApiError.from(error)
 }
 
-export type CheatMealInput = {
+type CheatMealInput = {
   readonly userId: string
   readonly date: string
   readonly mealType: MealType
@@ -96,7 +96,7 @@ export async function setCheatMeal({
   if (error) throw ApiError.from(error)
 }
 
-export type MealNoteInput = {
+type MealNoteInput = {
   readonly userId: string
   readonly date: string
   readonly mealType: MealType

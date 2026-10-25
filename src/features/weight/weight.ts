@@ -5,8 +5,8 @@ import { parseDecimal, roundTo } from '../../lib/numbers'
 export type WeightEntry = { readonly date: string; readonly weightKg: number }
 
 // weight_entries.weight_kg: numeric(4, 1) between 20 and 400
-export const MIN_WEIGHT_KG = 20
-export const MAX_WEIGHT_KG = 400
+const MIN_WEIGHT_KG = 20
+const MAX_WEIGHT_KG = 400
 const WEIGHT_DECIMALS = 1
 
 export function weightFromRow(
@@ -39,7 +39,7 @@ export function withWeightRemoved(entries: readonly WeightEntry[], date: string)
   return entries.filter((entry) => entry.date !== date)
 }
 
-export type ParsedWeight =
+type ParsedWeight =
   | { readonly ok: true; readonly weightKg: number }
   | { readonly ok: false; readonly message: string }
 

@@ -1,5 +1,5 @@
 /** The version running: its commit and when it was built (set at build time, vite.config.ts). */
-export type AppVersion = { readonly id: string; readonly builtAt: string }
+type AppVersion = { readonly id: string; readonly builtAt: string }
 
 export const APP_VERSION: AppVersion = __APP_VERSION__
 
