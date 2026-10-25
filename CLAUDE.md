@@ -24,8 +24,9 @@ Don't bump `CACHE_BUSTER` for that: it would also drop changes still waiting to 
 **Current work:** `docs/plan-2026-10-20.md` has the build plan for items 32–47 (the user's lists of
 2026-10-20 and 2026-10-21): every decision, the approach per item ("As built" notes) and a status
 table. Read it before working on any of them; keep its status table and the README checkboxes
-current. **Everything is built and live; 44 (repo clean-up) is the one left, started 2026-10-25
-at the user's word.** As of 2026-10-25:
+current. **Everything is built and live, 44 (repo clean-up) too (2026-10-25, four commits; see
+its "As built" notes).** Once 46 is confirmed, the plan file can go (its header says how). As of
+2026-10-25:
 
 - Done and confirmed by the user: 32–43, 45, 47.
 - 46 changed 2026-10-25 at the user's request (a table under the amount field: per 100 g and per

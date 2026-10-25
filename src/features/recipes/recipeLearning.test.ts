@@ -74,7 +74,7 @@ describe('learnedRecipe', () => {
     expect(slotOf(recipe, 's-frisch')).toMatchObject({ optional: true, leftOut: false })
   })
 
-  test('a line removed on Cook becomes optional and stays off next time', () => {
+  test('a line removed in Add food becomes optional and stays off next time', () => {
     const cooked = cookFromRecipe(TOAST, [], eaterOf)
     const dish = withoutLine(cooked.dish, cooked.link.slots['s-cheese'] ?? '')
 
@@ -86,7 +86,7 @@ describe('learnedRecipe', () => {
     ])
   })
 
-  test('a line added on Cook joins as an optional line, and the dish stays linked to it', () => {
+  test('a line added in Add food joins as an optional line, and the dish stays linked to it', () => {
     // Arrange
     const cooked = cookFromRecipe(TOAST, [], eaterOf)
     const tomato = productLine('l-tomato', 'tomato', 'Tomato', 50, 18)

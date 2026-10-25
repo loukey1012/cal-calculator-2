@@ -1,5 +1,5 @@
 import { activePage, dayLabel, expect, localDay, logIn, test } from './backend.ts'
-import { backToDay, cookFor } from './cook.ts'
+import { backToDay, addToEmptyMeal } from './addFood.ts'
 
 test('select a past day in History and add a forgotten dinner beneath the calendar', async ({
   page,
@@ -50,7 +50,7 @@ test('select a past day in History and add a forgotten dinner beneath the calend
   const carousel = page.locator('[data-testid="tab-page"]').first().locator('xpath=../..')
   expect(await carousel.evaluate((element) => element.scrollLeft)).toBe(0)
   // the empty dinner opens its Add food on top of that day; Back from the meal returns here
-  await cookFor(day, page, /Dinner/)
+  await addToEmptyMeal(day, page, /Dinner/)
   const cook = activePage(page)
   await cook.getByRole('button', { name: 'Add ingredient' }).click()
   await cook.getByRole('button', { name: 'Custom item' }).click()

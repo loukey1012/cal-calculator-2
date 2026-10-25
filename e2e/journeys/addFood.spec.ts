@@ -1,5 +1,5 @@
 import { activePage, expect, localDay, logIn, test } from './backend.ts'
-import { addIngredient, backToDay, cookFor, openAddFood } from './cook.ts'
+import { addIngredient, backToDay, addToEmptyMeal, openAddFood } from './addFood.ts'
 
 /** name → amount of one person's items in a meal, as stored on the server */
 async function loggedItems(
@@ -84,7 +84,7 @@ test('cook together: one dish logged for both, edited, and a meal shared afterwa
   await backToDay(page)
 
   // dinner logged alone, then shared with her afterwards (saving leads to the meal)
-  await cookFor(activePage(page), page, /Dinner/)
+  await addToEmptyMeal(activePage(page), page, /Dinner/)
   await addIngredient(page, 'Skyr', '400')
   await activePage(page).getByRole('button', { name: 'Save meal' }).click()
   await sheet.getByRole('button', { name: /Skyr.*400 g/ }).click()
@@ -109,7 +109,7 @@ test('leftovers: cook a portion more, see it on Today, eat it later', async ({ p
   })
   await logIn(page, me)
 
-  await cookFor(activePage(page), page, /Dinner/)
+  await addToEmptyMeal(activePage(page), page, /Dinner/)
   const cook = activePage(page)
   await cook.getByLabel('Dish name (optional)').fill('Chili')
   await cook.getByRole('button', { name: 'More leftover portions' }).click()
@@ -120,7 +120,7 @@ test('leftovers: cook a portion more, see it on Today, eat it later', async ({ p
   // the leftover shows on Today; on a meal's page it is eaten there, here for lunch
   await backToDay(page)
   await expect(activePage(page).getByRole('button', { name: 'Chili left' })).toBeVisible()
-  await cookFor(activePage(page), page, /Lunch/)
+  await addToEmptyMeal(activePage(page), page, /Lunch/)
   await activePage(page).getByRole('button', { name: 'Back' }).click()
   await activePage(page)
     .getByRole('button', { name: /Chili.*900 kcal/ })
@@ -218,7 +218,7 @@ test('adding an ingredient: Back and the back swipe go one step at a time', asyn
   await expect(cook.getByRole('button', { name: /Tomato/ })).toBeVisible()
 })
 
-test('the Cook search: category chips, and a missing ingredient created right there', async ({
+test('the Add food search: category chips, and a missing ingredient created right there', async ({
   page,
   backend,
 }) => {

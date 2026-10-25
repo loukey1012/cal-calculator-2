@@ -30,6 +30,12 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-25T13:08',
+    kind: 'internal',
+    title: 'Clean-up: tests named after Add food',
+    items: ['The automatic tests and their helpers no longer speak of the Cook tab'],
+  },
+  {
     at: '2026-10-25T13:02',
     kind: 'internal',
     title: 'Clean-up: unused code removed',

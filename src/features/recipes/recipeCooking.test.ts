@@ -105,7 +105,7 @@ describe('cookFromRecipe', () => {
   })
 })
 
-describe('choosing on Cook', () => {
+describe('choosing in Add food', () => {
   test('another product of a line takes its place, with its own amount', () => {
     // Arrange
     const cooked = cookFromRecipe(TOAST, [], eaterOf)
@@ -137,7 +137,7 @@ describe('choosing on Cook', () => {
     expect(off.link.slots['s-frisch']).toBeNull()
   })
 
-  test('a product swapped in on Cook is none of the choices yet', () => {
+  test('a product swapped in while adding is none of the choices yet', () => {
     const cooked = cookFromRecipe(TOAST, [], eaterOf)
     const cheese = TOAST.slots[1]
     if (!cheese) throw new Error('no cheese line')

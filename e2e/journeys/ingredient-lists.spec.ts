@@ -1,5 +1,5 @@
 import { activePage, expect, logIn, pickBasics, test } from './backend.ts'
-import { addIngredient, openAddFood } from './cook.ts'
+import { addIngredient, openAddFood } from './addFood.ts'
 
 function openTab(page: import('@playwright/test').Page, tab: string) {
   return page.getByRole('navigation', { name: 'Tabs' }).getByRole('button', { name: tab }).click()

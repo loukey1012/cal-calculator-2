@@ -1,12 +1,12 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { activePage, expect, logIn, test } from './backend.ts'
-import { openAddFood } from './cook.ts'
+import { openAddFood } from './addFood.ts'
 
 const NUTELLA_PHOTO = fileURLToPath(new URL('../fixtures/ean13-nutella.png', import.meta.url))
 const FAKE_CAMERA = fileURLToPath(new URL('../fixtures/fake-camera.js', import.meta.url))
 
-test('the live camera reads a package on Cook and goes straight to its amount', async ({
+test('the live camera reads a package in Add food and goes straight to its amount', async ({
   page,
   backend,
 }) => {

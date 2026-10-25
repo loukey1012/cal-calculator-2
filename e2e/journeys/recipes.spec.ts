@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { activePage, expect, localDay, logIn, test } from './backend.ts'
-import { addFromRecipe, addIngredient, openAddFood } from './cook.ts'
+import { addFromRecipe, addIngredient, openAddFood } from './addFood.ts'
 
 /** name → amount of one person's items in a meal of today, as stored on the server */
 async function loggedItems(admin: SupabaseClient, userId: string, mealType: string) {

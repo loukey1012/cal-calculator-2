@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test'
 import { activePage, expect, logIn, pickBasics, test } from './backend.ts'
-import { openAddFood } from './cook.ts'
+import { openAddFood } from './addFood.ts'
 
 const BARCODE = '3017620422003'
 
@@ -70,7 +70,7 @@ test('a scanned portion of 3 biscuits is split into single units; a wrong value 
     ])
 })
 
-test('on Cook, an unknown package goes to the saved ingredient it is; an estimated one marks the dish', async ({
+test('in Add food, an unknown package goes to the saved ingredient it is; an estimated one marks the dish', async ({
   page,
   backend,
 }) => {

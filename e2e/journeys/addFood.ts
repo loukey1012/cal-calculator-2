@@ -13,7 +13,7 @@ export async function addIngredient(page: Page, name: RegExp | string, amount: s
 }
 
 /** Opens an empty meal on the shown day, then its Add food. */
-export async function cookFor(day: Locator, page: Page, meal: RegExp) {
+export async function addToEmptyMeal(day: Locator, page: Page, meal: RegExp) {
   const card = day.getByRole('button', { name: meal })
   await expect(card).toContainText('Nothing logged')
   await card.click()

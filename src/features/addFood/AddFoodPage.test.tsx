@@ -196,7 +196,7 @@ beforeEach(() => {
 
 afterEach(() => vi.restoreAllMocks())
 
-describe('the dish waiting on Cook', () => {
+describe('the dish waiting in Add food', () => {
   test('is noted for the "not logged yet" reminder, and forgotten once logged', async () => {
     // Arrange
     const user = userEvent.setup()
@@ -216,7 +216,7 @@ describe('the dish waiting on Cook', () => {
     await vi.waitFor(() => expect(sendDraftNotice).toHaveBeenLastCalledWith('u1', null))
   })
 
-  test('opening Cook with a waiting dish sends nothing (its clock keeps running)', async () => {
+  test('opening Add food with a waiting dish sends nothing (its clock keeps running)', async () => {
     renderAddFood()
 
     await screen.findByRole('button', { name: 'Lukas', pressed: true })

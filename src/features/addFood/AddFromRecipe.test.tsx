@@ -170,8 +170,8 @@ beforeEach(() => {
 
 afterEach(() => vi.restoreAllMocks())
 
-describe('recipes on Cook', () => {
-  test('the dish on Cook is saved as a named recipe', async () => {
+describe('recipes in Add food', () => {
+  test('the dish in Add food is saved as a named recipe', async () => {
     // Arrange
     const user = userEvent.setup()
     renderAddFood()
@@ -233,7 +233,7 @@ describe('recipes on Cook', () => {
     expect(recipe.slots[1]).toMatchObject({ optional: true, leftOut: false })
   })
 
-  test('choices of last time are offered on Cook, and logging teaches the recipe', async () => {
+  test('choices of last time are offered in Add food, and logging teaches the recipe', async () => {
     // Arrange
     vi.mocked(fetchRecipes).mockResolvedValue([TOAST])
     const user = userEvent.setup()

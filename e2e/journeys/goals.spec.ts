@@ -1,5 +1,5 @@
 import { activePage, expect, logIn, test } from './backend.ts'
-import { addIngredient, backToDay, cookFor } from './cook.ts'
+import { addIngredient, backToDay, addToEmptyMeal } from './addFood.ts'
 
 test('set a goal, see the rings, and log a meal for the partner', async ({ page, backend }) => {
   const me = await backend.user('Lukas')
@@ -30,7 +30,7 @@ test('set a goal, see the rings, and log a meal for the partner', async ({ page,
   await sheet.getByLabel('Calories').fill('2000')
   await sheet.getByLabel('Protein').fill('120')
   await sheet.getByRole('button', { name: 'Save' }).click()
-  await cookFor(today, page, /Lunch/)
+  await addToEmptyMeal(today, page, /Lunch/)
   await addIngredient(page, 'Skyr', '500')
   await activePage(page).getByRole('button', { name: 'Save meal' }).click()
   await backToDay(page)
@@ -42,7 +42,7 @@ test('set a goal, see the rings, and log a meal for the partner', async ({ page,
   await today.getByRole('radio', { name: 'baby' }).click()
   await expect(today.getByText('baby hasn’t set a daily goal yet.')).toBeVisible()
   // her empty breakfast opens its Add food, for her
-  await cookFor(today, page, /Breakfast/)
+  await addToEmptyMeal(today, page, /Breakfast/)
   await expect(activePage(page).getByRole('button', { name: 'baby', pressed: true })).toBeVisible()
   await addIngredient(page, 'Haferflocken', '60')
   await activePage(page).getByRole('button', { name: 'Save meal' }).click()

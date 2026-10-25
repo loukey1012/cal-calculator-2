@@ -4,7 +4,7 @@ import { addFoodStepOf, addFoodStepPath, parentStep } from './addFoodSteps'
 // a meal's Add food page
 const BASE = '/today/meal-lunch-2026-10-21-u1/food'
 
-describe('Cook steps as pages', () => {
+describe('Add food steps as pages', () => {
   test.each([
     [{ kind: 'main' } as const, `${BASE}`],
     [{ kind: 'pick' } as const, `${BASE}/add`],

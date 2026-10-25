@@ -1,5 +1,5 @@
 import { activePage, expect, logIn, test } from './backend.ts'
-import { addIngredient, backToDay, cookFor } from './cook.ts'
+import { addIngredient, backToDay, addToEmptyMeal } from './addFood.ts'
 
 test('a meal logged offline is kept and sent exactly once when back online', async ({
   page,
@@ -16,7 +16,7 @@ test('a meal logged offline is kept and sent exactly once when back online', asy
     kcal_100: 63,
   })
   await logIn(page, me)
-  await cookFor(activePage(page), page, /Lunch/)
+  await addToEmptyMeal(activePage(page), page, /Lunch/)
   await addIngredient(page, 'Skyr', '250')
 
   await context.setOffline(true)

@@ -1,5 +1,5 @@
 import { activePage, expect, localDay, logIn, test, type DevBackend } from './backend.ts'
-import { addIngredient, backToDay, openAddFood } from './cook.ts'
+import { addIngredient, backToDay, openAddFood } from './addFood.ts'
 
 /** A plain portion of 200 g Skyr at 60 kcal / 100 g, logged for someone on a day. */
 async function logSkyr(backend: DevBackend, userId: string, ingredientId: string, date: string) {

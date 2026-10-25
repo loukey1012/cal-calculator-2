@@ -96,7 +96,7 @@ describe('plannedByClock', () => {
 })
 
 describe('messages', () => {
-  test('a reminder opens Cook for that meal', () => {
+  test('a reminder opens that meal (through the old Cook link)', () => {
     expect(reminderMessage('u1', 'lunch', '2026-10-20')).toEqual({
       title: 'Lunch',
       body: 'Nothing logged for lunch yet.',

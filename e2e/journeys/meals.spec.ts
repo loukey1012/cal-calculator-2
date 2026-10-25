@@ -1,7 +1,7 @@
 import { activePage, expect, localDay, logIn, test } from './backend.ts'
-import { addIngredient, backToDay, cookFor, openAddFood } from './cook.ts'
+import { addIngredient, backToDay, addToEmptyMeal, openAddFood } from './addFood.ts'
 
-test('log a meal on Cook: from the database and as a custom item, then change and delete', async ({
+test('log a meal in Add food: from the database and as a custom item, then change and delete', async ({
   page,
   backend,
 }) => {
@@ -29,7 +29,7 @@ test('log a meal on Cook: from the database and as a custom item, then change an
   const sheet = activePage(page)
 
   // an empty meal opens its Add food
-  await cookFor(activePage(page), page, /Lunch/)
+  await addToEmptyMeal(activePage(page), page, /Lunch/)
   const cook = activePage(page)
   await cook.getByRole('button', { name: 'Add ingredient' }).click()
   await cook.getByRole('button', { name: /Skyr/ }).click()
@@ -140,7 +140,7 @@ test('a meal eaten out is logged as an estimate and the day shows ~', async ({ p
   const household = await backend.household([me])
   await logIn(page, me)
 
-  await cookFor(activePage(page), page, /Dinner/)
+  await addToEmptyMeal(activePage(page), page, /Dinner/)
   const cook = activePage(page)
   await cook.getByRole('button', { name: 'Add ingredient' }).click()
   await cook.getByRole('button', { name: 'Custom item' }).click()
@@ -186,7 +186,7 @@ test('a logged meal is moved to another meal; the dish stays one', async ({ page
   })
   await logIn(page, me)
 
-  await cookFor(activePage(page), page, /Lunch/)
+  await addToEmptyMeal(activePage(page), page, /Lunch/)
   await addIngredient(page, 'Skyr', '200')
   await activePage(page).getByRole('button', { name: 'Save meal' }).click()
   const meal = activePage(page)
