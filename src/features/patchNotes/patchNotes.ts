@@ -30,6 +30,15 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-25T13:20',
+    kind: 'fix',
+    title: '“1 × 1 Packung” instead of “1 1 Packung”',
+    items: [
+      'A unit name that already says how much one unit is, like “1 Packung” or “3 Stück”, is counted with a × when choosing an amount and in the values table',
+      'Long unit names next to the amount stay on one line',
+    ],
+  },
+  {
     at: '2026-10-25T13:08',
     kind: 'internal',
     title: 'Clean-up: tests named after Add food',

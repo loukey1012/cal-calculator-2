@@ -1,6 +1,6 @@
 import { formatGrams, formatKcal } from '../nutrition/format'
 import type { Goal, RingKey } from '../nutrition/goals'
-import { measureOf } from '../nutrition/unitNames'
+import { amountSuffix, measureOf } from '../nutrition/unitNames'
 import type { Ingredient } from './ingredientsApi'
 
 /** An ingredient's values per 100 g (or ml) and per unit, for the nutrients one keeps track of. */
@@ -35,7 +35,7 @@ export function trackedNutrients(goal: Goal | null): readonly RingKey[] {
 function basisLabel(ingredient: Ingredient, basis: Basis): string {
   return basis === '100'
     ? `100 ${measureOf(ingredient)}`
-    : `1 ${ingredient.unit_label ?? DEFAULT_UNIT_LABEL}`
+    : `1 ${amountSuffix('unit', ingredient.unit_label ?? DEFAULT_UNIT_LABEL)}`
 }
 
 function valueText(ingredient: Ingredient, key: RingKey, basis: Basis, locale?: string): string {

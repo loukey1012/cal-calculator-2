@@ -57,6 +57,14 @@ describe('referenceTable', () => {
     expect(referenceTable(egg, ['kcal'], 'en')?.rows).toEqual([{ basis: '1 unit', values: ['90'] }])
   })
 
+  test('a unit name with an amount in it is counted with ×', () => {
+    const pack = ingredient({ kcal_unit: 480, unit_label: '1 Packung' })
+
+    expect(referenceTable(pack, ['kcal'], 'en')?.rows).toEqual([
+      { basis: '1 × 1 Packung', values: ['480'] },
+    ])
+  })
+
   test('"~" before calories that are an estimate', () => {
     const pizza = ingredient({ kcal_unit: 900, kcal_estimated: true, unit_label: 'pizza' })
 

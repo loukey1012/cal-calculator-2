@@ -16,6 +16,13 @@ describe('unit names', () => {
     expect(amountSuffix('unit', null)).toBe('units')
   })
 
+  test('a unit name that starts with an amount is counted with ×: "1 × 1 Packung"', () => {
+    expect(amountSuffix('unit', '1 Packung')).toBe('× 1 Packung')
+    expect(amountSuffix('unit', '3 Stück')).toBe('× 3 Stück')
+    expect(amountSuffix('unit', '0,5 l Flasche')).toBe('× 0,5 l Flasche')
+    expect(amountSuffix('unit', 'Riegel 2')).toBe('Riegel 2')
+  })
+
   test('in sentences: per 100 g or ml, grams or millilitres', () => {
     expect(per100Name('g')).toBe('per 100 g')
     expect(per100Name('ml')).toBe('per 100 ml')

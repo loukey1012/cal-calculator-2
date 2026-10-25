@@ -283,6 +283,20 @@ describe('choosing an amount', () => {
     expect(referenceRows()).toEqual(['Perkcal', '100 g350', '1 bar210'])
   })
 
+  test('a unit name with an amount in it reads "1 × 1 Packung"', async () => {
+    vi.mocked(fetchIngredients).mockResolvedValue([
+      ingredient({ id: 'chips', name: 'Chips', kcal_unit: 480, unit_label: '1 Packung' }),
+    ])
+    const user = userEvent.setup()
+    renderAddFood()
+
+    await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
+    await user.click(await screen.findByRole('button', { name: /Chips/ }))
+
+    expect(screen.getByText('× 1 Packung')).toBeInTheDocument()
+    expect(referenceRows()).toEqual(['Perkcal', '1 × 1 Packung480'])
+  })
+
   test('a line of the dish shows them when its amount is changed', async () => {
     const user = userEvent.setup()
     renderAddFood()

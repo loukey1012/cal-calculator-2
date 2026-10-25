@@ -21,26 +21,32 @@ a cached query changes, give its query key a new version (like `RECIPES_SHAPE` i
 `src/features/recipes/hooks.ts`), so an old copy is ignored instead of crashing the new version.
 Don't bump `CACHE_BUSTER` for that: it would also drop changes still waiting to be sent.
 
-**Current work:** `docs/plan-2026-10-20.md` has the build plan for items 32–47 (the user's lists of
-2026-10-20 and 2026-10-21): every decision, the approach per item ("As built" notes) and a status
-table. Read it before working on any of them; keep its status table and the README checkboxes
-current. **Everything is built and live, 44 (repo clean-up) too (2026-10-25, four commits; see
-its "As built" notes).** Once 46 is confirmed, the plan file can go (its header says how). As of
-2026-10-25:
+**State (2026-10-25):** items 1–47 are all built and confirmed; their plan
+(`docs/plan-2026-10-20.md`) was removed at the user's request, the decisions live in README.md
+and the code. Latest: a unit name with an amount in it ("1 Packung") is counted with a ×
+("1 × 1 Packung", `amountSuffix` in `nutrition/unitNames.ts`); user tests it. What to know:
 
-- Done and confirmed by the user: 32–43, 45, 47.
-- 46 changed 2026-10-25 at the user's request (a table under the amount field: per 100 g and per
-  unit, calories plus each nutrient of the user's goal); user tests it, ask how it went.
-- How meal pages work: addresses in `src/features/meals/mealPages.ts`, every tab is a page stack
-  (`roots` in `app/TabShell.tsx`), the picked person travels in navigation state
-  (`app/stackNavigate.ts`), old `/cook` links are redirected in `addFood/legacyCookLink.ts` (the
-  notifications on the server still send them; nothing to redeploy).
+- Meal pages: addresses in `src/features/meals/mealPages.ts` (`/today/meal-<meal>-<date>-<person>`,
+  `/history/<date>/meal-…`, Add food at `…/food`, Add from recipe at `…/recipes`); every tab is a
+  page stack (`roots` in `app/TabShell.tsx`); the picked person travels in navigation state
+  (`app/stackNavigate.ts`). Old `/cook` links (still sent by the notifications) are redirected in
+  `addFood/legacyCookLink.ts`. Kept on purpose from the Cook days: the `cook_drafts` table and
+  the phone's `cook-draft:` storage key (renaming them would lose waiting dishes).
+- Edit dish is `DishComposer` in compact mode (`dishes/CompactDish.tsx`); Move to… is
+  `meals/moveMeal.ts` (a dish moves by giving its portion a new eater, through `save_dish`).
+- The amount step's values table: `ingredients/referenceValues.ts` (+ `ReferenceValues.tsx`,
+  `useReferenceTable.ts`); tests rendering a meal page mock `goals/goalsApi`.
+- Clear buttons: `components/ios/clearable.ts`; automatic ones are named just "Clear" (a
+  "Clear <label>" name would also match the field's label in label queries).
+- Back swipe and tab swipe ignore the bottom 44 px (`stackMotion.startsAtBottomEdge`), so the
+  iOS home-indicator swipe doesn't close a page.
+- `pnpm knip` (`knip.json`, also in CI) finds unused files, exports and dependencies.
 - Journeys locally: build against dev (`VITE_SUPABASE_URL=$SUPABASE_TEST_URL
 VITE_SUPABASE_ANON_KEY=$SUPABASE_TEST_ANON_KEY`, README); without them the build talks to prod
   and every login fails. Pushing a migration to dev with `npx supabase db push --linked` may need
   the user's OK in auto mode.
 
-**State (2026-10-20, evening):** items 1–31 are built; their build plan
+**Earlier (2026-10-20):** items 1–31 are built; their build plan
 (`docs/plan-2026-10-15.md`) was removed at the user's request, its decisions live in README.md
 and the code. Being tried by the user over the next days, ask how it went:
 

@@ -88,7 +88,7 @@ export function AmountEditor({
           }}
           className="min-w-0 flex-1 bg-transparent text-center text-[28px] font-semibold text-label outline-none"
         />
-        <span className="text-[17px] text-label-secondary">{unitName}</span>
+        <span className="max-w-[45%] truncate text-[17px] text-label-secondary">{unitName}</span>
         <Button variant="plain" aria-label="More" onClick={() => step(1)} className="text-[24px]">
           +
         </Button>

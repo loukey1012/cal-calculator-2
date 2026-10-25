@@ -21,9 +21,17 @@ export function measureName(measure: Measure): string {
   return MEASURE_NAMES[measure].toLowerCase()
 }
 
-/** The unit after an amount: "g", "ml", or the ingredient's unit name ("bar"), else "units". */
+// a unit name like "1 Packung" or "3 Stück" already says how much one unit is
+const STARTS_WITH_AMOUNT = /^\s*\d/
+
+/**
+ * The unit after an amount: "g", "ml", the ingredient's unit name ("bar"), else "units". A unit
+ * name that starts with an amount is counted with a ×, so 1 unit reads "1 × 1 Packung".
+ */
 export function amountSuffix(unit: AmountUnit, unitLabel?: string | null): string {
-  return unit === 'unit' ? (unitLabel ?? 'units') : unit
+  if (unit !== 'unit') return unit
+  const name = unitLabel ?? 'units'
+  return STARTS_WITH_AMOUNT.test(name) ? `× ${name}` : name
 }
 
 /** The unit to choose in an amount editor: "Grams", "Millilitres", or the unit name. */

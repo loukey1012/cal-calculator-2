@@ -15,7 +15,7 @@ Built for a two-person household: both members log their own meals, can see and 
 - **Every meal is a page of its own:** tap Breakfast, Lunch, Dinner or Snacks on Today (or on a day in History) and it slides in over the day, with what was eaten, **+ Add food**, **Add from recipe** and the household's **leftovers**; an empty meal opens its page too (to add food or cook a recipe). A meal with a dish waiting has a **dot** by its name. **‹ Today** (or **‹ History**) or a swipe to the right goes back, still showing the person picked. There is no Cook tab any more; its old links (and the notifications') open the meal they are about.
 - **Add food** is one place for everything you eat, alone or together: a snack, a quick breakfast or a dish cooked for two, set up for that meal's person, day and meal.
 - **Who eats:** tap yourself and/or your partner. **When:** the meal it was opened for; the day can still be changed (today or an earlier one).
-- Add ingredients from the shared **ingredient database** (with search) or as a **custom one-off item** that isn't saved to the database. Amounts in **grams (or millilitres, for an ingredient measured in ml) or the ingredient's own unit** (e.g. "Riegel"), with a **live preview** of calories and macros. Under the amount, a small table shows the ingredient's values **per 100 g (or ml) and per unit**: the calories and every nutrient your current goal has a target for (protein, carbs, fat, fiber; only the calories without a goal). For units, **amount chips** in two rows: **whole numbers** (1 to 5) set the amount, and **fractions** (¼ ⅓ ½ ⅔ ¾) fill in parts the iPhone number pad can't type: 2 then ½ makes "2 1/2", and ⅓ stays an exact third. Typed fractions such as "1/3" work too.
+- Add ingredients from the shared **ingredient database** (with search) or as a **custom one-off item** that isn't saved to the database. Amounts in **grams (or millilitres, for an ingredient measured in ml) or the ingredient's own unit** (e.g. "Riegel"), with a **live preview** of calories and macros. Under the amount, a small table shows the ingredient's values **per 100 g (or ml) and per unit**: the calories and every nutrient your current goal has a target for (protein, carbs, fat, fiber; only the calories without a goal). A unit name that already says how much one unit is, like "1 Packung" or "3 Stück", is counted with a × ("1 × 1 Packung"). For units, **amount chips** in two rows: **whole numbers** (1 to 5) set the amount, and **fractions** (¼ ⅓ ½ ⅔ ¾) fill in parts the iPhone number pad can't type: 2 then ½ makes "2 1/2", and ⅓ stays an exact third. Typed fractions such as "1/3" work too.
 - The ingredient search has the **category chips** of the Ingredients page, in the layout chosen under Appearance › Category chips. The search and the chosen chip stay while you look at an amount and go back; a new search starts over.
 - Not in the database yet? **New ingredient** in the search creates it right there (the name you searched for already filled in, same form as on the Ingredients page). It is saved to the shared ingredients and goes straight to its amount; Back from there leads to the search. Also in the dish editor on Today and History.
 - Adding an ingredient goes **step by step like the Settings pages**: the search and the amount each slide in as a page of their own. **‹ Back** or a **swipe to the right** goes back one step (amount → search, still showing what you searched for → dish), never to another tab. Back in the dish editor on Today and History goes one step at a time too.
@@ -173,9 +173,9 @@ Everything here is saved **to your account**, never to the device: you get the s
 
 ---
 
-## Fixes and improvements, noted 2026-10-20 (planned)
+## Fixes and improvements, noted 2026-10-20 (done)
 
-Build plan with every decision: [`docs/plan-2026-10-20.md`](docs/plan-2026-10-20.md). Order: quick fixes → categories and duplicates → meals and Cook → clean-up.
+All built (2026-10-21 to 2026-10-25); the build plan was removed once everything was confirmed.
 
 **Quick fixes**
 
@@ -456,7 +456,7 @@ Planned 2026-10-07, all five groups shipped 2026-10-08, one group at a time.
 
 ## Coming next
 
-Next up is the list noted 2026-10-20 above. Recipes with choices, the notifications and the label reader are being tried in daily use.
+Everything noted so far is built. Recipes with choices, the notifications and the label reader are being tried in daily use.
 
 **Ideas for later (not planned yet, need discussing first):**
 

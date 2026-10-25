@@ -65,7 +65,12 @@ export function InputRow({
           ref={clearRef}
           onChange={onTextChange}
         />
-        {suffix && <span className="w-8 text-[15px] text-label-secondary">{suffix}</span>}
+        {suffix && (
+          // at least the width of "kcal", so the values of all rows line up; long unit names are cut
+          <span className="min-w-8 max-w-32 truncate text-[15px] text-label-secondary">
+            {suffix}
+          </span>
+        )}
         {/* the space stays when empty, so the values of all rows line up */}
         {showsClear && (
           <span className="flex w-6 shrink-0 justify-center">
