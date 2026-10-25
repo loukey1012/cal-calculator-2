@@ -198,10 +198,10 @@ describe('unsaved dish', () => {
     expect(isUnsavedDue('2026-10-20T12:01:00Z', 30, now)).toBe(false)
   })
 
-  test('the notice names the dish and opens Cook', () => {
+  test('the notice names the dish and opens its meal (through the old Cook link)', () => {
     expect(unsavedDishMessage('Chili')).toEqual({
       title: 'Not logged yet',
-      body: 'Chili is still waiting on Cook.',
+      body: 'Chili is still waiting to be logged.',
       url: '/cook',
       tag: 'unsaved',
     })

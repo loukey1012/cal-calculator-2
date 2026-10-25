@@ -6,17 +6,17 @@ import { foodPath, recipesPath, type MealPageRef } from '../meals/mealPages'
 import { RecipePage } from '../recipes/RecipePage'
 import { RecipesList } from '../recipes/RecipesList'
 import type { Recipe } from '../recipes/recipeModel'
-import { hasContent, withRecipe } from './cookDraft'
-import { useCookSession } from './cookSessionContext'
+import { hasContent, withRecipe } from './addFoodDraft'
+import { useAddFoodSession } from './addFoodSessionContext'
 import { recipePageOf, recipePath } from './recipePages'
 
 const REPLACE_QUESTION = 'Replace the dish you started with this recipe? What’s entered is removed.'
 
 /** A meal's Add from recipe: the list, then a recipe; cooking one fills Add food for the meal. */
-export function CookRecipePages({ page }: { readonly page: MealPageRef }) {
+export function AddFromRecipePages({ page }: { readonly page: MealPageRef }) {
   const { householdId } = useCurrentUser()
   const ingredients = useIngredients(householdId)
-  const { draft, setDraft } = useCookSession()
+  const { draft, setDraft } = useAddFoodSession()
   const go = useStackNavigate()
   const base = recipesPath(page.mealPath)
   const shown = recipePageOf(`${base}/${page.rest.join('/')}`, base) ?? { kind: 'list' }

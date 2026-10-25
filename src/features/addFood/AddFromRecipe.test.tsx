@@ -46,8 +46,8 @@ import { productLine, slot } from '../recipes/testData'
 import { toLocalDateString } from '../../lib/dates'
 import { MealRoute } from '../meals/MealPage'
 import { foodPath, mealPageOf, mealPath, recipesPath } from '../meals/mealPages'
-import { mealForTime } from './cookDraft'
-import { CookSession } from './CookSession'
+import { mealForTime } from './addFoodDraft'
+import { AddFoodSession } from './AddFoodSession'
 
 function profile(id: string, name: string) {
   return {
@@ -131,15 +131,15 @@ function MealTab() {
   return page ? <MealRoute page={page} /> : <p>Today page</p>
 }
 
-function renderCook(route = food(), cached: ReadonlyArray<readonly [QueryKey, unknown]> = []) {
+function renderAddFood(route = food(), cached: ReadonlyArray<readonly [QueryKey, unknown]> = []) {
   return renderWithProviders(
     <CurrentUserContext value={{ profile: ME, householdId: 'h1' }}>
-      <CookSession>
+      <AddFoodSession>
         <Routes>
           <Route path="/today/*" element={<MealTab />} />
         </Routes>
         <LocationProbe />
-      </CookSession>
+      </AddFoodSession>
     </CurrentUserContext>,
     { route, cached },
   )
@@ -174,7 +174,7 @@ describe('recipes on Cook', () => {
   test('the dish on Cook is saved as a named recipe', async () => {
     // Arrange
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
     await addPatty(user, '250')
 
     // Act
@@ -196,7 +196,7 @@ describe('recipes on Cook', () => {
   test('a recipe from the list fills Add food at current values, with everyone who eats it', async () => {
     // Arrange
     const user = userEvent.setup()
-    renderCook(meal())
+    renderAddFood(meal())
 
     // Act
     await user.click(await screen.findByRole('button', { name: 'Add from recipe' }))
@@ -217,7 +217,7 @@ describe('recipes on Cook', () => {
   test('a dish cooked from a recipe can update that recipe', async () => {
     // Arrange
     const user = userEvent.setup()
-    renderCook(`${recipes()}/r-burgers`)
+    renderAddFood(`${recipes()}/r-burgers`)
     await user.click(await screen.findByRole('button', { name: 'Cook this' }))
     await addPatty(user, '50')
 
@@ -237,7 +237,7 @@ describe('recipes on Cook', () => {
     // Arrange
     vi.mocked(fetchRecipes).mockResolvedValue([TOAST])
     const user = userEvent.setup()
-    renderCook(`${recipes()}/r-toast`)
+    renderAddFood(`${recipes()}/r-toast`)
     await user.click(await screen.findByRole('button', { name: 'Cook this' }))
 
     // Act: Clever toast today, with Frischkäse
@@ -262,7 +262,7 @@ describe('recipes on Cook', () => {
     // Arrange
     const user = userEvent.setup()
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
-    renderCook()
+    renderAddFood()
     await addPatty(user, '100')
     await user.click(screen.getByRole('button', { name: 'Back' }))
     await user.click(await screen.findByRole('button', { name: 'Add from recipe' }))
@@ -278,7 +278,7 @@ describe('recipes on Cook', () => {
 
   test('Back goes from a recipe to the list, and from the list to the meal', async () => {
     const user = userEvent.setup()
-    renderCook(`${recipes()}/r-burgers`)
+    renderAddFood(`${recipes()}/r-burgers`)
     // the page is complete once the recipe has loaded
     await screen.findByRole('heading', { name: 'Burgers' })
 
@@ -293,7 +293,7 @@ describe('recipes on Cook', () => {
     // Arrange
     const user = userEvent.setup()
     vi.spyOn(window, 'confirm').mockReturnValue(true)
-    renderCook(`${recipes()}/r-burgers`)
+    renderAddFood(`${recipes()}/r-burgers`)
     const name = await screen.findByLabelText('Recipe name')
 
     // Act
@@ -312,7 +312,7 @@ describe('recipes on Cook', () => {
     // Arrange
     vi.mocked(fetchRecipes).mockResolvedValue([TOAST])
     const user = userEvent.setup()
-    renderCook(`${recipes()}/r-toast`)
+    renderAddFood(`${recipes()}/r-toast`)
 
     // Act
     await user.click(
@@ -334,7 +334,7 @@ describe('recipes on Cook', () => {
     const old = { ...withoutSlots, lines: [] }
 
     // Act
-    renderCook(`${recipes()}/r-burgers`, [[['recipes', 'h1'], [old]]])
+    renderAddFood(`${recipes()}/r-burgers`, [[['recipes', 'h1'], [old]]])
 
     // Assert
     expect(await screen.findByRole('heading', { name: 'Burgers' })).toBeInTheDocument()
@@ -344,13 +344,13 @@ describe('recipes on Cook', () => {
   test('without recipes the list says how to make one', async () => {
     vi.mocked(fetchRecipes).mockResolvedValue([])
 
-    renderCook(`${recipes()}`)
+    renderAddFood(`${recipes()}`)
 
     expect(await screen.findByText('No recipes yet')).toBeInTheDocument()
   })
 
   test('the list shows each recipe with its size and calories', async () => {
-    renderCook(`${recipes()}`)
+    renderAddFood(`${recipes()}`)
 
     const row = await screen.findByRole('button', { name: /Burgers/ })
     expect(within(row).getByText('1 ingredient')).toBeInTheDocument()

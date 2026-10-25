@@ -15,7 +15,7 @@ import {
  * What a recipe learns from a dish cooked from it (when it's logged, or saved over the recipe):
  * the products used become its last choices (a swapped-in one is added as a new choice, with
  * the amounts used), a line left out becomes optional and stays off next time, and a line added
- * on Cook joins as an optional one. Who eats and the split follow the dish.
+ * in Add food joins as an optional one. Who eats and the split follow the dish.
  */
 export function learnedRecipe(recipe: Recipe, link: RecipeLink, dish: Dish): LinkedRecipe {
   const recipePortionOf = new Map(
@@ -42,7 +42,7 @@ export function learnedRecipe(recipe: Recipe, link: RecipeLink, dish: Dish): Lin
       const pickedId = choices.some((choice) => choice.id === slot.pickedId)
         ? slot.pickedId
         : (choices[0]?.id ?? slot.pickedId)
-      // not on Cook this time (switched off or removed); a line added to the recipe since the
+      // not in Add food this time (switched off or removed); a line added to the recipe since the
       // dish was filled (lineId undefined) stays as it is
       return lineId === undefined
         ? [{ ...slot, choices, pickedId }]

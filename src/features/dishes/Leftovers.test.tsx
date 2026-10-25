@@ -37,7 +37,7 @@ vi.mock('./dishesApi', () => ({
 import { fetchGoals } from '../goals/goalsApi'
 import { fetchMembers } from '../household/householdApi'
 import { fetchDay } from '../meals/mealsApi'
-import { CookSession } from '../cook/CookSession'
+import { AddFoodSession } from '../addFood/AddFoodSession'
 import { TodayPage } from '../today/TodayPage'
 import { fetchLeftoverDishes } from './dishesApi'
 import type { Dish } from './portions'
@@ -76,9 +76,9 @@ function LocationProbe() {
 function renderToday() {
   renderWithProviders(
     <CurrentUserContext value={{ profile: PROFILE, householdId: 'h1' }}>
-      <CookSession>
+      <AddFoodSession>
         <TodayPage />
-      </CookSession>
+      </AddFoodSession>
       <LocationProbe />
     </CurrentUserContext>,
     { route: '/today' },

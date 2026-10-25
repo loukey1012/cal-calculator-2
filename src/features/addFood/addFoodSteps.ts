@@ -10,11 +10,11 @@ const LINE_PREFIX = 'line-'
 const SWAP_SEGMENT = 'swap'
 
 /**
- * The address of a Cook step below `base` (a meal's Add food page). Each step is one level below
+ * The address of an Add food step below `base` (a meal's Add food page). Each step is one level below
  * the step Back leads to, so the page stack's back swipe (which drops the last part of the
  * address) goes back exactly one step.
  */
-export function cookStepPath(step: ComposerStep, base: string): string {
+export function addFoodStepPath(step: ComposerStep, base: string): string {
   switch (step.kind) {
     case 'main':
       return base
@@ -31,9 +31,9 @@ export function cookStepPath(step: ComposerStep, base: string): string {
     case 'editLine':
       return `${base}/${LINE_PREFIX}${encodeURIComponent(step.lineId)}`
     case 'swap':
-      return `${cookStepPath({ kind: 'editLine', lineId: step.lineId }, base)}/${SWAP_SEGMENT}`
+      return `${addFoodStepPath({ kind: 'editLine', lineId: step.lineId }, base)}/${SWAP_SEGMENT}`
     case 'swapLine':
-      return `${cookStepPath({ kind: 'swap', lineId: step.lineId }, base)}/${encodeURIComponent(step.ingredientId)}`
+      return `${addFoodStepPath({ kind: 'swap', lineId: step.lineId }, base)}/${encodeURIComponent(step.ingredientId)}`
   }
 }
 
@@ -77,7 +77,7 @@ function stepOfSegments(segments: readonly string[]): ComposerStep | null {
 }
 
 /** The step an address below `base` shows; anything unknown shows the dish. */
-export function cookStepOf(path: string, base: string): ComposerStep {
+export function addFoodStepOf(path: string, base: string): ComposerStep {
   const segments = path
     .slice(base.length)
     .split('/')

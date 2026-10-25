@@ -210,7 +210,7 @@ export function isQuiet(changedAt: readonly string[], now: Date): boolean {
   return changedAt.length > 0 && now.getTime() - latest >= PARTNER_QUIET_MINUTES * 60_000
 }
 
-/** A dish left on Cook is told once it hasn't changed for the person's delay. */
+/** A dish left in Add food is told once it hasn't changed for the person's delay. */
 export function isUnsavedDue(updatedAt: string, afterMinutes: number, now: Date): boolean {
   return now.getTime() - Date.parse(updatedAt) >= afterMinutes * 60_000
 }
@@ -218,7 +218,8 @@ export function isUnsavedDue(updatedAt: string, afterMinutes: number, now: Date)
 export function unsavedDishMessage(label: string): PushMessage {
   return {
     title: 'Not logged yet',
-    body: `${label} is still waiting on Cook.`,
+    body: `${label} is still waiting to be logged.`,
+    // the app sends the old Cook address on to the meal the dish is for
     url: '/cook',
     tag: 'unsaved',
   }

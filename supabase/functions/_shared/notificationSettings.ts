@@ -18,7 +18,7 @@ export type NotificationSettings = {
   /** a meal still empty at its time */
   readonly reminders: Readonly<Record<ReminderMeal, TimedSwitch>>
   readonly summary: TimedSwitch & { readonly day: SummaryDay }
-  /** a dish left on Cook without being logged */
+  /** a dish left in Add food without being logged */
   readonly unsavedDish: { readonly on: boolean; readonly afterMinutes: number }
   /** the weekly review found something new */
   readonly weeklyReview: boolean

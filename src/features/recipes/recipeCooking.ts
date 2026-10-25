@@ -18,7 +18,7 @@ import {
 } from './recipeModel'
 
 /**
- * Cooking a recipe on Cook: a fresh dish from it (the last choices, optional lines as last
+ * Cooking a recipe in Add food: a fresh dish from it (the last choices, optional lines as last
  * time), and switching a line to another choice or an optional line on and off. Uses the
  * ingredients' current values.
  */

@@ -3,12 +3,12 @@ import { useStackNavigate } from '../../app/stackNavigate'
 import { BackButton } from '../../components/ios/BackButton'
 import { Button } from '../../components/ios/Button'
 import { PageHeader } from '../../components/ios/PageHeader'
-import { CookPage } from '../cook/CookPage'
-import { CookRecipePages } from '../cook/CookRecipePages'
-import { useCookSession } from '../cook/cookSessionContext'
+import { AddFoodPage } from '../addFood/AddFoodPage'
+import { AddFromRecipePages } from '../addFood/AddFromRecipePages'
+import { useAddFoodSession } from '../addFood/addFoodSessionContext'
 import { usePeople } from '../household/hooks'
 import { useLookOf } from '../household/usePersonLook'
-import { useMealOfDay } from '../cook/useMealOfDay'
+import { useMealOfDay } from '../addFood/useMealOfDay'
 import { useToday } from '../today/useToday'
 import { formatShortDay } from '../trends/trendFormat'
 import { mealLabel } from './dayModel'
@@ -22,9 +22,9 @@ import { isDraftFor } from './unsavedDish'
 export function MealRoute({ page }: { readonly page: MealPageRef }) {
   switch (page.page) {
     case 'food':
-      return <CookPage page={page} />
+      return <AddFoodPage page={page} />
     case 'recipes':
-      return <CookRecipePages page={page} />
+      return <AddFromRecipePages page={page} />
     case 'meal':
       return <MealPage page={page} />
   }
@@ -42,7 +42,7 @@ function MealPage({ page }: { readonly page: MealPageRef }) {
   const people = usePeople(profile, householdId)
   const lookOf = useLookOf()
   const go = useStackNavigate()
-  const { draft } = useCookSession()
+  const { draft } = useAddFoodSession()
   const note = useDay(meal.userId, meal.date).data?.find(
     (candidate) => candidate.meal_type === meal.mealType,
   )?.note

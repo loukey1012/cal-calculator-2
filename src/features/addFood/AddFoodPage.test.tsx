@@ -70,9 +70,9 @@ import type { Dish } from '../dishes/portions'
 import { gramsItem } from '../dishes/testData'
 import { MealRoute } from '../meals/MealPage'
 import { foodPath, mealPageOf, mealPath, type MealRef } from '../meals/mealPages'
-import { mealForTime } from './cookDraft'
+import { mealForTime } from './addFoodDraft'
 import { sendDraftNotice } from './draftNotice'
-import { CookSession } from './CookSession'
+import { AddFoodSession } from './AddFoodSession'
 
 function profile(id: string, name: string) {
   return {
@@ -145,17 +145,17 @@ function MealTab({ name }: { readonly name: string }) {
   return page ? <MealRoute page={page} /> : <p>{name} page</p>
 }
 
-function renderCook(route = food(), appearance: Record<string, unknown> = {}) {
+function renderAddFood(route = food(), appearance: Record<string, unknown> = {}) {
   const profile = { ...ME, appearance: { ...ME.appearance, ...appearance } }
   return renderWithProviders(
     <CurrentUserContext value={{ profile, householdId: 'h1' }}>
-      <CookSession>
+      <AddFoodSession>
         <Routes>
           <Route path="/today/*" element={<MealTab name="Today" />} />
           <Route path="/history/*" element={<MealTab name="History" />} />
         </Routes>
         <LocationProbe />
-      </CookSession>
+      </AddFoodSession>
     </CurrentUserContext>,
     { route },
   )
@@ -168,7 +168,7 @@ async function addIngredient(user: UserEvent, name: string, amount: string) {
   await user.click(screen.getByRole('button', { name: 'Add to dish' }))
 }
 
-async function cookWithHer(user: UserEvent) {
+async function addHerAsEater(user: UserEvent) {
   await user.click(await screen.findByRole('button', { name: 'Schatz', pressed: false }))
 }
 
@@ -200,7 +200,7 @@ describe('the dish waiting on Cook', () => {
   test('is noted for the "not logged yet" reminder, and forgotten once logged', async () => {
     // Arrange
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
     await screen.findByRole('button', { name: 'Lukas', pressed: true })
 
     // Act
@@ -217,7 +217,7 @@ describe('the dish waiting on Cook', () => {
   })
 
   test('opening Cook with a waiting dish sends nothing (its clock keeps running)', async () => {
-    renderCook()
+    renderAddFood()
 
     await screen.findByRole('button', { name: 'Lukas', pressed: true })
 
@@ -259,7 +259,7 @@ describe('choosing an amount', () => {
     ])
     vi.mocked(fetchIngredients).mockResolvedValue([BAR])
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
 
     await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
     await user.click(await screen.findByRole('button', { name: /Protein bar/ }))
@@ -275,7 +275,7 @@ describe('choosing an amount', () => {
   test('only calories without a goal', async () => {
     vi.mocked(fetchIngredients).mockResolvedValue([BAR])
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
 
     await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
     await user.click(await screen.findByRole('button', { name: /Protein bar/ }))
@@ -285,7 +285,7 @@ describe('choosing an amount', () => {
 
   test('a line of the dish shows them when its amount is changed', async () => {
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
     await addIngredient(user, 'Patty', '100')
 
     await user.click(screen.getByRole('button', { name: /^Patty/ }))
@@ -314,7 +314,7 @@ describe('swapping an ingredient', () => {
     // Arrange
     vi.mocked(fetchIngredients).mockResolvedValue([PATTY, TOMATO, NOODLES, VEGGIE])
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
     await addIngredient(user, 'Patty', '250')
 
     // Act
@@ -336,7 +336,7 @@ describe('swapping an ingredient', () => {
   test('a product measured differently asks for its amount first', async () => {
     vi.mocked(fetchIngredients).mockResolvedValue([PATTY, FROZEN])
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
     await user.click(screen.getByRole('button', { name: 'Add ingredient' }))
     await user.click(await screen.findByRole('button', { name: /^Patty/ }))
     await user.type(screen.getByLabelText('Amount'), '250')
@@ -358,7 +358,7 @@ describe('cooking alone', () => {
   test('one food for me, saved as a dish into the meal it was opened for', async () => {
     // Arrange
     const user = userEvent.setup()
-    renderCook(food({ ...mealNow(), mealType: 'snack' }))
+    renderAddFood(food({ ...mealNow(), mealType: 'snack' }))
 
     // Act
     expect(await screen.findByRole('button', { name: 'Lukas', pressed: true })).toBeInTheDocument()
@@ -384,7 +384,7 @@ describe('cooking alone', () => {
 
   test('a dish needs at least one ingredient', async () => {
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
 
     await user.click(await screen.findByRole('button', { name: 'Save meal' }))
 
@@ -394,7 +394,7 @@ describe('cooking alone', () => {
 
   test('a custom one-off food can be added without touching the ingredients', async () => {
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
 
     await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
     await user.click(await screen.findByRole('button', { name: /Custom item/ }))
@@ -416,7 +416,7 @@ describe('calories as an estimate', () => {
   test('a meal eaten out is saved marked as an estimate, its totals shown with ~', async () => {
     // Arrange
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
 
     // Act
     await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
@@ -446,7 +446,7 @@ describe('calories as an estimate', () => {
     })
     vi.mocked(fetchIngredients).mockResolvedValue([PATTY, pizza])
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
 
     await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
     await user.click(await screen.findByRole('button', { name: /Pizza from Luigi/ }))
@@ -474,7 +474,7 @@ describe('calories as an estimate', () => {
     })
     vi.mocked(fetchIngredients).mockResolvedValue([PATTY, oat])
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
 
     await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
     await user.click(await screen.findByRole('button', { name: /Oat drink/ }))
@@ -494,7 +494,7 @@ describe('calories as an estimate', () => {
     const pizza = ingredient({ id: 'pizza', name: 'Pizza', kcal_unit: 800, unit_label: 'pizza' })
     vi.mocked(fetchIngredients).mockResolvedValue([PATTY, pizza])
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
 
     await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
     await user.click(await screen.findByRole('button', { name: /Pizza/ }))
@@ -510,7 +510,7 @@ describe('calories as an estimate', () => {
 
   test('a dish is exact unless marked', async () => {
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
 
     await addIngredient(user, 'Patty', '100')
     await user.click(screen.getByRole('button', { name: 'Save meal' }))
@@ -524,10 +524,10 @@ describe('cooking together', () => {
   test('a burger: shared patty, tomato only for her, saved for both', async () => {
     // Arrange
     const user = userEvent.setup()
-    renderCook(food({ ...mealNow(), mealType: 'lunch' }))
+    renderAddFood(food({ ...mealNow(), mealType: 'lunch' }))
 
     // Act
-    await cookWithHer(user)
+    await addHerAsEater(user)
     await user.type(screen.getByLabelText('Dish name (optional)'), 'Burger')
     await addIngredient(user, 'Patty', '250')
     await user.click(screen.getByRole('button', { name: 'Add ingredient' }))
@@ -558,9 +558,9 @@ describe('cooking together', () => {
 
   test('own amounts per person: 120 g and 100 g of noodles', async () => {
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
 
-    await cookWithHer(user)
+    await addHerAsEater(user)
     await user.click(screen.getByRole('button', { name: 'Add ingredient' }))
     await user.click(await screen.findByRole('button', { name: /Noodles/ }))
     await user.click(await screen.findByRole('radio', { name: 'Own amounts' }))
@@ -579,9 +579,9 @@ describe('cooking together', () => {
 
   test('count split: I have 3, she has 2', async () => {
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
 
-    await cookWithHer(user)
+    await addHerAsEater(user)
     await addIngredient(user, 'Patty', '500')
     await user.click(screen.getByRole('radio', { name: 'Count' }))
     await user.clear(screen.getByLabelText('Lukas count'))
@@ -598,9 +598,9 @@ describe('cooking together', () => {
 
   test('an impossible split says why and is not saved', async () => {
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
 
-    await cookWithHer(user)
+    await addHerAsEater(user)
     await addIngredient(user, 'Patty', '100')
     await user.click(screen.getByRole('radio', { name: '%' }))
     await user.clear(screen.getByLabelText('Lukas percent'))
@@ -617,8 +617,8 @@ describe('cooking together', () => {
     // Arrange
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
     const user = userEvent.setup()
-    renderCook()
-    await cookWithHer(user)
+    renderAddFood()
+    await addHerAsEater(user)
     await user.click(screen.getByRole('button', { name: 'Add ingredient' }))
     await user.click(await screen.findByRole('button', { name: /Tomato/ }))
     await user.click(screen.getByRole('radio', { name: 'Only Schatz' }))
@@ -638,9 +638,9 @@ describe('cooking together', () => {
 
   test('cooking one portion more keeps it as a leftover', async () => {
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
 
-    await cookWithHer(user)
+    await addHerAsEater(user)
     await user.click(screen.getByRole('button', { name: 'More leftover portions' }))
     await addIngredient(user, 'Patty', '300')
 
@@ -659,12 +659,12 @@ describe('the draft', () => {
   test('survives leaving the page', async () => {
     // Arrange
     const user = userEvent.setup()
-    const first = renderCook()
+    const first = renderAddFood()
     await addIngredient(user, 'Patty', '100')
 
     // Act
     first.unmount()
-    renderCook()
+    renderAddFood()
 
     // Assert
     expect(await screen.findByRole('button', { name: /Patty/ })).toBeInTheDocument()
@@ -672,13 +672,13 @@ describe('the draft', () => {
 
   test('is cleared after saving', async () => {
     const user = userEvent.setup()
-    const first = renderCook()
+    const first = renderAddFood()
     await addIngredient(user, 'Patty', '100')
     await user.click(screen.getByRole('button', { name: 'Save meal' }))
     await vi.waitFor(() => expect(currentPath()).toBe(mealPath(mealNow(), 'today')))
 
     first.unmount()
-    renderCook()
+    renderAddFood()
 
     await screen.findByRole('button', { name: 'Add ingredient' })
     expect(screen.queryByRole('button', { name: /Patty/ })).not.toBeInTheDocument()
@@ -687,7 +687,7 @@ describe('the draft', () => {
   test('can be discarded', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true)
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
     await addIngredient(user, 'Patty', '100')
 
     await user.click(screen.getByRole('button', { name: 'Discard' }))
@@ -700,7 +700,7 @@ describe('the draft', () => {
 describe('steps', () => {
   test('each step is its own page: the dish, the search, the amount', async () => {
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
 
     await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
     expect(currentPath()).toBe(`${food()}/add`)
@@ -716,7 +716,7 @@ describe('steps', () => {
   test('Back on the amount goes back to the search, which still shows what was searched', async () => {
     // Arrange
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
     await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
     await user.type(screen.getByLabelText('Search ingredients'), 'pat')
     await user.click(await screen.findByRole('button', { name: /Patty/ }))
@@ -732,7 +732,7 @@ describe('steps', () => {
 
   test('Back on the search goes back to the dish', async () => {
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
     await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
 
     await user.click(screen.getByRole('button', { name: 'Back' }))
@@ -743,7 +743,7 @@ describe('steps', () => {
 
   test('a new search starts empty', async () => {
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
     await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
     await user.type(screen.getByLabelText('Search ingredients'), 'pat')
     await user.click(screen.getByRole('button', { name: 'Back' }))
@@ -755,7 +755,7 @@ describe('steps', () => {
 
   test('an ingredient line opens as its own page and Back returns to the dish', async () => {
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
     await addIngredient(user, 'Patty', '100')
 
     await user.click(screen.getByRole('button', { name: /Patty/ }))
@@ -766,7 +766,7 @@ describe('steps', () => {
   })
 
   test('an opened ingredient that is no longer there says so', async () => {
-    renderCook(`${food()}/add/gone`)
+    renderAddFood(`${food()}/add/gone`)
 
     expect(await screen.findByText('This ingredient is no longer available.')).toBeInTheDocument()
   })
@@ -785,7 +785,7 @@ describe('the ingredient search', () => {
   test('a + opens a new ingredient and a pencil a custom item, straight away', async () => {
     // Arrange
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
     await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
     await user.type(screen.getByLabelText('Search ingredients'), 'Feta')
 
@@ -806,7 +806,7 @@ describe('the ingredient search', () => {
     // Arrange
     createsFeta()
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
     await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
     await user.type(screen.getByLabelText('Search ingredients'), ' Feta ')
     expect(await screen.findByText('No matches.')).toBeInTheDocument()
@@ -835,7 +835,7 @@ describe('the ingredient search', () => {
   test('Back from the new ingredient’s amount leads to the search, not to the form', async () => {
     createsFeta()
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
     await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
     await user.click(screen.getByRole('button', { name: /New ingredient/ }))
     await user.type(screen.getByLabelText('Name'), 'Feta')
@@ -858,7 +858,7 @@ describe('the ingredient search', () => {
     ])
     scanned.barcode = '3017620422003'
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
     await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
     await screen.findByRole('button', { name: /Patty/ })
 
@@ -892,7 +892,7 @@ describe('the ingredient search', () => {
       return nutella
     })
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
     await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
 
     // Act
@@ -923,7 +923,7 @@ describe('the ingredient search', () => {
     scanned.barcode = '96385074'
     vi.mocked(lookupProduct).mockResolvedValue({ kind: 'notFound' })
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
     await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
     await user.type(screen.getByLabelText('Search ingredients'), 'Rye bread')
 
@@ -937,7 +937,7 @@ describe('the ingredient search', () => {
 
   test('a new ingredient with missing values is not saved', async () => {
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
     await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
     await user.click(screen.getByRole('button', { name: /New ingredient/ }))
 
@@ -951,7 +951,7 @@ describe('the ingredient search', () => {
   test('category chips filter the search, and stay chosen after looking at an amount', async () => {
     // Arrange
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
     await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
     const chips = within(await screen.findByRole('group', { name: 'Categories' }))
 
@@ -981,7 +981,7 @@ describe('the ingredient search', () => {
     })
     vi.mocked(fetchIngredients).mockResolvedValue([older, newer])
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
     await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
 
     const rows = await screen.findAllByRole('button', { name: /kcal \/ 100 g/ })
@@ -996,7 +996,7 @@ describe('the ingredient search', () => {
     const skyr = ingredient({ id: 'skyr', name: 'Skyr', brand: 'Milbona', kcal_100: 62 })
     vi.mocked(fetchIngredients).mockResolvedValue([PATTY, skyr])
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
     await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
 
     await user.click(await screen.findByRole('button', { name: 'Brand: All brands' }))
@@ -1012,7 +1012,7 @@ describe('the ingredient search', () => {
 
   test('the chips follow the chosen layout, e.g. grouped', async () => {
     const user = userEvent.setup()
-    renderCook(food(), { categoryLayout: 'grouped' })
+    renderAddFood(food(), { categoryLayout: 'grouped' })
     await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
 
     await user.click(await screen.findByRole('button', { name: 'Fresh' }))
@@ -1023,7 +1023,7 @@ describe('the ingredient search', () => {
 
   test('a new search starts with all categories again', async () => {
     const user = userEvent.setup()
-    renderCook()
+    renderAddFood()
     await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
     const chips = within(await screen.findByRole('group', { name: 'Categories' }))
     await user.click(chips.getByRole('button', { name: 'Fresh' }))
@@ -1040,7 +1040,7 @@ describe('opened from an empty meal', () => {
   test('starts with that person, day and meal, and returns there after saving', async () => {
     // Arrange
     const user = userEvent.setup()
-    renderCook(food({ userId: 'u2', date: '2026-10-04', mealType: 'dinner' }, 'history'))
+    renderAddFood(food({ userId: 'u2', date: '2026-10-04', mealType: 'dinner' }, 'history'))
 
     // Assert: set up for her dinner on that day
     expect(await screen.findByRole('button', { name: 'Schatz', pressed: true })).toBeInTheDocument()
@@ -1068,7 +1068,7 @@ describe('leftovers, on a meal’s page', () => {
   test('a leftover of a dish marked as an estimate shows ~ before its calories', async () => {
     vi.mocked(fetchLeftoverDishes).mockResolvedValue([{ ...CHILI, kcalEstimated: true }])
     const user = userEvent.setup()
-    renderCook(dinner())
+    renderAddFood(dinner())
 
     await user.click(await screen.findByRole('button', { name: /Chili.*~500 kcal/ }))
 
@@ -1081,7 +1081,7 @@ describe('leftovers, on a meal’s page', () => {
     // Arrange
     vi.mocked(fetchLeftoverDishes).mockResolvedValue([CHILI])
     const user = userEvent.setup()
-    renderCook(dinner())
+    renderAddFood(dinner())
 
     // Act: half of 400 g mince at 250 kcal
     await user.click(await screen.findByRole('button', { name: /Chili.*500 kcal/ }))
@@ -1100,7 +1100,7 @@ describe('leftovers, on a meal’s page', () => {
   test('a leftover can be thrown away', async () => {
     vi.mocked(fetchLeftoverDishes).mockResolvedValue([CHILI])
     const user = userEvent.setup()
-    renderCook(dinner())
+    renderAddFood(dinner())
 
     await user.click(await screen.findByRole('button', { name: /Chili/ }))
     const sheet = within(screen.getByRole('dialog', { name: 'Chili' }))

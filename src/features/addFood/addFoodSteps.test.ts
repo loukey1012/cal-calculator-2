@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { cookStepOf, cookStepPath, parentStep } from './cookSteps'
+import { addFoodStepOf, addFoodStepPath, parentStep } from './addFoodSteps'
 
 // a meal's Add food page
 const BASE = '/today/meal-lunch-2026-10-21-u1/food'
@@ -19,18 +19,18 @@ describe('Cook steps as pages', () => {
       `${BASE}/line-l-1/swap/edamer`,
     ],
   ])('%o has its own address %s, and back', (step, path) => {
-    expect(cookStepPath(step, BASE)).toBe(path)
-    expect(cookStepOf(path, BASE)).toEqual(step)
+    expect(addFoodStepPath(step, BASE)).toBe(path)
+    expect(addFoodStepOf(path, BASE)).toEqual(step)
   })
 
   test('each step sits one level below the one Back leads to', () => {
     // the page stack's back swipe drops the last part of the address
-    expect(cookStepPath({ kind: 'newLine', ingredientId: 'patty' }, BASE)).toBe(
-      `${cookStepPath({ kind: 'pick' }, BASE)}/patty`,
+    expect(addFoodStepPath({ kind: 'newLine', ingredientId: 'patty' }, BASE)).toBe(
+      `${addFoodStepPath({ kind: 'pick' }, BASE)}/patty`,
     )
-    expect(cookStepPath({ kind: 'pick' }, BASE)).toBe(`${BASE}/add`)
-    expect(cookStepPath({ kind: 'swap', lineId: 'l-1' }, BASE)).toBe(
-      `${cookStepPath({ kind: 'editLine', lineId: 'l-1' }, BASE)}/swap`,
+    expect(addFoodStepPath({ kind: 'pick' }, BASE)).toBe(`${BASE}/add`)
+    expect(addFoodStepPath({ kind: 'swap', lineId: 'l-1' }, BASE)).toBe(
+      `${addFoodStepPath({ kind: 'editLine', lineId: 'l-1' }, BASE)}/swap`,
     )
   })
 
@@ -45,15 +45,15 @@ describe('Cook steps as pages', () => {
   test('odd characters in an id stay inside their part of the address', () => {
     const step = { kind: 'newLine', ingredientId: 'a/b c' } as const
 
-    expect(cookStepOf(cookStepPath(step, BASE), BASE)).toEqual(step)
+    expect(addFoodStepOf(addFoodStepPath(step, BASE), BASE)).toEqual(step)
   })
 
   test('an unknown address below Add food shows the dish', () => {
-    expect(cookStepOf(`${BASE}/whatever/else`, BASE)).toEqual({ kind: 'main' })
-    expect(cookStepOf(`${BASE}/`, BASE)).toEqual({ kind: 'main' })
+    expect(addFoodStepOf(`${BASE}/whatever/else`, BASE)).toEqual({ kind: 'main' })
+    expect(addFoodStepOf(`${BASE}/`, BASE)).toEqual({ kind: 'main' })
     // a broken escape, e.g. typed by hand
-    expect(cookStepOf(`${BASE}/add/%E0`, BASE)).toEqual({ kind: 'main' })
+    expect(addFoodStepOf(`${BASE}/add/%E0`, BASE)).toEqual({ kind: 'main' })
     // not a valid barcode
-    expect(cookStepOf(`${BASE}/add/new-123`, BASE)).toEqual({ kind: 'main' })
+    expect(addFoodStepOf(`${BASE}/add/new-123`, BASE)).toEqual({ kind: 'main' })
   })
 })

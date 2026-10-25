@@ -139,7 +139,10 @@ export function NotificationKinds() {
           />
         </div>
       )}
-      <GroupedSection header="Cook" footer="When a dish waits on Cook without being logged.">
+      <GroupedSection
+        header="Unsaved dish"
+        footer="When a dish waits in Add food without being logged."
+      >
         <ToggleRow
           label="Dish not logged yet"
           checked={settings.unsavedDish.on}

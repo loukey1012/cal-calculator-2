@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { MealType } from '../meals/dayModel'
-import { mealForTime } from './cookDraft'
+import { mealForTime } from './addFoodDraft'
 
 /**
  * The meal for the time of day. Checked again when the app returns to the foreground, so a

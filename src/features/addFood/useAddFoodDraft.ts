@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react'
-import { newCookDraft, type CookDraft } from './cookDraft'
+import { newAddFoodDraft, type AddFoodDraft } from './addFoodDraft'
 import { draftNotice, sendDraftNotice } from './draftNotice'
-import { clearCookDraft, loadCookDraft, saveCookDraft } from './draftStorage'
+import { clearAddFoodDraft, loadAddFoodDraft, saveAddFoodDraft } from './draftStorage'
 
-type CookDraftState = {
-  readonly draft: CookDraft
-  readonly setDraft: Dispatch<SetStateAction<CookDraft>>
+type AddFoodDraftState = {
+  readonly draft: AddFoodDraft
+  readonly setDraft: Dispatch<SetStateAction<AddFoodDraft>>
   /** a fresh draft, e.g. after saving */
   readonly reset: () => void
 }
@@ -14,12 +14,12 @@ type CookDraftState = {
 const NOTICE_DELAY_MS = 3000
 
 /**
- * Tells the server about a dish waiting on Cook, for the "not logged yet" notification. A
+ * Tells the server about a dish waiting in Add food, for the "not logged yet" notification. A
  * logged or discarded dish is forgotten at once, and a waiting note goes out when the app goes
  * to the background, so iOS closing it doesn't leave a wrong one. Opening the app sends
  * nothing: that would restart the dish's clock. Best effort: offline, the next change retries.
  */
-function useDraftNotice(userId: string, draft: CookDraft): void {
+function useDraftNotice(userId: string, draft: AddFoodDraft): void {
   const isFirst = useRef(true)
   const pending = useRef<(() => void) | null>(null)
 
@@ -32,7 +32,7 @@ function useDraftNotice(userId: string, draft: CookDraft): void {
     const send = () => {
       pending.current = null
       sendDraftNotice(userId, notice).catch(() => {
-        // offline or refused: the dish is still on the phone and the Cook badge shows it;
+        // offline or refused: the dish is still on the phone and the unsaved-dish dot shows it;
         // only the reminder may not come
       })
     }
@@ -51,18 +51,18 @@ function useDraftNotice(userId: string, draft: CookDraft): void {
   }, [])
 }
 
-/** The person's Cook draft, kept on this phone after every change. */
-export function useCookDraft(userId: string): CookDraftState {
-  const [draft, setDraft] = useState(() => loadCookDraft(userId) ?? newCookDraft(userId))
+/** The person's Add food draft, kept on this phone after every change. */
+export function useAddFoodDraft(userId: string): AddFoodDraftState {
+  const [draft, setDraft] = useState(() => loadAddFoodDraft(userId) ?? newAddFoodDraft(userId))
 
   useEffect(() => {
-    saveCookDraft(userId, draft)
+    saveAddFoodDraft(userId, draft)
   }, [userId, draft])
   useDraftNotice(userId, draft)
 
   const reset = () => {
-    clearCookDraft(userId)
-    setDraft(newCookDraft(userId))
+    clearAddFoodDraft(userId)
+    setDraft(newAddFoodDraft(userId))
   }
   return { draft, setDraft, reset }
 }

@@ -11,8 +11,8 @@ import {
 import { Navigate, useLocation, useNavigate } from 'react-router'
 import { HistoryIcon, IngredientsIcon, SettingsIcon, TodayIcon } from '../components/ios/icons'
 import { TabBar } from '../components/ios/TabBar'
-import { CookSession } from '../features/cook/CookSession'
-import { useLegacyCookTarget } from '../features/cook/legacyCookLink'
+import { AddFoodSession } from '../features/addFood/AddFoodSession'
+import { useLegacyCookTarget } from '../features/addFood/legacyCookLink'
 import { HistoryPage } from '../features/history/HistoryPage'
 import { IngredientsPage } from '../features/ingredients/IngredientsPage'
 import { SettingsPage } from '../features/settings/SettingsPage'
@@ -117,9 +117,9 @@ function backPathFor(pathname: string): string | null {
 /** The tabs; the dish being added lives above them, so any meal's Add food finds it. */
 export function TabShell() {
   return (
-    <CookSession>
+    <AddFoodSession>
       <ShellContent />
-    </CookSession>
+    </AddFoodSession>
   )
 }
 

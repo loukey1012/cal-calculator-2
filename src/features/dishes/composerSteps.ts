@@ -21,7 +21,7 @@ export const MAIN_STEP: ComposerStep = { kind: 'main' }
 export const NO_FILTER: IngredientFilter = { query: '', category: ALL_CATEGORIES, brand: null }
 
 /**
- * Moving between the composer's steps. On the Cook tab each step is a page of its own (so a back
+ * Moving between the composer's steps. In Add food each step is a page of its own (so a back
  * swipe works); in the dish editor sheet they are a history kept in the sheet.
  */
 export type ComposerSteps = {

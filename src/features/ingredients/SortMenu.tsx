@@ -28,7 +28,7 @@ export function SortMenu({ sort, onChange }: SortMenuProps) {
         <ChevronDownIcon className="h-3.5 w-3.5" />
       </button>
       <Sheet open={open} onClose={() => setOpen(false)} title="Sort by">
-        <GroupedSection footer="Applies to the Ingredients tab and the ingredient search on Cook.">
+        <GroupedSection footer="Applies to the Ingredients tab and the ingredient search in Add food.">
           {INGREDIENT_SORT_OPTIONS.map((option) => (
             <ListRow
               key={option.value}

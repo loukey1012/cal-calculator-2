@@ -1,9 +1,9 @@
 import { ApiError } from '../../lib/errors'
 import { supabase } from '../../lib/supabase'
-import { hasContent, type CookDraft } from './cookDraft'
+import { hasContent, type AddFoodDraft } from './addFoodDraft'
 
 /**
- * What the server learns of a dish waiting on Cook, so it can tell about it later (Settings ›
+ * What the server learns of a dish waiting in Add food, so it can tell about it later (Settings ›
  * Notifications › Unsaved dish). The draft itself stays on the phone.
  */
 export type DraftNotice = { readonly label: string; readonly lineCount: number }
@@ -13,7 +13,7 @@ const MAX_LABEL = 120
 const NAMED_LINES = 2
 
 /** null: nothing worth telling (empty, or only a name without ingredients). */
-export function draftNotice(draft: CookDraft): DraftNotice | null {
+export function draftNotice(draft: AddFoodDraft): DraftNotice | null {
   if (!hasContent(draft) || draft.dish.lines.length === 0) return null
   const names = draft.dish.lines.map((line) => line.item.name)
   const more = names.length - NAMED_LINES

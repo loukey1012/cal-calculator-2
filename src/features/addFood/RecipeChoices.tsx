@@ -5,11 +5,11 @@ import { useIngredients } from '../ingredients/hooks'
 import { useRecipes } from '../recipes/hooks'
 import { currentChoiceId, lineOfSlot, withChoice, withSlotIncluded } from '../recipes/recipeCooking'
 import { choiceLabel, pickedChoice, type RecipeSlot } from '../recipes/recipeModel'
-import { withDish, type CookDraft } from './cookDraft'
+import { withDish, type AddFoodDraft } from './addFoodDraft'
 
 type RecipeChoicesProps = {
-  readonly draft: CookDraft
-  readonly onChange: (draft: CookDraft) => void
+  readonly draft: AddFoodDraft
+  readonly onChange: (draft: AddFoodDraft) => void
 }
 
 type ChipsProps = {
@@ -60,7 +60,7 @@ export function RecipeChoices({ draft, onChange }: RecipeChoicesProps) {
   const slots = recipe.slots.filter((slot) => slot.optional || slot.choices.length > 1)
   if (slots.length === 0) return null
 
-  const apply = (cooked: { dish: CookDraft['dish']; link: typeof link }) =>
+  const apply = (cooked: { dish: AddFoodDraft['dish']; link: typeof link }) =>
     onChange({ ...withDish(draft, cooked.dish), recipe: cooked.link })
   const cooked = { dish: draft.dish, link }
 

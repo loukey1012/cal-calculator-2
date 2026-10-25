@@ -32,7 +32,7 @@ at the user's word.** As of 2026-10-25:
   unit, calories plus each nutrient of the user's goal); user tests it, ask how it went.
 - How meal pages work: addresses in `src/features/meals/mealPages.ts`, every tab is a page stack
   (`roots` in `app/TabShell.tsx`), the picked person travels in navigation state
-  (`app/stackNavigate.ts`), old `/cook` links are redirected in `cook/legacyCookLink.ts` (the
+  (`app/stackNavigate.ts`), old `/cook` links are redirected in `addFood/legacyCookLink.ts` (the
   notifications on the server still send them; nothing to redeploy).
 - Journeys locally: build against dev (`VITE_SUPABASE_URL=$SUPABASE_TEST_URL
 VITE_SUPABASE_ANON_KEY=$SUPABASE_TEST_ANON_KEY`, README); without them the build talks to prod

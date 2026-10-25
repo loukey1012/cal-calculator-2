@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { newCookDraft } from './cookDraft'
+import { newAddFoodDraft } from './addFoodDraft'
 import { legacyCookTarget, parseCookLink } from './legacyCookLink'
 
 const TODAY = '2026-10-06'
@@ -11,29 +11,32 @@ describe('old Cook links', () => {
     expect(
       legacyCookTarget(
         at('/cook', '?person=u2&date=2026-10-06&meal=dinner'),
-        newCookDraft('u1'),
+        newAddFoodDraft('u1'),
         ME,
       ),
     ).toBe('/today/meal-dinner-2026-10-06-u2/food')
     expect(
       legacyCookTarget(
         at('/cook', '?person=u2&date=2026-10-04&meal=dinner'),
-        newCookDraft('u1'),
+        newAddFoodDraft('u1'),
         ME,
       ),
     ).toBe('/history/2026-10-04/meal-dinner-2026-10-04-u2/food')
   })
 
   test('a bare /cook opens the meal a started dish is for, else Today', () => {
-    const started = { ...newCookDraft('u1'), dish: { ...newCookDraft('u1').dish, name: 'Chili' } }
+    const started = {
+      ...newAddFoodDraft('u1'),
+      dish: { ...newAddFoodDraft('u1').dish, name: 'Chili' },
+    }
 
     expect(legacyCookTarget(at('/cook'), started, ME)).toBe('/today/meal-lunch-2026-10-06-u1/food')
-    expect(legacyCookTarget(at('/cook/add'), newCookDraft('u1'), ME)).toBe('/today')
+    expect(legacyCookTarget(at('/cook/add'), newAddFoodDraft('u1'), ME)).toBe('/today')
   })
 
   test('anything else is no old Cook link', () => {
-    expect(legacyCookTarget(at('/today'), newCookDraft('u1'), ME)).toBeNull()
-    expect(legacyCookTarget(at('/cookies'), newCookDraft('u1'), ME)).toBeNull()
+    expect(legacyCookTarget(at('/today'), newAddFoodDraft('u1'), ME)).toBeNull()
+    expect(legacyCookTarget(at('/cookies'), newAddFoodDraft('u1'), ME)).toBeNull()
   })
 
   test.each([

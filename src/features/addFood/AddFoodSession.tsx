@@ -4,16 +4,16 @@ import { useCurrentUser } from '../../app/currentUser'
 import { useToday } from '../today/useToday'
 import { NO_FILTER } from '../dishes/composerSteps'
 import { mealPageOf } from '../meals/mealPages'
-import { withPrefill } from './cookDraft'
-import { CookSessionContext } from './cookSessionContext'
-import { useCookDraft } from './useCookDraft'
+import { withPrefill } from './addFoodDraft'
+import { AddFoodSessionContext } from './addFoodSessionContext'
+import { useAddFoodDraft } from './useAddFoodDraft'
 
 /** Holds the dish being put together and the ingredient search, for every Add food page. */
-export function CookSession({ children }: { readonly children: ReactNode }) {
+export function AddFoodSession({ children }: { readonly children: ReactNode }) {
   const { profile } = useCurrentUser()
   const today = useToday()
   const { pathname } = useLocation()
-  const { draft, setDraft, reset } = useCookDraft(profile.id)
+  const { draft, setDraft, reset } = useAddFoodDraft(profile.id)
   const [filter, setFilter] = useState(NO_FILTER)
   const [handledMeal, setHandledMeal] = useState('')
 
@@ -26,8 +26,8 @@ export function CookSession({ children }: { readonly children: ReactNode }) {
   }
 
   return (
-    <CookSessionContext value={{ draft, setDraft, reset, filter, setFilter }}>
+    <AddFoodSessionContext value={{ draft, setDraft, reset, filter, setFilter }}>
       {children}
-    </CookSessionContext>
+    </AddFoodSessionContext>
   )
 }

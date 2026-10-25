@@ -30,6 +30,16 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-25T12:58',
+    kind: 'fix',
+    title: 'No more mentions of the old Cook tab',
+    items: [
+      'The notification for a dish not logged yet says it is still waiting to be logged',
+      'Settings › Notifications calls that section Unsaved dish; the sort menu and recipe hints name Add food',
+      'Behind the scenes, the Add food code has its own name and folder',
+    ],
+  },
+  {
     at: '2026-10-25T12:54',
     kind: 'internal',
     title: 'Clean-up: leftovers of finished one-off work removed',

@@ -29,8 +29,8 @@ vi.mock('../recipes/recipesApi', () => ({
   saveRecipe: vi.fn(),
   deleteRecipe: vi.fn(),
 }))
-vi.mock('../cook/draftNotice', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../cook/draftNotice')>()),
+vi.mock('../addFood/draftNotice', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../addFood/draftNotice')>()),
   sendDraftNotice: vi.fn().mockResolvedValue(undefined),
 }))
 vi.mock('../goals/goalsApi', () => ({ fetchGoals: vi.fn(), saveGoal: vi.fn() }))
@@ -55,9 +55,9 @@ import {
   updateMealItem,
 } from '../meals/mealsApi'
 import { fetchWeights, saveWeight } from '../weight/weightApi'
-import { newCookDraft, withDish } from '../cook/cookDraft'
-import { CookSession } from '../cook/CookSession'
-import { saveCookDraft } from '../cook/draftStorage'
+import { newAddFoodDraft, withDish } from '../addFood/addFoodDraft'
+import { AddFoodSession } from '../addFood/AddFoodSession'
+import { saveAddFoodDraft } from '../addFood/draftStorage'
 import { TodayPage } from './TodayPage'
 
 const PROFILE = {
@@ -109,9 +109,9 @@ function LocationProbe() {
 function renderPage() {
   return renderWithProviders(
     <CurrentUserContext value={{ profile: PROFILE, householdId: 'h1' }}>
-      <CookSession>
+      <AddFoodSession>
         <TodayPage />
-      </CookSession>
+      </AddFoodSession>
       <LocationProbe />
     </CurrentUserContext>,
     { route: '/today' },
@@ -353,8 +353,8 @@ describe('TodayPage', () => {
   })
 
   test('a dish being added shows on its meal, with a dot by its name', async () => {
-    const draft = { ...newCookDraft('u1'), mealType: 'dinner' as const }
-    saveCookDraft('u1', withDish(draft, { ...draft.dish, name: 'Chili' }))
+    const draft = { ...newAddFoodDraft('u1'), mealType: 'dinner' as const }
+    saveAddFoodDraft('u1', withDish(draft, { ...draft.dish, name: 'Chili' }))
     const user = userEvent.setup()
     renderPage()
 

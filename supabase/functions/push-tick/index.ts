@@ -22,7 +22,7 @@ import { sendToAll, type Subscription } from '../_shared/sendPush.ts'
 /**
  * Runs every 5 minutes (pg_cron → pg_net, see the notification_schedule migration) and sends
  * what is due for everyone with a phone that has notifications on: meal reminders, the day
- * summary, the partner's changes, a dish left on Cook and new weekly review findings. Only
+ * summary, the partner's changes, a dish left in Add food and new weekly review findings. Only
  * callable with the shared tick secret.
  */
 
@@ -173,7 +173,7 @@ async function partnerMessages(
   }))
 }
 
-/** A dish left on Cook, once per change of it, after the person's delay. */
+/** A dish left in Add food, once per change of it, after the person's delay. */
 async function unsavedMessages(
   admin: SupabaseClient,
   profile: Profile,

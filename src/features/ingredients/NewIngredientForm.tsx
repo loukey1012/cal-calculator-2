@@ -23,7 +23,7 @@ type NewIngredientFormProps = {
   readonly onSaved: (ingredient: Ingredient) => void
 }
 
-/** Adds an ingredient to the shared database without leaving the current step, e.g. on Cook. */
+/** Adds an ingredient to the shared database without leaving the current step, e.g. in Add food. */
 export function NewIngredientForm({
   initialName,
   barcode = null,

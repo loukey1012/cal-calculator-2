@@ -8,7 +8,7 @@ import { itemDraftOf } from '../nutrition/fromIngredient'
  * and meal. Each line can hold several products ("choices", each with its own amount: toast
  * bread from Clever or from Spar) and can be optional (Frischkäse sometimes). It remembers the
  * choice used last time and whether an optional line was left out. A whole meal is saved merged
- * into one dish, since Cook holds one dish at a time.
+ * into one dish, since Add food holds one dish at a time.
  */
 
 export type RecipePortion = {
@@ -39,7 +39,7 @@ export type Recipe = {
   readonly slots: readonly RecipeSlot[]
 }
 
-/** Which recipe a Cook dish came from, and what of it went where. */
+/** Which recipe an Add food dish came from, and what of it went where. */
 export type RecipeLink = {
   readonly recipeId: string
   /** recipe portion id → dish portion id */

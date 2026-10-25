@@ -7,16 +7,16 @@ import {
   type ComposerStep,
   type ComposerSteps,
 } from '../dishes/composerSteps'
-import { cookStepOf, cookStepPath, parentStep } from './cookSteps'
-import { useCookSession } from './cookSessionContext'
+import { addFoodStepOf, addFoodStepPath, parentStep } from './addFoodSteps'
+import { useAddFoodSession } from './addFoodSessionContext'
 
-/** The Cook steps as pages below `base`: opening one pushes it, Back and a back swipe pop it. */
-export function useCookSteps(base: string): ComposerSteps {
+/** The Add food steps as pages below `base`: opening one pushes it, Back and a back swipe pop it. */
+export function useAddFoodSteps(base: string): ComposerSteps {
   const path = usePagePath()
   const navigate = useStackNavigate()
-  const { filter, setFilter } = useCookSession()
-  const step = useMemo(() => cookStepOf(path, base), [path, base])
-  const go = (next: ComposerStep) => navigate(cookStepPath(next, base))
+  const { filter, setFilter } = useAddFoodSession()
+  const step = useMemo(() => addFoodStepOf(path, base), [path, base])
+  const go = (next: ComposerStep) => navigate(addFoodStepPath(next, base))
   return {
     step,
     open: (next) => {

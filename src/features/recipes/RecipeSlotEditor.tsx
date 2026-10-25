@@ -36,7 +36,7 @@ export function RecipeSlotEditor({
     <>
       <GroupedSection
         header="Products"
-        footer="A product you swap in on Cook is added here when the meal is logged."
+        footer="A product you swap in when adding the recipe is added here when the meal is logged."
       >
         {slot.choices.map((choice) => (
           <div key={choice.id} className="flex min-h-14 items-center gap-3 px-4 py-3">
@@ -63,7 +63,7 @@ export function RecipeSlotEditor({
       <GroupedSection
         footer={
           slot.optional
-            ? 'Cook offers it with a switch, on or off as last time.'
+            ? 'Add from recipe offers it with a switch, on or off as last time.'
             : 'Always part of the dish.'
         }
       >

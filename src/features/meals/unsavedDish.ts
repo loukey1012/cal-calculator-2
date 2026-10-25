@@ -1,4 +1,4 @@
-import { draftEaterIds, hasContent, type CookDraft } from '../cook/cookDraft'
+import { draftEaterIds, hasContent, type AddFoodDraft } from '../addFood/addFoodDraft'
 import type { MealType } from './dayModel'
 import type { MealRef } from './mealPages'
 
@@ -7,7 +7,7 @@ import type { MealRef } from './mealPages'
  * person, on its day and at it. Day and meal follow today and the time of day until chosen.
  */
 export function isDraftFor(
-  draft: CookDraft,
+  draft: AddFoodDraft,
   meal: MealRef,
   today: string,
   mealOfDay: MealType,

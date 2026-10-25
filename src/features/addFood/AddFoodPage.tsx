@@ -24,11 +24,11 @@ import { SaveRecipeForm } from '../recipes/SaveRecipeForm'
 import { mealLabel } from '../meals/dayModel'
 import { foodPath, mealPath, type MealPageRef } from '../meals/mealPages'
 import { useToday } from '../today/useToday'
-import { hasContent, keepEaters, resolvedDish, withDish, type CookDraft } from './cookDraft'
-import { useCookSession } from './cookSessionContext'
-import { CookWhoWhen } from './CookWhoWhen'
+import { hasContent, keepEaters, resolvedDish, withDish, type AddFoodDraft } from './addFoodDraft'
+import { useAddFoodSession } from './addFoodSessionContext'
+import { WhoEats } from './WhoEats'
 import { RecipeChoices } from './RecipeChoices'
-import { useCookSteps } from './useCookSteps'
+import { useAddFoodSteps } from './useAddFoodSteps'
 import { useMealOfDay } from './useMealOfDay'
 
 const DISCARD_QUESTION = 'Discard this meal? Everything entered so far is removed.'
@@ -37,7 +37,7 @@ const DISCARD_QUESTION = 'Discard this meal? Everything entered so far is remove
  * A meal's Add food, the one place food is logged: alone or together, cooked or a single food.
  * Each step of adding an ingredient (search, amount) is a page of its own below it.
  */
-export function CookPage({ page }: { readonly page: MealPageRef }) {
+export function AddFoodPage({ page }: { readonly page: MealPageRef }) {
   const { profile, householdId } = useCurrentUser()
   const members = useMembers(householdId)
   const people = usePeople(profile, householdId)
@@ -46,8 +46,8 @@ export function CookPage({ page }: { readonly page: MealPageRef }) {
   const mealOfDay = useMealOfDay()
   const navigate = useStackNavigate()
   const saveDish = useSaveDish()
-  const { draft: storedDraft, setDraft, reset } = useCookSession()
-  const steps = useCookSteps(foodPath(page.mealPath))
+  const { draft: storedDraft, setDraft, reset } = useAddFoodSession()
+  const steps = useAddFoodSteps(foodPath(page.mealPath))
   const backToMeal = () => navigate(page.mealPath)
   const recipes = useRecipes(householdId)
   const saveRecipe = useSaveRecipe(householdId)
@@ -60,7 +60,7 @@ export function CookPage({ page }: { readonly page: MealPageRef }) {
   const memberIds = members.data && [profile.id, ...members.data.map((member) => member.id)]
   const draft = memberIds ? keepEaters(storedDraft, memberIds, profile.id) : storedDraft
 
-  const change = (next: CookDraft) => {
+  const change = (next: AddFoodDraft) => {
     setDraft(next)
     setError(null)
   }
@@ -132,7 +132,7 @@ export function CookPage({ page }: { readonly page: MealPageRef }) {
         steps={steps}
         header={
           <>
-            <CookWhoWhen draft={draft} people={people} onChange={change} />
+            <WhoEats draft={draft} people={people} onChange={change} />
             <RecipeChoices draft={draft} onChange={change} />
           </>
         }

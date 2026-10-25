@@ -5,8 +5,8 @@ import { useLocation } from 'react-router'
 import { renderWithProviders } from '../test/render'
 import { CurrentUserContext } from './currentUser'
 
-vi.mock('../features/cook/draftNotice', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../features/cook/draftNotice')>()),
+vi.mock('../features/addFood/draftNotice', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../features/addFood/draftNotice')>()),
   sendDraftNotice: vi.fn().mockResolvedValue(undefined),
 }))
 vi.mock('../features/recipes/recipesApi', () => ({
@@ -56,8 +56,8 @@ vi.mock('../features/history/historyApi', () => ({
 vi.mock('../features/auth/authApi', () => ({ signOut: vi.fn() }))
 vi.mock('../features/live/liveChannel', () => ({ openLiveChannel: () => ({ close: () => {} }) }))
 
-import { newCookDraft, withDish } from '../features/cook/cookDraft'
-import { saveCookDraft } from '../features/cook/draftStorage'
+import { newAddFoodDraft, withDish } from '../features/addFood/addFoodDraft'
+import { saveAddFoodDraft } from '../features/addFood/draftStorage'
 import { TabShell } from './TabShell'
 
 const PROFILE = {
@@ -110,8 +110,8 @@ describe('TabShell', () => {
   })
 
   test('the old Cook address (the unsaved-dish notification) opens the meal the dish is for', () => {
-    const draft = { ...newCookDraft('u1'), mealType: 'dinner' as const }
-    saveCookDraft('u1', withDish(draft, { ...draft.dish, name: 'Pasta' }))
+    const draft = { ...newAddFoodDraft('u1'), mealType: 'dinner' as const }
+    saveAddFoodDraft('u1', withDish(draft, { ...draft.dish, name: 'Pasta' }))
 
     renderShell('/cook')
 

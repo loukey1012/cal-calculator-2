@@ -90,7 +90,7 @@ const appearanceSchema = z
     progressStyle: z.enum(PROGRESS_STYLES).catch(DEFAULT_APPEARANCE.progressStyle),
     categoryLayout: z.enum(CATEGORY_LAYOUTS).catch(DEFAULT_APPEARANCE.categoryLayout),
     appIcon: z.enum(APP_ICONS).catch(DEFAULT_APPEARANCE.appIcon),
-    // the order of both ingredient lists (Ingredients tab and the Cook search)
+    // the order of both ingredient lists (Ingredients tab and the Add food search)
     ingredientSort: z.enum(INGREDIENT_SORTS).catch(DEFAULT_APPEARANCE.ingredientSort),
     glass: z.enum(GLASS_LEVELS).catch(DEFAULT_APPEARANCE.glass),
     // the color background behind Liquid Glass Full; checked field by field in glassField.ts

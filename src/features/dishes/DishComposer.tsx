@@ -55,8 +55,8 @@ type DishComposerProps = {
 
 /**
  * Puts a dish together: its ingredients (each shared, only for one person or with own amounts),
- * the split, name and leftovers, and what everyone gets. Used to cook a new dish on the Cook
- * tab and to edit a saved one from a meal.
+ * the split, name and leftovers, and what everyone gets. Used to put a new dish together in
+ * Add food and to edit a saved one from a meal.
  */
 export function DishComposer({
   dish,

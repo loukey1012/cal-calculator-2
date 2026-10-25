@@ -5,11 +5,11 @@ const { supabaseMock } = vi.hoisted(() => ({ supabaseMock: { from: vi.fn() } }))
 vi.mock('../../lib/supabase', () => ({ supabase: supabaseMock }))
 
 import { sharedLine } from '../dishes/testData'
-import { newCookDraft, withDish, type CookDraft } from './cookDraft'
+import { newAddFoodDraft, withDish, type AddFoodDraft } from './addFoodDraft'
 import { draftNotice, sendDraftNotice } from './draftNotice'
 
-function withLines(names: readonly string[], name: string | null = null): CookDraft {
-  const draft = newCookDraft('me')
+function withLines(names: readonly string[], name: string | null = null): AddFoodDraft {
+  const draft = newAddFoodDraft('me')
   return withDish(draft, {
     ...draft.dish,
     name,
@@ -21,7 +21,7 @@ beforeEach(() => vi.clearAllMocks())
 
 describe('draftNotice', () => {
   test('an empty draft or one with only a name tells nothing', () => {
-    expect(draftNotice(newCookDraft('me'))).toBeNull()
+    expect(draftNotice(newAddFoodDraft('me'))).toBeNull()
     expect(draftNotice(withLines([], 'Chili'))).toBeNull()
   })
 

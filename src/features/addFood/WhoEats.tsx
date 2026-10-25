@@ -1,16 +1,16 @@
 import type { Profile } from '../household/householdApi'
 import { PersonBadge } from '../household/PersonBadge'
 import { useLookOf } from '../household/usePersonLook'
-import { draftEaterIds, linesOnlyFor, withEater, type CookDraft } from './cookDraft'
+import { draftEaterIds, linesOnlyFor, withEater, type AddFoodDraft } from './addFoodDraft'
 
-type CookWhoWhenProps = {
-  readonly draft: CookDraft
+type WhoEatsProps = {
+  readonly draft: AddFoodDraft
   readonly people: readonly Profile[]
-  readonly onChange: (draft: CookDraft) => void
+  readonly onChange: (draft: AddFoodDraft) => void
 }
 
 /** Who eats (anyone in the household); the day and meal are the ones Add food was opened for. */
-export function CookWhoWhen({ draft, people, onChange }: CookWhoWhenProps) {
+export function WhoEats({ draft, people, onChange }: WhoEatsProps) {
   const lookOf = useLookOf()
   const eaters = draftEaterIds(draft)
 

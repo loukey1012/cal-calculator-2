@@ -11,8 +11,8 @@ import {
   SnackIcon,
 } from '../../components/ios/icons'
 import { toUserMessage } from '../../lib/errors'
-import { useCookSession } from '../cook/cookSessionContext'
-import { useMealOfDay } from '../cook/useMealOfDay'
+import { useAddFoodSession } from '../addFood/addFoodSessionContext'
+import { useMealOfDay } from '../addFood/useMealOfDay'
 import { useLatestDishChangeError } from '../dishes/hooks'
 import { LeftoversPill } from '../dishes/LeftoversPill'
 import type { Profile } from '../household/householdApi'
@@ -143,7 +143,7 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
   const latestChangeError = latestDayError ?? latestDishError
   const navigate = useStackNavigate()
   const from = usePagePath().startsWith('/history') ? 'history' : 'today'
-  const { draft } = useCookSession()
+  const { draft } = useAddFoodSession()
   const mealOfDay = useMealOfDay()
   const mealOf = (mealType: MealType) => ({ userId: person.id, date, mealType })
   const openMeal = (mealType: MealType) =>

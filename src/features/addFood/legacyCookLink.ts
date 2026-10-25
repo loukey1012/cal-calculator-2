@@ -3,8 +3,8 @@ import { useCurrentUser } from '../../app/currentUser'
 import { MEAL_TYPES, type MealType } from '../meals/dayModel'
 import { foodPath, mealPath, type MealRef } from '../meals/mealPages'
 import { useToday } from '../today/useToday'
-import { hasContent, type CookDraft } from './cookDraft'
-import { useCookSession } from './cookSessionContext'
+import { hasContent, type AddFoodDraft } from './addFoodDraft'
+import { useAddFoodSession } from './addFoodSessionContext'
 import { useMealOfDay } from './useMealOfDay'
 
 /**
@@ -33,7 +33,7 @@ export function parseCookLink(params: URLSearchParams, today: string): MealRef |
 /** Where an old Cook address leads now. */
 export function legacyCookTarget(
   url: { readonly pathname: string; readonly search: string },
-  draft: CookDraft,
+  draft: AddFoodDraft,
   { userId, today, mealOfDay }: { userId: string; today: string; mealOfDay: MealType },
 ): string | null {
   if (!COOK_PATH.test(url.pathname)) return null
@@ -49,7 +49,7 @@ export function legacyCookTarget(
 export function useLegacyCookTarget(): string | null {
   const { profile } = useCurrentUser()
   const location = useLocation()
-  const { draft } = useCookSession()
+  const { draft } = useAddFoodSession()
   const today = useToday()
   const mealOfDay = useMealOfDay()
   return legacyCookTarget(location, draft, { userId: profile.id, today, mealOfDay })

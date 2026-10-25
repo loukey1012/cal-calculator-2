@@ -7,15 +7,15 @@ import {
   keepEaters,
   linesOnlyFor,
   mealForTime,
-  newCookDraft,
+  newAddFoodDraft,
   resolvedDish,
   withDate,
   withEater,
   withMealType,
   withPrefill,
   withRecipe,
-  type CookDraft,
-} from './cookDraft'
+  type AddFoodDraft,
+} from './addFoodDraft'
 import type { Recipe } from '../recipes/recipeModel'
 import { slot } from '../recipes/testData'
 
@@ -25,7 +25,7 @@ function at(hours: number, minutes = 0): Date {
   return new Date(2026, 9, 6, hours, minutes)
 }
 
-function withHerOnlyCheese(draft: CookDraft): CookDraft {
+function withHerOnlyCheese(draft: AddFoodDraft): AddFoodDraft {
   const herPortion = draft.dish.portions.find((portion) => portion.eater?.userId === 'her')
   if (!herPortion) throw new Error('her portion missing')
   const cheese = {
@@ -53,10 +53,10 @@ describe('mealForTime', () => {
   })
 })
 
-describe('newCookDraft', () => {
+describe('newAddFoodDraft', () => {
   test('starts with only the cook eating, following today and the time of day', () => {
     // Act
-    const draft = newCookDraft('me')
+    const draft = newAddFoodDraft('me')
 
     // Assert
     expect(draftEaterIds(draft)).toEqual(['me'])
@@ -69,24 +69,24 @@ describe('newCookDraft', () => {
 
 describe('withEater', () => {
   test('adds and removes people', () => {
-    const both = withEater(newCookDraft('me'), 'her', true)
+    const both = withEater(newAddFoodDraft('me'), 'her', true)
     expect(draftEaterIds(both)).toEqual(['me', 'her'])
     expect(draftEaterIds(withEater(both, 'me', false))).toEqual(['her'])
   })
 
   test('adding someone already eating changes nothing', () => {
-    const draft = newCookDraft('me')
+    const draft = newAddFoodDraft('me')
     expect(withEater(draft, 'me', true)).toBe(draft)
   })
 
   test('keeps at least one person eating', () => {
-    const draft = newCookDraft('me')
+    const draft = newAddFoodDraft('me')
     expect(withEater(draft, 'me', false)).toBe(draft)
   })
 
   test('removing someone drops the ingredients only they had', () => {
     // Arrange
-    const draft = withHerOnlyCheese(withEater(newCookDraft('me'), 'her', true))
+    const draft = withHerOnlyCheese(withEater(newAddFoodDraft('me'), 'her', true))
 
     // Act
     const herPortionId = draft.dish.portions[1]?.id ?? ''
@@ -103,7 +103,7 @@ describe('withEater', () => {
 describe('resolvedDish', () => {
   test('every eater eats on today in the meal for the time of day by default', () => {
     // Arrange
-    const draft = withEater(newCookDraft('me'), 'her', true)
+    const draft = withEater(newAddFoodDraft('me'), 'her', true)
 
     // Act
     const dish = resolvedDish(draft, TODAY, 'lunch')
@@ -116,7 +116,7 @@ describe('resolvedDish', () => {
   })
 
   test('a chosen day and meal win', () => {
-    const draft = withMealType(withDate(newCookDraft('me'), '2026-10-04'), 'dinner')
+    const draft = withMealType(withDate(newAddFoodDraft('me'), '2026-10-04'), 'dinner')
     expect(resolvedDish(draft, TODAY, 'lunch').portions[0]?.eater).toEqual({
       userId: 'me',
       date: '2026-10-04',
@@ -125,14 +125,14 @@ describe('resolvedDish', () => {
   })
 
   test('picking today again follows today, so a draft never sticks to an old day', () => {
-    const draft = withDate(withDate(newCookDraft('me'), '2026-10-04'), TODAY, TODAY)
+    const draft = withDate(withDate(newAddFoodDraft('me'), '2026-10-04'), TODAY, TODAY)
     expect(draft.date).toBeNull()
     expect(resolvedDish(draft, '2026-10-07', 'lunch').portions[0]?.eater?.date).toBe('2026-10-07')
   })
 
   test('leftover portions stay uneaten', () => {
-    const draft = newCookDraft('me')
-    const withLeftover: CookDraft = {
+    const draft = newAddFoodDraft('me')
+    const withLeftover: AddFoodDraft = {
       ...draft,
       dish: {
         ...draft.dish,
@@ -147,7 +147,7 @@ describe('withPrefill', () => {
   test('an empty draft is set to exactly that person, day and meal', () => {
     // Act
     const draft = withPrefill(
-      newCookDraft('me'),
+      newAddFoodDraft('me'),
       { userId: 'her', date: '2026-10-04', mealType: 'dinner' },
       TODAY,
     )
@@ -160,7 +160,7 @@ describe('withPrefill', () => {
 
   test('today is stored as following today', () => {
     const draft = withPrefill(
-      newCookDraft('me'),
+      newAddFoodDraft('me'),
       { userId: 'me', date: TODAY, mealType: 'snack' },
       TODAY,
     )
@@ -169,9 +169,9 @@ describe('withPrefill', () => {
 
   test('a started draft keeps its people and ingredients and adds the person', () => {
     // Arrange
-    const started: CookDraft = {
-      ...newCookDraft('me'),
-      dish: withLine(newCookDraft('me').dish, sharedLine('l-rice', 'Rice', 200, 130)),
+    const started: AddFoodDraft = {
+      ...newAddFoodDraft('me'),
+      dish: withLine(newAddFoodDraft('me').dish, sharedLine('l-rice', 'Rice', 200, 130)),
     }
 
     // Act
@@ -187,15 +187,15 @@ describe('withPrefill', () => {
 
 describe('keepEaters', () => {
   test('people no longer in the household stop eating', () => {
-    const draft = withEater(withEater(newCookDraft('me'), 'her', true), 'gone', true)
+    const draft = withEater(withEater(newAddFoodDraft('me'), 'her', true), 'gone', true)
     expect(draftEaterIds(keepEaters(draft, ['me', 'her'], 'me'))).toEqual(['me', 'her'])
   })
 
   test('when nobody is left the cook eats, and the ingredients stay', () => {
     // Arrange
     const draft = {
-      ...newCookDraft('gone'),
-      dish: withLine(newCookDraft('gone').dish, sharedLine('l-rice', 'Rice', 200, 130)),
+      ...newAddFoodDraft('gone'),
+      dish: withLine(newAddFoodDraft('gone').dish, sharedLine('l-rice', 'Rice', 200, 130)),
     }
 
     // Act
@@ -207,7 +207,7 @@ describe('keepEaters', () => {
   })
 
   test('a draft of household members is left as it is', () => {
-    const draft = newCookDraft('me')
+    const draft = newAddFoodDraft('me')
     expect(keepEaters(draft, ['me', 'her'], 'me')).toBe(draft)
   })
 })
@@ -215,7 +215,7 @@ describe('keepEaters', () => {
 describe('withRecipe', () => {
   test('fills the dish from the recipe; day and meal stay, the recipe is remembered', () => {
     // Arrange
-    const draft = withDate(withMealType(newCookDraft('me'), 'dinner'), '2026-10-05', TODAY)
+    const draft = withDate(withMealType(newAddFoodDraft('me'), 'dinner'), '2026-10-05', TODAY)
     const recipe: Recipe = {
       id: 'r-chili',
       name: 'Chili',

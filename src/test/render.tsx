@@ -15,7 +15,7 @@ type RenderOptions = {
   readonly cached?: ReadonlyArray<readonly [QueryKey, unknown]>
 }
 
-/** A router entry for a route like "/cook?person=u2", with optional navigation state. */
+/** A router entry for a route like "/today?person=u2", with optional navigation state. */
 function entryOf(route: string, state: unknown) {
   const [pathname = '/', query] = route.split('?')
   return { pathname, search: query ? `?${query}` : '', state }

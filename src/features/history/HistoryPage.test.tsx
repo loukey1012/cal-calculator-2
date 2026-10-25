@@ -24,8 +24,8 @@ vi.mock('../recipes/recipesApi', () => ({
   saveRecipe: vi.fn(),
   deleteRecipe: vi.fn(),
 }))
-vi.mock('../cook/draftNotice', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../cook/draftNotice')>()),
+vi.mock('../addFood/draftNotice', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../addFood/draftNotice')>()),
   sendDraftNotice: vi.fn().mockResolvedValue(undefined),
 }))
 vi.mock('../goals/goalsApi', () => ({ fetchGoals: vi.fn(), saveGoal: vi.fn() }))
@@ -49,7 +49,7 @@ import { fetchGoals } from '../goals/goalsApi'
 import { fetchMembers } from '../household/householdApi'
 import { addMealItem, fetchDay } from '../meals/mealsApi'
 import { fetchDailyTotals } from './historyApi'
-import { CookSession } from '../cook/CookSession'
+import { AddFoodSession } from '../addFood/AddFoodSession'
 import { HistoryPage } from './HistoryPage'
 
 const PROFILE = {
@@ -105,9 +105,9 @@ function OpenPartnersDay() {
 function renderPage(route = '/history') {
   return renderWithProviders(
     <CurrentUserContext value={{ profile: PROFILE, householdId: 'h1' }}>
-      <CookSession>
+      <AddFoodSession>
         <HistoryPage />
-      </CookSession>
+      </AddFoodSession>
       <LocationProbe />
       <OpenPartnersDay />
     </CurrentUserContext>,
@@ -330,9 +330,9 @@ describe('HistoryPage', () => {
     vi.mocked(fetchMembers).mockResolvedValue([PROFILE, PARTNER])
     renderWithProviders(
       <CurrentUserContext value={{ profile: PROFILE, householdId: 'h1' }}>
-        <CookSession>
+        <AddFoodSession>
           <HistoryPage />
-        </CookSession>
+        </AddFoodSession>
       </CurrentUserContext>,
       { route: '/history/2026-09-10', state: { person: 'u2' } },
     )

@@ -137,7 +137,7 @@ export function useSaveIngredient(
       const input = { ...form.ingredient, category_id: categoryId }
       return id ? updateIngredient(id, input) : createIngredient(householdId, input)
     },
-    // in the list at once, e.g. for the amount step right after creating it on Cook
+    // in the list at once, e.g. for the amount step right after creating it in Add food
     onSuccess: cacheSaved,
     // also after a failure: a category may have been created before the ingredient failed
     onSettled: invalidate,

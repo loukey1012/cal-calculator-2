@@ -1,8 +1,8 @@
 import { z } from 'zod'
-import type { CookDraft } from './cookDraft'
+import type { AddFoodDraft } from './addFoodDraft'
 
 /**
- * The Cook tab's unsaved draft, kept on this phone so switching tabs or iOS closing the app
+ * Add food's unsaved draft, kept on this phone so switching tabs or iOS closing the app
  * loses nothing. Anything stored that doesn't match the current shape is ignored.
  */
 
@@ -83,7 +83,7 @@ function keyFor(userId: string): string {
   return `cook-draft:v${VERSION}:${userId}`
 }
 
-export function loadCookDraft(userId: string): CookDraft | null {
+export function loadAddFoodDraft(userId: string): AddFoodDraft | null {
   try {
     const stored = localStorage.getItem(keyFor(userId))
     if (stored === null) return null
@@ -95,7 +95,7 @@ export function loadCookDraft(userId: string): CookDraft | null {
   }
 }
 
-export function saveCookDraft(userId: string, draft: CookDraft): void {
+export function saveAddFoodDraft(userId: string, draft: AddFoodDraft): void {
   try {
     localStorage.setItem(keyFor(userId), JSON.stringify({ version: VERSION, draft }))
   } catch {
@@ -103,7 +103,7 @@ export function saveCookDraft(userId: string, draft: CookDraft): void {
   }
 }
 
-export function clearCookDraft(userId: string): void {
+export function clearAddFoodDraft(userId: string): void {
   try {
     localStorage.removeItem(keyFor(userId))
   } catch {

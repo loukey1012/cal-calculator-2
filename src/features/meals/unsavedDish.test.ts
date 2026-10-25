@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'vitest'
-import { newCookDraft, withEater } from '../cook/cookDraft'
+import { newAddFoodDraft, withEater } from '../addFood/addFoodDraft'
 import { isDraftFor } from './unsavedDish'
 
 const TODAY = '2026-10-21'
 const LUNCH = { userId: 'u1', date: TODAY, mealType: 'lunch' } as const
-const started = { ...newCookDraft('u1'), dish: { ...newCookDraft('u1').dish, name: 'Chili' } }
+const started = { ...newAddFoodDraft('u1'), dish: { ...newAddFoodDraft('u1').dish, name: 'Chili' } }
 
 describe('isDraftFor', () => {
   test('a started dish for the person, day and meal; day and meal follow today until chosen', () => {
@@ -15,7 +15,7 @@ describe('isDraftFor', () => {
   })
 
   test('not an empty one, and not for someone who isn’t eating', () => {
-    expect(isDraftFor(newCookDraft('u1'), LUNCH, TODAY, 'lunch')).toBe(false)
+    expect(isDraftFor(newAddFoodDraft('u1'), LUNCH, TODAY, 'lunch')).toBe(false)
     expect(isDraftFor(started, { ...LUNCH, userId: 'u2' }, TODAY, 'lunch')).toBe(false)
     expect(
       isDraftFor(withEater(started, 'u2', true), { ...LUNCH, userId: 'u2' }, TODAY, 'lunch'),

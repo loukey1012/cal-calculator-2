@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import { sharedLine } from '../dishes/testData'
-import { newCookDraft, type CookDraft } from './cookDraft'
-import { clearCookDraft, loadCookDraft, saveCookDraft } from './draftStorage'
+import { newAddFoodDraft, type AddFoodDraft } from './addFoodDraft'
+import { clearAddFoodDraft, loadAddFoodDraft, saveAddFoodDraft } from './draftStorage'
 
-function started(): CookDraft {
-  const draft = newCookDraft('me')
+function started(): AddFoodDraft {
+  const draft = newAddFoodDraft('me')
   return {
     ...draft,
     mealType: 'dinner',
@@ -28,11 +28,11 @@ describe('cook draft storage', () => {
     const draft = started()
 
     // Act
-    saveCookDraft('me', draft)
+    saveAddFoodDraft('me', draft)
 
     // Assert
-    expect(loadCookDraft('me')).toEqual(draft)
-    expect(loadCookDraft('her')).toBeNull()
+    expect(loadAddFoodDraft('me')).toEqual(draft)
+    expect(loadAddFoodDraft('her')).toBeNull()
   })
 
   test('remembers the recipe the draft was filled from', () => {
@@ -43,15 +43,15 @@ describe('cook draft storage', () => {
     }
     const draft = { ...started(), recipe }
 
-    saveCookDraft('me', draft)
+    saveAddFoodDraft('me', draft)
 
-    expect(loadCookDraft('me')?.recipe).toEqual(recipe)
+    expect(loadAddFoodDraft('me')?.recipe).toEqual(recipe)
   })
 
   test('a cleared draft is gone', () => {
-    saveCookDraft('me', started())
-    clearCookDraft('me')
-    expect(loadCookDraft('me')).toBeNull()
+    saveAddFoodDraft('me', started())
+    clearAddFoodDraft('me')
+    expect(loadAddFoodDraft('me')).toBeNull()
   })
 
   test.each([
@@ -67,7 +67,7 @@ describe('cook draft storage', () => {
     ],
   ])('a stored draft with %s is ignored', (_reason, stored) => {
     localStorage.setItem('cook-draft:v1:me', stored)
-    expect(loadCookDraft('me')).toBeNull()
+    expect(loadAddFoodDraft('me')).toBeNull()
   })
 
   test('a draft stored before estimates existed still loads, as not an estimate', () => {
@@ -77,8 +77,8 @@ describe('cook draft storage', () => {
       JSON.stringify({ version: 1, draft: { ...started(), dish } }),
     )
 
-    expect(loadCookDraft('me')?.dish.kcalEstimated).toBeUndefined()
-    expect(loadCookDraft('me')?.dish.name).toBe('Rice bowl')
+    expect(loadAddFoodDraft('me')?.dish.kcalEstimated).toBeUndefined()
+    expect(loadAddFoodDraft('me')?.dish.name).toBe('Rice bowl')
   })
 
   test('unavailable storage never breaks cooking', () => {
@@ -89,7 +89,7 @@ describe('cook draft storage', () => {
       throw new Error('blocked')
     })
 
-    expect(() => saveCookDraft('me', started())).not.toThrow()
-    expect(loadCookDraft('me')).toBeNull()
+    expect(() => saveAddFoodDraft('me', started())).not.toThrow()
+    expect(loadAddFoodDraft('me')).toBeNull()
   })
 })
