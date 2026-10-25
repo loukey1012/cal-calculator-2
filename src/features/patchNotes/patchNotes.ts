@@ -30,6 +30,15 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-25T12:45',
+    kind: 'new',
+    title: 'More values while choosing an amount',
+    items: [
+      'Under the amount field, a small table shows the ingredient’s values per 100 g and per unit',
+      'It has the calories and every nutrient your goal has a target for (protein, carbs, fat, fiber)',
+    ],
+  },
+  {
     at: '2026-10-21T15:02',
     kind: 'new',
     title: 'Calories while choosing an amount, and a clear button in every field',

@@ -8,8 +8,7 @@ import { ListRow } from '../../components/ios/ListRow'
 import { TextField } from '../../components/ios/TextField'
 import { toUserMessage } from '../../lib/errors'
 import { useIngredients } from '../ingredients/hooks'
-import type { Ingredient } from '../ingredients/ingredientsApi'
-import { nutritionSummary } from '../ingredients/listing'
+import { useReferenceTable } from '../ingredients/useReferenceTable'
 import { NewIngredientForm } from '../ingredients/NewIngredientForm'
 import { CustomItemForm } from '../meals/CustomItemForm'
 import { FoodPicker } from '../meals/FoodPicker'
@@ -256,29 +255,21 @@ type NewLineStepProps = {
   readonly onAdd: (line: DishLine) => void
 }
 
-/** The calories of a saved ingredient (a custom item has none to show). */
-function caloriesOf(
-  ingredientId: string | null,
-  ingredients: readonly Ingredient[] | undefined,
-): string | undefined {
-  const ingredient = ingredients?.find((candidate) => candidate.id === ingredientId)
-  return ingredient && nutritionSummary(ingredient)
-}
-
 /** The amount of a picked ingredient. */
 function NewLineStep({ ingredientId, portions, onAdd }: NewLineStepProps) {
   const { householdId } = useCurrentUser()
   const ingredients = useIngredients(householdId)
   // one id for the line while its amount is entered
   const [lineId] = useState(newId)
+  const ingredient = ingredients.data?.find((candidate) => candidate.id === ingredientId)
+  const reference = useReferenceTable(ingredient)
   if (ingredients.isError) return <ErrorBanner message={toUserMessage(ingredients.error)} />
   if (ingredients.isPending) return <Message text="Loading…" />
-  const ingredient = ingredients.data.find((candidate) => candidate.id === ingredientId)
   if (!ingredient) return <Message text="This ingredient is no longer available." />
   return (
     <DishLineEditor
       title={ingredient.name}
-      calories={nutritionSummary(ingredient)}
+      reference={reference}
       units={availableUnits(ingredientNutrition(ingredient))}
       unitLabel={ingredient.unit_label}
       portions={portions}
@@ -308,12 +299,15 @@ function EditLineStep({ lineId, dish, portions, steps, onSave, onChange }: EditL
   // a removed line stays on screen while its page slides away
   const [opened] = useState(current)
   const line = current ?? opened
+  const reference = useReferenceTable(
+    ingredients.data?.find((candidate) => candidate.id === line?.item.ingredient_id),
+  )
   if (!line) return null
   const who = lineWho(line)
   return (
     <DishLineEditor
       title={line.item.name}
-      calories={caloriesOf(line.item.ingredient_id, ingredients.data)}
+      reference={reference}
       units={[line.item.entered_unit]}
       portions={portions}
       initialWho={who}
@@ -369,6 +363,9 @@ function SwapStep({ step, steps, dish, portions, onSwap }: SwapStepProps) {
   // a swapped line stays on screen while its page slides away
   const [opened] = useState(current)
   const line = current ?? opened
+  const picked = step.kind === 'swapLine' ? step.ingredientId : null
+  const ingredient = ingredients.data?.find((candidate) => candidate.id === picked)
+  const reference = useReferenceTable(ingredient)
   if (!line) return <Message text="This ingredient is no longer in the dish." />
 
   if (step.kind === 'swap') {
@@ -386,13 +383,12 @@ function SwapStep({ step, steps, dish, portions, onSwap }: SwapStepProps) {
   }
   if (ingredients.isError) return <ErrorBanner message={toUserMessage(ingredients.error)} />
   if (ingredients.isPending) return <Message text="Loading…" />
-  const ingredient = ingredients.data.find((candidate) => candidate.id === step.ingredientId)
   if (!ingredient) return <Message text="This ingredient is no longer available." />
   const who = lineWho(line)
   return (
     <DishLineEditor
       title={ingredient.name}
-      calories={nutritionSummary(ingredient)}
+      reference={reference}
       units={availableUnits(ingredientNutrition(ingredient))}
       unitLabel={ingredient.unit_label}
       portions={portions}

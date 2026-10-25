@@ -31,6 +31,7 @@ vi.mock('../ingredients/ingredientsApi', () => ({
   updateIngredient: vi.fn(),
 }))
 vi.mock('../household/householdApi', () => ({ fetchMembers: vi.fn() }))
+vi.mock('../goals/goalsApi', () => ({ fetchGoals: vi.fn() }))
 vi.mock('../barcode/openFoodFacts', () => ({ lookupProduct: vi.fn() }))
 // the camera can't run here: the scanner reports the barcode in `scanned` when tapped
 const scanned = vi.hoisted(() => ({ barcode: '' }))
@@ -54,6 +55,7 @@ vi.mock('../dishes/dishesApi', () => ({
 }))
 
 import { fetchMembers } from '../household/householdApi'
+import { fetchGoals } from '../goals/goalsApi'
 import {
   createIngredient,
   fetchCategories,
@@ -187,6 +189,7 @@ beforeEach(() => {
   ])
   vi.mocked(fetchCategoryGroups).mockResolvedValue([categoryGroup('g-fresh', 'Fresh')])
   vi.mocked(fetchMembers).mockResolvedValue([ME, HER])
+  vi.mocked(fetchGoals).mockResolvedValue([])
   vi.mocked(saveDish).mockResolvedValue()
   vi.mocked(fetchLeftoverDishes).mockResolvedValue([])
 })
@@ -223,23 +226,61 @@ describe('the dish waiting on Cook', () => {
 })
 
 describe('choosing an amount', () => {
-  test('shows the ingredient’s calories per 100 g and per unit under its name', async () => {
-    vi.mocked(fetchIngredients).mockResolvedValue([
-      ingredient({
-        id: 'bar',
-        name: 'Protein bar',
-        kcal_100: 350,
-        kcal_unit: 210,
-        unit_label: 'bar',
-      }),
+  const BAR = ingredient({
+    id: 'bar',
+    name: 'Protein bar',
+    kcal_100: 350,
+    protein_100: 30,
+    fat_100: 12.5,
+    kcal_unit: 210,
+    protein_unit: 18,
+    fat_unit: 7.5,
+    unit_label: 'bar',
+  })
+
+  function referenceRows(): string[] {
+    const table = screen.getByTestId('reference-values')
+    return within(table)
+      .getAllByRole('row')
+      .map((row) => row.textContent ?? '')
+  }
+
+  test('shows the values per 100 g and per unit under the amount, for the goal’s nutrients', async () => {
+    vi.mocked(fetchGoals).mockResolvedValue([
+      {
+        validFrom: '2026-01-01',
+        kcal: 2000,
+        proteinG: 150,
+        carbsG: null,
+        fatG: 70,
+        fiberG: null,
+        weightGoalKg: null,
+      },
     ])
+    vi.mocked(fetchIngredients).mockResolvedValue([BAR])
     const user = userEvent.setup()
     renderCook()
 
     await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
     await user.click(await screen.findByRole('button', { name: /Protein bar/ }))
 
-    expect(screen.getByTestId('calories')).toHaveTextContent('350 kcal / 100 g · 210 kcal / bar')
+    await screen.findByRole('columnheader', { name: 'Protein' })
+    expect(referenceRows()).toEqual([
+      'PerkcalProteinFat',
+      '100 g35030.0 g12.5 g',
+      '1 bar21018.0 g7.5 g',
+    ])
+  })
+
+  test('only calories without a goal', async () => {
+    vi.mocked(fetchIngredients).mockResolvedValue([BAR])
+    const user = userEvent.setup()
+    renderCook()
+
+    await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
+    await user.click(await screen.findByRole('button', { name: /Protein bar/ }))
+
+    expect(referenceRows()).toEqual(['Perkcal', '100 g350', '1 bar210'])
   })
 
   test('a line of the dish shows them when its amount is changed', async () => {
@@ -249,7 +290,7 @@ describe('choosing an amount', () => {
 
     await user.click(screen.getByRole('button', { name: /^Patty/ }))
 
-    expect(screen.getByTestId('calories')).toHaveTextContent('240 kcal / 100 g')
+    expect(referenceRows()).toEqual(['Perkcal', '100 g240'])
   })
 })
 

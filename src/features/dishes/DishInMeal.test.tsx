@@ -6,6 +6,7 @@ import { renderWithProviders } from '../../test/render'
 import { ingredient } from '../ingredients/testData'
 import { dayMeal, mealItem } from '../meals/testData'
 
+vi.mock('../goals/goalsApi', () => ({ fetchGoals: vi.fn().mockResolvedValue([]) }))
 vi.mock('../meals/mealsApi', () => ({
   fetchDay: vi.fn(),
   addMealItem: vi.fn(),

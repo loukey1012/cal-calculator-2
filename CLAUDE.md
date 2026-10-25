@@ -21,13 +21,23 @@ a cached query changes, give its query key a new version (like `RECIPES_SHAPE` i
 `src/features/recipes/hooks.ts`), so an old copy is ignored instead of crashing the new version.
 Don't bump `CACHE_BUSTER` for that: it would also drop changes still waiting to be sent.
 
-**Current work:** `docs/plan-2026-10-20.md` has the build plan for items 32–44 (the user's list of
-2026-10-20): every decision, the approach per item and a status table. Read it before working on
-any of them; keep its status table and the README checkboxes current. Batch A (32–37, 43) is
-done; 38 (two-level categories, tree in `scripts/recategorize/tree.json`) is done (2026-10-21);
-45 (notes on days and meals, added 2026-10-21) and 39 (merging duplicates from the review) are
-built; batch C (40 meal pages, 41 compact dish editing, 42 Move to…) is built (2026-10-21, user
-tests it); next is D (44, repo clean-up), last.
+**Current work:** `docs/plan-2026-10-20.md` has the build plan for items 32–47 (the user's lists of
+2026-10-20 and 2026-10-21): every decision, the approach per item ("As built" notes) and a status
+table. Read it before working on any of them; keep its status table and the README checkboxes
+current. **Everything is built and live; 44 (repo clean-up) is the one left, started 2026-10-25
+at the user's word.** As of 2026-10-25:
+
+- Done and confirmed by the user: 32–43, 45, 47.
+- 46 changed 2026-10-25 at the user's request (a table under the amount field: per 100 g and per
+  unit, calories plus each nutrient of the user's goal); user tests it, ask how it went.
+- How meal pages work: addresses in `src/features/meals/mealPages.ts`, every tab is a page stack
+  (`roots` in `app/TabShell.tsx`), the picked person travels in navigation state
+  (`app/stackNavigate.ts`), old `/cook` links are redirected in `cook/legacyCookLink.ts` (the
+  notifications on the server still send them; nothing to redeploy).
+- Journeys locally: build against dev (`VITE_SUPABASE_URL=$SUPABASE_TEST_URL
+VITE_SUPABASE_ANON_KEY=$SUPABASE_TEST_ANON_KEY`, README); without them the build talks to prod
+  and every login fails. Pushing a migration to dev with `npx supabase db push --linked` may need
+  the user's OK in auto mode.
 
 **State (2026-10-20, evening):** items 1–31 are built; their build plan
 (`docs/plan-2026-10-15.md`) was removed at the user's request, its decisions live in README.md

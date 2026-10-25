@@ -1,6 +1,8 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { Button } from '../../components/ios/Button'
 import { SegmentedControl } from '../../components/ios/SegmentedControl'
+import { ReferenceValues } from '../ingredients/ReferenceValues'
+import type { ReferenceTable } from '../ingredients/referenceValues'
 import { parseDecimal, roundTo } from '../../lib/numbers'
 import { formatKcal, macroSummary } from '../nutrition/format'
 import type { AmountUnit, NutritionTotals } from '../nutrition/types'
@@ -11,8 +13,8 @@ const AMOUNT_DECIMALS = 2
 
 type AmountEditorProps = {
   readonly title: string
-  /** e.g. "92 kcal / 100 g · 210 kcal / bar", under the name */
-  readonly calories?: string
+  /** the ingredient's values per 100 g and per unit, under the amount */
+  readonly reference?: ReferenceTable
   readonly units: readonly AmountUnit[]
   /** shown instead of "Units", e.g. "Riegel" */
   readonly unitLabel?: string | null
@@ -25,7 +27,7 @@ type AmountEditorProps = {
 
 export function AmountEditor({
   title,
-  calories,
+  reference,
   units,
   unitLabel,
   initialAmount = '',
@@ -58,11 +60,6 @@ export function AmountEditor({
   return (
     <form noValidate onSubmit={handleSubmit} className="mt-2">
       <h3 className="text-[20px] font-semibold">{title}</h3>
-      {calories && (
-        <p data-testid="calories" className="mt-0.5 text-[15px] font-semibold text-label-secondary">
-          {calories}
-        </p>
-      )}
       {units.length > 1 && (
         <div className="mt-4">
           <SegmentedControl
@@ -97,6 +94,7 @@ export function AmountEditor({
         </Button>
       </div>
       {error && <p className="mt-1 px-1 text-[13px] text-destructive">{error}</p>}
+      {reference && <ReferenceValues table={reference} />}
       <div data-testid="amount-preview" className="mt-3 px-1 text-[15px] text-label-secondary">
         {totals ? `${formatKcal(totals.kcal)} kcal · ${macroSummary(totals)}` : '–'}
       </div>

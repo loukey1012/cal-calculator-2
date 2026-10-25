@@ -2,6 +2,8 @@ import { useState, type FormEvent, type ReactNode } from 'react'
 import { Button } from '../../components/ios/Button'
 import { GroupedSection } from '../../components/ios/GroupedSection'
 import { SegmentedControl } from '../../components/ios/SegmentedControl'
+import { ReferenceValues } from '../ingredients/ReferenceValues'
+import type { ReferenceTable } from '../ingredients/referenceValues'
 import { formatKcal, macroSummary } from '../nutrition/format'
 import { itemTotals } from '../nutrition/totals'
 import type { AmountUnit } from '../nutrition/types'
@@ -22,8 +24,8 @@ type WhoValue = 'shared' | 'own' | `only:${string}`
 
 type DishLineEditorProps = {
   readonly title: string
-  /** e.g. "92 kcal / 100 g · 210 kcal / bar", under the name */
-  readonly calories?: string
+  /** the ingredient's values per 100 g and per unit, under the amount */
+  readonly reference?: ReferenceTable
   readonly units: readonly AmountUnit[]
   readonly unitLabel?: string | null
   readonly portions: readonly PortionOption[]
@@ -71,7 +73,7 @@ function tryBuild(build: DishLineEditorProps['build'], input: LineInput | null):
 /** One ingredient of a dish: its unit, who has it and how much. */
 export function DishLineEditor({
   title,
-  calories,
+  reference,
   units,
   unitLabel,
   portions,
@@ -120,11 +122,6 @@ export function DishLineEditor({
   return (
     <form noValidate onSubmit={handleSubmit} className="mt-2">
       <h3 className="text-[20px] font-semibold">{title}</h3>
-      {calories && (
-        <p data-testid="calories" className="mt-0.5 text-[15px] font-semibold text-label-secondary">
-          {calories}
-        </p>
-      )}
       {portions.length > 1 && (
         <div className="mt-4">
           <SegmentedControl label="Who" options={whoOptions} value={who} onChange={setWho} />
@@ -185,6 +182,11 @@ export function DishLineEditor({
         )}
       </GroupedSection>
       {error && <p className="mt-1 px-4 text-[13px] text-destructive">{error}</p>}
+      {reference && (
+        <div className="px-3">
+          <ReferenceValues table={reference} />
+        </div>
+      )}
       <p data-testid="line-preview" className="mt-3 px-4 text-[15px] text-label-secondary">
         {totals ? `${formatKcal(totals.kcal)} kcal · ${macroSummary(totals)}` : '–'}
       </p>

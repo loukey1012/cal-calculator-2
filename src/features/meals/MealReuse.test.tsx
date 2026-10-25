@@ -6,6 +6,7 @@ import { toLocalDateString } from '../../lib/dates'
 import { renderWithProviders } from '../../test/render'
 import { dayMeal, mealItem } from './testData'
 
+vi.mock('../goals/goalsApi', () => ({ fetchGoals: vi.fn().mockResolvedValue([]) }))
 vi.mock('../dishes/dishesApi', () => ({
   fetchLeftoverDishes: vi.fn().mockResolvedValue([]),
   fetchDish: vi.fn(),
