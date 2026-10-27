@@ -11,6 +11,8 @@ import {
   SnackIcon,
 } from '../../components/ios/icons'
 import { toUserMessage } from '../../lib/errors'
+import { useGoals } from '../goals/hooks'
+import { DayStatusPill } from '../history/DayStatusPill'
 import { useAddFoodSession } from '../addFood/addFoodSessionContext'
 import { useMealOfDay } from '../addFood/useMealOfDay'
 import { useLatestDishChangeError } from '../dishes/hooks'
@@ -22,6 +24,7 @@ import { useDay, useDayNote, useLatestDayChangeError, useDayMark } from '../meal
 import { mealPath } from '../meals/mealPages'
 import { isDraftFor } from '../meals/unsavedDish'
 import { formatKcalTotal } from '../nutrition/format'
+import { goalForDate } from '../nutrition/goals'
 import type { NutritionTotals } from '../nutrition/types'
 import { mealTotals, sumTotals } from '../nutrition/totals'
 import {
@@ -30,6 +33,7 @@ import {
   missingMainMeals,
   type MainMeal,
 } from '../../../supabase/functions/_shared/dayCounting'
+import { DayNoteCard } from './DayNoteCard'
 import { DayOptionsSheet } from './DayOptionsSheet'
 import { GoalCard } from './GoalCard'
 import { useToday } from './useToday'
@@ -113,7 +117,7 @@ function MealCard({ type, label, subtitle, note, unsaved, onOpen }: MealCardProp
           <span
             data-testid="unsaved-dot"
             aria-hidden="true"
-            className="h-2.5 w-2.5 shrink-0 rounded-full bg-accent"
+            className="h-2.5 w-2.5 shrink-0 rounded-full bg-accent-ink"
           />
         )}
       </span>
@@ -121,7 +125,14 @@ function MealCard({ type, label, subtitle, note, unsaved, onOpen }: MealCardProp
         {subtitle}
       </span>
       {note && (
-        <span className="-mt-1 block truncate px-0.5 text-[12px] text-label-secondary">{note}</span>
+        <span className="-mt-1 flex items-start gap-1.5 px-0.5 text-[12px] text-label-secondary">
+          <span
+            data-testid="meal-note-dot"
+            aria-hidden="true"
+            className="mt-[5px] h-1.5 w-1.5 shrink-0 rounded-full bg-accent-ink"
+          />
+          <span className="line-clamp-2 min-w-0 break-words">{note}</span>
+        </span>
       )}
     </button>
   )
@@ -132,14 +143,20 @@ type DayViewProps = {
   readonly isOwnDay: boolean
   /** local YYYY-MM-DD; today or any past day, all editable */
   readonly date: string
+  /**
+   * History: the day's verdict and note come first, as a pill and a card. Today stays compact,
+   * with the note under the Meals heading.
+   */
+  readonly showStatus?: boolean
 }
 
 /** A person's day: goal progress, total and the four meals, each opening as a page of its own. */
-export function DayView({ person, isOwnDay, date }: DayViewProps) {
+export function DayView({ person, isOwnDay, date, showStatus = false }: DayViewProps) {
   const day = useDay(person.id, date)
   const dayMark = useDayMark(person.id, date).data ?? null
   const dayNote = useDayNote(person.id, date).data ?? null
   const today = useToday()
+  const goals = useGoals(person.id)
   const lookOf = useLookOf()
   const [optionsOpen, setOptionsOpen] = useState(false)
   // reported here too, so a save that fails after its meal was left isn't silent
@@ -197,6 +214,23 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
         </>
       ) : (
         <>
+          {showStatus && (
+            <div className="mt-2 flex flex-col items-start gap-2">
+              {!day.isPending && goals.data !== undefined && (
+                <DayStatusPill
+                  input={{
+                    date,
+                    today,
+                    day: counted,
+                    kcal: dayTotals.kcal,
+                    estimated: dayTotals.estimated,
+                    goal: goalForDate(goals.data, date),
+                  }}
+                />
+              )}
+              {dayNote && <DayNoteCard note={dayNote} />}
+            </div>
+          )}
           <GoalCard
             key={person.id}
             userId={person.id}
@@ -234,7 +268,7 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
                   {missing.length > 0 && <DayBadge label={missingLabel(missing)} />}
                 </div>
               )}
-              {dayNote && (
+              {dayNote && !showStatus && (
                 <p className="mt-1.5 truncate text-[13px] text-label-secondary">{dayNote}</p>
               )}
             </div>

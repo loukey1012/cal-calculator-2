@@ -1,3 +1,4 @@
+import { partialMatchKey } from '@tanstack/react-query'
 import { describe, expect, test } from 'vitest'
 import { keysForHint, parseHint } from './liveEvent'
 
@@ -52,6 +53,20 @@ describe('keysForHint', () => {
       ['day', PARTNER, '2026-10-06'],
       ['month', PARTNER],
     ])
+  })
+
+  test("a partner's day note (sent as a meals hint) refreshes the month's note dates", () => {
+    // Arrange: the month's note dates are cached under the person's month prefix
+    const noteDatesKey = ['month', PARTNER, '2026-10-01', 'notes']
+
+    // Act
+    const keys = keysForHint(
+      { table: 'meals', user_id: PARTNER, date: '2026-10-06', actor: PARTNER },
+      HOUSEHOLD,
+    )
+
+    // Assert
+    expect(keys.some((key) => partialMatchKey(noteDatesKey, key))).toBe(true)
   })
 
   test('a partner logging into my day refreshes my day', () => {

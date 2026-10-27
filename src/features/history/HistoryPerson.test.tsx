@@ -12,7 +12,10 @@ vi.mock('../dishes/dishesApi', () => ({
   saveDish: vi.fn(),
   deleteDish: vi.fn(),
 }))
-vi.mock('./historyApi', () => ({ fetchDailyTotals: vi.fn() }))
+vi.mock('./historyApi', () => ({
+  fetchDailyTotals: vi.fn(),
+  fetchNoteDates: vi.fn().mockResolvedValue([]),
+}))
 vi.mock('../weight/weightApi', () => ({
   fetchWeights: vi.fn().mockResolvedValue([{ date: '2026-09-28', weightKg: 72.4 }]),
   saveWeight: vi.fn(),

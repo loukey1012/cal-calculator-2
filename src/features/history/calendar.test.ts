@@ -2,10 +2,12 @@ import { describe, expect, test } from 'vitest'
 import {
   addMonths,
   dayStatus,
-  monthGrid,
+  monthWeeks,
   monthRange,
   monthStart,
   monthSummary,
+  weekAverageKcal,
+  weekEdgeRanges,
   type DayTotal,
 } from './calendar'
 
@@ -27,29 +29,46 @@ describe('months', () => {
     expect(addMonths('2026-01-01', -1)).toBe('2025-12-01')
   })
 
-  test('the grid has Monday-first weeks with blanks before and after the month', () => {
+  test('the weeks are Monday-first and run on into the neighbouring months', () => {
     // 1 October 2026 is a Thursday
-    const grid = monthGrid('2026-10-01')
+    const weeks = monthWeeks('2026-10-01')
 
-    expect(grid[0]).toEqual([
-      null,
-      null,
-      null,
+    expect(weeks).toHaveLength(5)
+    expect(weeks[0]).toEqual([
+      '2026-09-28',
+      '2026-09-29',
+      '2026-09-30',
       '2026-10-01',
       '2026-10-02',
       '2026-10-03',
       '2026-10-04',
     ])
-    expect(grid.at(-1)).toEqual([
+    expect(weeks.at(-1)).toEqual([
       '2026-10-26',
       '2026-10-27',
       '2026-10-28',
       '2026-10-29',
       '2026-10-30',
       '2026-10-31',
-      null,
+      '2026-11-01',
     ])
-    expect(grid.flat().filter(Boolean)).toHaveLength(31)
+  })
+
+  test('a month that starts on a Monday and ends on a Sunday has no days of its neighbours', () => {
+    // February 2027: Monday 1st to Sunday 28th
+    const weeks = monthWeeks('2027-02-01')
+
+    expect(weeks).toHaveLength(4)
+    expect(weeks[0]?.[0]).toBe('2027-02-01')
+    expect(weeks.at(-1)?.[6]).toBe('2027-02-28')
+    expect(weekEdgeRanges('2027-02-01')).toEqual([])
+  })
+
+  test('the edge ranges are the days of the first and last week that lie outside the month', () => {
+    expect(weekEdgeRanges('2026-10-01')).toEqual([
+      { first: '2026-09-28', last: '2026-09-30' },
+      { first: '2026-11-01', last: '2026-11-01' },
+    ])
   })
 })
 
@@ -177,5 +196,52 @@ describe('monthSummary', () => {
     )
 
     expect(summary).toMatchObject({ averageKcal: 1500, estimated: true })
+  })
+})
+
+describe('weekAverageKcal', () => {
+  const day = (date: string, kcal: number, extra: Partial<DayTotal> = {}): DayTotal => ({
+    date,
+    kcal,
+    protein: 0,
+    mealCount: 3,
+    kcalEstimated: false,
+    lunchLogged: true,
+    dinnerLogged: true,
+    ...extra,
+  })
+  const week = [
+    '2026-10-12',
+    '2026-10-13',
+    '2026-10-14',
+    '2026-10-15',
+    '2026-10-16',
+    '2026-10-17',
+    '2026-10-18',
+  ]
+  const byDate = (days: DayTotal[]) => new Map(days.map((total) => [total.date, total]))
+
+  test('averages only the days that count', () => {
+    const totals = byDate([
+      day('2026-10-12', 1800),
+      day('2026-10-13', 2200),
+      day('2026-10-14', 5000, { cheatDay: true }),
+      day('2026-10-15', 5000, { alcoholDay: true }),
+      day('2026-10-16', 5000, { cheatMeal: true }),
+      day('2026-10-17', 300, { dinnerLogged: false }),
+    ])
+
+    expect(weekAverageKcal(week, totals, '2026-10-18')).toBe(2000)
+  })
+
+  test('leaves out today, which is still being logged', () => {
+    const totals = byDate([day('2026-10-12', 1800), day('2026-10-13', 3000)])
+
+    expect(weekAverageKcal(week, totals, '2026-10-13')).toBe(1800)
+  })
+
+  test('is null when no day of the week counts, or the week has blanks only', () => {
+    expect(weekAverageKcal(week, byDate([]), '2026-10-30')).toBeNull()
+    expect(weekAverageKcal([null, null, '2026-10-01'], byDate([]), '2026-10-30')).toBeNull()
   })
 })

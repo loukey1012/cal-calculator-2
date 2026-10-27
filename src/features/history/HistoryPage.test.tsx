@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useLocation, useNavigate } from 'react-router'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
@@ -12,7 +12,10 @@ vi.mock('../dishes/dishesApi', () => ({
   saveDish: vi.fn(),
   deleteDish: vi.fn(),
 }))
-vi.mock('./historyApi', () => ({ fetchDailyTotals: vi.fn() }))
+vi.mock('./historyApi', () => ({
+  fetchDailyTotals: vi.fn(),
+  fetchNoteDates: vi.fn().mockResolvedValue([]),
+}))
 vi.mock('../weight/weightApi', () => ({
   fetchWeights: vi.fn().mockResolvedValue([{ date: '2026-09-28', weightKg: 72.4 }]),
   saveWeight: vi.fn(),
@@ -47,8 +50,9 @@ vi.mock('../ingredients/ingredientsApi', () => ({
 
 import { fetchGoals } from '../goals/goalsApi'
 import { fetchMembers } from '../household/householdApi'
-import { addMealItem, fetchDay } from '../meals/mealsApi'
-import { fetchDailyTotals } from './historyApi'
+import { addMealItem, fetchDay, fetchDayMark, fetchDayNote } from '../meals/mealsApi'
+import { fetchDailyTotals, fetchNoteDates } from './historyApi'
+import { fetchWeights } from '../weight/weightApi'
 import { AddFoodSession } from '../addFood/AddFoodSession'
 import { HistoryPage } from './HistoryPage'
 
@@ -124,11 +128,15 @@ beforeEach(() => {
     { date: '2026-10-02', kcal: 2350, protein: 60, mealCount: 2, kcalEstimated: false },
   ])
   vi.mocked(fetchGoals).mockResolvedValue([GOAL])
+  vi.mocked(fetchWeights).mockResolvedValue([{ date: '2026-09-28', weightKg: 72.4 }])
+  vi.mocked(fetchNoteDates).mockResolvedValue([])
   vi.mocked(fetchMembers).mockResolvedValue([PROFILE])
   vi.mocked(fetchDay).mockResolvedValue([
     dayMeal('m1', 'lunch', [mealItem({ id: 'a', name: 'Pasta', kcal: 350, basis_multiplier: 2 })]),
   ])
   vi.mocked(addMealItem).mockResolvedValue()
+  vi.mocked(fetchDayMark).mockResolvedValue(null)
+  vi.mocked(fetchDayNote).mockResolvedValue(null)
 })
 
 afterEach(() => {
@@ -144,6 +152,65 @@ describe('HistoryPage', () => {
     )
     expect(screen.getByRole('button', { name: /October 2.*over goal/ })).toBeInTheDocument()
     expect(fetchDailyTotals).toHaveBeenCalledWith('u1', '2026-10-01', '2026-10-31')
+  })
+
+  test('marks days with a note, a weigh-in or estimated calories', async () => {
+    vi.mocked(fetchNoteDates).mockResolvedValue(['2026-10-01'])
+    vi.mocked(fetchWeights).mockResolvedValue([{ date: '2026-10-01', weightKg: 72 }])
+    vi.mocked(fetchDailyTotals).mockResolvedValue([
+      { ...complete('2026-10-01'), kcalEstimated: true },
+      complete('2026-10-02'),
+    ])
+    renderPage()
+
+    expect(
+      await screen.findByRole('button', {
+        name: 'October 1, within goal, has a note, weigh-in, estimated calories',
+      }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'October 2, within goal' })).toBeInTheDocument()
+    expect(fetchNoteDates).toHaveBeenCalledWith('u1', '2026-10-01', '2026-10-31')
+  })
+
+  test('shows the average of the counted days at the end of each week', async () => {
+    vi.mocked(fetchDailyTotals).mockResolvedValue([
+      complete('2026-10-01'),
+      { ...complete('2026-10-02'), kcal: 2400 },
+      { ...complete('2026-10-03'), kcal: 9000, cheatDay: true },
+    ])
+    renderPage()
+
+    await waitFor(() =>
+      expect(screen.getAllByTestId('week-average').map((cell) => cell.textContent)).toContain(
+        '2,100',
+      ),
+    )
+    expect(
+      screen.getAllByTestId('week-average').filter((cell) => cell.textContent !== ''),
+    ).toHaveLength(1)
+  })
+
+  test('a week across two months averages all its days, whichever month shows it', async () => {
+    const days = [
+      { ...complete('2026-09-29'), kcal: 1000 },
+      { ...complete('2026-10-01'), kcal: 3000 },
+    ]
+    vi.mocked(fetchDailyTotals).mockImplementation(async (_userId, first, last) =>
+      days.filter((day) => day.date >= first && day.date <= last),
+    )
+    const user = userEvent.setup()
+    renderPage()
+
+    await waitFor(() => expect(screen.getAllByTestId('week-average')[0]).toHaveTextContent('2,000'))
+    // the days of the neighbouring month are not drawn, and don't join the month's summary
+    expect(screen.getByTestId('month-summary')).toHaveTextContent('1 day logged · Ø 3,000 kcal')
+
+    await user.click(screen.getByRole('button', { name: 'Previous month' }))
+
+    await waitFor(() =>
+      expect(screen.getAllByTestId('week-average').at(-1)).toHaveTextContent('2,000'),
+    )
+    expect(screen.getByTestId('month-summary')).toHaveTextContent('1 day logged · Ø 1,000 kcal')
   })
 
   test('summarises the logged days of the month', async () => {
@@ -293,6 +360,38 @@ describe('HistoryPage', () => {
     expect(screen.queryByRole('region', { name: /October/ })).not.toBeInTheDocument()
   })
 
+  test('holding a day shows its verdict, calories and note without opening it', async () => {
+    vi.mocked(fetchDailyTotals).mockResolvedValue([complete('2026-10-01')])
+    vi.mocked(fetchNoteDates).mockResolvedValue(['2026-10-01'])
+    vi.mocked(fetchDayNote).mockResolvedValue('Birthday at Oma’s')
+    renderPage()
+    const day = await screen.findByRole('button', { name: /^October 1,.*has a note/ })
+
+    fireEvent.pointerDown(day, { pointerId: 1, isPrimary: true, clientX: 50, clientY: 50 })
+    const look = await screen.findByRole('dialog', {}, { timeout: 2000 })
+    expect(look).toHaveTextContent(/Within goal/)
+    expect(look).toHaveTextContent('1,800 of 2,000 kcal')
+    expect(await within(look).findByText('Birthday at Oma’s')).toBeInTheDocument()
+    fireEvent.pointerUp(day, { pointerId: 1, isPrimary: true, clientX: 50, clientY: 50 })
+    fireEvent.click(day)
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByTestId('path')).toHaveTextContent(/^\/history$/)
+  })
+
+  test('swiping the calendar shows the previous month, and Today comes back', async () => {
+    renderPage()
+    const grid = await screen.findByRole('table')
+
+    fireEvent.pointerDown(grid, { pointerId: 1, isPrimary: true, clientX: 100, clientY: 300 })
+    fireEvent.pointerUp(grid, { pointerId: 1, isPrimary: true, clientX: 240, clientY: 300 })
+
+    expect(await screen.findByRole('heading', { name: /September 2026/ })).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Today' }))
+    expect(await screen.findByRole('heading', { name: /October 2026/ })).toBeInTheDocument()
+    expect(screen.getByTestId('path')).toHaveTextContent(/^\/history$/)
+  })
+
   test('a day in an earlier month opens that month', () => {
     renderPage('/history/2026-09-10')
 
@@ -353,5 +452,85 @@ describe('HistoryPage', () => {
     await waitFor(() =>
       expect(fetchDailyTotals).toHaveBeenCalledWith('u2', '2026-09-01', '2026-09-30'),
     )
+  })
+
+  describe('the open day', () => {
+    const LUNCH_AND_DINNER = [
+      dayMeal('m1', 'lunch', [mealItem({ id: 'a', name: 'Pasta', kcal: 900 })]),
+      dayMeal('m2', 'dinner', [mealItem({ id: 'b', name: 'Soup', kcal: 900 })]),
+    ]
+
+    test('starts with a status pill, in words', async () => {
+      vi.mocked(fetchDay).mockResolvedValue(LUNCH_AND_DINNER)
+      renderPage('/history/2026-10-01')
+
+      const day = await screen.findByRole('region', { name: /October 1/ })
+      expect(await within(day).findByTestId('day-status')).toHaveTextContent(
+        'Within goal · 200 kcal left',
+      )
+    })
+
+    test('says what is missing when a main meal has no food', async () => {
+      renderPage('/history/2026-10-12')
+
+      const day = await screen.findByRole('region', { name: /October 12/ })
+      expect(await within(day).findByTestId('day-status')).toHaveTextContent(
+        'Dinner missing · not counted',
+      )
+    })
+
+    test('names a day marked as alcohol day', async () => {
+      vi.mocked(fetchDay).mockResolvedValue(LUNCH_AND_DINNER)
+      vi.mocked(fetchDayMark).mockResolvedValue('alcohol')
+      renderPage('/history/2026-10-01')
+
+      expect(await screen.findByTestId('day-status')).toHaveTextContent('Alcohol day · not counted')
+    })
+
+    test('says so when there is no goal', async () => {
+      vi.mocked(fetchDay).mockResolvedValue(LUNCH_AND_DINNER)
+      vi.mocked(fetchGoals).mockResolvedValue([])
+      renderPage('/history/2026-10-01')
+
+      expect(await screen.findByTestId('day-status')).toHaveTextContent('No goal set')
+    })
+
+    test('never judges today', async () => {
+      vi.mocked(fetchDay).mockResolvedValue(LUNCH_AND_DINNER)
+      renderPage('/history/2026-10-15')
+
+      expect(await screen.findByTestId('day-status')).toHaveTextContent('So far · 200 kcal left')
+    })
+
+    test('shows the day note as a card right under the pill, once', async () => {
+      vi.mocked(fetchDay).mockResolvedValue(LUNCH_AND_DINNER)
+      vi.mocked(fetchDayNote).mockResolvedValue('Birthday at Oma’s')
+      renderPage('/history/2026-10-01')
+
+      const card = await screen.findByRole('group', { name: 'Note' })
+      expect(card).toHaveTextContent('Birthday at Oma’s')
+      expect(screen.getAllByText('Birthday at Oma’s')).toHaveLength(1)
+      const pill = screen.getByTestId('day-status')
+      expect(pill.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    })
+
+    test('shows no note card without a note', async () => {
+      vi.mocked(fetchDay).mockResolvedValue(LUNCH_AND_DINNER)
+      renderPage('/history/2026-10-01')
+
+      await screen.findByTestId('day-status')
+      expect(screen.queryByRole('group', { name: 'Note' })).not.toBeInTheDocument()
+    })
+
+    test('a meal note is on its meal card right away, with a dot', async () => {
+      vi.mocked(fetchDay).mockResolvedValue([
+        { ...dayMeal('m1', 'lunch', [mealItem({ id: 'a', kcal: 900 })]), note: 'Restaurant' },
+        dayMeal('m2', 'dinner', [mealItem({ id: 'b', kcal: 900 })]),
+      ])
+      renderPage('/history/2026-10-01')
+
+      const lunch = await screen.findByRole('button', { name: /Lunch.*Restaurant/ })
+      expect(within(lunch).getByTestId('meal-note-dot')).toHaveClass('bg-accent-ink')
+    })
   })
 })

@@ -30,6 +30,18 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-27T18:40',
+    kind: 'new',
+    title: 'History easier to read',
+    items: [
+      'Days in the calendar show small symbols: a glass for an alcohol day (purple outline), a star for a cheat meal, “!” when lunch or dinner is missing, a dot for a note, a scale for a weigh-in and “~” for estimated calories',
+      'Today has a ring and the open day is filled; the current week is lightly tinted, and each week ends with its Ø kcal of the counted days',
+      'A key under the calendar explains the colors and symbols (Hide key / Show key)',
+      'Swipe sideways for the month before or after, Today jumps back; hold a day for a quick look',
+      'An open day starts with a status pill (e.g. “Within goal · 140 kcal over”, “Alcohol day · not counted”) and its note as a card; meal notes show with a dot',
+    ],
+  },
+  {
     at: '2026-10-27T18:07',
     kind: 'new',
     title: 'Save in the day options',

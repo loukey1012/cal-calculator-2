@@ -31,3 +31,30 @@ export async function fetchDailyTotals(
     dinnerLogged: row.dinner_logged ?? false,
   }))
 }
+
+/** The days between two local dates (inclusive) that have a day note or a note on a meal. */
+export async function fetchNoteDates(
+  userId: string,
+  first: string,
+  last: string,
+): Promise<string[]> {
+  const [dayNotes, meals] = await Promise.all([
+    supabase
+      .from('day_notes')
+      .select('date')
+      .eq('user_id', userId)
+      .gte('date', first)
+      .lte('date', last),
+    supabase
+      .from('meals')
+      .select('date, note')
+      .eq('user_id', userId)
+      .not('note', 'is', null)
+      .gte('date', first)
+      .lte('date', last),
+  ])
+  if (dayNotes.error) throw ApiError.from(dayNotes.error)
+  if (meals.error) throw ApiError.from(meals.error)
+  const withMealNote = meals.data.filter((meal) => meal.note)
+  return [...new Set([...dayNotes.data, ...withMealNote].map((row) => row.date))].toSorted()
+}

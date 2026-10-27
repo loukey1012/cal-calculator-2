@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, test, vi } from 'vitest'
-import type { DayStatus } from './calendar'
+import type { DayMarks, DayStatus } from './calendar'
 import { MonthCalendar } from './MonthCalendar'
 
 const STATUS_OF: Record<string, DayStatus> = {
@@ -13,15 +13,23 @@ const STATUS_OF: Record<string, DayStatus> = {
   '2026-10-06': 'alcoholDay',
 }
 
-function renderCalendar() {
+const NO_MARKS: DayMarks = { hasNote: false, weighed: false, estimated: false }
+const MARKS_OF: Record<string, DayMarks> = {
+  '2026-10-06': { ...NO_MARKS, hasNote: true, weighed: true },
+  '2026-10-07': { ...NO_MARKS, estimated: true },
+}
+
+function renderCalendar(today = '2026-10-15', month = '2026-10-01') {
   const onSelectDay = vi.fn()
   const onChangeMonth = vi.fn()
   render(
     <MonthCalendar
-      month="2026-10-01"
-      today="2026-10-15"
+      month={month}
+      today={today}
       selectedDay="2026-10-02"
       statusOf={(date) => STATUS_OF[date] ?? 'none'}
+      marksOf={(date) => MARKS_OF[date] ?? NO_MARKS}
+      averageOf={(week) => (week.includes('2026-10-07') ? 1850 : null)}
       onSelectDay={onSelectDay}
       onChangeMonth={onChangeMonth}
     />,
@@ -98,5 +106,158 @@ describe('MonthCalendar', () => {
     await user.click(screen.getByRole('button', { name: 'Previous month' }))
     expect(onChangeMonth).toHaveBeenCalledWith('2026-09-01')
     expect(screen.getByRole('button', { name: 'Next month' })).toBeDisabled()
+  })
+
+  test('lists every mark of a day in its name', () => {
+    renderCalendar()
+
+    expect(
+      screen.getByRole('button', { name: 'October 6, alcohol day, has a note, weigh-in' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'October 7, estimated calories' }),
+    ).toBeInTheDocument()
+  })
+
+  test('draws the note dot, scale and estimate mark only where they apply', () => {
+    renderCalendar()
+
+    const marked = screen.getByRole('button', { name: /October 6,/ })
+    expect(within(marked).getByTestId('note-dot')).toBeInTheDocument()
+    expect(within(marked).getByTestId('weigh-in-mark')).toBeInTheDocument()
+    expect(within(marked).queryByTestId('estimate-mark')).not.toBeInTheDocument()
+    expect(within(marked).getByTestId('alcohol-mark')).toBeInTheDocument()
+    const estimated = screen.getByRole('button', { name: /October 7,/ })
+    expect(within(estimated).getByTestId('estimate-mark')).toBeInTheDocument()
+    expect(within(estimated).queryByTestId('note-dot')).not.toBeInTheDocument()
+    const plain = screen.getByRole('button', { name: /October 1,/ })
+    expect(within(plain).queryByTestId('note-dot')).not.toBeInTheDocument()
+  })
+
+  test('marks a cheat meal with a star and a missing meal with a badge, not with dots', () => {
+    renderCalendar()
+
+    const cheatMeal = screen.getByRole('button', { name: /October 4,/ })
+    expect(within(cheatMeal).getByTestId('cheat-meal-mark')).toBeInTheDocument()
+    expect(within(cheatMeal).queryByTestId('note-dot')).not.toBeInTheDocument()
+    expect(
+      within(screen.getByRole('button', { name: /October 5,/ })).getByTestId('missing-dot'),
+    ).toBeInTheDocument()
+  })
+
+  test('outlines alcohol days in purple and cheat days in grey, both dashed', () => {
+    renderCalendar()
+
+    expect(screen.getByRole('button', { name: /October 6,/ }).className).toMatch(
+      /border-dashed.*border-alcohol|border-alcohol.*border-dashed/,
+    )
+    expect(screen.getByRole('button', { name: /October 3,/ }).className).not.toMatch(/alcohol/)
+    expect(screen.getByRole('button', { name: /October 3,/ }).className).toMatch(/border-dashed/)
+  })
+
+  test('tells today (a ring) from the selected day (filled)', () => {
+    renderCalendar('2026-10-02')
+
+    const todayAndSelected = screen.getByRole('button', { name: /Today, October 2/ })
+    expect(todayAndSelected.className).toMatch(/bg-accent\b/)
+    renderCalendar()
+    const todayOnly = screen.getByRole('button', { name: 'Today, October 15' })
+    expect(todayOnly.className).toMatch(/ring-2/)
+    expect(todayOnly.className).not.toMatch(/bg-accent\b/)
+  })
+
+  test('shows each week average at the end of its row, empty without counted days', () => {
+    renderCalendar()
+
+    expect(screen.getByRole('columnheader', { name: 'Ø kcal' })).toBeInTheDocument()
+    const averages = screen.getAllByTestId('week-average')
+    expect(averages.map((cell) => cell.textContent)).toContain('1,850')
+    expect(averages.filter((cell) => cell.textContent === '')).toHaveLength(averages.length - 1)
+  })
+
+  test('keeps the week averages on one line, without a prefix the header already says', () => {
+    renderCalendar()
+
+    for (const cell of screen.getAllByTestId('week-average')) {
+      expect(cell).toHaveClass('whitespace-nowrap')
+      expect(cell.textContent).not.toMatch(/Ø/)
+    }
+  })
+
+  test('draws only the days of the month, though the first week reaches into September', () => {
+    renderCalendar()
+
+    const firstRow = screen.getAllByTestId('week-row')[0]
+    expect(within(firstRow).getAllByRole('button')).toHaveLength(4)
+    expect(screen.queryByRole('button', { name: /September 30/ })).not.toBeInTheDocument()
+  })
+
+  test('hands the whole week, with the days of the neighbouring months, to the average', () => {
+    const averageOf = vi.fn(() => null)
+    render(
+      <MonthCalendar
+        month="2026-10-01"
+        today="2026-10-15"
+        selectedDay={null}
+        statusOf={() => 'none'}
+        marksOf={() => NO_MARKS}
+        averageOf={averageOf}
+        onSelectDay={vi.fn()}
+        onChangeMonth={vi.fn()}
+      />,
+    )
+
+    expect(averageOf).toHaveBeenCalledWith([
+      '2026-09-28',
+      '2026-09-29',
+      '2026-09-30',
+      '2026-10-01',
+      '2026-10-02',
+      '2026-10-03',
+      '2026-10-04',
+    ])
+  })
+
+  test('tints the current week also as the first row of the month after it', () => {
+    // 30 September is in the week that October's calendar shows first
+    renderCalendar('2026-09-30', '2026-10-01')
+
+    const tinted = screen.getAllByTestId('week-row').filter((row) => row.dataset.current === 'true')
+    expect(tinted).toEqual([screen.getAllByTestId('week-row')[0]])
+  })
+
+  test('tints the current week also as the last row of the month before it', () => {
+    renderCalendar('2026-10-02', '2026-09-01')
+
+    const rows = screen.getAllByTestId('week-row')
+    expect(rows.at(-1)).toHaveAttribute('data-current', 'true')
+  })
+
+  test('draws the marks in themed colors that keep their contrast on every style', () => {
+    renderCalendar()
+
+    const star = within(screen.getByRole('button', { name: /October 4,/ })).getByTestId(
+      'cheat-meal-mark',
+    )
+    expect(star).toHaveClass('text-star')
+    const badge = within(screen.getByRole('button', { name: /October 5,/ })).getByTestId(
+      'missing-dot',
+    )
+    expect(badge).toHaveClass('bg-missing', 'text-on-missing')
+    const wine = within(screen.getByRole('button', { name: /October 6,/ })).getByTestId(
+      'alcohol-mark',
+    )
+    expect(wine).toHaveClass('text-alcohol')
+    expect(
+      within(screen.getByRole('button', { name: /October 6,/ })).getByTestId('weigh-in-mark'),
+    ).toHaveClass('h-3', 'w-3')
+  })
+
+  test('tints the row of the current week only', () => {
+    renderCalendar()
+
+    const tinted = screen.getAllByTestId('week-row').filter((row) => row.dataset.current === 'true')
+    expect(tinted).toHaveLength(1)
+    expect(within(tinted[0]).getByRole('button', { name: 'Today, October 15' })).toBeInTheDocument()
   })
 })

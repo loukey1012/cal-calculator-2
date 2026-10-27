@@ -5,7 +5,7 @@ const { supabaseMock } = vi.hoisted(() => ({ supabaseMock: { from: vi.fn() } }))
 vi.mock('../../lib/supabase', () => ({ supabase: supabaseMock }))
 
 import { ApiError } from '../../lib/errors'
-import { fetchDailyTotals } from './historyApi'
+import { fetchDailyTotals, fetchNoteDates } from './historyApi'
 
 beforeEach(() => vi.clearAllMocks())
 
@@ -74,5 +74,45 @@ describe('fetchDailyTotals', () => {
     await expect(fetchDailyTotals('u1', '2026-10-01', '2026-10-31')).rejects.toBeInstanceOf(
       ApiError,
     )
+  })
+})
+
+describe('fetchNoteDates', () => {
+  test('lists the days with a day note or a meal note in the range, once each, in order', async () => {
+    const queries = {
+      day_notes: fakeQuery({
+        data: [{ date: '2026-10-09' }, { date: '2026-10-03' }],
+        error: null,
+      }),
+      meals: fakeQuery({
+        data: [
+          { date: '2026-10-03', note: 'late' },
+          { date: '2026-10-05', note: 'big lunch' },
+          { date: '2026-10-06', note: null },
+          { date: '2026-10-07', note: '' },
+        ],
+        error: null,
+      }),
+    }
+    supabaseMock.from.mockImplementation((table: keyof typeof queries) => queries[table])
+
+    await expect(fetchNoteDates('u1', '2026-10-01', '2026-10-31')).resolves.toEqual([
+      '2026-10-03',
+      '2026-10-05',
+      '2026-10-09',
+    ])
+    expect(queries.day_notes.eq).toHaveBeenCalledWith('user_id', 'u1')
+    // the database leaves out the meals without a note
+    expect(queries.meals.not).toHaveBeenCalledWith('note', 'is', null)
+    expect(queries.meals.gte).toHaveBeenCalledWith('date', '2026-10-01')
+    expect(queries.meals.lte).toHaveBeenCalledWith('date', '2026-10-31')
+  })
+
+  test('turns database errors into ApiError', async () => {
+    const failing = fakeQuery({ data: null, error: { message: 'x', code: '42501' } })
+    const fine = fakeQuery({ data: [], error: null })
+    supabaseMock.from.mockImplementation((table: string) => (table === 'meals' ? failing : fine))
+
+    await expect(fetchNoteDates('u1', '2026-10-01', '2026-10-31')).rejects.toBeInstanceOf(ApiError)
   })
 })

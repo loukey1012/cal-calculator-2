@@ -9,6 +9,7 @@ import { SegmentedControl } from '../../components/ios/SegmentedControl'
 import { fromLocalDateString, toLocalDateString } from '../../lib/dates'
 import { toUserMessage } from '../../lib/errors'
 import { useGoals } from '../goals/hooks'
+import { goalForDate } from '../nutrition/goals'
 import { usePeople } from '../household/hooks'
 import type { Profile } from '../household/householdApi'
 import { PersonSwitch } from '../household/PersonSwitch'
@@ -18,9 +19,12 @@ import { mealPageOf } from '../meals/mealPages'
 import { DayView } from '../today/DayView'
 import { TrendsView } from '../trends/TrendsView'
 import { DayWeight } from '../weight/DayWeight'
+import { useWeights } from '../weight/hooks'
 import { useToday } from '../today/useToday'
-import { dayStatus, monthStart, monthSummary, type MonthSummary } from './calendar'
-import { useMonthTotals } from './hooks'
+import { dayStatus, monthStart, monthSummary, weekAverageKcal, type MonthSummary } from './calendar'
+import { CalendarKey } from './CalendarKey'
+import { DayQuickLook } from './DayQuickLook'
+import { useMonthNoteDates, useMonthTotals, useWeekEdgeTotals } from './hooks'
 import { MonthCalendar } from './MonthCalendar'
 
 const DAY_ROUTE = /^\/history\/(\d{4}-\d{2}-\d{2})$/
@@ -185,7 +189,7 @@ function SelectedDay({ day, today, person, isOwnDay }: SelectedDayProps) {
       <h2 id="history-day-title" className="px-1 font-display text-[22px] font-bold">
         {title}
       </h2>
-      <DayView key={person.id} person={person} isOwnDay={isOwnDay} date={day} />
+      <DayView key={person.id} person={person} isOwnDay={isOwnDay} date={day} showStatus />
       <div className="mt-4">
         <DayWeight userId={person.id} date={day} today={today} isOwnDay={isOwnDay} />
       </div>
@@ -212,7 +216,16 @@ function MonthOverview({
 }: MonthOverviewProps) {
   const totals = useMonthTotals(person.id, month)
   const goals = useGoals(person.id)
+  const edgeTotals = useWeekEdgeTotals(person.id, month, today)
+  const noteDates = useMonthNoteDates(person.id, month)
+  const weights = useWeights(person.id)
   const byDate = new Map((totals.data ?? []).map((total) => [total.date, total]))
+  // a week across two months averages all its days: the edge days only count there
+  const byDateInWeeks = new Map(
+    [...(edgeTotals.data ?? []), ...(totals.data ?? [])].map((total) => [total.date, total]),
+  )
+  const notedDays = new Set(noteDates.data)
+  const weighedDays = new Set((weights.data ?? []).map((entry) => entry.date))
 
   return (
     <>
@@ -221,9 +234,44 @@ function MonthOverview({
         today={today}
         selectedDay={selectedDay}
         statusOf={(day) => dayStatus(day, byDate.get(day), goals.data ?? [], today)}
+        marksOf={(day) => ({
+          hasNote: notedDays.has(day),
+          weighed: weighedDays.has(day),
+          estimated: byDate.get(day)?.kcalEstimated === true,
+        })}
+        averageOf={(week) => weekAverageKcal(week, byDateInWeeks, today)}
         onSelectDay={onSelectDay}
         onChangeMonth={onChangeMonth}
+        renderQuickLook={(day, close) => {
+          const total = byDate.get(day)
+          const goal = goalForDate(goals.data ?? [], day)
+          return (
+            <DayQuickLook
+              userId={person.id}
+              date={day}
+              kcal={total?.kcal ?? 0}
+              estimated={total?.kcalEstimated === true}
+              goalKcal={goal?.kcal ?? null}
+              status={
+                goals.data === undefined
+                  ? null
+                  : {
+                      date: day,
+                      today,
+                      day: total ?? { date: day, mealCount: 0 },
+                      kcal: total?.kcal ?? 0,
+                      estimated: total?.kcalEstimated === true,
+                      goal,
+                    }
+              }
+              hasFood={(total?.mealCount ?? 0) > 0}
+              hasNote={notedDays.has(day)}
+              onClose={close}
+            />
+          )
+        }}
       />
+      <CalendarKey />
       {totals.isError && totals.data === undefined ? (
         <ErrorBanner message={toUserMessage(totals.error)} />
       ) : (
