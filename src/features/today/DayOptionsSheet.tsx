@@ -1,11 +1,12 @@
-import { useId } from 'react'
+import { useId, useState } from 'react'
+import { Button } from '../../components/ios/Button'
 import { GroupedSection } from '../../components/ios/GroupedSection'
 import { SegmentedControl } from '../../components/ios/SegmentedControl'
 import { ToggleRow } from '../../components/ios/FormRows'
 import { ClearButton } from '../../components/ios/ClearButton'
 import { useClearable } from '../../components/ios/clearable'
 import { Sheet } from '../../components/ios/Sheet'
-import { cheatMeals, MEAL_TYPES } from '../meals/dayModel'
+import { cheatMeals, MEAL_TYPES, type MealType } from '../meals/dayModel'
 import type { DayMark } from '../meals/mealsApi'
 import {
   useDay,
@@ -40,31 +41,116 @@ type DayOptionsSheetProps = {
 }
 
 /**
- * The day's marks and notes: a cheat day or an alcohol day, which meals were cheat meals, and a note on the day and
- * on each meal. A switch saves at once, a note when its field is left.
+ * What was edited in the sheet and not saved yet. A part that is missing follows the loaded data, so a change
+ * made by the partner meanwhile still shows.
  */
-export function DayOptionsSheet({ open, userId, date, onClose }: DayOptionsSheetProps) {
-  return (
-    <Sheet open={open} onClose={onClose} title="Day">
-      <DayOptions userId={userId} date={date} />
-    </Sheet>
-  )
+type Draft = {
+  readonly mark?: MarkChoice
+  readonly cheatMeals: Readonly<Partial<Record<MealType, boolean>>>
+  readonly dayNote?: string
+  readonly mealNotes: Readonly<Partial<Record<MealType, string>>>
 }
 
-function DayOptions({ userId, date }: Pick<DayOptionsSheetProps, 'userId' | 'date'>) {
+const EMPTY_DRAFT: Draft = { cheatMeals: {}, mealNotes: {} }
+
+const DISCARD_QUESTION = 'Discard changes?'
+
+/**
+ * An edit, or none once it is back at the saved value: an untouched part follows the data, so a
+ * change from the partner meanwhile shows and is never overwritten by a Save.
+ */
+function editOf<T>(value: T, saved: T): T | undefined {
+  return value === saved ? undefined : value
+}
+
+function withEdit<T>(
+  edits: Readonly<Partial<Record<MealType, T>>>,
+  type: MealType,
+  value: T,
+  saved: T,
+): Partial<Record<MealType, T>> {
+  const { [type]: _previous, ...others } = edits
+  const edit = editOf(value, saved)
+  return edit === undefined ? others : { ...others, [type]: edit }
+}
+
+/**
+ * The day's marks and notes: a cheat day or an alcohol day, which meals were cheat meals, and a note on the day and
+ * on each meal. Nothing is kept until Save; closing the sheet with edits asks first.
+ */
+export function DayOptionsSheet({ open, ...rest }: DayOptionsSheetProps) {
+  // mounted only while open, so every opening starts without edits
+  return open ? <DayOptionsPanel {...rest} /> : null
+}
+
+function DayOptionsPanel({ userId, date, onClose }: Omit<DayOptionsSheetProps, 'open'>) {
   const day = useDay(userId, date)
   const dayMark = useDayMark(userId, date)
+  const dayNote = useDayNote(userId, date)
   const markHelpId = useId()
   const setDayMark = useSetDayMark(userId, date)
   const setCheatMeal = useSetCheatMeal(userId, date)
-  const dayNote = useDayNote(userId, date)
   const setDayNote = useSetDayNote(userId, date)
   const setMealNote = useSetMealNote(userId, date)
-  const cheatMealTypes = cheatMeals(day.data ?? [])
-  const mealNote = (type: string) => day.data?.find((meal) => meal.meal_type === type)?.note ?? null
+  const [draft, setDraft] = useState(EMPTY_DRAFT)
+
+  const savedMark: MarkChoice = dayMark.data ?? 'none'
+  const savedCheatMeals = cheatMeals(day.data ?? [])
+  const savedDayNote = dayNote.data ?? ''
+  const savedMealNote = (type: MealType) =>
+    day.data?.find((meal) => meal.meal_type === type)?.note ?? ''
+
+  // only what differs from what is saved
+  const markChanged = draft.mark !== undefined && draft.mark !== savedMark
+  const changedCheatMeals = MEAL_TYPES.filter(
+    ({ type }) =>
+      draft.cheatMeals[type] !== undefined && draft.cheatMeals[type] !== savedCheatMeals.has(type),
+  )
+  const dayNoteChanged = draft.dayNote !== undefined && draft.dayNote.trim() !== savedDayNote
+  const changedMealNotes = MEAL_TYPES.filter(
+    ({ type }) =>
+      draft.mealNotes[type] !== undefined && draft.mealNotes[type].trim() !== savedMealNote(type),
+  )
+  const hasChanges =
+    markChanged || dayNoteChanged || changedCheatMeals.length > 0 || changedMealNotes.length > 0
+  // until the day is known, a save could overwrite or clear what is there
+  const loaded = dayMark.data !== undefined && day.data !== undefined && dayNote.data !== undefined
+
+  function close() {
+    if (hasChanges && !window.confirm(DISCARD_QUESTION)) return
+    onClose()
+  }
+
+  function save() {
+    if (markChanged && draft.mark !== undefined) setDayMark.mutate(markOf(draft.mark))
+    for (const { type } of changedCheatMeals) {
+      setCheatMeal.mutate({ mealType: type, cheatMeal: draft.cheatMeals[type] === true })
+    }
+    if (dayNoteChanged && draft.dayNote !== undefined) setDayNote.mutate(draft.dayNote)
+    for (const { type } of changedMealNotes) {
+      setMealNote.mutate({ mealType: type, note: draft.mealNotes[type] ?? '' })
+    }
+    // the edits are in the mutations now (optimistic, queued offline); what shows follows the data again
+    setDraft(EMPTY_DRAFT)
+    onClose()
+  }
 
   return (
-    <>
+    <Sheet
+      open
+      onClose={close}
+      title="Day"
+      action={
+        <Button
+          variant="plain"
+          disabled={!hasChanges || !loaded}
+          onClick={save}
+          className="-mr-2 font-semibold"
+        >
+          Save
+        </Button>
+      }
+    >
       <GroupedSection
         footerId={markHelpId}
         footer="A cheat day is off plan. On an alcohol day the calories are not known. Either is left out of averages and the weekly review, and the rings show no over colors."
@@ -73,11 +159,13 @@ function DayOptions({ userId, date }: Pick<DayOptionsSheetProps, 'userId' | 'dat
           <SegmentedControl
             label="Day mark"
             options={MARK_OPTIONS}
-            value={dayMark.data ?? 'none'}
+            value={draft.mark ?? savedMark}
             // until the day's mark is known, a tap could overwrite or clear it
             disabled={dayMark.data === undefined}
             describedBy={markHelpId}
-            onChange={(choice) => setDayMark.mutate(markOf(choice))}
+            onChange={(mark) =>
+              setDraft((current) => ({ ...current, mark: editOf(mark, savedMark) }))
+            }
           />
         </div>
       </GroupedSection>
@@ -89,47 +177,63 @@ function DayOptions({ userId, date }: Pick<DayOptionsSheetProps, 'userId' | 'dat
           <ToggleRow
             key={type}
             label={label}
-            checked={cheatMealTypes.has(type)}
-            onChange={(checked) => setCheatMeal.mutate({ mealType: type, cheatMeal: checked })}
+            checked={draft.cheatMeals[type] ?? savedCheatMeals.has(type)}
+            onChange={(checked) =>
+              setDraft((current) => ({
+                ...current,
+                cheatMeals: withEdit(current.cheatMeals, type, checked, savedCheatMeals.has(type)),
+              }))
+            }
           />
         ))}
       </GroupedSection>
-      <GroupedSection header="Notes" footer="E.g. what happened that day or at that meal.">
-        <NoteField label="Day" note={dayNote.data ?? null} onSave={setDayNote.mutate} />
+      <GroupedSection
+        header="Notes"
+        footer="E.g. what happened that day or at that meal. Save keeps the changes."
+      >
+        <NoteField
+          label="Day"
+          value={draft.dayNote ?? savedDayNote}
+          disabled={!loaded}
+          onChange={(note) =>
+            setDraft((current) => ({ ...current, dayNote: editOf(note, savedDayNote) }))
+          }
+        />
         {MEAL_TYPES.map(({ type, label }) => (
           <NoteField
             key={type}
             label={label}
-            note={mealNote(type)}
-            onSave={(note) => setMealNote.mutate({ mealType: type, note })}
+            value={draft.mealNotes[type] ?? savedMealNote(type)}
+            disabled={!loaded}
+            onChange={(note) =>
+              setDraft((current) => ({
+                ...current,
+                mealNotes: withEdit(current.mealNotes, type, note, savedMealNote(type)),
+              }))
+            }
           />
         ))}
       </GroupedSection>
-    </>
+    </Sheet>
   )
 }
 
 type NoteFieldProps = {
   readonly label: string
-  /** as saved; null = none */
-  readonly note: string | null
-  readonly onSave: (note: string) => void
+  readonly value: string
+  readonly disabled: boolean
+  readonly onChange: (note: string) => void
 }
 
-/** A note row, its name on the left; saved when the field is left (or Return), only if it changed. */
-function NoteField(props: NoteFieldProps) {
-  // starts over from the saved note whenever that changes, e.g. after the partner's edit
-  return <NoteInput key={props.note ?? ''} {...props} />
-}
-
-function NoteInput({ label, note, onSave }: NoteFieldProps) {
+/** A note row, its name on the left. Emptied, the note goes once the sheet is saved. */
+function NoteField({ label, value, disabled, onChange }: NoteFieldProps) {
   const id = useId()
   const {
     ref: clearRef,
     hasValue: hasText,
     onChange: onTextChange,
     clear,
-  } = useClearable({ defaultValue: note ?? '' })
+  } = useClearable({ value })
   return (
     <div className="flex items-center gap-3 px-4 py-3">
       <label htmlFor={id} className="w-24 shrink-0 text-[17px]">
@@ -138,7 +242,8 @@ function NoteInput({ label, note, onSave }: NoteFieldProps) {
       <input
         id={id}
         aria-label={`${label} note`}
-        defaultValue={note ?? ''}
+        value={value}
+        disabled={disabled}
         placeholder="Add a note"
         maxLength={MAX_NOTE}
         enterKeyHint="done"
@@ -146,13 +251,12 @@ function NoteInput({ label, note, onSave }: NoteFieldProps) {
         onKeyDown={(event) => {
           if (event.key === 'Enter') event.currentTarget.blur()
         }}
-        onBlur={(event) => {
-          if (event.target.value.trim() !== (note ?? '')) onSave(event.target.value)
-        }}
         ref={clearRef}
-        onChange={onTextChange}
+        onChange={(event) => {
+          onTextChange(event)
+          onChange(event.target.value)
+        }}
       />
-      {/* emptied, the note goes once the field is left */}
       {hasText && <ClearButton onClick={clear} />}
     </div>
   )

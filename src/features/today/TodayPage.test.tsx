@@ -279,6 +279,8 @@ describe('TodayPage', () => {
     await user.click(screen.getByRole('button', { name: 'Day options' }))
     const sheet = screen.getByRole('dialog', { name: 'Day' })
     await user.click(within(sheet).getByRole('radio', { name: 'Alcohol day' }))
+    expect(setDayMark).not.toHaveBeenCalled()
+    await user.click(within(sheet).getByRole('button', { name: 'Save' }))
 
     await waitFor(() => expect(setDayMark).toHaveBeenCalledWith('u2', '2026-10-01', 'alcohol'))
   })

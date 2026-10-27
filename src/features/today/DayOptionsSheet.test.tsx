@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react'
+import { fireEvent, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { renderWithProviders } from '../../test/render'
@@ -33,6 +33,7 @@ let cheatMealsOnServer = new Set<MealType>(['dinner'])
 
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.spyOn(window, 'confirm').mockReturnValue(true)
   markOnServer = null
   cheatMealsOnServer = new Set(['dinner'])
   vi.mocked(fetchDay).mockImplementation(async () => [
@@ -64,14 +65,39 @@ beforeEach(() => {
 
 function renderSheet() {
   const onClose = vi.fn()
-  renderWithProviders(<DayOptionsSheet open userId="u1" date="2026-10-02" onClose={onClose} />)
-  return { onClose }
+  const { queryClient } = renderWithProviders(
+    <DayOptionsSheet open userId="u1" date="2026-10-02" onClose={onClose} />,
+  )
+  return { onClose, queryClient }
 }
 
 const switchNamed = (name: string) => screen.getByRole('switch', { name })
 const radioNamed = (name: string) => screen.getByRole('radio', { name })
+const saveButton = () => screen.getByRole('button', { name: 'Save' })
+const closeButton = () => screen.getByRole('button', { name: 'Close' })
 
 describe('DayOptionsSheet', () => {
+  test('an edit taken back follows a change from the partner again', async () => {
+    const user = userEvent.setup()
+    const { queryClient } = renderSheet()
+    await waitFor(() => expect(radioNamed('None')).toBeEnabled())
+    await user.click(radioNamed('Cheat day'))
+    await user.click(radioNamed('None'))
+
+    markOnServer = 'alcohol'
+    await queryClient.invalidateQueries()
+
+    await waitFor(() => expect(radioNamed('Alcohol day')).toBeChecked())
+    expect(saveButton()).toBeDisabled()
+  })
+
+  test('the notes can only be edited once the day note has loaded', async () => {
+    vi.mocked(fetchDayNote).mockImplementation(() => new Promise(() => {}))
+    renderSheet()
+
+    expect(await screen.findByRole('textbox', { name: 'Day note' })).toBeDisabled()
+  })
+
   test('shows the day as neither, and which meals were cheat meals', async () => {
     renderSheet()
 
@@ -101,6 +127,7 @@ describe('DayOptionsSheet', () => {
     await user.click(radioNamed('Alcohol day'))
 
     expect(radioNamed('Alcohol day')).toBeDisabled()
+    expect(saveButton()).toBeDisabled()
     expect(setDayMark).not.toHaveBeenCalled()
   })
 
@@ -112,6 +139,106 @@ describe('DayOptionsSheet', () => {
     )
   })
 
+  test('Save is off while nothing is changed, and a change that is undone counts as none', async () => {
+    const user = userEvent.setup()
+    renderSheet()
+    await waitFor(() => expect(radioNamed('None')).toBeEnabled())
+    expect(saveButton()).toBeDisabled()
+
+    await user.click(radioNamed('Cheat day'))
+    expect(saveButton()).toBeEnabled()
+    await user.click(radioNamed('None'))
+    expect(saveButton()).toBeDisabled()
+
+    await user.click(switchNamed('Lunch'))
+    expect(saveButton()).toBeEnabled()
+    await user.click(switchNamed('Lunch'))
+    expect(saveButton()).toBeDisabled()
+  })
+
+  test('nothing is saved before Save is pressed', async () => {
+    const user = userEvent.setup()
+    renderSheet()
+    await waitFor(() => expect(radioNamed('None')).toBeEnabled())
+
+    await user.click(radioNamed('Alcohol day'))
+    await user.click(switchNamed('Lunch'))
+    await user.type(screen.getByRole('textbox', { name: 'Day note' }), ' party')
+    await user.type(screen.getByRole('textbox', { name: 'Lunch note' }), 'Salad{Enter}')
+
+    expect(radioNamed('Alcohol day')).toBeChecked()
+    expect(switchNamed('Lunch')).toHaveAttribute('aria-checked', 'true')
+    expect(setDayMark).not.toHaveBeenCalled()
+    expect(setCheatMeal).not.toHaveBeenCalled()
+    expect(setDayNote).not.toHaveBeenCalled()
+    expect(setMealNote).not.toHaveBeenCalled()
+  })
+
+  test('Save saves the mark, a cheat meal and both kinds of notes together, then closes', async () => {
+    const user = userEvent.setup()
+    const { onClose } = renderSheet()
+    await screen.findByDisplayValue('Birthday')
+    await waitFor(() => expect(radioNamed('None')).toBeEnabled())
+
+    await user.click(radioNamed('Cheat day'))
+    await user.click(switchNamed('Lunch'))
+    await user.type(screen.getByRole('textbox', { name: 'Day note' }), ' party')
+    await user.type(screen.getByRole('textbox', { name: 'Lunch note' }), 'Leftovers at work')
+    await user.click(saveButton())
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1))
+    expect(setDayMark).toHaveBeenCalledWith('u1', '2026-10-02', 'cheat')
+    expect(setCheatMeal).toHaveBeenCalledTimes(1)
+    expect(setCheatMeal).toHaveBeenCalledWith({
+      userId: 'u1',
+      date: '2026-10-02',
+      mealType: 'lunch',
+      cheatMeal: true,
+    })
+    expect(setDayNote).toHaveBeenCalledWith('u1', '2026-10-02', 'Birthday party')
+    expect(setMealNote).toHaveBeenCalledTimes(1)
+    expect(setMealNote).toHaveBeenCalledWith({
+      userId: 'u1',
+      date: '2026-10-02',
+      mealType: 'lunch',
+      note: 'Leftovers at work',
+    })
+    expect(window.confirm).not.toHaveBeenCalled()
+  })
+
+  test('only the changed parts are sent', async () => {
+    const user = userEvent.setup()
+    renderSheet()
+    await waitFor(() => expect(switchNamed('Dinner')).toHaveAttribute('aria-checked', 'true'))
+    await screen.findByDisplayValue('Birthday')
+
+    await user.click(switchNamed('Dinner'))
+    await user.click(saveButton())
+
+    await waitFor(() => expect(setCheatMeal).toHaveBeenCalledTimes(1))
+    expect(setCheatMeal).toHaveBeenCalledWith({
+      userId: 'u1',
+      date: '2026-10-02',
+      mealType: 'dinner',
+      cheatMeal: false,
+    })
+    expect(setDayMark).not.toHaveBeenCalled()
+    expect(setDayNote).not.toHaveBeenCalled()
+    expect(setMealNote).not.toHaveBeenCalled()
+  })
+
+  test('clearing the day note and saving removes it', async () => {
+    const user = userEvent.setup()
+    renderSheet()
+    const day = await screen.findByDisplayValue('Birthday')
+
+    await user.clear(day)
+    await user.click(saveButton())
+
+    await waitFor(() => expect(setDayNote).toHaveBeenCalledWith('u1', '2026-10-02', ''))
+    expect(setMealNote).not.toHaveBeenCalled()
+  })
+
   test('a mark that fails to save goes back to what it was', async () => {
     const user = userEvent.setup()
     vi.mocked(setDayMark).mockRejectedValue(new Error('offline'))
@@ -119,62 +246,67 @@ describe('DayOptionsSheet', () => {
     await waitFor(() => expect(radioNamed('None')).toBeEnabled())
 
     await user.click(radioNamed('Alcohol day'))
+    await user.click(saveButton())
 
     await waitFor(() => expect(radioNamed('None')).toBeChecked())
     expect(radioNamed('Alcohol day')).not.toBeChecked()
   })
 
-  test('marks the day as a cheat day, switches it to an alcohol day, and clears it', async () => {
+  test('Close with changes asks first; Cancel keeps the sheet and the edits', async () => {
     const user = userEvent.setup()
-    renderSheet()
+    vi.mocked(window.confirm).mockReturnValue(false)
+    const { onClose } = renderSheet()
     await waitFor(() => expect(radioNamed('None')).toBeEnabled())
 
     await user.click(radioNamed('Cheat day'))
-    await waitFor(() => expect(radioNamed('Cheat day')).toBeChecked())
-    await waitFor(() => expect(setDayMark).toHaveBeenLastCalledWith('u1', '2026-10-02', 'cheat'))
+    await user.click(closeButton())
 
-    await user.click(radioNamed('Alcohol day'))
-    await waitFor(() => expect(radioNamed('Alcohol day')).toBeChecked())
-    expect(radioNamed('Cheat day')).not.toBeChecked()
-    await waitFor(() => expect(setDayMark).toHaveBeenLastCalledWith('u1', '2026-10-02', 'alcohol'))
-
-    await user.click(radioNamed('None'))
-    await waitFor(() => expect(radioNamed('None')).toBeChecked())
-    await waitFor(() => expect(setDayMark).toHaveBeenLastCalledWith('u1', '2026-10-02', null))
+    expect(window.confirm).toHaveBeenCalledWith('Discard changes?')
+    expect(onClose).not.toHaveBeenCalled()
+    expect(radioNamed('Cheat day')).toBeChecked()
+    expect(setDayMark).not.toHaveBeenCalled()
   })
 
-  test('marks a meal as a cheat meal, or takes the mark back', async () => {
+  test('Close with changes closes without saving when discarding is confirmed', async () => {
     const user = userEvent.setup()
-    renderSheet()
-    await waitFor(() => expect(switchNamed('Dinner')).toHaveAttribute('aria-checked', 'true'))
+    vi.mocked(window.confirm).mockReturnValue(true)
+    const { onClose } = renderSheet()
+    await screen.findByDisplayValue('Birthday')
 
-    await user.click(switchNamed('Lunch'))
-    await user.click(switchNamed('Dinner'))
+    await user.type(screen.getByRole('textbox', { name: 'Day note' }), '!')
+    await user.click(closeButton())
 
-    await waitFor(() => expect(switchNamed('Lunch')).toHaveAttribute('aria-checked', 'true'))
-    await waitFor(() => expect(switchNamed('Dinner')).toHaveAttribute('aria-checked', 'false'))
-    await waitFor(() => expect(setCheatMeal).toHaveBeenCalledTimes(2))
-    expect(setCheatMeal).toHaveBeenNthCalledWith(1, {
-      userId: 'u1',
-      date: '2026-10-02',
-      mealType: 'lunch',
-      cheatMeal: true,
-    })
-    expect(setCheatMeal).toHaveBeenNthCalledWith(2, {
-      userId: 'u1',
-      date: '2026-10-02',
-      mealType: 'dinner',
-      cheatMeal: false,
-    })
+    expect(window.confirm).toHaveBeenCalledWith('Discard changes?')
+    expect(onClose).toHaveBeenCalledTimes(1)
+    expect(setDayNote).not.toHaveBeenCalled()
   })
 
-  test('switches save on their own: Close just closes', async () => {
+  test('Escape, the backdrop and a swipe down go through the same question', async () => {
+    const user = userEvent.setup()
+    vi.mocked(window.confirm).mockReturnValue(false)
+    const { onClose } = renderSheet()
+    await waitFor(() => expect(radioNamed('None')).toBeEnabled())
+    await user.click(switchNamed('Lunch'))
+
+    await user.keyboard('{Escape}')
+    await user.click(screen.getByTestId('sheet-backdrop'))
+    const handle = screen.getByTestId('sheet-drag-handle')
+    fireEvent.pointerDown(handle, { clientY: 100 })
+    fireEvent.pointerUp(handle, { clientY: 400 })
+
+    expect(window.confirm).toHaveBeenCalledTimes(3)
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  test('Close without changes closes directly', async () => {
     const user = userEvent.setup()
     const { onClose } = renderSheet()
+    await waitFor(() => expect(radioNamed('None')).toBeEnabled())
 
-    await user.click(screen.getByRole('button', { name: 'Close' }))
+    await user.click(closeButton())
 
-    expect(onClose).toHaveBeenCalled()
+    expect(window.confirm).not.toHaveBeenCalled()
+    expect(onClose).toHaveBeenCalledTimes(1)
   })
 
   test('shows the notes of the day and its meals', async () => {
@@ -188,37 +320,5 @@ describe('DayOptionsSheet', () => {
     // each row says what it is for, also once it has a note
     expect(screen.getByText('Day', { selector: 'label' })).toBeVisible()
     expect(screen.getByText('Dinner', { selector: 'label' })).toBeVisible()
-  })
-
-  test('a note is saved when its field is left, only if it changed', async () => {
-    const user = userEvent.setup()
-    renderSheet()
-    const lunch = screen.getByRole('textbox', { name: 'Lunch note' })
-    await screen.findByDisplayValue('Birthday')
-
-    await user.click(screen.getByRole('textbox', { name: 'Day note' }))
-    await user.click(lunch)
-    expect(setDayNote).not.toHaveBeenCalled()
-    await user.type(lunch, 'Leftovers at work{Enter}')
-
-    await waitFor(() =>
-      expect(setMealNote).toHaveBeenCalledWith({
-        userId: 'u1',
-        date: '2026-10-02',
-        mealType: 'lunch',
-        note: 'Leftovers at work',
-      }),
-    )
-  })
-
-  test('clearing the day note removes it', async () => {
-    const user = userEvent.setup()
-    renderSheet()
-    const day = await screen.findByDisplayValue('Birthday')
-
-    await user.clear(day)
-    await user.tab()
-
-    await waitFor(() => expect(setDayNote).toHaveBeenCalledWith('u1', '2026-10-02', ''))
   })
 })

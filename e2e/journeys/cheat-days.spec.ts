@@ -32,7 +32,7 @@ test('a cheat meal today, and a past cheat day in History', async ({ page, backe
     'aria-checked',
     'true',
   )
-  await options.getByRole('button', { name: 'Close' }).click()
+  await options.getByRole('button', { name: 'Save' }).click()
   await expect(today.getByRole('button', { name: /Dinner/ })).toContainText('Cheat meal')
   await expect(today.getByTestId('day-total')).toContainText('Cheat meal')
   await expect
@@ -65,7 +65,7 @@ test('a cheat meal today, and a past cheat day in History', async ({ page, backe
     .getByRole('radiogroup', { name: 'Day mark' })
     .getByRole('radio', { name: 'Cheat day' })
     .click()
-  await page.getByRole('dialog', { name: 'Day' }).getByRole('button', { name: 'Close' }).click()
+  await page.getByRole('dialog', { name: 'Day' }).getByRole('button', { name: 'Save' }).click()
 
   await expect(day.getByTestId('day-total')).toContainText('Cheat day')
   await expect(history.getByRole('button', { name: /cheat day/, pressed: true })).toBeVisible()
@@ -101,18 +101,19 @@ test('a note on a cheat meal and on the day, shown on Today, then one cleared', 
   await options.getByRole('switch', { name: 'Dinner' }).click()
   await options.getByRole('textbox', { name: 'Dinner note' }).fill('Pizza with colleagues')
   await options.getByRole('textbox', { name: 'Day note' }).fill('Birthday at work')
-  await options.getByRole('textbox', { name: 'Day note' }).press('Enter')
+  // nothing is kept before Save
+  expect(await notes()).toEqual({ meals: [], day: [] })
+  await options.getByRole('button', { name: 'Save' }).click()
   await expect.poll(notes).toEqual({
     meals: [{ meal_type: 'dinner', cheat_meal: true, note: 'Pizza with colleagues' }],
     day: [{ note: 'Birthday at work' }],
   })
-  await options.getByRole('button', { name: 'Close' }).click()
   await expect(today.getByRole('button', { name: /Dinner/ })).toContainText('Pizza with colleagues')
   await expect(today.getByTestId('day-total')).toContainText('Birthday at work')
 
   await today.getByRole('button', { name: 'Day options' }).click()
   await options.getByRole('textbox', { name: 'Day note' }).clear()
-  await options.getByRole('textbox', { name: 'Day note' }).press('Enter')
+  await options.getByRole('button', { name: 'Save' }).click()
   await expect.poll(async () => (await notes()).day).toEqual([])
 })
 
@@ -148,19 +149,43 @@ test('a past day marked as alcohol day, then cheat day, then none', async ({ pag
   const dayMark = options.getByRole('radiogroup', { name: 'Day mark' })
 
   await dayMark.getByRole('radio', { name: 'Alcohol day' }).click()
-  await options.getByRole('button', { name: 'Close' }).click()
+  await options.getByRole('button', { name: 'Save' }).click()
   await expect(day.getByTestId('day-total')).toContainText('Alcohol day')
   await expect(history.getByRole('button', { name: dayLabel(date, 'alcohol day') })).toBeVisible()
   await expect.poll(marks).toEqual([{ date, kind: 'alcohol' }])
 
   await day.getByRole('button', { name: 'Day options' }).click()
   await dayMark.getByRole('radio', { name: 'Cheat day' }).click()
+  await options.getByRole('button', { name: 'Save' }).click()
   await expect.poll(marks).toEqual([{ date, kind: 'cheat' }])
-  await options.getByRole('button', { name: 'Close' }).click()
   await expect(day.getByTestId('day-total')).toContainText('Cheat day')
   await expect(day.getByTestId('day-total')).not.toContainText('Alcohol day')
 
   await day.getByRole('button', { name: 'Day options' }).click()
   await dayMark.getByRole('radio', { name: 'None' }).click()
+  await options.getByRole('button', { name: 'Save' }).click()
   await expect.poll(marks).toEqual([])
+})
+
+test('closing the day options with edits asks first, and Cancel keeps them', async ({
+  page,
+  backend,
+}) => {
+  const me = await backend.user('Lena')
+  await backend.household([me])
+  await logIn(page, me)
+  const today = activePage(page)
+  await today.getByRole('button', { name: 'Day options' }).click()
+  const options = page.getByRole('dialog', { name: 'Day' })
+  await options.getByRole('textbox', { name: 'Day note' }).fill('Not kept')
+
+  page.once('dialog', (dialog) => dialog.dismiss())
+  await options.getByRole('button', { name: 'Close' }).click()
+  await expect(options.getByRole('textbox', { name: 'Day note' })).toHaveValue('Not kept')
+
+  page.once('dialog', (dialog) => dialog.accept())
+  await options.getByRole('button', { name: 'Close' }).click()
+  await expect(options).toBeHidden()
+  const { data } = await backend.admin.from('day_notes').select('note').eq('user_id', me.id)
+  expect(data).toEqual([])
 })
