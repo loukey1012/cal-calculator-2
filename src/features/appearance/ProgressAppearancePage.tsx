@@ -33,11 +33,11 @@ const SAMPLE_PROGRESS = [
   sample('fiber', 18, 30),
 ]
 
-// a day over the goals: calories and carbs full, fat more than 10 % over
+// a day over the goals: only the calories change color, the rest keep theirs
 const SAMPLE_OVER = [
-  sample('kcal', 2250, 2100),
+  sample('kcal', 2500, 2100),
   sample('protein', 150, 140),
-  sample('carbs', 230, 230),
+  sample('carbs', 280, 230),
   sample('fat', 85, 70),
   sample('fiber', 32, 30),
 ]

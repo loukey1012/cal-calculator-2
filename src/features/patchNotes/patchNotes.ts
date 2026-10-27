@@ -30,6 +30,35 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-27T16:55',
+    kind: 'fix',
+    title: 'Your partner’s days in History',
+    items: [
+      'Tapping a day in your partner’s calendar opens their day instead of switching back to yours',
+      'The month shown stays when you switch person or close a day',
+    ],
+  },
+  {
+    at: '2026-10-27T16:55',
+    kind: 'new',
+    title: 'Over the goal: calories only, with new limits',
+    items: [
+      'Up to 10 % over the calorie goal still counts as within the goal, in History and Trends too',
+      'More than 10 % over shows the first over color, more than 300 kcal over the second',
+      'Carbs and fat no longer change color when over',
+    ],
+  },
+  {
+    at: '2026-10-27T16:55',
+    kind: 'new',
+    title: 'Weight per unit and values per unit',
+    items: [
+      'A scanned or searched product fills in only the values Open Food Facts states; Calculate missing values works out the rest when tapped',
+      'The ingredient form flags a weight per unit without values per unit, and values per unit without a weight',
+      'The weekly review flags saved ingredients with the same mismatch',
+    ],
+  },
+  {
     at: '2026-10-25T13:20',
     kind: 'fix',
     title: '“1 × 1 Packung” instead of “1 1 Packung”',

@@ -16,8 +16,8 @@ const MODE_LABELS: Record<OverMode, { label: string; description: string }> = {
 
 type Level = 'full' | 'well'
 const LEVEL_LABELS: Record<Level, string> = {
-  full: 'Full, up to 10 % over',
-  well: 'More than 10 % over',
+  full: 'More than 10 % over',
+  well: 'More than 300 kcal over',
 }
 
 function Dot({ color }: { readonly color: string }) {
@@ -51,14 +51,14 @@ type OverColorsSectionProps = {
   readonly onChange: (over: OverColors) => void
 }
 
-/** Appearance › Progress › When over: the colors of full and over calorie, carb and fat rings. */
+/** Appearance › Progress › When over: the colors of calorie rings that are over. */
 export function OverColorsSection({ over, onChange }: OverColorsSectionProps) {
   const [editing, setEditing] = useState<Level | null>(null)
 
   return (
     <SettingSection
       title="When over"
-      footer="Calories, carbs and fat change color once full: one color up to 10 % over, another above. Protein and fiber keep theirs."
+      footer="Only calories change color when over the goal. Up to 10 % over still counts as within the goal; beyond that the first color shows, and more than 300 kcal over the second."
     >
       <OptionCards
         label="When over"

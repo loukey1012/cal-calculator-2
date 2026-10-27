@@ -75,14 +75,16 @@ const statusOf = (day: DayTotal | undefined, date = day?.date ?? '2026-10-15') =
 describe('dayStatus', () => {
   test('within the calorie goal, over it, logged without a goal, or nothing logged', () => {
     expect(statusOf(total({ kcal: 1999.2 }))).toBe('onTarget')
-    expect(statusOf(total({ kcal: 2000.4 }))).toBe('over')
+    expect(statusOf(total({ kcal: 2200 }))).toBe('onTarget')
+    expect(statusOf(total({ kcal: 2201 }))).toBe('over')
     expect(statusOf(total({ date: '2026-08-01', kcal: 500 }))).toBe('logged')
     expect(statusOf(undefined, '2026-09-30')).toBe('none')
   })
 
-  test('over the goal: up to 110 % is over, beyond that well over (like the rings)', () => {
-    expect(statusOf(total({ kcal: 2200 }))).toBe('over')
-    expect(statusOf(total({ kcal: 2200.6 }))).toBe('wellOver')
+  test('over the goal: more than 10 % is over, more than 300 kcal well over (like the rings)', () => {
+    expect(statusOf(total({ kcal: 2200.6 }))).toBe('over')
+    expect(statusOf(total({ kcal: 2300 }))).toBe('over')
+    expect(statusOf(total({ kcal: 2300.6 }))).toBe('wellOver')
     expect(statusOf(total({ kcal: 3000 }))).toBe('wellOver')
   })
 

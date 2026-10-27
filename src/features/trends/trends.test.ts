@@ -188,7 +188,7 @@ describe('nutritionBars', () => {
 
 describe('nutritionSummary', () => {
   test('average per logged day, days at goal, and the range before', () => {
-    const days = [day('2026-10-01', 1800, 130), day('2026-10-02', 2200, 100)]
+    const days = [day('2026-10-01', 1700, 130), day('2026-10-02', 2300, 100)]
     const before = [day('2026-09-01', 2100)]
 
     expect(nutritionSummary(days, before, 'kcal', [GOAL], TODAY)).toEqual({
@@ -203,6 +203,12 @@ describe('nutritionSummary', () => {
       goalDays: 1,
       previousAverage: null,
     })
+  })
+
+  test('calories up to 110 % of the goal count as within it', () => {
+    const near = [day('2026-10-01', 2200), day('2026-10-02', 2201), day('2026-10-03', 2199.5)]
+
+    expect(nutritionSummary(near, [], 'kcal', [GOAL], TODAY).goalDays).toBe(2)
   })
 
   test('nothing logged', () => {

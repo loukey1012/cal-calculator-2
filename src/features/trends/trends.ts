@@ -1,6 +1,8 @@
 import { fromLocalDateString, toLocalDateString } from '../../lib/dates'
 import { roundTo } from '../../lib/numbers'
+import { calorieOverLevel } from '../appearance/overColors'
 import { countsInAverages, type CountedDay } from '../history/dayCounting'
+import { toWholeKcal } from '../nutrition/format'
 import { goalForDate, type Goal } from '../nutrition/goals'
 import { weightOn, type WeightEntry } from '../weight/weight'
 
@@ -90,10 +92,10 @@ function goalOf(goal: Goal | null, metric: NutritionMetric): number | null {
   return metric === 'kcal' ? goal.kcal : (goal[GOAL_FIELDS[metric]] as number | null)
 }
 
-/** Calories count when at or under the goal; nutrients once the target is reached. */
+/** Calories count when within the goal (see calorieOverLevel); nutrients once the target is reached. */
 function atGoal(metric: NutritionMetric, value: number, goal: number | null): boolean {
   if (goal === null) return false
-  return metric === 'kcal' ? value <= goal : value >= goal
+  return metric === 'kcal' ? calorieOverLevel(toWholeKcal(value), goal) === 'none' : value >= goal
 }
 
 // only complete past days count (see dayCounting)

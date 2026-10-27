@@ -76,7 +76,7 @@ describe('TrendsView', () => {
     expect(fetchNutritionDays).toHaveBeenCalledWith('u1', '2026-08-14', TODAY)
     const stats = screen.getByTestId('trend-stats')
     expect(stats).toHaveTextContent('Ø per day2,000 kcal')
-    expect(stats).toHaveTextContent('Within goal1 of 2')
+    expect(stats).toHaveTextContent('Within goal2 of 2')
     expect(stats).toHaveTextContent('vs. previous−300 kcal4 weeks')
   })
 

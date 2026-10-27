@@ -111,17 +111,18 @@ describe('productFormValues', () => {
     expect(info.imageUrl).toBeNull()
   })
 
-  test('per-portion values missing: worked out from per 100 g and the portion weight', () => {
+  test('per-portion values missing: left empty, only the portion weight is filled', () => {
     const values = productFormValues(
       { serving_quantity: 40, nutriments: { 'energy-kcal_100g': 200, proteins_100g: 10 } },
       '96385074',
     )
 
-    expect(values).toMatchObject({ perUnitEnabled: true, unitLabel: '', unitWeightG: '40' })
-    expect(values.perUnit).toEqual(basis({ kcal: '80', protein: '4' }))
+    expect(values).toMatchObject({ perUnitEnabled: false, unitLabel: '', unitWeightG: '40' })
+    expect(values.perUnit).toEqual(basis({}))
+    expect(values.per100g).toEqual(basis({ kcal: '200', protein: '10' }))
   })
 
-  test('per-100 g values missing: worked out from the portion and its weight', () => {
+  test('per-100 g values missing: left empty, only what the package states is filled', () => {
     const values = productFormValues(
       {
         serving_quantity: 40,
@@ -130,10 +131,10 @@ describe('productFormValues', () => {
       '96385074',
     )
 
-    // what the package states wins over what is worked out
-    expect(values.per100g).toEqual(basis({ kcal: '200', protein: '9.5' }))
+    // kcal per 100 g isn't stated, so it isn't worked out; the stated protein is kept
+    expect(values.per100g).toEqual(basis({ protein: '9.5' }))
     expect(values.perUnit).toEqual(basis({ kcal: '80', protein: '4' }))
-    expect(values.per100gEnabled).toBe(true)
+    expect(values).toMatchObject({ per100gEnabled: true, perUnitEnabled: true })
   })
 
   test('per-portion values without a portion weight: per portion only, per 100 g stays empty', () => {
@@ -197,7 +198,8 @@ describe('productFormValues', () => {
     expect(values).toMatchObject({
       measure: 'ml',
       per100g: basis({ kcal: '46' }),
-      perUnit: basis({ kcal: '115' }),
+      perUnitEnabled: false,
+      perUnit: basis({}),
       unitWeightG: '250',
     })
   })
@@ -321,7 +323,7 @@ describe('warnings about odd product data', () => {
       expect.stringMatching(/No calories/),
     )
     expect(warningsOf({ nutriments: { 'energy-kcal_serving': 80 } })).toContainEqual(
-      expect.stringMatching(/no portion weight/),
+      expect.stringMatching(/weight per unit is missing/),
     )
   })
 })

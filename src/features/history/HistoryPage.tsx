@@ -70,6 +70,14 @@ export function HistoryPage() {
   return page ? <MealRoute page={page} /> : <HistoryMonth />
 }
 
+/** What History showed, kept in the navigation state; `person` as for any page of the stack. */
+type HistoryState = { readonly person: string; readonly month: string }
+
+function monthOf(state: unknown): string | null {
+  if (typeof state !== 'object' || state === null || !('month' in state)) return null
+  return typeof state.month === 'string' ? state.month : null
+}
+
 function HistoryMonth() {
   const { profile, householdId } = useCurrentUser()
   const today = useToday()
@@ -88,7 +96,9 @@ function HistoryMonth() {
     requestedDay !== undefined && isRealDay(requestedDay) && requestedDay <= today
       ? requestedDay
       : null
-  const [month, setMonth] = useState(() => monthStart(selectedDay ?? today))
+  const [month, setMonth] = useState(
+    () => monthOf(location.state) ?? monthStart(selectedDay ?? today),
+  )
 
   // opened from elsewhere for someone's day (the review's Open day): that person and its month
   const [seenNavigation, setSeenNavigation] = useState(location.key)
@@ -96,18 +106,32 @@ function HistoryMonth() {
     setSeenNavigation(location.key)
     const person = personOf(location.state)
     if (person) setSelectedId(person)
-    if (selectedDay) setMonth(monthStart(selectedDay))
+    const shownMonth = monthOf(location.state) ?? (selectedDay && monthStart(selectedDay))
+    if (shownMonth) setMonth(shownMonth)
   }
 
-  // selecting replaces the entry: browsing days builds no back stack
+  // The picked person and the month shown ride along in the navigation state: another day is
+  // another address, which mounts the page again, and only the state tells it what was shown.
+  // Selecting replaces the entry: browsing days builds no back stack.
+  function goTo(path: string, state: HistoryState) {
+    navigate(path, { replace: true, state })
+  }
   function toggleDay(day: string) {
-    navigate(day === selectedDay ? '/history' : `/history/${day}`, { replace: true })
+    goTo(day === selectedDay ? '/history' : `/history/${day}`, { person: person.id, month })
+  }
+  function selectPerson(personId: string) {
+    setSelectedId(personId)
+    goTo(pathname, { person: personId, month })
+  }
+  function changeMonth(shown: string) {
+    setMonth(shown)
+    goTo(pathname, { person: person.id, month: shown })
   }
 
   return (
     <>
       <PageHeader title="History" />
-      <PersonSwitch people={people} selectedId={person.id} onChange={setSelectedId} />
+      <PersonSwitch people={people} selectedId={person.id} onChange={selectPerson} />
       <div className="mt-3">
         <SegmentedControl label="View" options={VIEW_OPTIONS} value={view} onChange={setView} />
       </div>
@@ -126,7 +150,7 @@ function HistoryMonth() {
             month={month}
             today={today}
             selectedDay={selectedDay}
-            onChangeMonth={setMonth}
+            onChangeMonth={changeMonth}
             onSelectDay={toggleDay}
           />
           {selectedDay ? (

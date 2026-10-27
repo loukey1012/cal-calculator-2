@@ -85,6 +85,37 @@ function per100gLimits(numbers: NutritionBasis, measure: Measure): ValueWarning[
   return warnings
 }
 
+const hasAnyValue = (basis: NutritionBasis | null) =>
+  basis !== null && NUTRITION_FIELDS.some((field) => basis[field] !== null)
+
+/** A weight per unit and values per unit belong together; either alone can be filled from the other. */
+function unitPairCheck(
+  perUnit: NutritionBasis | null,
+  weightText: string,
+  measure: Measure,
+): ValueWarning[] {
+  const weight = parseDecimal(weightText)
+  const hasWeight = weight !== null && weight > 0
+  const noun = measure === 'ml' ? 'volume' : 'weight'
+  if (hasWeight && !hasAnyValue(perUnit)) {
+    return [
+      {
+        text: `A ${noun} per unit, but no values per unit. With values per 100 g, Calculate missing values fills them in.`,
+        fields: ['unitWeightG'],
+      },
+    ]
+  }
+  if (!hasWeight && hasAnyValue(perUnit)) {
+    return [
+      {
+        text: `Values per unit, but no ${noun} per unit. With calories per 100 g, Calculate missing values works it out.`,
+        fields: ['unitWeightG'],
+      },
+    ]
+  }
+  return []
+}
+
 /** Per unit should be per 100 g scaled by the grams per unit (or ml). */
 function unitWeightCheck(
   per100g: NutritionBasis | null,
@@ -120,6 +151,7 @@ export function valueWarnings(values: IngredientFormValues): readonly ValueWarni
       ? [...per100gLimits(per100g, measure), ...basisChecks('per100g', per100g, measure)]
       : []),
     ...(perUnit ? basisChecks('perUnit', perUnit, measure) : []),
+    ...unitPairCheck(perUnit, values.unitWeightG, measure),
     ...unitWeightCheck(per100g, perUnit, values.unitWeightG, measure),
   ]
 }

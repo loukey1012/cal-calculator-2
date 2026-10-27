@@ -103,30 +103,47 @@ describe('GoalProgressView', () => {
     const strokeOf = (ring: Element) =>
       (ring.querySelectorAll('circle')[1] as SVGCircleElement | undefined)?.style.stroke ?? ''
 
-    test('a full ring takes the first over color, more than 10 % over the second', () => {
+    test.each([
+      ['within the goal', 220, 'var(--goal-kcal)'],
+      ['more than 10 % over', 221, 'var(--goal-over-full, var(--goal-kcal))'],
+      ['more than 300 kcal over', 2400, 'var(--goal-over-well, var(--goal-kcal))'],
+    ])('calories %s', (_name, consumed, stroke) => {
+      const target = consumed === 2400 ? 2000 : 200
+      render(
+        <GoalProgressView progress={[{ ...over('kcal', 1), consumed, target }]} style="rings" />,
+      )
+
+      expect(strokeOf(screen.getByTestId('ring'))).toBe(stroke)
+    })
+
+    test('carbs, fat and protein keep their color when over', () => {
       render(
         <GoalProgressView
-          progress={[over('kcal', 1.05), over('fat', 1.2), over('protein', 1.5)]}
+          progress={[over('carbs', 1.3), over('fat', 1.3), over('protein', 1.5)]}
           style="rings"
         />,
       )
 
-      const [kcal, fat, protein] = screen.getAllByTestId('ring')
-      expect(strokeOf(kcal!)).toBe('var(--goal-over-full, var(--goal-kcal))')
-      expect(strokeOf(fat!)).toBe('var(--goal-over-well, var(--goal-fat))')
-      // more protein is fine: it keeps its color
+      const [carbs, fat, protein] = screen.getAllByTestId('ring')
+      expect(strokeOf(carbs!)).toBe('var(--goal-carbs)')
+      expect(strokeOf(fat!)).toBe('var(--goal-fat)')
       expect(strokeOf(protein!)).toBe('var(--goal-protein)')
     })
 
     test('bars change the same way', () => {
-      render(<GoalProgressView progress={[over('kcal', 1.2), over('carbs', 1)]} style="bars" />)
+      render(
+        <GoalProgressView
+          progress={[{ ...over('kcal', 1.2), consumed: 2400, target: 2000 }, over('carbs', 1.2)]}
+          style="bars"
+        />,
+      )
 
       const [kcal, carbs] = screen.getAllByTestId('bar')
       expect((kcal!.firstElementChild as HTMLElement).style.backgroundColor).toBe(
         'var(--goal-over-well, var(--goal-kcal))',
       )
       expect((carbs!.firstElementChild as HTMLElement).style.backgroundColor).toBe(
-        'var(--goal-over-full, var(--goal-carbs))',
+        'var(--goal-carbs)',
       )
     })
 

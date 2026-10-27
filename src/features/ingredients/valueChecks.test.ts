@@ -50,6 +50,42 @@ describe('valueWarnings', () => {
     })
   })
 
+  test('a weight per unit but no values per unit points at the weight', () => {
+    const expected = {
+      text: 'A weight per unit, but no values per unit. With values per 100 g, Calculate missing values fills them in.',
+      fields: ['unitWeightG'],
+    }
+
+    expect(valueWarnings({ ...GUMMIES, perUnitEnabled: false })).toContainEqual(expected)
+    expect(valueWarnings({ ...GUMMIES, perUnit: basis({}) })).toContainEqual(expected)
+  })
+
+  test('values per unit but no weight per unit points at the weight', () => {
+    const expected = {
+      text: 'Values per unit, but no weight per unit. With calories per 100 g, Calculate missing values works it out.',
+      fields: ['unitWeightG'],
+    }
+
+    expect(valueWarnings({ ...GUMMIES, unitWeightG: '' })).toContainEqual(expected)
+    expect(valueWarnings({ ...GUMMIES, unitWeightG: '0' })).toContainEqual(expected)
+    expect(valueWarnings({ ...GUMMIES, unitWeightG: 'abc' })).toContainEqual(expected)
+  })
+
+  test('no weight and no values per unit is fine', () => {
+    expect(valueWarnings({ ...GUMMIES, perUnitEnabled: false, unitWeightG: '' })).toEqual([])
+  })
+
+  test('a drink says ml per unit', () => {
+    const drink = { ...GUMMIES, measure: 'ml' as const }
+
+    expect(texts({ ...drink, perUnitEnabled: false })).toContain(
+      'A volume per unit, but no values per unit. With values per 100 g, Calculate missing values fills them in.',
+    )
+    expect(texts({ ...drink, unitWeightG: '' })).toContain(
+      'Values per unit, but no volume per unit. With calories per 100 g, Calculate missing values works it out.',
+    )
+  })
+
   test('calories that don’t fit protein, carbs, fat and fiber', () => {
     const warnings = valueWarnings(
       form({

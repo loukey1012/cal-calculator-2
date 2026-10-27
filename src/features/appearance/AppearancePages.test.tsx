@@ -360,12 +360,12 @@ describe('When over', () => {
     })
   })
 
-  test('custom: a color for full and one for more than 10 % over', async () => {
+  test('custom: a color for more than 10 % over and one for more than 300 kcal over', async () => {
     const user = userEvent.setup()
     renderPage(PROGRESS, { overColors: { mode: 'custom' } })
 
-    await user.click(screen.getByRole('button', { name: /More than 10 % over/ }))
-    const sheet = screen.getByRole('dialog', { name: 'More than 10 % over' })
+    await user.click(screen.getByRole('button', { name: /More than 300 kcal over/ }))
+    const sheet = screen.getByRole('dialog', { name: 'More than 300 kcal over' })
     await user.click(within(sheet).getByRole('radio', { name: 'Violet' }))
 
     expect(updateProfile).toHaveBeenLastCalledWith('u1', {
@@ -373,7 +373,7 @@ describe('When over', () => {
         overColors: expect.objectContaining({ mode: 'custom', well: '#8e4ec6' }),
       }),
     })
-    expect(screen.getByRole('button', { name: /Full, up to 10 % over/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /More than 10 % over/ })).toBeInTheDocument()
   })
 
   test('the preview shows rings that are over, too', () => {

@@ -2,9 +2,10 @@ import { z } from 'zod'
 import type { GoalProgress, RingKey } from '../nutrition/goals'
 
 /**
- * Rings and bars that are full or over: calories, carbs and fat change color (more protein or
- * fiber is fine). From 100 % up to 110 % they take the first color, above that the second. Saved to
- * the account in profiles.appearance.overColors; painted as --goal-over-full / --goal-over-well.
+ * Calorie rings and bars that are over the goal change color (everything else is fine over):
+ * more than 10 % over takes the first color, more than 300 kcal over the second. Up to 10 % over
+ * still counts as within the goal. Saved to the account in profiles.appearance.overColors;
+ * painted as --goal-over-full / --goal-over-well.
  */
 
 const OVER_PRESETS = ['signal', 'ember', 'neon'] as const
@@ -27,16 +28,26 @@ export const OVER_PRESET_COLORS: Record<OverPreset, OverColorPair> = {
 export const DEFAULT_OVER_COLORS: OverColors = { mode: 'signal', ...OVER_PRESET_COLORS.signal }
 
 /** Only these change: for them, over the goal is too much. */
-const OVER_RING_KEYS: readonly RingKey[] = ['kcal', 'carbs', 'fat']
-/** Above this share of the goal, a ring is "well over" (the second color). */
-export const WELL_OVER_RATIO = 1.1
+const OVER_RING_KEYS: readonly RingKey[] = ['kcal']
+/** Up to this share of the calorie goal still counts as within it. */
+const WITHIN_GOAL_RATIO = 1.1
+/** More calories over the goal than this is "well over" (the second color), whatever the goal. */
+const RED_OVER_KCAL = 300
 
 type OverLevel = 'none' | 'full' | 'well'
 
+/**
+ * The one calorie rule behind rings, History's calendar and Trends: none while within the goal
+ * (up to 10 % over), the first color beyond that, the second once more than 300 kcal over.
+ */
+export function calorieOverLevel(consumed: number, target: number): OverLevel {
+  if (consumed - target > RED_OVER_KCAL) return 'well'
+  return consumed > target * WITHIN_GOAL_RATIO ? 'full' : 'none'
+}
+
 export function overLevel(goal: GoalProgress): OverLevel {
   if (!OVER_RING_KEYS.includes(goal.key)) return 'none'
-  if (goal.ratio > WELL_OVER_RATIO) return 'well'
-  return goal.ratio >= 1 ? 'full' : 'none'
+  return calorieOverLevel(goal.consumed, goal.target)
 }
 
 const hex = z

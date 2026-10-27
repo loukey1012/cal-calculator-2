@@ -3,7 +3,7 @@ import { roundTo } from '../../lib/numbers'
 import { EMPTY_INGREDIENT_FORM, type IngredientFormValues } from '../ingredients/ingredientForm'
 import { NUTRITION_FIELDS, type NutritionBasis, type NutritionField } from '../nutrition/bases'
 import type { Measure } from '../nutrition/types'
-import { nutritionWarnings, resolveNutrition } from './productNutrition'
+import { nutritionWarnings } from './productNutrition'
 
 /**
  * Product data from Open Food Facts (free, open, no account), used to fill in a new ingredient.
@@ -185,6 +185,9 @@ function reportedNutrition(product: ParsedProduct, measure: Measure) {
 const asText = (value: number | null) =>
   value === null ? '' : String(roundTo(value, NUTRIENT_DECIMALS))
 
+const hasAnyValue = (basis: NutritionBasis) =>
+  NUTRITION_FIELDS.some((field) => basis[field] !== null)
+
 function formBasis(basis: NutritionBasis): IngredientFormValues['per100g'] {
   const text = Object.fromEntries(
     NUTRITION_FIELDS.map((field) => [
@@ -241,23 +244,23 @@ function productInfo(product: ParsedProduct): ProductInfo {
 }
 
 /**
- * The new-ingredient form filled in from a product: per 100 g and per portion as stated, each
- * worked out from the other where missing; unknown values stay empty.
+ * The new-ingredient form filled in from a product: per 100 g and per portion exactly as stated;
+ * nothing is worked out (that is the form's "Calculate missing values"), unknown values stay empty.
  */
 export function productPrefill(raw: OffProduct, barcode: string): ProductPrefill {
   const product = productSchema.parse(raw)
   const measure = productMeasure(product)
   const reported = reportedNutrition(product, measure)
-  const { per100g, perPortion } = resolveNutrition(reported)
+  const { per100g, perPortion } = reported
   return {
     values: {
       ...EMPTY_INGREDIENT_FORM,
       name: titleCase(productName(product)).slice(0, MAX_NAME),
       brand: firstBrand(product.brands).slice(0, MAX_BRAND),
       barcode,
-      per100gEnabled: per100g.kcal !== null,
+      per100gEnabled: hasAnyValue(per100g),
       per100g: formBasis(per100g),
-      perUnitEnabled: perPortion.kcal !== null,
+      perUnitEnabled: hasAnyValue(perPortion),
       perUnit: formBasis(perPortion),
       measure,
       unitWeightG: asText(reported.portionG),
@@ -312,7 +315,7 @@ function toHit(raw: unknown): ProductHit | null {
   const prefill = productPrefill(parsed.data, parsed.data.code)
   const { values } = prefill
   // without a name or any calories there is nothing to take over
-  const usable = values.name !== '' && (values.per100gEnabled || values.perUnitEnabled)
+  const usable = values.name !== '' && (values.per100g.kcal !== '' || values.perUnit.kcal !== '')
   return usable ? { ...prefill, barcode: parsed.data.code } : null
 }
 
