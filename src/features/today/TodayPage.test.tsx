@@ -18,10 +18,10 @@ vi.mock('../meals/mealsApi', () => ({
   addMealItem: vi.fn(),
   updateMealItem: vi.fn(),
   deleteMealItem: vi.fn(),
-  fetchCheatDay: vi.fn().mockResolvedValue(false),
+  fetchDayMark: vi.fn().mockResolvedValue(null),
   fetchDayNote: vi.fn().mockResolvedValue(null),
   setCheatMeal: vi.fn(),
-  setCheatDay: vi.fn(),
+  setDayMark: vi.fn(),
 }))
 // Add food (opened from an empty meal) loads the recipes and notes a started dish
 vi.mock('../recipes/recipesApi', () => ({
@@ -47,13 +47,7 @@ vi.mock('../ingredients/ingredientsApi', () => ({
 
 import { fetchGoals } from '../goals/goalsApi'
 import { fetchMembers } from '../household/householdApi'
-import {
-  fetchDay,
-  fetchCheatDay,
-  fetchDayNote,
-  setCheatDay,
-  updateMealItem,
-} from '../meals/mealsApi'
+import { fetchDay, fetchDayMark, fetchDayNote, setDayMark, updateMealItem } from '../meals/mealsApi'
 import { fetchWeights, saveWeight } from '../weight/weightApi'
 import { newAddFoodDraft, withDish } from '../addFood/addFoodDraft'
 import { AddFoodSession } from '../addFood/AddFoodSession'
@@ -123,7 +117,7 @@ beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date(2026, 9, 1, 12, 0, 0))
   vi.mocked(fetchDay).mockResolvedValue([LUNCH])
-  vi.mocked(fetchCheatDay).mockResolvedValue(false)
+  vi.mocked(fetchDayMark).mockResolvedValue(null)
   vi.mocked(fetchGoals).mockResolvedValue([GOAL])
   vi.mocked(fetchMembers).mockResolvedValue([PROFILE])
   vi.mocked(fetchWeights).mockResolvedValue([{ date: '2026-09-28', weightKg: 72.4 }])
@@ -208,7 +202,7 @@ describe('TodayPage', () => {
 
   test('a cheat day says so, and its rings show no over colors', async () => {
     // Arrange: 2,538 kcal against a goal of 2,000
-    vi.mocked(fetchCheatDay).mockResolvedValue(true)
+    vi.mocked(fetchDayMark).mockResolvedValue('cheat')
     vi.mocked(fetchDay).mockResolvedValue([
       LUNCH,
       dayMeal('m2', 'dinner', [mealItem({ id: 'cake', kcal: 2000 })]),
@@ -220,6 +214,23 @@ describe('TodayPage', () => {
     // Assert
     const total = screen.getByTestId('day-total')
     await waitFor(() => expect(total).toHaveTextContent('Cheat day'))
+    const goals = await screen.findByRole('list', { name: 'Goals' })
+    const ring = within(goals).getAllByTestId('ring')[0]
+    expect(ring?.querySelectorAll('circle')[1]?.style.stroke).toBe('var(--goal-kcal)')
+  })
+
+  test('an alcohol day says so, and its rings show no over colors', async () => {
+    vi.mocked(fetchDayMark).mockResolvedValue('alcohol')
+    vi.mocked(fetchDay).mockResolvedValue([
+      LUNCH,
+      dayMeal('m2', 'dinner', [mealItem({ id: 'cake', kcal: 2000 })]),
+    ])
+
+    renderPage()
+
+    const total = screen.getByTestId('day-total')
+    await waitFor(() => expect(total).toHaveTextContent('Alcohol day'))
+    expect(total).not.toHaveTextContent('Cheat day')
     const goals = await screen.findByRole('list', { name: 'Goals' })
     const ring = within(goals).getAllByTestId('ring')[0]
     expect(ring?.querySelectorAll('circle')[1]?.style.stroke).toBe('var(--goal-kcal)')
@@ -260,16 +271,16 @@ describe('TodayPage', () => {
 
   test('Day options marks the day, also for the partner', async () => {
     vi.mocked(fetchMembers).mockResolvedValue([PROFILE, PARTNER])
-    vi.mocked(setCheatDay).mockResolvedValue()
+    vi.mocked(setDayMark).mockResolvedValue()
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     renderPage()
 
     await user.click(await screen.findByRole('radio', { name: /baby/ }))
     await user.click(screen.getByRole('button', { name: 'Day options' }))
     const sheet = screen.getByRole('dialog', { name: 'Day' })
-    await user.click(within(sheet).getByRole('switch', { name: 'Cheat day' }))
+    await user.click(within(sheet).getByRole('radio', { name: 'Alcohol day' }))
 
-    await waitFor(() => expect(setCheatDay).toHaveBeenCalledWith('u2', '2026-10-01', true))
+    await waitFor(() => expect(setDayMark).toHaveBeenCalledWith('u2', '2026-10-01', 'alcohol'))
   })
 
   test('the current weight sits next to the title; tapping it enters today’s', async () => {

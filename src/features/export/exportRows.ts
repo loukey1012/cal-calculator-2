@@ -42,6 +42,7 @@ export type ExportData = {
       readonly kcal_estimated: boolean | null
       readonly cheat_day?: boolean | null
       readonly cheat_meal?: boolean | null
+      readonly alcohol_day?: boolean | null
     }
   >
   readonly weights: ReadonlyArray<{
@@ -83,6 +84,7 @@ export const DAY_HEADER = [
   'Estimate',
   'Cheat day',
   'Cheat meal',
+  'Alcohol day',
 ]
 
 const UNIT_NAMES: Record<Enums<'amount_unit'>, string> = { g: 'g', ml: 'ml', unit: 'pieces' }
@@ -143,6 +145,7 @@ export function dayRows(data: ExportData): CsvValue[][] {
       total?.kcal_estimated ?? false,
       total?.cheat_day ?? false,
       total?.cheat_meal ?? false,
+      total?.alcohol_day ?? false,
     ]
   })
 }

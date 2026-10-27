@@ -116,6 +116,7 @@ export type DaySummary = {
   readonly mealCount: number
   readonly cheatDay: boolean
   readonly cheatMeal: boolean
+  readonly alcoholDay: boolean
   readonly kcalEstimated: boolean
 }
 
@@ -140,7 +141,13 @@ export function summaryMessage(
 ): PushMessage {
   const kcal = `${day.kcalEstimated ? '~' : ''}${Math.round(day.kcal)}`
   const total = goal ? `${kcal} of ${Math.round(goal.kcal)} kcal` : `${kcal} kcal`
-  const flag = day.cheatDay ? 'Cheat day' : day.cheatMeal ? 'Cheat meal' : null
+  const flag = day.cheatDay
+    ? 'Cheat day'
+    : day.alcoholDay
+      ? 'Alcohol day'
+      : day.cheatMeal
+        ? 'Cheat meal'
+        : null
   const body = [
     flag,
     grams('Protein', day.protein, goal?.protein ?? null),

@@ -138,24 +138,31 @@ export async function setDayNote(userId: string, date: string, text: string): Pr
   if (error) throw ApiError.from(error)
 }
 
-/** Whether the day is a cheat day. */
-export async function fetchCheatDay(userId: string, date: string): Promise<boolean> {
+/** How a whole day is marked; its calories can't be judged, so it is left out of every figure. */
+export type DayMark = 'cheat' | 'alcohol' | null
+
+/** Whether the day is a cheat day, an alcohol day or neither. */
+export async function fetchDayMark(userId: string, date: string): Promise<DayMark> {
   const { data, error } = await supabase
     .from('cheat_days')
-    .select('date')
+    .select('kind')
     .eq('user_id', userId)
     .eq('date', date)
     .maybeSingle()
   if (error) throw ApiError.from(error)
-  return data !== null
+  // the column is a plain string in the generated types; the database allows only these two
+  return data?.kind === 'cheat' || data?.kind === 'alcohol' ? data.kind : null
 }
 
-/** Marks the day as a cheat day or removes the mark; both can be sent again safely. */
-export async function setCheatDay(userId: string, date: string, cheatDay: boolean): Promise<void> {
-  const { error } = cheatDay
+/**
+ * Marks the day as a cheat day or an alcohol day, replacing the other kind, or removes the mark;
+ * both can be sent again safely.
+ */
+export async function setDayMark(userId: string, date: string, mark: DayMark): Promise<void> {
+  const { error } = mark
     ? await supabase
         .from('cheat_days')
-        .upsert({ user_id: userId, date }, { onConflict: 'user_id,date', ignoreDuplicates: true })
+        .upsert({ user_id: userId, date, kind: mark }, { onConflict: 'user_id,date' })
     : await supabase.from('cheat_days').delete().eq('user_id', userId).eq('date', date)
   if (error) throw ApiError.from(error)
 }

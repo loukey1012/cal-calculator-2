@@ -193,3 +193,119 @@ describe('main meals in the day totals', () => {
     expect(data).toEqual([{ lunch_logged: false, dinner_logged: false }])
   })
 })
+
+describe('alcohol days', () => {
+  const ALCOHOL_EMPTY_DAY = '2026-10-12'
+  const ALCOHOL_MEAL_DAY = '2026-10-13'
+  const SWITCH_DAY = '2026-10-14'
+
+  async function alcoholDayOf(userId: string, date: string) {
+    const { data, error } = await alice.client
+      .from('daily_totals')
+      .select('meal_count, cheat_day, alcohol_day')
+      .eq('user_id', userId)
+      .eq('date', date)
+    if (error) throw new Error(error.message)
+    return data
+  }
+
+  test('the partner marks a day without meals: it shows up as an alcohol day, not a cheat day', async () => {
+    const { error } = await bob.client
+      .from('cheat_days')
+      .upsert(
+        { user_id: alice.id, date: ALCOHOL_EMPTY_DAY, kind: 'alcohol' },
+        { onConflict: 'user_id,date' },
+      )
+
+    expect(error).toBeNull()
+    expect(await alcoholDayOf(alice.id, ALCOHOL_EMPTY_DAY)).toEqual([
+      { meal_count: 0, cheat_day: false, alcohol_day: true },
+    ])
+  })
+
+  test('a day with meals is flagged too, and a cheat meal may sit inside it', async () => {
+    const meal = await alice.client.rpc('ensure_meal', {
+      p_user_id: alice.id,
+      p_date: ALCOHOL_MEAL_DAY,
+      p_meal_type: 'dinner',
+    })
+    const item = await alice.client.from('meal_items').insert({
+      meal_id: meal.data,
+      name: 'Pasta',
+      entered_amount: 1,
+      entered_unit: 'unit',
+      basis: 'per_unit',
+      basis_multiplier: 1,
+      kcal: 500,
+    })
+    const cheatMeal = await alice.client.rpc('set_cheat_meal', {
+      p_user_id: alice.id,
+      p_date: ALCOHOL_MEAL_DAY,
+      p_meal_type: 'dinner',
+      p_cheat_meal: true,
+    })
+    const day = await alice.client
+      .from('cheat_days')
+      .insert({ user_id: alice.id, date: ALCOHOL_MEAL_DAY, kind: 'alcohol' })
+
+    expect(item.error).toBeNull()
+    expect(cheatMeal.error).toBeNull()
+    expect(day.error).toBeNull()
+    const { data } = await alice.client
+      .from('daily_totals')
+      .select('meal_count, kcal, cheat_meal, cheat_day, alcohol_day')
+      .eq('user_id', alice.id)
+      .eq('date', ALCOHOL_MEAL_DAY)
+    expect(data).toEqual([
+      { meal_count: 1, kcal: 500, cheat_meal: true, cheat_day: false, alcohol_day: true },
+    ])
+  })
+
+  test('a plain mark is a cheat day; switching the kind replaces it and leaves one row', async () => {
+    await alice.client.from('cheat_days').insert({ user_id: alice.id, date: SWITCH_DAY })
+    expect(await alcoholDayOf(alice.id, SWITCH_DAY)).toEqual([
+      { meal_count: 0, cheat_day: true, alcohol_day: false },
+    ])
+
+    const toAlcohol = await bob.client
+      .from('cheat_days')
+      .upsert(
+        { user_id: alice.id, date: SWITCH_DAY, kind: 'alcohol' },
+        { onConflict: 'user_id,date' },
+      )
+    expect(toAlcohol.error).toBeNull()
+    expect(await alcoholDayOf(alice.id, SWITCH_DAY)).toEqual([
+      { meal_count: 0, cheat_day: false, alcohol_day: true },
+    ])
+
+    const toCheat = await alice.client
+      .from('cheat_days')
+      .upsert(
+        { user_id: alice.id, date: SWITCH_DAY, kind: 'cheat' },
+        { onConflict: 'user_id,date' },
+      )
+    expect(toCheat.error).toBeNull()
+    const rows = await alice.client
+      .from('cheat_days')
+      .select('kind')
+      .eq('user_id', alice.id)
+      .eq('date', SWITCH_DAY)
+    expect(rows.data).toEqual([{ kind: 'cheat' }])
+  })
+
+  test('only the two known kinds are accepted', async () => {
+    const { error } = await alice.client
+      .from('cheat_days')
+      .insert({ user_id: alice.id, date: '2026-10-15', kind: 'party' })
+
+    expect(error?.code).toBe('23514')
+  })
+
+  test('someone from another household can’t set one', async () => {
+    const { error } = await carol.client
+      .from('cheat_days')
+      .insert({ user_id: alice.id, date: '2026-10-16', kind: 'alcohol' })
+
+    expect(error?.code).toBe('42501')
+  })
+})

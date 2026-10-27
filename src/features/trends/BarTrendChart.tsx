@@ -38,7 +38,8 @@ function barPath(x: number, width: number, top: number, bottom: number): string 
   ].join(' ')
 }
 
-const isGhost = (bar: TrendBar) => bar.kind === 'cheatDay' || bar.kind === 'cheatMeal'
+const isGhost = (bar: TrendBar) =>
+  bar.kind === 'cheatDay' || bar.kind === 'alcoholDay' || bar.kind === 'cheatMeal'
 
 /** How high a bar stands: a cheat day's ghost reaches its goal, so it never distorts the chart. */
 function heightOf(bar: TrendBar): number {

@@ -18,12 +18,13 @@ import {
   type DayChange,
 } from './dayChanges'
 import { noteOf, type AmountPatch, type DayMeal, type MealType } from './dayModel'
-import { fetchDay, fetchCheatDay, fetchDayNote } from './mealsApi'
+import { fetchDay, fetchDayMark, fetchDayNote, type DayMark } from './mealsApi'
 
 const dayKeys = {
   day: (userId: string, date: string) => ['day', userId, date] as const,
   // under the day's key, so everything that refreshes the day refreshes the mark too
-  cheatDay: (userId: string, date: string) => ['day', userId, date, 'cheatDay'] as const,
+  // 'dayMark', not the old 'cheatDay': that one cached a boolean, this one says which kind
+  dayMark: (userId: string, date: string) => ['day', userId, date, 'dayMark'] as const,
   dayNote: (userId: string, date: string) => ['day', userId, date, 'note'] as const,
 }
 
@@ -31,11 +32,11 @@ export function useDay(userId: string, date: string): UseQueryResult<DayMeal[]> 
   return useQuery({ queryKey: dayKeys.day(userId, date), queryFn: () => fetchDay(userId, date) })
 }
 
-/** Whether the day is a cheat day. */
-export function useCheatDay(userId: string, date: string): UseQueryResult<boolean> {
+/** Whether the day is a cheat day, an alcohol day or neither. */
+export function useDayMark(userId: string, date: string): UseQueryResult<DayMark> {
   return useQuery({
-    queryKey: dayKeys.cheatDay(userId, date),
-    queryFn: () => fetchCheatDay(userId, date),
+    queryKey: dayKeys.dayMark(userId, date),
+    queryFn: () => fetchDayMark(userId, date),
   })
 }
 
@@ -147,17 +148,17 @@ export function useSetCheatMeal(userId: string, date: string): DayChangeActions<
   }
 }
 
-/** Marks the day as a cheat day, or takes the mark back. */
-export function useSetCheatDay(userId: string, date: string): DayChangeActions<boolean> {
-  const change = useCachedDayChange<boolean>(
+/** Marks the day as a cheat day or an alcohol day (replacing the other), or takes the mark back. */
+export function useSetDayMark(userId: string, date: string): DayChangeActions<DayMark> {
+  const change = useCachedDayChange<DayMark>(
     userId,
     date,
-    dayKeys.cheatDay(userId, date),
-    (cached, next) => (next.kind === 'cheatDay' ? next.cheatDay : (cached ?? false)),
+    dayKeys.dayMark(userId, date),
+    (cached, next) => (next.kind === 'dayMark' ? next.mark : (cached ?? null)),
   )
   return {
     ...change,
-    mutate: (cheatDay) => change.mutate({ kind: 'cheatDay', userId, date, cheatDay }),
+    mutate: (mark) => change.mutate({ kind: 'dayMark', userId, date, mark }),
   }
 }
 

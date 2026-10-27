@@ -2,7 +2,12 @@ import { fromLocalDateString, toLocalDateString } from '../../lib/dates'
 import { calorieOverLevel } from '../appearance/overColors'
 import { toWholeKcal } from '../nutrition/format'
 import { goalForDate, type Goal } from '../nutrition/goals'
-import { countsInAverages, isCheat, isMissingMeals, type CountedDay } from './dayCounting'
+import {
+  countsInAverages,
+  isLeftOut,
+  isMissingMeals,
+  type CountedDay,
+} from '../../../supabase/functions/_shared/dayCounting'
 
 const DAYS_PER_WEEK = 7
 
@@ -23,6 +28,7 @@ export type DayStatus =
   /** more than 300 kcal over it (the rings' second over color) */
   | 'wellOver'
   | 'cheatDay'
+  | 'alcoholDay'
   | 'cheatMeal'
   /** a past day without food at lunch or dinner (see dayCounting) */
   | 'missing'
@@ -30,7 +36,7 @@ export type DayStatus =
 export type MonthSummary = {
   /** days with something logged that count (see dayCounting) */
   readonly loggedDays: number
-  /** past days with something logged that don't count: cheat days, a meal missing */
+  /** past days with something logged that don't count: cheat and alcohol days, a meal missing */
   readonly leftOutDays: number
   readonly averageKcal: number
   readonly averageProtein: number
@@ -72,7 +78,7 @@ export function monthGrid(month: string): ReadonlyArray<ReadonlyArray<string | n
 
 /**
  * Judged against the goal that was valid on that day, with calories rounded up like everywhere.
- * Cheat days and days missing a main meal are never judged: they don't count.
+ * Cheat days, alcohol days and days missing a main meal are never judged: they don't count.
  */
 export function dayStatus(
   date: string,
@@ -81,6 +87,7 @@ export function dayStatus(
   today: string,
 ): DayStatus {
   if (total?.cheatDay) return 'cheatDay'
+  if (total?.alcoholDay) return 'alcoholDay'
   if (total?.cheatMeal) return 'cheatMeal'
   if (isMissingMeals(date, total, today)) return 'missing'
   if (!total || total.mealCount === 0) return 'none'
@@ -96,7 +103,7 @@ export function monthSummary(totals: readonly DayTotal[], today: string): MonthS
   const logged = totals.filter((day) => countsInAverages(day, today))
   const leftOutDays = totals.filter(
     (day) =>
-      day.date < today && (day.mealCount > 0 || isCheat(day)) && !countsInAverages(day, today),
+      day.date < today && (day.mealCount > 0 || isLeftOut(day)) && !countsInAverages(day, today),
   ).length
   if (logged.length === 0) {
     return { loggedDays: 0, leftOutDays, averageKcal: 0, averageProtein: 0, estimated: false }

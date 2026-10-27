@@ -57,7 +57,9 @@ async function mealIsLogged(admin: SupabaseClient, userId: string, date: string,
 async function summaryFor(admin: SupabaseClient, userId: string, date: string) {
   const day = await admin
     .from('daily_totals')
-    .select('kcal, protein, carbs, fat, meal_count, cheat_day, cheat_meal, kcal_estimated')
+    .select(
+      'kcal, protein, carbs, fat, meal_count, cheat_day, cheat_meal, alcohol_day, kcal_estimated',
+    )
     .eq('user_id', userId)
     .eq('date', date)
     .maybeSingle()
@@ -82,6 +84,7 @@ async function summaryFor(admin: SupabaseClient, userId: string, date: string) {
       mealCount: day.data.meal_count ?? 0,
       cheatDay: day.data.cheat_day === true,
       cheatMeal: day.data.cheat_meal === true,
+      alcoholDay: day.data.alcohol_day === true,
       kcalEstimated: day.data.kcal_estimated === true,
     },
     goal: goal.data

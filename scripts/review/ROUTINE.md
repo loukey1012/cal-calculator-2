@@ -33,7 +33,8 @@ This writes `review-data.json`:
     `cheat_meal`: the person marked the meal as a cheat meal (its food may be missing).
   - `days`: each person's total `kcal` per logged day; `kcal_estimated` means a dish's calories
     were only roughly known. `cheat_day`: the person marked the day as a cheat day (it can have no
-    meals at all). `cheat_meal`: a meal that day was a cheat meal.
+    meals at all). `alcohol_day`: the person marked the day as an alcohol day (its calories are
+    not known; it can have no meals at all). `cheat_meal`: a meal that day was a cheat meal.
   - `findings`: meal findings from before, with their `status`.
 
 ## 2. Look for real problems only
@@ -67,8 +68,8 @@ a different one.
 | `double_entry` | the same food twice in one meal, probably logged twice; give `meal_type` and the `meal_item_id` of the second one                                                     |
 | `zero_kcal`    | an item with 0 kcal that should have some; never for water, coffee, tea, diet or zero drinks, spices and the like                                                     |
 
-**Skip cheat days and days with a cheat meal completely** (`cheat_day` or `cheat_meal` in
-`days`): no finding of any kind for that person and day. They also don't count as
+**Skip cheat days, alcohol days and days with a cheat meal completely** (`cheat_day`,
+`alcohol_day` or `cheat_meal` in `days`): no finding of any kind for that person and day. They also don't count as
 a person's usual pattern.
 
 Never flag a missing snack, a day that only has snacks because that's how the person eats, or a

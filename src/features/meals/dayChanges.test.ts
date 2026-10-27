@@ -6,7 +6,7 @@ vi.mock('./mealsApi', () => ({
   updateMealItem: vi.fn(),
   deleteMealItem: vi.fn(),
   setCheatMeal: vi.fn(),
-  setCheatDay: vi.fn(),
+  setDayMark: vi.fn(),
   setMealNote: vi.fn(),
   setDayNote: vi.fn(),
 }))
@@ -27,7 +27,7 @@ import {
   addMealItem,
   deleteMealItem,
   setCheatMeal,
-  setCheatDay,
+  setDayMark,
   setDayNote,
   setMealNote,
   updateMealItem,
@@ -89,7 +89,7 @@ describe('applyDayChange', () => {
       mealType: 'dinner',
       cheatMeal: true,
     })
-    await applyDayChange({ kind: 'cheatDay', userId: 'u1', date: '2026-10-01', cheatDay: true })
+    await applyDayChange({ kind: 'dayMark', userId: 'u1', date: '2026-10-01', mark: 'alcohol' })
     await applyDayChange({
       kind: 'mealNote',
       userId: 'u1',
@@ -117,7 +117,7 @@ describe('applyDayChange', () => {
       mealType: 'dinner',
       cheatMeal: true,
     })
-    expect(setCheatDay).toHaveBeenCalledWith('u1', '2026-10-01', true)
+    expect(setDayMark).toHaveBeenCalledWith('u1', '2026-10-01', 'alcohol')
     expect(setMealNote).toHaveBeenCalledWith({
       userId: 'u1',
       date: '2026-10-01',
@@ -197,15 +197,23 @@ describe('applyDayChangeLocally', () => {
     expect(nothing).toEqual(DAY)
   })
 
-  test('a cheat day leaves the meals as they are', () => {
-    const change = {
-      kind: 'cheatDay',
-      userId: 'u1',
-      date: '2026-10-01',
-      cheatDay: true,
-    } as const
+  test('a day mark leaves the meals as they are', () => {
+    const change = { kind: 'dayMark', userId: 'u1', date: '2026-10-01', mark: 'cheat' } as const
 
     expect(applyDayChangeLocally(DAY, change)).toEqual(DAY)
+    expect(applyDayChangeLocally(DAY, { ...change, mark: null })).toEqual(DAY)
+  })
+
+  test('a cheat day queued by an earlier version is still sent, as a day mark', async () => {
+    vi.mocked(setDayMark).mockResolvedValue()
+    const base = { kind: 'cheatDay', userId: 'u1', date: '2026-10-01' } as const
+
+    await applyDayChange({ ...base, cheatDay: true })
+    await applyDayChange({ ...base, cheatDay: false })
+
+    expect(setDayMark).toHaveBeenNthCalledWith(1, 'u1', '2026-10-01', 'cheat')
+    expect(setDayMark).toHaveBeenNthCalledWith(2, 'u1', '2026-10-01', null)
+    expect(applyDayChangeLocally(DAY, { ...base, cheatDay: true })).toEqual(DAY)
   })
 })
 

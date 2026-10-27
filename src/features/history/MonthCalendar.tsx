@@ -20,6 +20,7 @@ const STATUS_TEXT: Record<DayStatus, string> = {
   over: ', over goal',
   wellOver: ', well over goal',
   cheatDay: ', cheat day',
+  alcoholDay: ', alcohol day',
   cheatMeal: ', cheat meal',
   missing: ', lunch or dinner missing',
 }
@@ -33,6 +34,8 @@ const STATUS_CLASSES: Record<DayStatus, string> = {
   wellOver: 'day-well-over text-label',
   // left out of the averages: an outline instead of a fill
   cheatDay: 'border-2 border-dashed border-label-secondary/60 text-label-secondary',
+  // the same outline until it gets a symbol of its own
+  alcoholDay: 'border-2 border-dashed border-label-secondary/60 text-label-secondary',
   cheatMeal: 'bg-fill text-label',
   // not judged against the goal: it doesn't count until lunch and dinner are logged
   missing: 'bg-fill text-label',

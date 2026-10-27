@@ -9,10 +9,10 @@ vi.mock('../meals/mealsApi', () => ({
   addMealItem: vi.fn(),
   updateMealItem: vi.fn(),
   deleteMealItem: vi.fn(),
-  fetchCheatDay: vi.fn().mockResolvedValue(false),
+  fetchDayMark: vi.fn().mockResolvedValue(null),
   fetchDayNote: vi.fn().mockResolvedValue(null),
   setCheatMeal: vi.fn(),
-  setCheatDay: vi.fn(),
+  setDayMark: vi.fn(),
 }))
 
 import { ApiError, toUserMessage } from '../../lib/errors'

@@ -41,6 +41,7 @@ function day(date: string, kcal: number, protein = 100, estimated = false): Nutr
 
 describe("days that don't count", () => {
   const days = [
+    { ...day('2026-10-04', 3200), alcoholDay: true },
     day('2026-10-05', 1800),
     { ...day('2026-10-06', 3500), cheatDay: true },
     { ...day('2026-10-07', 600), cheatMeal: true },
@@ -52,6 +53,7 @@ describe("days that don't count", () => {
     const bars = nutritionBars(days, 'kcal', '4w', [GOAL], TODAY)
 
     expect(bars.map((bar) => [bar.start, bar.kind, bar.value, bar.days])).toEqual([
+      ['2026-10-04', 'alcoholDay', 3200, 0],
       ['2026-10-05', 'counted', 1800, 1],
       ['2026-10-06', 'cheatDay', 3500, 0],
       ['2026-10-07', 'cheatMeal', 600, 0],

@@ -1,19 +1,32 @@
 import { useId } from 'react'
 import { GroupedSection } from '../../components/ios/GroupedSection'
+import { SegmentedControl } from '../../components/ios/SegmentedControl'
 import { ToggleRow } from '../../components/ios/FormRows'
 import { ClearButton } from '../../components/ios/ClearButton'
 import { useClearable } from '../../components/ios/clearable'
 import { Sheet } from '../../components/ios/Sheet'
 import { cheatMeals, MEAL_TYPES } from '../meals/dayModel'
+import type { DayMark } from '../meals/mealsApi'
 import {
   useDay,
-  useCheatDay,
+  useDayMark,
   useDayNote,
   useSetCheatMeal,
-  useSetCheatDay,
+  useSetDayMark,
   useSetDayNote,
   useSetMealNote,
 } from '../meals/hooks'
+
+// DayMark as strings, since a segment needs a value
+type MarkChoice = 'none' | 'cheat' | 'alcohol'
+
+const MARK_OPTIONS = [
+  { value: 'none', label: 'None' },
+  { value: 'cheat', label: 'Cheat day' },
+  { value: 'alcohol', label: 'Alcohol day' },
+] as const satisfies readonly { value: MarkChoice; label: string }[]
+
+const markOf = (choice: MarkChoice): DayMark => (choice === 'none' ? null : choice)
 
 // mirrors the database checks on day_notes.note and meals.note
 const MAX_NOTE = 500
@@ -27,7 +40,7 @@ type DayOptionsSheetProps = {
 }
 
 /**
- * The day's marks and notes: a cheat day, which meals were cheat meals, and a note on the day and
+ * The day's marks and notes: a cheat day or an alcohol day, which meals were cheat meals, and a note on the day and
  * on each meal. A switch saves at once, a note when its field is left.
  */
 export function DayOptionsSheet({ open, userId, date, onClose }: DayOptionsSheetProps) {
@@ -40,8 +53,9 @@ export function DayOptionsSheet({ open, userId, date, onClose }: DayOptionsSheet
 
 function DayOptions({ userId, date }: Pick<DayOptionsSheetProps, 'userId' | 'date'>) {
   const day = useDay(userId, date)
-  const cheatDay = useCheatDay(userId, date)
-  const setCheatDay = useSetCheatDay(userId, date)
+  const dayMark = useDayMark(userId, date)
+  const markHelpId = useId()
+  const setDayMark = useSetDayMark(userId, date)
   const setCheatMeal = useSetCheatMeal(userId, date)
   const dayNote = useDayNote(userId, date)
   const setDayNote = useSetDayNote(userId, date)
@@ -51,12 +65,21 @@ function DayOptions({ userId, date }: Pick<DayOptionsSheetProps, 'userId' | 'dat
 
   return (
     <>
-      <GroupedSection footer="Left out of averages and the weekly review. The rings show no over colors.">
-        <ToggleRow
-          label="Cheat day"
-          checked={cheatDay.data === true}
-          onChange={(checked) => setCheatDay.mutate(checked)}
-        />
+      <GroupedSection
+        footerId={markHelpId}
+        footer="A cheat day is off plan. On an alcohol day the calories are not known. Either is left out of averages and the weekly review, and the rings show no over colors."
+      >
+        <div className="p-3">
+          <SegmentedControl
+            label="Day mark"
+            options={MARK_OPTIONS}
+            value={dayMark.data ?? 'none'}
+            // until the day's mark is known, a tap could overwrite or clear it
+            disabled={dayMark.data === undefined}
+            describedBy={markHelpId}
+            onChange={(choice) => setDayMark.mutate(markOf(choice))}
+          />
+        </div>
       </GroupedSection>
       <GroupedSection
         header="Cheat meals"

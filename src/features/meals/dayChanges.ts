@@ -17,10 +17,11 @@ import {
   addMealItem,
   deleteMealItem,
   setCheatMeal,
-  setCheatDay,
+  setDayMark,
   setDayNote,
   setMealNote,
   updateMealItem,
+  type DayMark,
 } from './mealsApi'
 
 /**
@@ -52,6 +53,13 @@ export type DayChange =
       readonly mealType: MealType
       readonly cheatMeal: boolean
     }
+  | {
+      readonly kind: 'dayMark'
+      readonly userId: string
+      readonly date: string
+      readonly mark: DayMark
+    }
+  // only still sent for changes queued on the phone by earlier versions (before alcohol days)
   | {
       readonly kind: 'cheatDay'
       readonly userId: string
@@ -104,8 +112,10 @@ export async function applyDayChange(change: DayChange): Promise<void> {
         mealType: change.mealType,
         cheatMeal: change.cheatMeal,
       })
+    case 'dayMark':
+      return setDayMark(change.userId, change.date, change.mark)
     case 'cheatDay':
-      return setCheatDay(change.userId, change.date, change.cheatDay)
+      return setDayMark(change.userId, change.date, change.cheatDay ? 'cheat' : null)
     case 'mealNote':
       return setMealNote({
         userId: change.userId,
@@ -144,7 +154,8 @@ export function applyDayChangeLocally(meals: readonly DayMeal[], change: DayChan
       return withCheatMeal(meals, change.mealType, change.cheatMeal)
     case 'mealNote':
       return withMealNote(meals, change.mealType, change.note)
-    // marks on the whole day, cached apart from the meals (see useCheatDay, useDayNote)
+    // marks on the whole day, cached apart from the meals (see useDayMark, useDayNote)
+    case 'dayMark':
     case 'cheatDay':
     case 'dayNote':
       return [...meals]

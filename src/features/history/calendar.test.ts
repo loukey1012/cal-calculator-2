@@ -106,6 +106,14 @@ describe('dayStatus', () => {
     // both: the cheat day says more
     expect(statusOf({ ...over, cheatMeal: true, cheatDay: true })).toBe('cheatDay')
   })
+
+  test('an alcohol day is never over or missing, logged or not; a cheat meal inside it changes nothing', () => {
+    const over = total({ kcal: 3000, lunchLogged: false })
+
+    expect(statusOf({ ...over, alcoholDay: true })).toBe('alcoholDay')
+    expect(statusOf({ ...over, mealCount: 0, kcal: 0, alcoholDay: true })).toBe('alcoholDay')
+    expect(statusOf({ ...over, alcoholDay: true, cheatMeal: true })).toBe('alcoholDay')
+  })
 })
 
 describe('monthSummary', () => {
@@ -142,6 +150,7 @@ describe('monthSummary', () => {
         total({ date: '2026-10-02', kcal: 4000, kcalEstimated: true, cheatDay: true }),
         total({ date: '2026-10-03', kcal: 300, cheatMeal: true }),
         total({ date: '2026-10-04', kcal: 0, mealCount: 0, cheatDay: true }),
+        total({ date: '2026-10-05', kcal: 0, mealCount: 0, alcoholDay: true }),
         total({ date: '2026-10-12', kcal: 700, dinnerLogged: false }),
         // today is still going: neither counted nor left out
         total({ date: TODAY, kcal: 400, dinnerLogged: false }),
@@ -151,7 +160,7 @@ describe('monthSummary', () => {
 
     expect(summary).toEqual({
       loggedDays: 1,
-      leftOutDays: 4,
+      leftOutDays: 5,
       averageKcal: 2000,
       averageProtein: 100,
       estimated: false,

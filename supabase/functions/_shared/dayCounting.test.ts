@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import {
   countsInAverages,
-  isCheat,
+  isLeftOut,
   isMissingMeals,
   missingMainMeals,
   TRACKING_START,
@@ -55,6 +55,9 @@ describe('isMissingMeals', () => {
     expect(isMissingMeals('2026-10-15', day({ lunchLogged: false, cheatMeal: true }), TODAY)).toBe(
       false,
     )
+    expect(isMissingMeals('2026-10-15', day({ lunchLogged: false, alcoholDay: true }), TODAY)).toBe(
+      false,
+    )
   })
 })
 
@@ -68,6 +71,7 @@ describe('countsInAverages', () => {
     expect(countsInAverages(day({ dinnerLogged: false }), TODAY)).toBe(false)
     expect(countsInAverages(day({ cheatDay: true }), TODAY)).toBe(false)
     expect(countsInAverages(day({ cheatMeal: true }), TODAY)).toBe(false)
+    expect(countsInAverages(day({ alcoholDay: true }), TODAY)).toBe(false)
     expect(countsInAverages(day({ mealCount: 0 }), TODAY)).toBe(false)
   })
 
@@ -76,10 +80,15 @@ describe('countsInAverages', () => {
   })
 })
 
-describe('isCheat', () => {
-  test('a cheat day or a day with a cheat meal', () => {
-    expect(isCheat(day({ cheatDay: true }))).toBe(true)
-    expect(isCheat(day({ cheatMeal: true }))).toBe(true)
-    expect(isCheat(day())).toBe(false)
+describe('isLeftOut', () => {
+  test('a cheat day, an alcohol day or a day with a cheat meal', () => {
+    expect(isLeftOut(day({ cheatDay: true }))).toBe(true)
+    expect(isLeftOut(day({ cheatMeal: true }))).toBe(true)
+    expect(isLeftOut(day({ alcoholDay: true }))).toBe(true)
+    expect(isLeftOut(day())).toBe(false)
+  })
+
+  test('data cached before alcohol days existed is not left out', () => {
+    expect(isLeftOut({ date: '2026-10-15', mealCount: 1, cheatDay: false })).toBe(false)
   })
 })

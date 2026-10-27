@@ -425,6 +425,22 @@ describe('the review routine and meals', () => {
       ]),
     )
   })
+
+  test('tells which days are alcohol days, apart from cheat days', async () => {
+    const alcoholDay = await alice.client
+      .from('cheat_days')
+      .insert({ user_id: alice.id, date: '2026-10-07', kind: 'alcohol' })
+
+    const { data } = await routine.rpc('review_meals', { p_key: reviewKey, ...RANGE })
+
+    expect(alcoholDay.error).toBeNull()
+    expect(data.days).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ date: '2026-10-07', cheat_day: false, alcohol_day: true }),
+        expect.objectContaining({ date: '2026-10-08', cheat_day: true, alcohol_day: false }),
+      ]),
+    )
+  })
 })
 
 describe('members and findings', () => {

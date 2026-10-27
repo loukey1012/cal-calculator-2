@@ -114,6 +114,7 @@ describe('messages', () => {
     mealCount: 4,
     cheatDay: false,
     cheatMeal: false,
+    alcoholDay: false,
     kcalEstimated: false,
   }
 
@@ -126,6 +127,12 @@ describe('messages', () => {
       url: '/history/2026-10-19',
       tag: 'summary',
     })
+  })
+
+  test('an alcohol day is named too', () => {
+    const message = summaryMessage({ ...DAY, alcoholDay: true }, null, 'previous')
+
+    expect(message.body).toContain('Alcohol day')
   })
 
   test('without a goal, an estimate and a cheat day', () => {

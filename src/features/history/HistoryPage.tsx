@@ -46,7 +46,7 @@ function averagesText({
 function summaryText(summary: MonthSummary): string {
   const { loggedDays, leftOutDays } = summary
   if (loggedDays === 0 && leftOutDays === 0) return 'Nothing logged this month.'
-  // cheat days and days with a cheat meal aren't in the averages
+  // cheat days, alcohol days and days with a cheat meal aren't in the averages
   const parts = [
     loggedDays > 0 ? averagesText(summary) : null,
     leftOutDays > 0 ? `${dayCount(leftOutDays)} left out` : null,

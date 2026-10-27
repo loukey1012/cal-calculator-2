@@ -36,6 +36,7 @@ type NutritionTrendProps = {
 /** why a day doesn't count, after its date in the readout */
 const NOT_COUNTED: Partial<Record<TrendBar['kind'], string>> = {
   cheatDay: 'cheat day · not counted',
+  alcoholDay: 'alcohol day · not counted',
   cheatMeal: 'cheat meal · not counted',
 }
 
@@ -43,7 +44,7 @@ function readout(metric: NutritionMetric, bar: TrendBar | undefined): string {
   if (!bar) return 'Tap a bar to see its value.'
   const span = formatSpan(bar.start, bar.end)
   const notCounted = NOT_COUNTED[bar.kind]
-  // a cheat day's numbers don't matter
+  // a day that is left out: its numbers don't matter
   if (notCounted) return `${span}: ${notCounted}`
   const value = `${bar.estimated ? '~' : ''}${formatMetric(metric, bar.value)}`
   const goal = bar.goal === null ? '' : ` · goal ${formatMetric(metric, bar.goal)}`

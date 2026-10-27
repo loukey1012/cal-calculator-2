@@ -18,13 +18,18 @@ import { LeftoversPill } from '../dishes/LeftoversPill'
 import type { Profile } from '../household/householdApi'
 import { useLookOf } from '../household/usePersonLook'
 import { cheatMeals, itemsByMeal, mealEntries, MEAL_TYPES, type MealType } from '../meals/dayModel'
-import { useDay, useDayNote, useLatestDayChangeError, useCheatDay } from '../meals/hooks'
+import { useDay, useDayNote, useLatestDayChangeError, useDayMark } from '../meals/hooks'
 import { mealPath } from '../meals/mealPages'
 import { isDraftFor } from '../meals/unsavedDish'
 import { formatKcalTotal } from '../nutrition/format'
 import type { NutritionTotals } from '../nutrition/types'
 import { mealTotals, sumTotals } from '../nutrition/totals'
-import { isMissingMeals, missingMainMeals, type MainMeal } from '../history/dayCounting'
+import {
+  isLeftOut,
+  isMissingMeals,
+  missingMainMeals,
+  type MainMeal,
+} from '../../../supabase/functions/_shared/dayCounting'
 import { DayOptionsSheet } from './DayOptionsSheet'
 import { GoalCard } from './GoalCard'
 import { useToday } from './useToday'
@@ -132,7 +137,7 @@ type DayViewProps = {
 /** A person's day: goal progress, total and the four meals, each opening as a page of its own. */
 export function DayView({ person, isOwnDay, date }: DayViewProps) {
   const day = useDay(person.id, date)
-  const cheatDay = useCheatDay(person.id, date).data === true
+  const dayMark = useDayMark(person.id, date).data ?? null
   const dayNote = useDayNote(person.id, date).data ?? null
   const today = useToday()
   const lookOf = useLookOf()
@@ -167,7 +172,8 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
   const counted = {
     date,
     mealCount: meals.filter((meal) => meal.count > 0).length,
-    cheatDay,
+    cheatDay: dayMark === 'cheat',
+    alcoholDay: dayMark === 'alcohol',
     cheatMeal: hasCheatMeal,
     lunchLogged: byMeal.lunch.length > 0,
     dinnerLogged: byMeal.dinner.length > 0,
@@ -199,7 +205,7 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
             date={date}
             totals={dayTotals}
             // over colors would judge a day that is left out
-            showOver={!cheatDay && !hasCheatMeal}
+            showOver={!isLeftOut(counted)}
           />
           <section className="mt-4">
             <div data-testid="day-total" className="mb-3 px-1">
@@ -220,9 +226,10 @@ export function DayView({ person, isOwnDay, date }: DayViewProps) {
                 </button>
               </div>
               {/* the day's kcal and macros are on the goal card above, not repeated here */}
-              {(cheatDay || hasCheatMeal || missing.length > 0) && (
+              {(dayMark !== null || hasCheatMeal || missing.length > 0) && (
                 <div className="flex flex-wrap items-center gap-2">
-                  {cheatDay && <DayBadge label="Cheat day" />}
+                  {dayMark === 'cheat' && <DayBadge label="Cheat day" />}
+                  {dayMark === 'alcohol' && <DayBadge label="Alcohol day" />}
                   {hasCheatMeal && <DayBadge label="Cheat meal" />}
                   {missing.length > 0 && <DayBadge label={missingLabel(missing)} />}
                 </div>

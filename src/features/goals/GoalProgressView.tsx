@@ -243,7 +243,7 @@ type GoalProgressViewProps = {
   readonly progress: readonly GoalProgress[]
   /** the viewer's own choice, also when looking at someone else's day */
   readonly style: ProgressStyle
-  /** false on cheat days and days with a cheat meal: no over colors */
+  /** false on cheat days, alcohol days and days with a cheat meal: no over colors */
   readonly showOver?: boolean
 }
 

@@ -21,6 +21,7 @@ describe('fetchDailyTotals', () => {
           kcal_estimated: true,
           cheat_day: true,
           cheat_meal: false,
+          alcohol_day: true,
           lunch_logged: true,
           dinner_logged: false,
         },
@@ -41,6 +42,7 @@ describe('fetchDailyTotals', () => {
         kcalEstimated: true,
         cheatDay: true,
         cheatMeal: false,
+        alcoholDay: true,
         lunchLogged: true,
         dinnerLogged: false,
       },
@@ -52,13 +54,14 @@ describe('fetchDailyTotals', () => {
         kcalEstimated: false,
         cheatDay: false,
         cheatMeal: false,
+        alcoholDay: false,
         lunchLogged: false,
         dinnerLogged: false,
       },
     ])
     expect(supabaseMock.from).toHaveBeenCalledWith('daily_totals')
     expect(query.select).toHaveBeenCalledWith(
-      'date, kcal, protein, meal_count, kcal_estimated, cheat_day, cheat_meal, lunch_logged, dinner_logged',
+      'date, kcal, protein, meal_count, kcal_estimated, cheat_day, cheat_meal, alcohol_day, lunch_logged, dinner_logged',
     )
     expect(query.eq).toHaveBeenCalledWith('user_id', 'u1')
   })

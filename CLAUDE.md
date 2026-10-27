@@ -30,7 +30,9 @@ Don't bump `CACHE_BUSTER` for that: it would also drop changes still waiting to 
 **State (2026-10-27):** items 1–47 are all built and confirmed in daily use (recipes with
 choices, notifications, label reading and the "1 × 1 Packung" fix included); their plans were
 removed, the decisions live in README.md and the code. **Next:** items 48–56 (README ›
-Coming next), planned in `docs/plan-2026-10-27.md`: batches A–G, waiting for the user's OK. What to know:
+Coming next), planned in `docs/plan-2026-10-27.md`: batches A–G; A, B, C built (54, 52, 51, 50, 49, 55).
+Day counting (`isLeftOut`: cheat day, alcohol day, cheat meal) lives in
+`supabase/functions/_shared/dayCounting.ts`, shared by the app and push-tick. What to know:
 
 - Meal pages: addresses in `src/features/meals/mealPages.ts` (`/today/meal-<meal>-<date>-<person>`,
   `/history/<date>/meal-…`, Add food at `…/food`, Add from recipe at `…/recipes`); every tab is a

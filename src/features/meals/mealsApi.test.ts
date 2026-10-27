@@ -9,10 +9,10 @@ import {
   addMealItem,
   deleteMealItem,
   fetchDay,
-  fetchCheatDay,
+  fetchDayMark,
   fetchDayNote,
   setCheatMeal,
-  setCheatDay,
+  setDayMark,
   setDayNote,
   setMealNote,
   updateMealItem,
@@ -106,39 +106,61 @@ describe('mealsApi', () => {
     await expect(refused).rejects.toBeInstanceOf(ApiError)
   })
 
-  test('fetchCheatDay tells whether a day is marked as not counting', async () => {
-    const marked = fakeQuery({ data: { date: '2026-10-01' }, error: null })
-    const unmarked = fakeQuery({ data: null, error: null })
-    supabaseMock.from.mockReturnValueOnce(marked).mockReturnValueOnce(unmarked)
+  test('fetchDayMark tells whether a day is a cheat day, an alcohol day or neither', async () => {
+    const cheat = fakeQuery({ data: { kind: 'cheat' }, error: null })
+    const alcohol = fakeQuery({ data: { kind: 'alcohol' }, error: null })
+    const none = fakeQuery({ data: null, error: null })
+    supabaseMock.from
+      .mockReturnValueOnce(cheat)
+      .mockReturnValueOnce(alcohol)
+      .mockReturnValueOnce(none)
 
-    await expect(fetchCheatDay('u1', '2026-10-01')).resolves.toBe(true)
-    await expect(fetchCheatDay('u1', '2026-10-02')).resolves.toBe(false)
+    await expect(fetchDayMark('u1', '2026-10-01')).resolves.toBe('cheat')
+    await expect(fetchDayMark('u1', '2026-10-02')).resolves.toBe('alcohol')
+    await expect(fetchDayMark('u1', '2026-10-03')).resolves.toBeNull()
     expect(supabaseMock.from).toHaveBeenCalledWith('cheat_days')
-    expect(marked.eq).toHaveBeenCalledWith('user_id', 'u1')
-    expect(marked.eq).toHaveBeenCalledWith('date', '2026-10-01')
-    expect(marked.maybeSingle).toHaveBeenCalled()
+    expect(cheat.select).toHaveBeenCalledWith('kind')
+    expect(cheat.eq).toHaveBeenCalledWith('user_id', 'u1')
+    expect(cheat.eq).toHaveBeenCalledWith('date', '2026-10-01')
+    expect(cheat.maybeSingle).toHaveBeenCalled()
   })
 
-  test('setCheatDay marks a day (again is fine) or removes the mark', async () => {
-    const mark = fakeQuery({ data: null, error: null })
-    const unmark = fakeQuery({ data: null, error: null })
+  test('setDayMark switches the kind with a real upsert, and clears with a delete', async () => {
+    const toCheat = fakeQuery({ data: null, error: null })
+    const toAlcohol = fakeQuery({ data: null, error: null })
+    const backToCheat = fakeQuery({ data: null, error: null })
+    const clear = fakeQuery({ data: null, error: null })
     const refused = fakeQuery({ data: null, error: DB_ERROR })
     supabaseMock.from
-      .mockReturnValueOnce(mark)
-      .mockReturnValueOnce(unmark)
+      .mockReturnValueOnce(toCheat)
+      .mockReturnValueOnce(toAlcohol)
+      .mockReturnValueOnce(backToCheat)
+      .mockReturnValueOnce(clear)
       .mockReturnValueOnce(refused)
 
-    await setCheatDay('u1', '2026-10-01', true)
-    await setCheatDay('u1', '2026-10-01', false)
+    await setDayMark('u1', '2026-10-01', 'cheat')
+    await setDayMark('u1', '2026-10-01', 'alcohol')
+    await setDayMark('u1', '2026-10-01', 'cheat')
+    await setDayMark('u1', '2026-10-01', null)
 
-    expect(mark.upsert).toHaveBeenCalledWith(
-      { user_id: 'u1', date: '2026-10-01' },
-      { onConflict: 'user_id,date', ignoreDuplicates: true },
+    // no ignoreDuplicates: an existing row of the other kind must be replaced
+    expect(toCheat.upsert).toHaveBeenCalledWith(
+      { user_id: 'u1', date: '2026-10-01', kind: 'cheat' },
+      { onConflict: 'user_id,date' },
     )
-    expect(unmark.delete).toHaveBeenCalled()
-    expect(unmark.eq).toHaveBeenCalledWith('user_id', 'u1')
-    expect(unmark.eq).toHaveBeenCalledWith('date', '2026-10-01')
-    await expect(setCheatDay('u1', '2026-10-01', true)).rejects.toBeInstanceOf(ApiError)
+    expect(toAlcohol.upsert).toHaveBeenCalledWith(
+      { user_id: 'u1', date: '2026-10-01', kind: 'alcohol' },
+      { onConflict: 'user_id,date' },
+    )
+    expect(backToCheat.upsert).toHaveBeenCalledWith(
+      { user_id: 'u1', date: '2026-10-01', kind: 'cheat' },
+      { onConflict: 'user_id,date' },
+    )
+    expect(clear.upsert).not.toHaveBeenCalled()
+    expect(clear.delete).toHaveBeenCalled()
+    expect(clear.eq).toHaveBeenCalledWith('user_id', 'u1')
+    expect(clear.eq).toHaveBeenCalledWith('date', '2026-10-01')
+    await expect(setDayMark('u1', '2026-10-01', 'alcohol')).rejects.toBeInstanceOf(ApiError)
   })
 
   test('setMealNote sends the note to set_meal_note', async () => {

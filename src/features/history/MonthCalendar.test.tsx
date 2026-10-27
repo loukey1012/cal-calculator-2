@@ -10,6 +10,7 @@ const STATUS_OF: Record<string, DayStatus> = {
   '2026-10-03': 'cheatDay',
   '2026-10-04': 'cheatMeal',
   '2026-10-05': 'missing',
+  '2026-10-06': 'alcoholDay',
 }
 
 function renderCalendar() {
@@ -67,6 +68,10 @@ describe('MonthCalendar', () => {
     expect(screen.getByRole('button', { name: /October 4.*cheat meal/ })).toHaveAttribute(
       'data-status',
       'cheatMeal',
+    )
+    expect(screen.getByRole('button', { name: /October 6.*alcohol day/ })).toHaveAttribute(
+      'data-status',
+      'alcoholDay',
     )
     const missing = screen.getByRole('button', { name: /October 5.*lunch or dinner missing/ })
     expect(missing).toHaveAttribute('data-status', 'missing')

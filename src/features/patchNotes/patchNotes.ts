@@ -30,6 +30,16 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-27T17:54',
+    kind: 'new',
+    title: 'Alcohol days',
+    items: [
+      'In the day options, a day can be marked as a cheat day or an alcohol day (None / Cheat day / Alcohol day); choosing one replaces the other',
+      'An alcohol day is for days whose calories aren’t known; like a cheat day it is left out of averages, Trends and the weekly review, and the rings show no over colors',
+      'It shows an “Alcohol day” label, cheat meals can still be marked on it, and the export has a column for it',
+    ],
+  },
+  {
     at: '2026-10-27T17:20',
     kind: 'new',
     title: 'Weigh later',

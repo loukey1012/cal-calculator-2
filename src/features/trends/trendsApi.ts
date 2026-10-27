@@ -15,7 +15,7 @@ export async function fetchNutritionDays(
     supabase
       .from('daily_totals')
       .select(
-        'date, kcal, protein, carbs, fat, fiber, kcal_estimated, meal_count, cheat_day, cheat_meal, lunch_logged, dinner_logged',
+        'date, kcal, protein, carbs, fat, fiber, kcal_estimated, meal_count, cheat_day, cheat_meal, alcohol_day, lunch_logged, dinner_logged',
       )
       .eq('user_id', userId)
       .gte('date', first)
@@ -35,6 +35,7 @@ export async function fetchNutritionDays(
     mealCount: row.meal_count ?? 0,
     cheatDay: row.cheat_day ?? false,
     cheatMeal: row.cheat_meal ?? false,
+    alcoholDay: row.alcohol_day ?? false,
     lunchLogged: row.lunch_logged ?? false,
     dinnerLogged: row.dinner_logged ?? false,
   }))

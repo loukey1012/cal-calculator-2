@@ -1,5 +1,5 @@
 import { fromLocalDateString } from '../../lib/dates'
-import { countsInAverages } from '../history/dayCounting'
+import { countsInAverages, isLeftOut } from '../../../supabase/functions/_shared/dayCounting'
 import { addDays, mondayOf, type NutritionDay } from './trends'
 
 /** A calendar week (Monday to Sunday) the Week view can show. */
@@ -13,8 +13,7 @@ const DAYS_PER_WEEK = 7
 const MS_PER_DAY = 86_400_000
 const THURSDAY_OFFSET = 3
 
-const hasEntry = (day: NutritionDay) =>
-  day.mealCount > 0 || day.cheatDay === true || day.cheatMeal === true
+const hasEntry = (day: NutritionDay) => day.mealCount > 0 || isLeftOut(day)
 
 /** Every week with at least one entry, newest first; the current week is always there. */
 export function loggedWeeks(days: readonly NutritionDay[], today: string): LoggedWeek[] {

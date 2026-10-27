@@ -54,6 +54,23 @@ describe('loggedWeeks', () => {
     ])
   })
 
+  test('an alcohol day is an entry too, left out of the average', () => {
+    const weeks = loggedWeeks(
+      [
+        day('2026-10-06', { alcoholDay: true, mealCount: 0, kcal: 0 }),
+        day('2026-10-13', { alcoholDay: true, mealCount: 0, kcal: 0 }),
+        day('2026-10-14', { kcal: 1700 }),
+      ],
+      TODAY,
+    )
+
+    expect(weeks).toEqual([
+      { monday: '2026-10-19', average: null },
+      { monday: '2026-10-12', average: 1700 },
+      { monday: '2026-10-05', average: null },
+    ])
+  })
+
   test('weeks across the turn of the year', () => {
     const weeks = loggedWeeks([day('2026-01-01'), day('2025-12-29')], '2026-01-07')
 

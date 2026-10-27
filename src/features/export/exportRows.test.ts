@@ -175,9 +175,26 @@ describe('dayRows', () => {
       'Estimate',
       'Cheat day',
       'Cheat meal',
+      'Alcohol day',
     ])
     expect(dayRows(DATA)).toEqual([
-      ['Lukas', '2026-10-02', 230, 80, 50, null, null, null, 1, 0, 81.4, false, false, false],
+      [
+        'Lukas',
+        '2026-10-02',
+        230,
+        80,
+        50,
+        null,
+        null,
+        null,
+        1,
+        0,
+        81.4,
+        false,
+        false,
+        false,
+        false,
+      ],
       [
         'Anna',
         '2026-10-03',
@@ -193,11 +210,12 @@ describe('dayRows', () => {
         false,
         false,
         false,
+        false,
       ],
     ])
   })
 
-  test('marks cheat days and days with a cheat meal', () => {
+  test('marks cheat days, alcohol days and days with a cheat meal', () => {
     const empty = { kcal: null, ...NUTRIENTS, kcal_estimated: false }
     const data: ExportData = {
       ...DATA,
@@ -205,12 +223,14 @@ describe('dayRows', () => {
       days: [
         { user_id: 'u1', date: '2026-10-04', ...empty, cheat_day: true, cheat_meal: false },
         { user_id: 'u2', date: '2026-10-04', ...empty, kcal: 300, cheat_meal: true },
+        { user_id: 'u1', date: '2026-10-05', ...empty, alcohol_day: true },
       ],
     }
 
-    expect(dayRows(data).map((row) => [row[0], row.at(-2), row.at(-1)])).toEqual([
-      ['Lukas', true, false],
-      ['Anna', false, true],
+    expect(dayRows(data).map((row) => [row[0], ...row.slice(-3)])).toEqual([
+      ['Lukas', true, false, false],
+      ['Anna', false, true, false],
+      ['Lukas', false, false, true],
     ])
   })
 

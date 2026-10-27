@@ -1,7 +1,11 @@
 import { fromLocalDateString, toLocalDateString } from '../../lib/dates'
 import { roundTo } from '../../lib/numbers'
 import { calorieOverLevel } from '../appearance/overColors'
-import { countsInAverages, type CountedDay } from '../history/dayCounting'
+import {
+  countsInAverages,
+  isLeftOut,
+  type CountedDay,
+} from '../../../supabase/functions/_shared/dayCounting'
 import { toWholeKcal } from '../nutrition/format'
 import { goalForDate, type Goal } from '../nutrition/goals'
 import { weightOn, type WeightEntry } from '../weight/weight'
@@ -106,11 +110,11 @@ const average = (values: readonly number[]) =>
 
 /**
  * How a bar is drawn: counted days in the metric's color; days that don't count stand out
- * instead of leaving a gap. A cheat day or a day with a cheat meal is a ghost bar as high as
+ * instead of leaving a gap. A cheat day, an alcohol day or a day with a cheat meal is a ghost bar as high as
  * its goal (its numbers don't matter), a past day missing lunch or dinner shows what was
  * logged in grey, and today shows what's logged so far in grey.
  */
-export type TrendBarKind = 'counted' | 'cheatDay' | 'cheatMeal' | 'missing' | 'today'
+export type TrendBarKind = 'counted' | 'cheatDay' | 'alcoholDay' | 'cheatMeal' | 'missing' | 'today'
 
 export type TrendBar = {
   readonly start: string
@@ -152,6 +156,7 @@ function barOf(
 function kindOf(day: NutritionDay, today: string): TrendBarKind {
   if (day.date >= today) return 'today'
   if (day.cheatDay) return 'cheatDay'
+  if (day.alcoholDay) return 'alcoholDay'
   if (day.cheatMeal) return 'cheatMeal'
   return countsInAverages(day, today) ? 'counted' : 'missing'
 }
@@ -171,7 +176,7 @@ export function nutritionBars(
 ): TrendBar[] {
   if (!WEEKLY_RANGES.has(range)) {
     return days
-      .filter((day) => day.mealCount > 0 || day.cheatDay === true || day.cheatMeal === true)
+      .filter((day) => day.mealCount > 0 || isLeftOut(day))
       .toSorted(byDate)
       .map((day) => barOf(day.date, day.date, [day], metric, goals, kindOf(day, today)))
   }

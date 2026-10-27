@@ -60,7 +60,11 @@ test('a cheat meal today, and a past cheat day in History', async ({ page, backe
     .click()
   const day = history.getByRole('region')
   await day.getByRole('button', { name: 'Day options' }).click()
-  await page.getByRole('dialog', { name: 'Day' }).getByRole('switch', { name: 'Cheat day' }).click()
+  await page
+    .getByRole('dialog', { name: 'Day' })
+    .getByRole('radiogroup', { name: 'Day mark' })
+    .getByRole('radio', { name: 'Cheat day' })
+    .click()
   await page.getByRole('dialog', { name: 'Day' }).getByRole('button', { name: 'Close' }).click()
 
   await expect(day.getByTestId('day-total')).toContainText('Cheat day')
@@ -110,4 +114,53 @@ test('a note on a cheat meal and on the day, shown on Today, then one cleared', 
   await options.getByRole('textbox', { name: 'Day note' }).clear()
   await options.getByRole('textbox', { name: 'Day note' }).press('Enter')
   await expect.poll(async () => (await notes()).day).toEqual([])
+})
+
+test('a past day marked as alcohol day, then cheat day, then none', async ({ page, backend }) => {
+  const me = await backend.user('Mira')
+  await backend.household([me])
+  const date = localDay(2)
+  const marks = async () => {
+    const { data } = await backend.admin
+      .from('cheat_days')
+      .select('date, kind')
+      .eq('user_id', me.id)
+    return data
+  }
+  await logIn(page, me)
+
+  await page
+    .getByRole('navigation', { name: 'Tabs' })
+    .getByRole('button', { name: 'History' })
+    .click()
+  const history = activePage(page)
+  if (date.slice(0, 7) !== localDay().slice(0, 7)) {
+    await history.getByRole('button', { name: 'Previous month' }).click()
+  }
+  const [year, month, dayOfMonth] = date.split('-').map(Number)
+  const dayName = new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric' }).format(
+    new Date(year ?? 0, (month ?? 1) - 1, dayOfMonth),
+  )
+  await history.getByRole('button', { name: new RegExp(`^${dayName}, `) }).click()
+  const day = history.getByRole('region')
+  await day.getByRole('button', { name: 'Day options' }).click()
+  const options = page.getByRole('dialog', { name: 'Day' })
+  const dayMark = options.getByRole('radiogroup', { name: 'Day mark' })
+
+  await dayMark.getByRole('radio', { name: 'Alcohol day' }).click()
+  await options.getByRole('button', { name: 'Close' }).click()
+  await expect(day.getByTestId('day-total')).toContainText('Alcohol day')
+  await expect(history.getByRole('button', { name: dayLabel(date, 'alcohol day') })).toBeVisible()
+  await expect.poll(marks).toEqual([{ date, kind: 'alcohol' }])
+
+  await day.getByRole('button', { name: 'Day options' }).click()
+  await dayMark.getByRole('radio', { name: 'Cheat day' }).click()
+  await expect.poll(marks).toEqual([{ date, kind: 'cheat' }])
+  await options.getByRole('button', { name: 'Close' }).click()
+  await expect(day.getByTestId('day-total')).toContainText('Cheat day')
+  await expect(day.getByTestId('day-total')).not.toContainText('Alcohol day')
+
+  await day.getByRole('button', { name: 'Day options' }).click()
+  await dayMark.getByRole('radio', { name: 'None' }).click()
+  await expect.poll(marks).toEqual([])
 })

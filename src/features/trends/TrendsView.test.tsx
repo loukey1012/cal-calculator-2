@@ -151,6 +151,20 @@ describe('TrendsView', () => {
     expect(chart).toHaveTextContent('700 kcal · lunch or dinner missing · not counted')
   })
 
+  test('an alcohol day is a ghost bar of its own and says so when tapped', async () => {
+    vi.mocked(fetchNutritionDays).mockResolvedValue([
+      day('2026-10-05', 1800),
+      { ...day('2026-10-06', 0), mealCount: 0, alcoholDay: true },
+    ])
+    renderTrends()
+    const chart = await screen.findByRole('region', { name: 'Calories chart' })
+
+    const bars = within(chart).getAllByTestId('trend-bar')
+    expect(bars.map((bar) => bar.getAttribute('data-kind'))).toEqual(['counted', 'alcoholDay'])
+    expect(within(chart).getByRole('table')).toHaveTextContent('alcohol day · not counted')
+    expect(screen.getByTestId('trend-stats')).toHaveTextContent('Ø per day1,800 kcal')
+  })
+
   test('the Week view steps back to an earlier week with an entry, compared with the one before', async () => {
     const user = userEvent.setup()
     // TODAY is Thursday, October 8: this week is October 5 – 11

@@ -5,9 +5,9 @@ import { renderWithProviders } from '../../test/render'
 
 vi.mock('../meals/mealsApi', () => ({
   fetchDay: vi.fn(),
-  fetchCheatDay: vi.fn(),
+  fetchDayMark: vi.fn(),
   setCheatMeal: vi.fn(),
-  setCheatDay: vi.fn(),
+  setDayMark: vi.fn(),
   fetchDayNote: vi.fn(),
   setDayNote: vi.fn(),
   setMealNote: vi.fn(),
@@ -15,24 +15,25 @@ vi.mock('../meals/mealsApi', () => ({
 
 import {
   fetchDay,
-  fetchCheatDay,
+  fetchDayMark,
   fetchDayNote,
   setCheatMeal,
-  setCheatDay,
+  setDayMark,
   setDayNote,
   setMealNote,
 } from '../meals/mealsApi'
 import type { MealType } from '../meals/dayModel'
+import type { DayMark } from '../meals/mealsApi'
 import { dayMeal, mealItem } from '../meals/testData'
 import { DayOptionsSheet } from './DayOptionsSheet'
 
 // a small server: what was saved is what the next fetch returns
-let cheatDayOnServer = false
+let markOnServer: DayMark = null
 let cheatMealsOnServer = new Set<MealType>(['dinner'])
 
 beforeEach(() => {
   vi.clearAllMocks()
-  cheatDayOnServer = false
+  markOnServer = null
   cheatMealsOnServer = new Set(['dinner'])
   vi.mocked(fetchDay).mockImplementation(async () => [
     {
@@ -45,7 +46,7 @@ beforeEach(() => {
       cheat_meal: cheatMealsOnServer.has('lunch'),
     },
   ])
-  vi.mocked(fetchCheatDay).mockImplementation(async () => cheatDayOnServer)
+  vi.mocked(fetchDayMark).mockImplementation(async () => markOnServer)
   vi.mocked(fetchDayNote).mockResolvedValue('Birthday')
   vi.mocked(setDayNote).mockResolvedValue()
   vi.mocked(setMealNote).mockResolvedValue()
@@ -56,8 +57,8 @@ beforeEach(() => {
         : [...cheatMealsOnServer].filter((type) => type !== mealType),
     )
   })
-  vi.mocked(setCheatDay).mockImplementation(async (_userId, _date, cheatDay) => {
-    cheatDayOnServer = cheatDay
+  vi.mocked(setDayMark).mockImplementation(async (_userId, _date, mark) => {
+    markOnServer = mark
   })
 })
 
@@ -68,27 +69,78 @@ function renderSheet() {
 }
 
 const switchNamed = (name: string) => screen.getByRole('switch', { name })
+const radioNamed = (name: string) => screen.getByRole('radio', { name })
 
 describe('DayOptionsSheet', () => {
-  test('shows whether it is a cheat day and which meals were cheat meals', async () => {
+  test('shows the day as neither, and which meals were cheat meals', async () => {
     renderSheet()
 
     await waitFor(() => expect(switchNamed('Dinner')).toHaveAttribute('aria-checked', 'true'))
-    expect(switchNamed('Cheat day')).toHaveAttribute('aria-checked', 'false')
+    expect(radioNamed('None')).toBeChecked()
+    expect(radioNamed('Cheat day')).not.toBeChecked()
+    expect(radioNamed('Alcohol day')).not.toBeChecked()
     expect(switchNamed('Breakfast')).toHaveAttribute('aria-checked', 'false')
     expect(switchNamed('Lunch')).toHaveAttribute('aria-checked', 'false')
     expect(switchNamed('Snacks')).toHaveAttribute('aria-checked', 'false')
   })
 
-  test('marks the day as a cheat day and saves it', async () => {
+  test('shows a day that is already an alcohol day', async () => {
+    markOnServer = 'alcohol'
+    renderSheet()
+
+    await waitFor(() => expect(radioNamed('Alcohol day')).toBeChecked())
+    expect(radioNamed('None')).not.toBeChecked()
+  })
+
+  test('the day mark can only be changed once it has loaded', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchDayMark).mockImplementation(() => new Promise(() => {}))
+    renderSheet()
+
+    await user.click(radioNamed('None'))
+    await user.click(radioNamed('Alcohol day'))
+
+    expect(radioNamed('Alcohol day')).toBeDisabled()
+    expect(setDayMark).not.toHaveBeenCalled()
+  })
+
+  test('explains the marks to VoiceOver', async () => {
+    renderSheet()
+
+    expect(await screen.findByRole('radiogroup', { name: 'Day mark' })).toHaveAccessibleDescription(
+      /calories are not known/,
+    )
+  })
+
+  test('a mark that fails to save goes back to what it was', async () => {
+    const user = userEvent.setup()
+    vi.mocked(setDayMark).mockRejectedValue(new Error('offline'))
+    renderSheet()
+    await waitFor(() => expect(radioNamed('None')).toBeEnabled())
+
+    await user.click(radioNamed('Alcohol day'))
+
+    await waitFor(() => expect(radioNamed('None')).toBeChecked())
+    expect(radioNamed('Alcohol day')).not.toBeChecked()
+  })
+
+  test('marks the day as a cheat day, switches it to an alcohol day, and clears it', async () => {
     const user = userEvent.setup()
     renderSheet()
-    await waitFor(() => expect(fetchCheatDay).toHaveBeenCalledWith('u1', '2026-10-02'))
+    await waitFor(() => expect(radioNamed('None')).toBeEnabled())
 
-    await user.click(switchNamed('Cheat day'))
+    await user.click(radioNamed('Cheat day'))
+    await waitFor(() => expect(radioNamed('Cheat day')).toBeChecked())
+    await waitFor(() => expect(setDayMark).toHaveBeenLastCalledWith('u1', '2026-10-02', 'cheat'))
 
-    await waitFor(() => expect(switchNamed('Cheat day')).toHaveAttribute('aria-checked', 'true'))
-    await waitFor(() => expect(setCheatDay).toHaveBeenCalledWith('u1', '2026-10-02', true))
+    await user.click(radioNamed('Alcohol day'))
+    await waitFor(() => expect(radioNamed('Alcohol day')).toBeChecked())
+    expect(radioNamed('Cheat day')).not.toBeChecked()
+    await waitFor(() => expect(setDayMark).toHaveBeenLastCalledWith('u1', '2026-10-02', 'alcohol'))
+
+    await user.click(radioNamed('None'))
+    await waitFor(() => expect(radioNamed('None')).toBeChecked())
+    await waitFor(() => expect(setDayMark).toHaveBeenLastCalledWith('u1', '2026-10-02', null))
   })
 
   test('marks a meal as a cheat meal, or takes the mark back', async () => {

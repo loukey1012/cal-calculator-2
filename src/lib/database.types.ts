@@ -86,16 +86,19 @@ export type Database = {
         Row: {
           created_at: string
           date: string
+          kind: string
           user_id: string
         }
         Insert: {
           created_at?: string
           date: string
+          kind?: string
           user_id: string
         }
         Update: {
           created_at?: string
           date?: string
+          kind?: string
           user_id?: string
         }
         Relationships: [
@@ -1279,6 +1282,7 @@ export type Database = {
     Views: {
       daily_totals: {
         Row: {
+          alcohol_day: boolean | null
           carbs: number | null
           carbs_missing: boolean | null
           cheat_day: boolean | null
