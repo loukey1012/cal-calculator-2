@@ -35,6 +35,56 @@ describe('cook draft storage', () => {
     expect(loadAddFoodDraft('her')).toBeNull()
   })
 
+  test('a draft with ingredients to weigh later loads again', () => {
+    const draft = started()
+    const withPlaceholder = {
+      ...draft,
+      dish: { ...draft.dish, toWeigh: [{ id: 'w-1', ingredientId: 'feta', name: 'Feta' }] },
+    }
+
+    saveAddFoodDraft('me', withPlaceholder)
+
+    expect(loadAddFoodDraft('me')).toEqual(withPlaceholder)
+  })
+
+  test('a draft stored before ingredients could wait for weighing still loads', () => {
+    const draft = started()
+    localStorage.setItem('cook-draft:v1:me', JSON.stringify({ version: 1, draft }))
+
+    expect(loadAddFoodDraft('me')).toEqual(draft)
+  })
+
+  test('invalid or repeated items to weigh are dropped, the rest of the draft stays', () => {
+    const draft = started()
+    const stored = {
+      ...draft,
+      dish: {
+        ...draft.dish,
+        toWeigh: [
+          { id: 'w-1', ingredientId: 'feta', name: 'Feta' },
+          { id: 'w-1', ingredientId: 'oil', name: 'Oil' },
+          { id: '', ingredientId: 'oil', name: 'Oil' },
+          { id: 'w-3', ingredientId: 'oil', name: 'x'.repeat(500) },
+          { id: 'w-4' },
+          'nonsense',
+          { id: 'w-5', ingredientId: 'rice', name: 'Rice' },
+        ],
+      },
+    }
+    localStorage.setItem('cook-draft:v1:me', JSON.stringify({ version: 1, draft: stored }))
+
+    expect(loadAddFoodDraft('me')).toEqual({
+      ...draft,
+      dish: {
+        ...draft.dish,
+        toWeigh: [
+          { id: 'w-1', ingredientId: 'feta', name: 'Feta' },
+          { id: 'w-5', ingredientId: 'rice', name: 'Rice' },
+        ],
+      },
+    })
+  })
+
   test('remembers the recipe the draft was filled from', () => {
     const recipe = {
       recipeId: 'r-1',

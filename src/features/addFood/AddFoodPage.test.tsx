@@ -66,11 +66,13 @@ import { fetchDay } from '../meals/mealsApi'
 import { lookupProduct } from '../barcode/openFoodFacts'
 import { EMPTY_INGREDIENT_FORM } from '../ingredients/ingredientForm'
 import { fetchLeftoverDishes, saveDish } from '../dishes/dishesApi'
+import { MAX_DISH_ENTRIES } from '../dishes/dishDraft'
 import type { Dish } from '../dishes/portions'
-import { gramsItem } from '../dishes/testData'
+import { gramsItem, sharedLine } from '../dishes/testData'
 import { MealRoute } from '../meals/MealPage'
 import { foodPath, mealPageOf, mealPath, type MealRef } from '../meals/mealPages'
-import { mealForTime } from './addFoodDraft'
+import { mealForTime, newAddFoodDraft } from './addFoodDraft'
+import { saveAddFoodDraft } from './draftStorage'
 import { sendDraftNotice } from './draftNotice'
 import { AddFoodSession } from './AddFoodSession'
 
@@ -305,6 +307,248 @@ describe('choosing an amount', () => {
     await user.click(screen.getByRole('button', { name: /^Patty/ }))
 
     expect(referenceRows()).toEqual(['Perkcal', '100 g240'])
+  })
+})
+
+/** Picks an ingredient and puts it in the dish without an amount. */
+async function weighLater(user: UserEvent, name: string) {
+  await user.click(screen.getByRole('button', { name: 'Add ingredient' }))
+  await user.click(await screen.findByRole('button', { name: pickerButtonName(name) }))
+  await user.click(screen.getByRole('button', { name: 'Weigh later' }))
+}
+
+/** The search result of an ingredient: its name, then what the row says about it. */
+function pickerButtonName(name: string): (accessibleName: string) => boolean {
+  return (accessibleName) => accessibleName === name || accessibleName.startsWith(`${name} `)
+}
+
+/** A draft in storage, as if left earlier, with ingredients waiting to be weighed. */
+function storeDraftToWeigh(
+  items: readonly { id: string; ingredientId: string; name: string }[],
+  lineCount = 0,
+) {
+  const draft = newAddFoodDraft('u1')
+  const lines = Array.from({ length: lineCount }, (_, index) =>
+    sharedLine(`l${index}`, 'Rice', 100, 130),
+  )
+  saveAddFoodDraft('u1', { ...draft, dish: { ...draft.dish, lines, toWeigh: items } })
+}
+
+describe('weighing an ingredient later', () => {
+  test('is added without an amount, shows "To weigh" and counts in no total', async () => {
+    const user = userEvent.setup()
+    renderAddFood()
+    await addIngredient(user, 'Patty', '100')
+
+    await weighLater(user, 'Tomato')
+
+    expect(currentPath()).toBe(food())
+    const row = screen.getByRole('button', { name: /Tomato/ })
+    expect(within(row).getByText('To weigh')).toBeInTheDocument()
+    expect(within(row).queryByText(/kcal/)).not.toBeInTheDocument()
+    expect(screen.getByTestId('dish-totals')).toHaveTextContent('240 kcal')
+  })
+
+  test('blocks Save meal and Save as recipe until everything is weighed', async () => {
+    const user = userEvent.setup()
+    renderAddFood()
+    await addIngredient(user, 'Patty', '100')
+    await weighLater(user, 'Tomato')
+    await weighLater(user, 'Noodles')
+
+    await user.click(screen.getByRole('button', { name: 'Save meal' }))
+    expect(screen.getByText('Weigh 2 ingredients first')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Save as recipe' }))
+    expect(screen.getByText('Weigh 2 ingredients first')).toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(saveDish).not.toHaveBeenCalled()
+  })
+
+  test('tapping it asks for the amount; confirming makes it a real line and allows saving', async () => {
+    const user = userEvent.setup()
+    renderAddFood()
+    await addIngredient(user, 'Patty', '100')
+    await weighLater(user, 'Tomato')
+
+    await user.click(screen.getByRole('button', { name: /Tomato/ }))
+    await user.type(screen.getByLabelText('Amount'), '150')
+    await user.click(screen.getByRole('button', { name: 'Add to dish' }))
+
+    expect(currentPath()).toBe(food())
+    expect(screen.queryByText('To weigh')).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Save meal' }))
+    expect(sentDish().lines.map((line) => line.item.name)).toEqual(['Patty', 'Tomato'])
+    expect(sentDish().lines[1]?.item.entered_amount).toBe(150)
+  })
+
+  test('the placeholder can be removed', async () => {
+    const user = userEvent.setup()
+    renderAddFood()
+    await addIngredient(user, 'Patty', '100')
+    await weighLater(user, 'Tomato')
+
+    await user.click(screen.getByRole('button', { name: /Tomato/ }))
+    await user.click(screen.getByRole('button', { name: 'Remove from dish' }))
+
+    expect(screen.queryByText('To weigh')).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Save meal' }))
+    expect(saveDish).toHaveBeenCalled()
+  })
+
+  test('is not offered when changing a line that has an amount', async () => {
+    const user = userEvent.setup()
+    renderAddFood()
+    await addIngredient(user, 'Patty', '100')
+
+    await user.click(screen.getByRole('button', { name: /Patty/ }))
+
+    expect(screen.queryByRole('button', { name: 'Weigh later' })).not.toBeInTheDocument()
+  })
+
+  test('survives leaving the page', async () => {
+    const user = userEvent.setup()
+    const { unmount } = renderAddFood()
+    await addIngredient(user, 'Patty', '100')
+    await weighLater(user, 'Tomato')
+    unmount()
+
+    renderAddFood()
+
+    expect(await screen.findByText('To weigh')).toBeInTheDocument()
+  })
+
+  test('its row reopens the right ingredient after leaving and coming back', async () => {
+    const user = userEvent.setup()
+    const { unmount } = renderAddFood()
+    await weighLater(user, 'Tomato')
+    await weighLater(user, 'Noodles')
+    unmount()
+    renderAddFood()
+
+    await user.click(await screen.findByRole('button', { name: 'Noodles, to weigh' }))
+
+    expect(currentPath()).toMatch(/\/weigh-/)
+    expect(await screen.findByRole('heading', { name: 'Noodles' })).toBeInTheDocument()
+  })
+
+  test('Back from the weighing step leaves the item waiting', async () => {
+    const user = userEvent.setup()
+    renderAddFood()
+    await weighLater(user, 'Tomato')
+    await user.click(screen.getByRole('button', { name: 'Tomato, to weigh' }))
+    expect(currentPath()).toMatch(/\/weigh-/)
+
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+
+    await vi.waitFor(() => expect(currentPath()).toBe(food()))
+    const row = screen.getByRole('button', { name: 'Tomato, to weigh' })
+    expect(within(row).getByText('To weigh')).toBeInTheDocument()
+  })
+
+  test('an address of an item that isn’t in the dish says so', async () => {
+    renderAddFood(`${food()}/weigh-gone`)
+
+    expect(await screen.findByText('This ingredient is no longer in the dish.')).toBeInTheDocument()
+  })
+
+  test('is weighed with own amounts for two people', async () => {
+    const user = userEvent.setup()
+    renderAddFood()
+    await addHerAsEater(user)
+    await weighLater(user, 'Tomato')
+
+    await user.click(screen.getByRole('button', { name: 'Tomato, to weigh' }))
+    await user.click(await screen.findByRole('radio', { name: 'Own amounts' }))
+    await user.type(screen.getByLabelText('Lukas amount'), '100')
+    await user.type(screen.getByLabelText('Schatz amount'), '50')
+    await user.click(screen.getByRole('button', { name: 'Add to dish' }))
+    await user.click(screen.getByRole('button', { name: 'Save meal' }))
+
+    const [line] = sentDish().lines
+    expect(line).toMatchObject({ allocation: 'per_portion', item: { name: 'Tomato' } })
+    expect(Object.values(line?.amounts ?? {}).sort()).toEqual([100, 50].sort())
+    expect(sentDish().toWeigh ?? []).toEqual([])
+  })
+
+  test('a dish of only an item to weigh can be discarded', async () => {
+    const user = userEvent.setup()
+    renderAddFood()
+    await weighLater(user, 'Tomato')
+
+    expect(screen.getByRole('button', { name: 'Discard' })).toBeInTheDocument()
+  })
+
+  test('is told on the dish while it waits, with the current name of the ingredient', async () => {
+    storeDraftToWeigh([{ id: 'w-1', ingredientId: 'tomato', name: 'Old tomato name' }])
+    renderAddFood()
+
+    expect(await screen.findByRole('button', { name: 'Tomato, to weigh' })).toBeInTheDocument()
+    expect(screen.getByText('Weigh these before saving the meal.')).toBeInTheDocument()
+  })
+
+  test('the note is gone once nothing waits', async () => {
+    const user = userEvent.setup()
+    renderAddFood()
+    await weighLater(user, 'Tomato')
+    expect(screen.getByText('Weigh these before saving the meal.')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Tomato, to weigh' }))
+    await user.click(screen.getByRole('button', { name: 'Remove from dish' }))
+
+    expect(screen.queryByText('Weigh these before saving the meal.')).not.toBeInTheDocument()
+  })
+
+  test('the reason Save meal is blocked is announced', async () => {
+    const user = userEvent.setup()
+    renderAddFood()
+    await weighLater(user, 'Tomato')
+
+    await user.click(screen.getByRole('button', { name: 'Save meal' }))
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Weigh 1 ingredient first')
+  })
+
+  test('a quick second tap on Weigh later adds it only once', async () => {
+    const user = userEvent.setup()
+    renderAddFood()
+    await user.click(screen.getByRole('button', { name: 'Add ingredient' }))
+    await user.click(await screen.findByRole('button', { name: pickerButtonName('Tomato') }))
+
+    await user.dblClick(screen.getByRole('button', { name: 'Weigh later' }))
+
+    expect(screen.getAllByText('To weigh')).toHaveLength(1)
+  })
+
+  test('is not offered once the dish holds as many entries as a draft can keep', async () => {
+    const user = userEvent.setup()
+    storeDraftToWeigh([], MAX_DISH_ENTRIES)
+    renderAddFood()
+
+    await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
+    await user.click(await screen.findByRole('button', { name: pickerButtonName('Tomato') }))
+
+    expect(screen.getByRole('button', { name: 'Add to dish' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Weigh later' })).not.toBeInTheDocument()
+  })
+
+  test('can be removed while the ingredients are still loading', async () => {
+    const user = userEvent.setup()
+    storeDraftToWeigh([{ id: 'w-1', ingredientId: 'tomato', name: 'Tomato' }])
+    vi.mocked(fetchIngredients).mockReturnValue(new Promise(() => undefined))
+    renderAddFood(`${food()}/weigh-w-1`)
+
+    await user.click(await screen.findByRole('button', { name: 'Remove from dish' }))
+
+    await vi.waitFor(() => expect(currentPath()).toBe(food()))
+    expect(screen.queryByText('To weigh')).not.toBeInTheDocument()
+  })
+
+  test('can be removed when the ingredients can’t be loaded', async () => {
+    storeDraftToWeigh([{ id: 'w-1', ingredientId: 'tomato', name: 'Tomato' }])
+    vi.mocked(fetchIngredients).mockRejectedValue(new Error('offline'))
+    renderAddFood(`${food()}/weigh-w-1`)
+
+    expect(await screen.findByRole('button', { name: 'Remove from dish' })).toBeInTheDocument()
   })
 })
 

@@ -208,7 +208,9 @@ describe('recipes in Add food', () => {
     // Assert
     expect(currentPath()).toBe(food())
     // 300 g at 200 kcal per 100 g today, not the 240 saved with the recipe
-    expect(await screen.findByText('600 kcal')).toBeInTheDocument()
+    expect(
+      within(await screen.findByRole('region', { name: 'Whole dish' })).getByText('600 kcal'),
+    ).toBeInTheDocument()
     // the partner's default nickname
     expect(await screen.findByRole('button', { name: 'baby', pressed: true })).toBeInTheDocument()
     expect(screen.getByDisplayValue('Burgers')).toBeInTheDocument()
@@ -274,6 +276,29 @@ describe('recipes in Add food', () => {
     // Assert
     expect(confirm).toHaveBeenCalled()
     expect(currentPath()).toBe(`${recipes()}/r-burgers`)
+  })
+
+  test('cooking a recipe replaces a dish holding only an ingredient to weigh', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    renderAddFood()
+    await user.click(await screen.findByRole('button', { name: 'Add ingredient' }))
+    await user.click(await screen.findByRole('button', { name: /Patty/ }))
+    await user.click(screen.getByRole('button', { name: 'Weigh later' }))
+    expect(screen.getByText('To weigh')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+    await user.click(await screen.findByRole('button', { name: 'Add from recipe' }))
+    await user.click(await screen.findByRole('button', { name: /Burgers/ }))
+
+    // Act
+    await user.click(await screen.findByRole('button', { name: 'Cook this' }))
+
+    // Assert
+    expect(confirm).toHaveBeenCalled()
+    await vi.waitFor(() => expect(currentPath()).toBe(food()))
+    expect(screen.queryByText('To weigh')).not.toBeInTheDocument()
+    expect(screen.queryByText('Weigh these before saving the meal.')).not.toBeInTheDocument()
   })
 
   test('Back goes from a recipe to the list, and from the list to the meal', async () => {

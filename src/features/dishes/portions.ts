@@ -44,6 +44,16 @@ export type DishLine = {
   readonly amounts: Readonly<Record<string, number>>
 }
 
+/**
+ * An ingredient put in the dish in Add food without an amount (weighed later). It remembers only
+ * the ingredient; it counts in no total, and the dish can't be saved while any is left.
+ */
+export type ToWeighItem = {
+  readonly id: string
+  readonly ingredientId: string
+  readonly name: string
+}
+
 export type Dish = {
   readonly id: string
   readonly name: string | null
@@ -56,6 +66,8 @@ export type Dish = {
   readonly revision: string
   readonly portions: readonly DishPortion[]
   readonly lines: readonly DishLine[]
+  /** only in an Add food draft, never in a saved dish; missing in older drafts */
+  readonly toWeigh?: readonly ToWeighItem[]
 }
 
 export type PortionItem = { readonly lineId: string; readonly draft: MealItemDraft }
@@ -153,6 +165,12 @@ function scaledItem(item: MealItemDraft, fraction: number): MealItemDraft | null
 function fractionOfLine(line: DishLine, portionId: string, share: number): number {
   if (line.allocation === 'shared') return share
   return (line.amounts[portionId] ?? 0) / line.item.entered_amount
+}
+
+/** What one portion gets of a line with own amounts; null when it has no amount. */
+export function ownAmountItem(line: DishLine, portionId: string): MealItemDraft | null {
+  const fraction = fractionOfLine(line, portionId, 0)
+  return fraction > 0 ? scaledItem(line.item, fraction) : null
 }
 
 /** What every portion (leftovers included) contains, ready to log into its eater's meal. */

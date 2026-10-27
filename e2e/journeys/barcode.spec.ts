@@ -43,6 +43,8 @@ test('scan a package: a photo is read, filled in from Open Food Facts, saved; fo
   await expect(sheet.getByLabel('Name', { exact: true })).toHaveValue('Nutella')
   await expect(sheet.getByLabel('Barcode', { exact: true })).toHaveValue(NUTELLA)
   await expect(sheet.getByLabel('Calories per 100 g', { exact: true })).toHaveValue('539')
+  // only what the package states: the portion's weight, but no values per portion to go with it
+  await expect(sheet.getByText(/A weight per unit, but no values per unit/)).toBeVisible()
   await pickBasics(sheet)
   await sheet.getByRole('button', { name: 'Save' }).click()
   await expect(sheet).toBeHidden()
@@ -55,8 +57,8 @@ test('scan a package: a photo is read, filled in from Open Food Facts, saved; fo
       return data
     })
     .toEqual([
-      // per portion worked out from per 100 g: 539 × 0.15
-      { name: 'Nutella', barcode: NUTELLA, kcal_100: 539, kcal_unit: 81, unit_weight_g: 15 },
+      // nothing worked out: per portion stays empty until Calculate missing values is tapped
+      { name: 'Nutella', barcode: NUTELLA, kcal_100: 539, kcal_unit: null, unit_weight_g: 15 },
     ])
 
   // typing the number finds the saved package

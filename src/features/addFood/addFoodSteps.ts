@@ -7,6 +7,7 @@ const NEW_INGREDIENT_SEGMENT = 'new'
 // a new ingredient for a scanned barcode, e.g. new-4014500513102 (ingredient ids are UUIDs)
 const BARCODE_PREFIX = 'new-'
 const LINE_PREFIX = 'line-'
+const WEIGH_PREFIX = 'weigh-'
 const SWAP_SEGMENT = 'swap'
 
 /**
@@ -30,6 +31,8 @@ export function addFoodStepPath(step: ComposerStep, base: string): string {
       return `${base}/${ADD_SEGMENT}/${encodeURIComponent(step.ingredientId)}`
     case 'editLine':
       return `${base}/${LINE_PREFIX}${encodeURIComponent(step.lineId)}`
+    case 'weighLine':
+      return `${base}/${WEIGH_PREFIX}${encodeURIComponent(step.itemId)}`
     case 'swap':
       return `${addFoodStepPath({ kind: 'editLine', lineId: step.lineId }, base)}/${SWAP_SEGMENT}`
     case 'swapLine':
@@ -61,6 +64,12 @@ function stepOfSegments(segments: readonly string[]): ComposerStep | null {
   const [first, second, ...rest] = segments
   if (first === undefined) return { kind: 'main' }
   if (first.startsWith(LINE_PREFIX)) return lineStepOf(segments)
+  if (first.startsWith(WEIGH_PREFIX)) {
+    const itemId = decoded(first.slice(WEIGH_PREFIX.length))
+    return itemId && second === undefined && rest.length === 0
+      ? { kind: 'weighLine', itemId }
+      : null
+  }
   if (rest.length > 0) return null
   if (first === ADD_SEGMENT) {
     if (second === undefined) return { kind: 'pick' }

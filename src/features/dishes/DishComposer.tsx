@@ -8,6 +8,7 @@ import { ListRow } from '../../components/ios/ListRow'
 import { TextField } from '../../components/ios/TextField'
 import { toUserMessage } from '../../lib/errors'
 import { useIngredients } from '../ingredients/hooks'
+import type { Ingredient } from '../ingredients/ingredientsApi'
 import { useReferenceTable } from '../ingredients/useReferenceTable'
 import { NewIngredientForm } from '../ingredients/NewIngredientForm'
 import { CustomItemForm } from '../meals/CustomItemForm'
@@ -18,6 +19,7 @@ import { ingredientNutrition, ingredientSource } from '../nutrition/fromIngredie
 import { itemTotals } from '../nutrition/totals'
 import {
   describeLine,
+  hasRoomForEntry,
   estimatedLineNames,
   lineWho,
   newId,
@@ -27,7 +29,10 @@ import {
   withKcalEstimated,
   withName,
   withoutLine,
+  withoutToWeigh,
   withSwappedLine,
+  withToWeigh,
+  withWeighedLine,
 } from './dishDraft'
 import { DishLineEditor, type PortionOption } from './DishLineEditor'
 import { CompactDish } from './CompactDish'
@@ -51,6 +56,8 @@ type DishComposerProps = {
   readonly steps: ComposerSteps
   /** a logged dish: amounts changed in place, the rest only when opened (`header` goes there) */
   readonly compact?: boolean
+  /** Add food: a new ingredient may be put in the dish without an amount (never for a saved dish) */
+  readonly allowWeighLater?: boolean
 }
 
 /**
@@ -67,6 +74,7 @@ export function DishComposer({
   error,
   steps,
   compact = false,
+  allowWeighLater = false,
 }: DishComposerProps) {
   const top = useRef<HTMLDivElement>(null)
   const { step } = steps
@@ -78,6 +86,7 @@ export function DishComposer({
     ),
   )
   const estimatedNames = estimatedLineNames(dish, estimatedIds)
+  const waiting = dish.toWeigh ?? []
   // a long form may be scrolled down; every step starts at its top
   const shownStep = useRef(stepKey(step))
   useEffect(() => {
@@ -107,7 +116,10 @@ export function DishComposer({
       {step.kind === 'main' && !compact && (
         <>
           {header}
-          <GroupedSection header="Ingredients">
+          <GroupedSection
+            header="Ingredients"
+            footer={waiting.length > 0 ? 'Weigh these before saving the meal.' : null}
+          >
             {dish.lines.map((line) => (
               <ListRow
                 key={line.id}
@@ -117,6 +129,22 @@ export function DishComposer({
                 onClick={() => steps.open({ kind: 'editLine', lineId: line.id })}
               />
             ))}
+            {waiting.map((item) => {
+              // the ingredient's name today, else the one it had when it was put in the dish
+              const name =
+                ingredients.data?.find((candidate) => candidate.id === item.ingredientId)?.name ??
+                item.name
+              return (
+                <ListRow
+                  key={item.id}
+                  title={name}
+                  detail="To weigh"
+                  accentDetail
+                  ariaLabel={`${name}, to weigh`}
+                  onClick={() => steps.open({ kind: 'weighLine', itemId: item.id })}
+                />
+              )
+            })}
             <div className="px-2 py-1">
               <Button variant="plain" onClick={() => steps.open({ kind: 'pick' })}>
                 Add ingredient
@@ -155,6 +183,7 @@ export function DishComposer({
           dish={dish}
           portions={portions}
           estimatedIds={estimatedIds}
+          allowWeighLater={allowWeighLater && !compact && hasRoomForEntry(dish)}
           onAdd={(line) => {
             onChange(withAddedLine(dish, line, estimatedIds))
             steps.finish()
@@ -182,12 +211,22 @@ type StepViewProps = {
   readonly portions: readonly PortionOption[]
   /** ingredients marked as an estimate: one swapped in marks the dish */
   readonly estimatedIds: ReadonlySet<string>
+  readonly allowWeighLater: boolean
   readonly onAdd: (line: DishLine) => void
   /** a change that ends the step, e.g. removing the line */
   readonly onChange: (dish: Dish) => void
 }
 
-function StepView({ step, steps, dish, portions, estimatedIds, onAdd, onChange }: StepViewProps) {
+function StepView({
+  step,
+  steps,
+  dish,
+  portions,
+  estimatedIds,
+  allowWeighLater,
+  onAdd,
+  onChange,
+}: StepViewProps) {
   switch (step.kind) {
     case 'pick':
       return (
@@ -219,7 +258,35 @@ function StepView({ step, steps, dish, portions, estimatedIds, onAdd, onChange }
         />
       )
     case 'newLine':
-      return <NewLineStep ingredientId={step.ingredientId} portions={portions} onAdd={onAdd} />
+      return (
+        <NewLineStep
+          ingredientId={step.ingredientId}
+          portions={portions}
+          onAdd={onAdd}
+          onWeighLater={
+            allowWeighLater
+              ? (ingredient, itemId) =>
+                  onChange(
+                    withToWeigh(dish, {
+                      id: itemId,
+                      ingredientId: ingredient.id,
+                      name: ingredient.name,
+                    }),
+                  )
+              : undefined
+          }
+        />
+      )
+    case 'weighLine':
+      return (
+        <WeighLineStep
+          itemId={step.itemId}
+          dish={dish}
+          portions={portions}
+          onWeighed={(line) => onChange(withWeighedLine(dish, step.itemId, line, estimatedIds))}
+          onRemove={() => onChange(withoutToWeigh(dish, step.itemId))}
+        />
+      )
     case 'editLine':
       return (
         <EditLineStep
@@ -253,14 +320,18 @@ type NewLineStepProps = {
   readonly ingredientId: string
   readonly portions: readonly PortionOption[]
   readonly onAdd: (line: DishLine) => void
+  /** puts the ingredient in the dish without an amount; missing where that isn't allowed */
+  readonly onWeighLater?: (ingredient: Ingredient, itemId: string) => void
 }
 
 /** The amount of a picked ingredient. */
-function NewLineStep({ ingredientId, portions, onAdd }: NewLineStepProps) {
+function NewLineStep({ ingredientId, portions, onAdd, onWeighLater }: NewLineStepProps) {
   const { householdId } = useCurrentUser()
   const ingredients = useIngredients(householdId)
   // one id for the line while its amount is entered
   const [lineId] = useState(newId)
+  // and one for the placeholder, so a second tap on Weigh later can't add it twice
+  const [itemId] = useState(newId)
   const ingredient = ingredients.data?.find((candidate) => candidate.id === ingredientId)
   const reference = useReferenceTable(ingredient)
   if (ingredients.isError) return <ErrorBanner message={toUserMessage(ingredients.error)} />
@@ -278,6 +349,71 @@ function NewLineStep({ ingredientId, portions, onAdd }: NewLineStepProps) {
         buildDishLine({ ...input, id: lineId, source: ingredientSource(ingredient) })
       }
       onConfirm={onAdd}
+      secondaryAction={
+        onWeighLater && (
+          <Button variant="secondary" onClick={() => onWeighLater(ingredient, itemId)}>
+            Weigh later
+          </Button>
+        )
+      }
+    />
+  )
+}
+
+type WeighLineStepProps = {
+  readonly itemId: string
+  readonly dish: Dish
+  readonly portions: readonly PortionOption[]
+  readonly onWeighed: (line: DishLine) => void
+  readonly onRemove: () => void
+}
+
+/** The amount (and who) of an ingredient put in the dish without one. */
+function WeighLineStep({ itemId, dish, portions, onWeighed, onRemove }: WeighLineStepProps) {
+  const { householdId } = useCurrentUser()
+  const ingredients = useIngredients(householdId)
+  const current = dish.toWeigh?.find((candidate) => candidate.id === itemId)
+  // a weighed or removed item stays on screen while its page slides away
+  const [opened] = useState(current)
+  const item = current ?? opened
+  const ingredient = ingredients.data?.find((candidate) => candidate.id === item?.ingredientId)
+  const reference = useReferenceTable(ingredient)
+  // one id for the line while its amount is entered
+  const [lineId] = useState(newId)
+  if (!item) return <Message text="This ingredient is no longer in the dish." />
+  const remove = (
+    <Button variant="destructive" onClick={onRemove}>
+      Remove from dish
+    </Button>
+  )
+  // without the ingredients (still loading, or offline) the placeholder can still be removed
+  if (ingredients.isError || ingredients.isPending || !ingredient) {
+    return (
+      <>
+        {ingredients.isError ? (
+          <ErrorBanner message={toUserMessage(ingredients.error)} />
+        ) : (
+          <Message
+            text={ingredients.isPending ? 'Loading…' : 'This ingredient is no longer available.'}
+          />
+        )}
+        <div className="mt-6">{remove}</div>
+      </>
+    )
+  }
+  return (
+    <DishLineEditor
+      title={ingredient.name}
+      reference={reference}
+      units={availableUnits(ingredientNutrition(ingredient))}
+      unitLabel={ingredient.unit_label}
+      portions={portions}
+      confirmLabel="Add to dish"
+      build={(input) =>
+        buildDishLine({ ...input, id: lineId, source: ingredientSource(ingredient) })
+      }
+      onConfirm={onWeighed}
+      secondaryAction={remove}
     />
   )
 }

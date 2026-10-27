@@ -9,7 +9,7 @@ import { ComposerBar } from '../dishes/ComposerBar'
 import { DishComposer } from '../dishes/DishComposer'
 import { useSaveDish } from '../dishes/hooks'
 import { portionName } from '../dishes/portionName'
-import { saveError } from '../dishes/saveError'
+import { saveError, toWeighError } from '../dishes/saveError'
 import { useMembers, usePeople } from '../household/hooks'
 import { useLookOf } from '../household/usePersonLook'
 import { useRecipes, useSaveRecipe } from '../recipes/hooks'
@@ -102,6 +102,12 @@ export function AddFoodPage({ page }: { readonly page: MealPageRef }) {
     navigate(saved ? mealPath(saved, from) : page.mealPath, saved && { person: saved.userId })
   }
 
+  function saveAsRecipe() {
+    const problem = toWeighError(draft.dish)
+    if (problem) return setError(problem)
+    setIsSavingRecipe(true)
+  }
+
   function discard() {
     if (!window.confirm(DISCARD_QUESTION)) return
     reset()
@@ -130,6 +136,7 @@ export function AddFoodPage({ page }: { readonly page: MealPageRef }) {
         nameOf={nameOf}
         error={error}
         steps={steps}
+        allowWeighLater
         header={
           <>
             <WhoEats draft={draft} people={people} onChange={change} />
@@ -140,7 +147,7 @@ export function AddFoodPage({ page }: { readonly page: MealPageRef }) {
           <>
             <Button onClick={save}>Save meal</Button>
             {draft.dish.lines.length > 0 && (
-              <Button variant="secondary" onClick={() => setIsSavingRecipe(true)}>
+              <Button variant="secondary" onClick={saveAsRecipe}>
                 Save as recipe
               </Button>
             )}

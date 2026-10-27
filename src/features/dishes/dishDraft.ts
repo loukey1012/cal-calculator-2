@@ -10,6 +10,7 @@ import {
   type DishPortion,
   type Eater,
   type SplitMode,
+  type ToWeighItem,
 } from './portions'
 
 /**
@@ -20,6 +21,8 @@ import {
 const PERCENT_WHOLE = 100
 const PERCENT_DECIMALS = 2
 const DEFAULT_COUNT = 1
+/** The most ingredients (with an amount, and waiting for one) each, so a draft can be kept. */
+export const MAX_DISH_ENTRIES = 50
 
 export type LineAmounts =
   | { readonly allocation: 'shared'; readonly amount: number }
@@ -182,6 +185,32 @@ export function estimatedLineNames(
     .filter((line) => isEstimatedLine(line, estimatedIngredientIds))
     .map((line) => line.item.name)
   return [...new Set(names)]
+}
+
+/** Another ingredient still fits: lines and waiting items together stay under the limit. */
+export function hasRoomForEntry(dish: Dish): boolean {
+  return dish.lines.length + (dish.toWeigh?.length ?? 0) < MAX_DISH_ENTRIES
+}
+
+/** An ingredient waits for its amount (an item already waiting under that id is left as it is). */
+export function withToWeigh(dish: Dish, item: ToWeighItem): Dish {
+  const waiting = dish.toWeigh ?? []
+  if (waiting.some((candidate) => candidate.id === item.id)) return dish
+  return { ...dish, toWeigh: [...waiting, item] }
+}
+
+export function withoutToWeigh(dish: Dish, itemId: string): Dish {
+  return { ...dish, toWeigh: (dish.toWeigh ?? []).filter((item) => item.id !== itemId) }
+}
+
+/** The ingredient waiting for its amount is weighed: it becomes a line. */
+export function withWeighedLine(
+  dish: Dish,
+  itemId: string,
+  line: DishLine,
+  estimatedIngredientIds: ReadonlySet<string>,
+): Dish {
+  return withAddedLine(withoutToWeigh(dish, itemId), line, estimatedIngredientIds)
 }
 
 export function withoutLine(dish: Dish, lineId: string): Dish {

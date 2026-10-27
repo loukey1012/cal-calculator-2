@@ -13,6 +13,7 @@ describe('Add food steps as pages', () => {
     [{ kind: 'newIngredient', barcode: '3017620422003' } as const, `${BASE}/add/new-3017620422003`],
     [{ kind: 'newLine', ingredientId: 'patty' } as const, `${BASE}/add/patty`],
     [{ kind: 'editLine', lineId: 'l-1' } as const, `${BASE}/line-l-1`],
+    [{ kind: 'weighLine', itemId: 'w-1' } as const, `${BASE}/weigh-w-1`],
     [{ kind: 'swap', lineId: 'l-1' } as const, `${BASE}/line-l-1/swap`],
     [
       { kind: 'swapLine', lineId: 'l-1', ingredientId: 'edamer' } as const,
@@ -40,6 +41,10 @@ describe('Add food steps as pages', () => {
       kind: 'swap',
       lineId: 'l-1',
     })
+  })
+
+  test('Back from weighing goes to the dish', () => {
+    expect(parentStep({ kind: 'weighLine', itemId: 'w-1' })).toEqual({ kind: 'main' })
   })
 
   test('odd characters in an id stay inside their part of the address', () => {

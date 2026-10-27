@@ -14,8 +14,12 @@ const NAMED_LINES = 2
 
 /** null: nothing worth telling (empty, or only a name without ingredients). */
 export function draftNotice(draft: AddFoodDraft): DraftNotice | null {
-  if (!hasContent(draft) || draft.dish.lines.length === 0) return null
-  const names = draft.dish.lines.map((line) => line.item.name)
+  // ingredients waiting to be weighed are part of the dish too
+  const names = [
+    ...draft.dish.lines.map((line) => line.item.name),
+    ...(draft.dish.toWeigh ?? []).map((item) => item.name),
+  ]
+  if (!hasContent(draft) || names.length === 0) return null
   const more = names.length - NAMED_LINES
   const label =
     draft.dish.name ?? names.slice(0, NAMED_LINES).join(', ') + (more > 0 ? ` +${more}` : '')

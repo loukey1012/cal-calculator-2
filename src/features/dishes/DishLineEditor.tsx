@@ -4,7 +4,7 @@ import { GroupedSection } from '../../components/ios/GroupedSection'
 import { SegmentedControl } from '../../components/ios/SegmentedControl'
 import { ReferenceValues } from '../ingredients/ReferenceValues'
 import type { ReferenceTable } from '../ingredients/referenceValues'
-import { formatKcal, macroSummary } from '../nutrition/format'
+import { formatKcalTotal, macroSummary } from '../nutrition/format'
 import { itemTotals } from '../nutrition/totals'
 import type { AmountUnit } from '../nutrition/types'
 import { amountSuffix, unitChoiceLabel } from '../nutrition/unitNames'
@@ -13,7 +13,7 @@ import { DecimalRow } from './DecimalRow'
 import { AmountChips } from './AmountChips'
 import { withFraction } from './fractions'
 import type { LineAmounts, LineWho } from './dishDraft'
-import type { DishLine } from './portions'
+import { ownAmountItem, type DishLine } from './portions'
 
 /** An eating portion as the editor shows it. */
 export type PortionOption = { readonly id: string; readonly name: string }
@@ -68,6 +68,28 @@ function tryBuild(build: DishLineEditorProps['build'], input: LineInput | null):
   } catch {
     return null
   }
+}
+
+/** One person's calories of a line with own amounts, or a dash without an amount. */
+function PersonKcal({
+  line,
+  portionId,
+}: {
+  readonly line: DishLine | null
+  readonly portionId: string
+}) {
+  const item = line ? ownAmountItem(line, portionId) : null
+  if (!item) {
+    return (
+      <span data-testid={`own-kcal-${portionId}`}>
+        <span aria-hidden="true">–</span>
+        <span className="sr-only">No amount</span>
+      </span>
+    )
+  }
+  return (
+    <span data-testid={`own-kcal-${portionId}`}>{`${formatKcalTotal(itemTotals(item))} kcal`}</span>
+  )
 }
 
 /** One ingredient of a dish: its unit, who has it and how much. */
@@ -155,6 +177,7 @@ export function DishLineEditor({
                 setAmounts((current) => ({ ...current, [id]: value }))
                 setError(null)
               }}
+              hint={<PersonKcal line={line} portionId={id} />}
             />
           ))
         ) : (
@@ -187,8 +210,14 @@ export function DishLineEditor({
           <ReferenceValues table={reference} />
         </div>
       )}
-      <p data-testid="line-preview" className="mt-3 px-4 text-[15px] text-label-secondary">
-        {totals ? `${formatKcal(totals.kcal)} kcal · ${macroSummary(totals)}` : '–'}
+      <p
+        data-testid="line-preview"
+        aria-live="polite"
+        className="mt-3 px-4 text-[15px] text-label-secondary"
+      >
+        {totals
+          ? `${who === 'own' ? 'Together ' : ''}${formatKcalTotal(totals)} kcal · ${macroSummary(totals)}`
+          : '–'}
       </p>
       <div className="mt-6">
         <Button type="submit">{confirmLabel}</Button>

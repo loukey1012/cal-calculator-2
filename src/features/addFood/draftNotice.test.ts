@@ -39,6 +39,30 @@ describe('draftNotice', () => {
   })
 })
 
+describe('draftNotice with ingredients to weigh', () => {
+  const toWeigh = (names: readonly string[]) =>
+    names.map((name, index) => ({ id: `w${index}`, ingredientId: `i${index}`, name }))
+
+  function withPlaceholders(lines: readonly string[], waiting: readonly string[]): AddFoodDraft {
+    const draft = withLines(lines)
+    return withDish(draft, { ...draft.dish, toWeigh: toWeigh(waiting) })
+  }
+
+  test('a dish of only placeholders is still an unsaved dish', () => {
+    expect(draftNotice(withPlaceholders([], ['Tomato']))).toEqual({
+      label: 'Tomato',
+      lineCount: 1,
+    })
+  })
+
+  test('placeholders count and are named after the real lines', () => {
+    expect(draftNotice(withPlaceholders(['Toast'], ['Jam', 'Butter']))).toEqual({
+      label: 'Toast, Jam +1',
+      lineCount: 3,
+    })
+  })
+})
+
 describe('sendDraftNotice', () => {
   test('a waiting dish is noted for me', async () => {
     const query = fakeQuery({ data: null, error: null })

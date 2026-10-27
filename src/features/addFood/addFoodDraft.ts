@@ -105,7 +105,9 @@ export function withRecipe(
 }
 
 export function hasContent(draft: AddFoodDraft): boolean {
-  return draft.dish.lines.length > 0 || draft.dish.name !== null
+  return (
+    draft.dish.lines.length > 0 || (draft.dish.toWeigh?.length ?? 0) > 0 || draft.dish.name !== null
+  )
 }
 
 /**

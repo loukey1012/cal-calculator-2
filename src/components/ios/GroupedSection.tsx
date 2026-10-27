@@ -1,16 +1,23 @@
-import type { ReactNode } from 'react'
+import { useId, type ReactNode } from 'react'
 
 type GroupedSectionProps = {
   readonly header?: string
   readonly footer?: ReactNode
+  /** makes the section a region named by its header, for screen readers and tests */
+  readonly region?: boolean
   readonly children: ReactNode
 }
 
 /** A titled card of rows with hairline separators. */
-export function GroupedSection({ header, footer, children }: GroupedSectionProps) {
+export function GroupedSection({ header, footer, region = false, children }: GroupedSectionProps) {
+  const headerId = useId()
   return (
-    <section className="mt-6">
-      {header && <h2 className="caption px-4 pb-2">{header}</h2>}
+    <section aria-labelledby={region && header ? headerId : undefined} className="mt-6">
+      {header && (
+        <h2 id={headerId} className="caption px-4 pb-2">
+          {header}
+        </h2>
+      )}
       <div className="glass-surface divide-y divide-separator overflow-hidden rounded-3xl bg-bg-elevated shadow-card">
         {children}
       </div>

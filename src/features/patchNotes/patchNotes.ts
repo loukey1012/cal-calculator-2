@@ -30,6 +30,25 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-27T17:20',
+    kind: 'new',
+    title: 'Weigh later',
+    items: [
+      'In Add food, Weigh later adds an ingredient without an amount, so the rest can be added first',
+      'It shows “To weigh” and counts in no total; tap it to give who and the amount, or remove it',
+      'Save meal and Save as recipe wait until everything is weighed',
+    ],
+  },
+  {
+    at: '2026-10-27T17:20',
+    kind: 'new',
+    title: 'Calories per person',
+    items: [
+      'With own amounts, each person’s calories show under their amount, with the total below',
+      'The dish shows the whole dish’s calories and macros when more than one portion is eaten',
+    ],
+  },
+  {
     at: '2026-10-27T16:55',
     kind: 'fix',
     title: 'Your partner’s days in History',

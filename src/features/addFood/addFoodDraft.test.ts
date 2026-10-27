@@ -67,6 +67,18 @@ describe('newAddFoodDraft', () => {
   })
 })
 
+describe('hasContent', () => {
+  test('an ingredient waiting to be weighed is content', () => {
+    const empty = newAddFoodDraft('me')
+    const draft = {
+      ...empty,
+      dish: { ...empty.dish, toWeigh: [{ id: 'w-1', ingredientId: 'feta', name: 'Feta' }] },
+    }
+
+    expect(hasContent(draft)).toBe(true)
+  })
+})
+
 describe('withEater', () => {
   test('adds and removes people', () => {
     const both = withEater(newAddFoodDraft('me'), 'her', true)

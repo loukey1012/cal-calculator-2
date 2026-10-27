@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useId, useState, type ReactNode } from 'react'
 import { InputRow } from '../../components/ios/FormRows'
 import { parseDecimal } from '../../lib/numbers'
 
@@ -15,6 +15,8 @@ type DecimalRowProps = {
   readonly parse?: (text: string) => number | null
   /** the text as typed, e.g. to add to it */
   readonly onTextChange?: (text: string) => void
+  /** a line under the row, read with the field (e.g. what the amount comes to) */
+  readonly hint?: ReactNode
 }
 
 /** A number row that keeps what is typed (e.g. "1," on the way to "1,5"). */
@@ -27,15 +29,18 @@ export function DecimalRow({
   initialText,
   parse = parseDecimal,
   onTextChange,
+  hint,
 }: DecimalRowProps) {
+  const hintId = useId()
   const [text, setText] = useState(initialText ?? (value === null ? '' : String(value)))
-  return (
+  const row = (
     <InputRow
       label={label}
       accessibleLabel={accessibleLabel}
       suffix={suffix}
       inputMode="decimal"
       placeholder="0"
+      aria-describedby={hint === undefined ? undefined : hintId}
       value={text}
       onChange={(event) => {
         setText(event.target.value)
@@ -43,5 +48,14 @@ export function DecimalRow({
         onChange(parse(event.target.value))
       }}
     />
+  )
+  if (hint === undefined) return row
+  return (
+    <div>
+      {row}
+      <p id={hintId} className="px-4 pb-2 text-[13px] text-label-secondary">
+        {hint}
+      </p>
+    </div>
   )
 }

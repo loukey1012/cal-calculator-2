@@ -2,7 +2,9 @@ import { describe, expect, test } from 'vitest'
 import {
   describeLine,
   estimatedLineNames,
+  hasRoomForEntry,
   lineWho,
+  MAX_DISH_ENTRIES,
   newDish,
   rescaledLine,
   swappedLine,
@@ -22,6 +24,9 @@ import {
   withSplitMode,
   withSplitValue,
   withSwappedLine,
+  withToWeigh,
+  withWeighedLine,
+  withoutToWeigh,
 } from './dishDraft'
 import { ingredient } from '../ingredients/testData'
 import { ingredientSource } from '../nutrition/fromIngredient'
@@ -290,5 +295,62 @@ describe('leftovers', () => {
 
     expect(thrown.portions).toHaveLength(3)
     expect(thrown.portions[2]).toMatchObject({ eater: null, discarded: true })
+  })
+})
+
+describe('ingredients to weigh later', () => {
+  const FETA = { id: 'w-1', ingredientId: 'feta', name: 'Feta' }
+
+  test('are added without touching the lines or totals', () => {
+    const dish = testDish()
+
+    const next = withToWeigh(dish, FETA)
+
+    expect(next.toWeigh).toEqual([FETA])
+    expect(next.lines).toBe(dish.lines)
+    expect(dish.toWeigh).toBeUndefined()
+  })
+
+  test('the same item added twice (a double tap) waits only once', () => {
+    const once = withToWeigh(testDish(), FETA)
+
+    expect(withToWeigh(once, FETA).toWeigh).toEqual([FETA])
+  })
+
+  test('room for another entry ends where lines and waiting items together reach the limit', () => {
+    const lines = Array.from({ length: MAX_DISH_ENTRIES - 1 }, (_, index) =>
+      sharedLine(`l${index}`, 'Rice', 100, 130),
+    )
+    const nearly = testDish({ lines })
+
+    expect(hasRoomForEntry(nearly)).toBe(true)
+    expect(hasRoomForEntry(withToWeigh(nearly, FETA))).toBe(false)
+  })
+
+  test('can be removed again', () => {
+    const next = withoutToWeigh(withToWeigh(testDish(), FETA), 'w-1')
+
+    expect(next.toWeigh).toEqual([])
+  })
+
+  test('weighing one turns it into a line and removes it from the list', () => {
+    const other = { id: 'w-2', ingredientId: 'oil', name: 'Oil' }
+    const dish = withToWeigh(withToWeigh(testDish(), FETA), other)
+    const line = sharedLine('l-feta', 'Feta', 50, 260)
+
+    const next = withWeighedLine(dish, 'w-1', line, new Set())
+
+    expect(next.toWeigh).toEqual([other])
+    expect(next.lines.map((candidate) => candidate.id)).toEqual(['l-mince', 'l-feta'])
+  })
+
+  test('weighing one of an ingredient marked as an estimate marks the dish', () => {
+    const dish = withToWeigh(testDish(), FETA)
+    const line: DishLine = {
+      ...sharedLine('l-feta', 'Feta', 50, 260),
+      item: { ...gramsItem('Feta', 50, 260), ingredient_id: 'feta' },
+    }
+
+    expect(withWeighedLine(dish, 'w-1', line, new Set(['feta'])).kcalEstimated).toBe(true)
   })
 })
