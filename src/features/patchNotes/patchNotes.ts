@@ -30,6 +30,16 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-28T12:00',
+    kind: 'new',
+    title: 'History: month summary, filters and notes',
+    items: [
+      'The month summary also shows the days within goal (“18 of 24 days within goal”), the longest streak within goal and the change in weight over the month; days that don’t count are left out',
+      'Filter chips under the calendar: Notes, Alcohol, Cheat and Missing; the other days fade, and the filter stays while days are opened',
+      'Notes of the month: every day note and meal note of the month as a list; tap one to open its day',
+    ],
+  },
+  {
     at: '2026-10-27T18:40',
     kind: 'new',
     title: 'History easier to read',

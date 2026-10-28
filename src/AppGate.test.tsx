@@ -44,7 +44,7 @@ vi.mock('./features/goals/goalsApi', () => ({
 }))
 vi.mock('./features/history/historyApi', () => ({
   fetchDailyTotals: vi.fn().mockResolvedValue([]),
-  fetchNoteDates: vi.fn().mockResolvedValue([]),
+  fetchMonthNotes: vi.fn().mockResolvedValue([]),
 }))
 vi.mock('./features/household/householdApi', () => ({
   fetchProfile: vi.fn(),

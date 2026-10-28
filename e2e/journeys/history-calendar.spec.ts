@@ -142,3 +142,65 @@ test('the calendar shows symbols and weekly averages; swipe turns the month; hol
   await history.getByRole('button', { name: 'Today', exact: true }).click()
   await expect(history.getByRole('heading', { name: currentTitle })).toBeVisible()
 })
+
+test('the notes of the month open their day, and the Notes filter fades the other days and stays on', async ({
+  page,
+  backend,
+}) => {
+  const me = await backend.user('Greta')
+  await backend.household([me])
+  const noteDay = previousMonthDay(11)
+  const plainDay = previousMonthDay(12)
+  const noteText = 'Dinner at the lake'
+
+  // Arrange: one day with a note, one day with only a weigh-in, in the previous month
+  await backend.admin.from('day_notes').insert({ user_id: me.id, date: noteDay, note: noteText })
+  await backend.admin
+    .from('weight_entries')
+    .insert({ user_id: me.id, date: plainDay, weight_kg: 70 })
+
+  await logIn(page, me)
+  await page
+    .getByRole('navigation', { name: 'Tabs' })
+    .getByRole('button', { name: 'History' })
+    .click()
+  const history = activePage(page)
+  await history.getByRole('button', { name: 'Previous month' }).click()
+  await expect(history.getByRole('heading', { name: monthTitle(noteDay) })).toBeVisible()
+
+  // the note is listed with its day; a tap opens that day
+  const notes = history.getByRole('region', { name: 'Notes of the month' })
+  await expect(notes).toContainText(noteText)
+  await notes.getByRole('button', { name: new RegExp(noteText) }).click()
+  await expect(history.locator(`button[data-date="${noteDay}"]`)).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  await expect(page).toHaveURL(new RegExp(`/history/${noteDay}`))
+
+  // the Notes chip fades the days without a note, and stays on after opening another day
+  const chips = history.getByRole('group', { name: 'Highlight days' })
+  await chips.getByRole('button', { name: 'Notes', exact: true }).click()
+  await expect(chips.getByRole('button', { name: 'Notes', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  await expect(history.locator(`button[data-date="${plainDay}"]`)).toHaveAttribute(
+    'data-faded',
+    'true',
+  )
+  await expect(history.locator(`button[data-date="${noteDay}"]`)).not.toHaveAttribute(
+    'data-faded',
+    'true',
+  )
+  await history.locator(`button[data-date="${plainDay}"]`).click()
+  await expect(page).toHaveURL(new RegExp(`/history/${plainDay}`))
+  await expect(chips.getByRole('button', { name: 'Notes', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  await expect(history.locator(`button[data-date="${plainDay}"]`)).toHaveAttribute(
+    'data-faded',
+    'true',
+  )
+})

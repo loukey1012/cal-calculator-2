@@ -1,6 +1,8 @@
 import { ApiError } from '../../lib/errors'
 import { supabase } from '../../lib/supabase'
+import { MEAL_TYPES, type MealType } from '../meals/dayModel'
 import type { DayTotal } from './calendar'
+import type { MonthNote } from './monthStats'
 
 /** Totals per day of one person between two local dates (inclusive), from the daily_totals view. */
 export async function fetchDailyTotals(
@@ -32,22 +34,28 @@ export async function fetchDailyTotals(
   }))
 }
 
-/** The days between two local dates (inclusive) that have a day note or a note on a meal. */
-export async function fetchNoteDates(
+const mealOrder = (type: MealType | null) =>
+  type === null ? -1 : MEAL_TYPES.findIndex((meal) => meal.type === type)
+
+/**
+ * The notes (on a day or on a meal) of the days between two local dates (inclusive), by date:
+ * the day's own note first, then its meals' notes in meal order.
+ */
+export async function fetchMonthNotes(
   userId: string,
   first: string,
   last: string,
-): Promise<string[]> {
+): Promise<MonthNote[]> {
   const [dayNotes, meals] = await Promise.all([
     supabase
       .from('day_notes')
-      .select('date')
+      .select('date, note')
       .eq('user_id', userId)
       .gte('date', first)
       .lte('date', last),
     supabase
       .from('meals')
-      .select('date, note')
+      .select('date, meal_type, note')
       .eq('user_id', userId)
       .not('note', 'is', null)
       .gte('date', first)
@@ -55,6 +63,17 @@ export async function fetchNoteDates(
   ])
   if (dayNotes.error) throw ApiError.from(dayNotes.error)
   if (meals.error) throw ApiError.from(meals.error)
-  const withMealNote = meals.data.filter((meal) => meal.note)
-  return [...new Set([...dayNotes.data, ...withMealNote].map((row) => row.date))].toSorted()
+  const notes: MonthNote[] = [
+    ...dayNotes.data.map((row) => ({ date: row.date, mealType: null, text: row.note.trim() })),
+    ...meals.data.map((row) => ({
+      date: row.date,
+      mealType: row.meal_type,
+      text: (row.note ?? '').trim(),
+    })),
+  ]
+  return notes
+    .filter((note) => note.text !== '')
+    .toSorted(
+      (a, b) => a.date.localeCompare(b.date) || mealOrder(a.mealType) - mealOrder(b.mealType),
+    )
 }

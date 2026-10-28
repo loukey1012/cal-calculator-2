@@ -53,6 +53,8 @@ type MonthCalendarProps = {
   readonly selectedDay: string | null
   readonly statusOf: (date: string) => DayStatus
   readonly marksOf: (date: string) => DayMarks
+  /** days that fade, because a filter is on and they don't match it */
+  readonly fadedOf?: (date: string) => boolean
   /** the average calories of the counted days of one week row; null when none counts */
   readonly averageOf: (week: ReadonlyArray<string>) => number | null
   readonly onSelectDay: (date: string) => void
@@ -67,6 +69,7 @@ export function MonthCalendar({
   selectedDay,
   statusOf,
   marksOf,
+  fadedOf,
   averageOf,
   onSelectDay,
   onChangeMonth,
@@ -171,6 +174,7 @@ export function MonthCalendar({
                           today={today}
                           selected={date === selectedDay}
                           status={statusOf(date)}
+                          faded={fadedOf?.(date) === true}
                           {...marksOf(date)}
                           onSelect={selectDay}
                         />
@@ -200,6 +204,7 @@ type DayButtonProps = DayMarks & {
   readonly today: string
   readonly selected: boolean
   readonly status: DayStatus
+  readonly faded: boolean
   readonly onSelect: (date: string) => void
 }
 
@@ -214,6 +219,7 @@ const DayButton = memo(function DayButton({
   today,
   selected,
   status,
+  faded,
   hasNote,
   weighed,
   estimated,
@@ -229,13 +235,14 @@ const DayButton = memo(function DayButton({
       type="button"
       data-date={date}
       data-status={status}
+      data-faded={faded ? 'true' : undefined}
       aria-current={isToday ? 'date' : undefined}
       aria-pressed={selected}
       aria-label={`${isToday ? 'Today, ' : ''}${label}${STATUS_TEXT[status]}${marksText({ hasNote, weighed, estimated })}`}
       // a future day takes no touches itself, so a swipe starting on it still reaches the grid
       disabled={isFuture}
       onClick={() => onSelect(date)}
-      className={`relative mx-auto flex h-9 w-9 items-center justify-center rounded-full text-[15px] font-semibold ${isFuture ? 'pointer-events-none opacity-30' : ''} ${
+      className={`relative mx-auto flex h-9 w-9 items-center justify-center rounded-full text-[15px] font-semibold ${isFuture ? 'pointer-events-none opacity-30' : ''} ${faded ? 'opacity-30' : ''} ${
         // the selected day is filled with the accent color; today is only a ring around its fill
         selected
           ? 'accent-edge bg-accent font-extrabold text-on-accent'

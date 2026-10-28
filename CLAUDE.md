@@ -27,12 +27,19 @@ a cached query changes, give its query key a new version (like `RECIPES_SHAPE` i
 `src/features/recipes/hooks.ts`), so an old copy is ignored instead of crashing the new version.
 Don't bump `CACHE_BUSTER` for that: it would also drop changes still waiting to be sent.
 
-**State (2026-10-27):** items 1–47 are all built and confirmed in daily use (recipes with
-choices, notifications, label reading and the "1 × 1 Packung" fix included); their plans were
-removed, the decisions live in README.md and the code. **Next:** items 48–56 (README ›
-Coming next), planned in `docs/plan-2026-10-27.md`: batches A–G; A, B, C built (54, 52, 51, 50, 49, 55).
-Day counting (`isLeftOut`: cheat day, alcohol day, cheat meal) lives in
-`supabase/functions/_shared/dayCounting.ts`, shared by the app and push-tick. What to know:
+**State (2026-10-28):** items 1–47 built and confirmed. Items 48–56 (README ›
+Coming next) are planned in `docs/plan-2026-10-27.md` (batches A–G, each with its decisions and
+status). **Done and pushed, CI green:** A (54, 52, 51), B (50, 49), C (55, migration on prod), the
+Save button in the day options, D (53 part 1: calendar symbols, key, swipe, hold, status pill).
+The user confirmed A–D and the Save button on the iPhone (the calendar's readability gets changes
+later, when the user brings them). **Now:** E (53 part 2) in two pushes: E1 month summary, filter
+chips, notes list; E2 note search, year overview. Then F (56: sketch the week page FIRST, user wants it), then G (48). Sketch of D:
+https://claude.ai/artifact/Sp4cvXiKk3us9kXNUTrT6g. Working rhythm that worked: `ecc:tdd-guide`
+agents build (in parallel only on separate files), then `ecc:typescript-reviewer` +
+`ecc:react-reviewer` (+ `ecc:database-reviewer`/`ecc:security-reviewer` for SQL) +
+`ecc:e2e-runner` in parallel, one agent fixes the findings, then the final checks and journeys
+run locally before the push. Day counting (`isLeftOut`: cheat day, alcohol day, cheat meal) lives
+in `supabase/functions/_shared/dayCounting.ts`, shared by the app and push-tick. What to know:
 
 - Meal pages: addresses in `src/features/meals/mealPages.ts` (`/today/meal-<meal>-<date>-<person>`,
   `/history/<date>/meal-…`, Add food at `…/food`, Add from recipe at `…/recipes`); every tab is a

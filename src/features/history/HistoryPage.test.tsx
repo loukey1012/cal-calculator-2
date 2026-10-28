@@ -14,7 +14,7 @@ vi.mock('../dishes/dishesApi', () => ({
 }))
 vi.mock('./historyApi', () => ({
   fetchDailyTotals: vi.fn(),
-  fetchNoteDates: vi.fn().mockResolvedValue([]),
+  fetchMonthNotes: vi.fn().mockResolvedValue([]),
 }))
 vi.mock('../weight/weightApi', () => ({
   fetchWeights: vi.fn().mockResolvedValue([{ date: '2026-09-28', weightKg: 72.4 }]),
@@ -51,7 +51,7 @@ vi.mock('../ingredients/ingredientsApi', () => ({
 import { fetchGoals } from '../goals/goalsApi'
 import { fetchMembers } from '../household/householdApi'
 import { addMealItem, fetchDay, fetchDayMark, fetchDayNote } from '../meals/mealsApi'
-import { fetchDailyTotals, fetchNoteDates } from './historyApi'
+import { fetchDailyTotals, fetchMonthNotes } from './historyApi'
 import { fetchWeights } from '../weight/weightApi'
 import { AddFoodSession } from '../addFood/AddFoodSession'
 import { HistoryPage } from './HistoryPage'
@@ -119,8 +119,11 @@ function renderPage(route = '/history') {
   )
 }
 
+const scrollIntoView = vi.fn()
+
 beforeEach(() => {
   vi.clearAllMocks()
+  Element.prototype.scrollIntoView = scrollIntoView
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(new Date(2026, 9, 15, 12, 0))
   vi.mocked(fetchDailyTotals).mockResolvedValue([
@@ -129,7 +132,7 @@ beforeEach(() => {
   ])
   vi.mocked(fetchGoals).mockResolvedValue([GOAL])
   vi.mocked(fetchWeights).mockResolvedValue([{ date: '2026-09-28', weightKg: 72.4 }])
-  vi.mocked(fetchNoteDates).mockResolvedValue([])
+  vi.mocked(fetchMonthNotes).mockResolvedValue([])
   vi.mocked(fetchMembers).mockResolvedValue([PROFILE])
   vi.mocked(fetchDay).mockResolvedValue([
     dayMeal('m1', 'lunch', [mealItem({ id: 'a', name: 'Pasta', kcal: 350, basis_multiplier: 2 })]),
@@ -155,7 +158,9 @@ describe('HistoryPage', () => {
   })
 
   test('marks days with a note, a weigh-in or estimated calories', async () => {
-    vi.mocked(fetchNoteDates).mockResolvedValue(['2026-10-01'])
+    vi.mocked(fetchMonthNotes).mockResolvedValue([
+      { date: '2026-10-01', mealType: null, text: 'Birthday at Oma’s' },
+    ])
     vi.mocked(fetchWeights).mockResolvedValue([{ date: '2026-10-01', weightKg: 72 }])
     vi.mocked(fetchDailyTotals).mockResolvedValue([
       { ...complete('2026-10-01'), kcalEstimated: true },
@@ -169,7 +174,7 @@ describe('HistoryPage', () => {
       }),
     ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'October 2, within goal' })).toBeInTheDocument()
-    expect(fetchNoteDates).toHaveBeenCalledWith('u1', '2026-10-01', '2026-10-31')
+    expect(fetchMonthNotes).toHaveBeenCalledWith('u1', '2026-10-01', '2026-10-31')
   })
 
   test('shows the average of the counted days at the end of each week', async () => {
@@ -362,7 +367,9 @@ describe('HistoryPage', () => {
 
   test('holding a day shows its verdict, calories and note without opening it', async () => {
     vi.mocked(fetchDailyTotals).mockResolvedValue([complete('2026-10-01')])
-    vi.mocked(fetchNoteDates).mockResolvedValue(['2026-10-01'])
+    vi.mocked(fetchMonthNotes).mockResolvedValue([
+      { date: '2026-10-01', mealType: null, text: 'Birthday at Oma’s' },
+    ])
     vi.mocked(fetchDayNote).mockResolvedValue('Birthday at Oma’s')
     renderPage()
     const day = await screen.findByRole('button', { name: /^October 1,.*has a note/ })
@@ -532,5 +539,203 @@ describe('HistoryPage', () => {
       const lunch = await screen.findByRole('button', { name: /Lunch.*Restaurant/ })
       expect(within(lunch).getByTestId('meal-note-dot')).toHaveClass('bg-accent-ink')
     })
+  })
+})
+
+describe('the month below the calendar', () => {
+  test('the summary adds the days within goal, the longest streak and the weight change', async () => {
+    vi.mocked(fetchDailyTotals).mockResolvedValue([
+      complete('2026-10-01'),
+      { ...complete('2026-10-02'), kcal: 2600 },
+      complete('2026-10-03'),
+      complete('2026-10-04'),
+      // left out: neither in the figures nor in the way of the streak
+      { ...complete('2026-10-05'), alcoholDay: true },
+      complete('2026-10-06'),
+    ])
+    vi.mocked(fetchWeights).mockResolvedValue([
+      { date: '2026-09-28', weightKg: 90 },
+      { date: '2026-10-02', weightKg: 80 },
+      { date: '2026-10-12', weightKg: 78.8 },
+    ])
+    renderPage()
+
+    const highlights = await screen.findByTestId('month-highlights')
+    await waitFor(() => expect(highlights).toHaveTextContent('4 of 5 days within goal'))
+    expect(highlights).toHaveTextContent('Longest streak 3 days')
+    expect(highlights).toHaveTextContent('Weight −1.2 kg')
+  })
+
+  test('leaves out the streak and the weight change when there is none', async () => {
+    vi.mocked(fetchDailyTotals).mockResolvedValue([{ ...complete('2026-10-02'), kcal: 2600 }])
+    renderPage()
+
+    const highlights = await screen.findByTestId('month-highlights')
+    await waitFor(() => expect(highlights).toHaveTextContent('0 of 1 day within goal'))
+    expect(highlights).not.toHaveTextContent('streak')
+    expect(highlights).not.toHaveTextContent('Weight')
+  })
+
+  test('a filter fades the days that do not match and survives opening a day', async () => {
+    vi.mocked(fetchDailyTotals).mockResolvedValue([
+      complete('2026-10-01'),
+      { ...complete('2026-10-02'), alcoholDay: true },
+    ])
+    const user = userEvent.setup()
+    renderPage()
+    const alcohol = await screen.findByRole('button', { name: 'Alcohol' })
+    expect(alcohol).toHaveAttribute('aria-pressed', 'false')
+
+    await user.click(alcohol)
+
+    expect(screen.getByRole('button', { name: 'Alcohol' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: /^October 1,/ })).toHaveAttribute(
+      'data-faded',
+      'true',
+    )
+    expect(screen.getByRole('button', { name: /^October 2,/ })).not.toHaveAttribute('data-faded')
+
+    // the page mounts again for another address: the filter rides along
+    await user.click(screen.getByRole('button', { name: /^October 2,/ }))
+    expect(screen.getByTestId('path')).toHaveTextContent('/history/2026-10-02')
+    expect(screen.getByRole('button', { name: 'Alcohol' })).toHaveAttribute('aria-pressed', 'true')
+
+    // one at a time, and tapping the active one clears it
+    await user.click(screen.getByRole('button', { name: 'Notes' }))
+    expect(screen.getByRole('button', { name: 'Alcohol' })).toHaveAttribute('aria-pressed', 'false')
+    await user.click(screen.getByRole('button', { name: 'Notes' }))
+    expect(screen.getByRole('button', { name: 'Notes' })).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByRole('button', { name: /^October 1,/ })).not.toHaveAttribute('data-faded')
+  })
+
+  test('the Notes filter keeps the days with a note', async () => {
+    vi.mocked(fetchDailyTotals).mockResolvedValue([complete('2026-10-01'), complete('2026-10-02')])
+    vi.mocked(fetchMonthNotes).mockResolvedValue([
+      { date: '2026-10-02', mealType: null, text: 'Hike' },
+    ])
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: 'Notes' }))
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /^October 1,/ })).toHaveAttribute('data-faded'),
+    )
+    expect(screen.getByRole('button', { name: /^October 2,/ })).not.toHaveAttribute('data-faded')
+  })
+
+  test('fades nothing for the Notes filter while the notes are loading', async () => {
+    vi.mocked(fetchMonthNotes).mockReturnValue(new Promise(() => {}))
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: 'Notes' }))
+    await screen.findByText(/days? logged/)
+
+    expect(screen.getByRole('button', { name: /^October 1,/ })).not.toHaveAttribute('data-faded')
+  })
+
+  test('fades nothing for a totals filter while the month totals are loading', async () => {
+    vi.mocked(fetchDailyTotals).mockReturnValue(new Promise(() => {}))
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: 'Missing' }))
+
+    expect(screen.getByRole('button', { name: /^October 1\b/ })).not.toHaveAttribute('data-faded')
+  })
+
+  test('shows an error instead of the notes list, and fades nothing, when the notes fail', async () => {
+    vi.mocked(fetchMonthNotes).mockRejectedValue(new Error('boom'))
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: 'Notes' }))
+
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^October 1,/ })).not.toHaveAttribute('data-faded')
+  })
+
+  test('the Cheat filter keeps a day with a cheat meal even when it is an alcohol day', async () => {
+    vi.mocked(fetchDailyTotals).mockResolvedValue([
+      complete('2026-10-01'),
+      { ...complete('2026-10-02'), alcoholDay: true, cheatMeal: true },
+    ])
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: 'Cheat' }))
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /^October 1,/ })).toHaveAttribute('data-faded'),
+    )
+    expect(screen.getByRole('button', { name: /^October 2,/ })).not.toHaveAttribute('data-faded')
+  })
+
+  test('does not fade the open day', async () => {
+    vi.mocked(fetchDailyTotals).mockResolvedValue([complete('2026-10-01'), complete('2026-10-02')])
+    const user = userEvent.setup()
+    renderPage('/history/2026-10-01')
+
+    await user.click(await screen.findByRole('button', { name: 'Alcohol' }))
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /^October 2,/ })).toHaveAttribute('data-faded'),
+    )
+    expect(screen.getByRole('button', { name: /^October 1,/ })).not.toHaveAttribute('data-faded')
+  })
+
+  test('opening a day from outside takes the filter of that navigation, none when absent', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByRole('button', { name: 'Alcohol' }))
+    expect(screen.getByRole('button', { name: 'Alcohol' })).toHaveAttribute('aria-pressed', 'true')
+
+    await user.click(screen.getByRole('button', { name: 'Open partner’s day' }))
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Alcohol' })).toHaveAttribute(
+        'aria-pressed',
+        'false',
+      ),
+    )
+  })
+
+  test('lists the notes of the month and a tap opens that day', async () => {
+    vi.mocked(fetchMonthNotes).mockResolvedValue([
+      { date: '2026-10-12', mealType: null, text: 'Birthday at Oma’s' },
+      { date: '2026-10-12', mealType: 'dinner', text: 'Pizza' },
+    ])
+    const user = userEvent.setup()
+    renderPage()
+
+    const list = await screen.findByRole('region', { name: 'Notes of the month' })
+    expect(within(list).getByText('Birthday at Oma’s')).toBeInTheDocument()
+    expect(within(list).getByText('Dinner · Pizza')).toBeInTheDocument()
+
+    expect(within(list).getByRole('list')).toBeInTheDocument()
+    expect(within(list).getAllByRole('listitem')).toHaveLength(2)
+
+    await user.click(within(list).getByRole('button', { name: /Pizza/ }))
+    expect(screen.getByTestId('path')).toHaveTextContent('/history/2026-10-12')
+    await waitFor(() => expect(scrollIntoView).toHaveBeenCalledTimes(1))
+    expect(scrollIntoView.mock.contexts[0]).toBe(screen.getByRole('region', { name: /October 12/ }))
+
+    // the day is open already: tapping again keeps it open
+    await user.click(
+      within(screen.getByRole('region', { name: 'Notes of the month' })).getByRole('button', {
+        name: /Pizza/,
+      }),
+    )
+    expect(screen.getByTestId('path')).toHaveTextContent('/history/2026-10-12')
+    // and it scrolls to the open day again, as feedback
+    await waitFor(() => expect(scrollIntoView).toHaveBeenCalledTimes(2))
+  })
+
+  test('shows no list without notes', async () => {
+    renderPage()
+
+    await screen.findByTestId('month-summary')
+    expect(screen.queryByRole('region', { name: 'Notes of the month' })).not.toBeInTheDocument()
   })
 })
