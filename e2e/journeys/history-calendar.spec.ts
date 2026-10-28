@@ -151,6 +151,7 @@ test('the Notes tab lists and searches the notes and opens their day; the Notes 
   await backend.household([me])
   const noteDay = previousMonthDay(11)
   const plainDay = previousMonthDay(12)
+  const emptyDay = previousMonthDay(13)
   const noteText = 'Dinner at the lake'
 
   // Arrange: one day with a note, one day with only a weigh-in, in the previous month
@@ -206,7 +207,16 @@ test('the Notes tab lists and searches the notes and opens their day; the Notes 
   await history.locator(`button[data-date="${plainDay}"]`).click()
   await expect(page).toHaveURL(new RegExp(`/history/${plainDay}`))
   await expect(history.getByRole('button', { name: 'Filter: Notes' })).toBeVisible()
+  // the open day never fades; the other days without a note still do
   await expect(history.locator(`button[data-date="${plainDay}"]`)).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  await expect(history.locator(`button[data-date="${plainDay}"]`)).not.toHaveAttribute(
+    'data-faded',
+    'true',
+  )
+  await expect(history.locator(`button[data-date="${emptyDay}"]`)).toHaveAttribute(
     'data-faded',
     'true',
   )
@@ -214,7 +224,7 @@ test('the Notes tab lists and searches the notes and opens their day; the Notes 
   // Clear in the pill removes the filter
   await history.getByRole('button', { name: 'Clear', exact: true }).click()
   await expect(history.getByRole('button', { name: 'Filter', exact: true })).toBeVisible()
-  await expect(history.locator(`button[data-date="${noteDay}"]`)).not.toHaveAttribute(
+  await expect(history.locator(`button[data-date="${emptyDay}"]`)).not.toHaveAttribute(
     'data-faded',
     'true',
   )
