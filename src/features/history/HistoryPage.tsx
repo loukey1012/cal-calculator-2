@@ -73,7 +73,7 @@ function HistoryMonth() {
   const [notesQuery, setNotesQuery] = useState(() => notesQueryOf(location.state))
   const [keyShown, setKeyShown] = useKeyShown()
   const person = people.find((member) => member.id === selectedId) ?? profile
-  const thisWeekDetail = useThisWeekSaved(person.id, today)
+  const thisWeekDetail = useThisWeekSaved(person.id, person.kcal_burned, today)
 
   const requestedDay = DAY_ROUTE.exec(pathname)?.[1]
   // only real days up to today can be opened; anything else shows just the calendar

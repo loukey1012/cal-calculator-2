@@ -27,6 +27,7 @@ const PROFILE = {
   household_id: 'h1',
   display_name: 'Lukas',
   accent_color: '#007aff',
+  kcal_burned: 2600 as number | null,
   appearance: {},
   created_at: '',
   updated_at: '',
@@ -36,7 +37,6 @@ const PARTNER = { ...PROFILE, id: 'u2', display_name: 'baby' }
 const GOAL = {
   validFrom: '2026-10-01',
   kcal: 2000,
-  kcalBurned: 2600,
   proteinG: 100,
   carbsG: null,
   fatG: null,
@@ -127,9 +127,13 @@ function Routed() {
   return week ? <WeekRoute week={week} key={pathname} /> : null
 }
 
-function renderWeek(path: string, state: unknown = { person: 'u1' }) {
+function renderWeek(
+  path: string,
+  state: unknown = { person: 'u1' },
+  profile: typeof PROFILE = PROFILE,
+) {
   return renderWithProviders(
-    <CurrentUserContext value={{ profile: PROFILE, householdId: 'h1' }}>
+    <CurrentUserContext value={{ profile, householdId: 'h1' }}>
       <Routed />
       <LocationProbe />
     </CurrentUserContext>,
@@ -242,27 +246,25 @@ describe('saved card', () => {
   })
 
   test('calls more eaten than burned a surplus', async () => {
-    vi.mocked(fetchGoals).mockResolvedValue([{ ...GOAL, kcalBurned: 1500 }])
-    renderWeek('/history/week-2026-43')
+    renderWeek('/history/week-2026-43', { person: 'u1' }, { ...PROFILE, kcal_burned: 1500 })
 
     const card = await screen.findByRole('region', { name: 'Saved this week' })
     expect(within(card).getByText('1,400 kcal surplus')).toBeInTheDocument()
   })
 
   test('without a burned figure it points to Settings instead of showing numbers', async () => {
-    vi.mocked(fetchGoals).mockResolvedValue([{ ...GOAL, kcalBurned: null }])
-    renderWeek('/history/week-2026-43')
+    renderWeek('/history/week-2026-43', { person: 'u1' }, { ...PROFILE, kcal_burned: null })
 
     const card = await screen.findByRole('region', { name: 'Saved this week' })
     expect(
-      within(card).getByText('Set your calories burned in Settings › Goals to see calories saved'),
+      within(card).getByText('Set your calories burned per day in Settings to see calories saved'),
     ).toBeInTheDocument()
     expect(within(card).queryByText(/Burned/)).not.toBeInTheDocument()
     expect(within(card).queryByText(/saved since/)).not.toBeInTheDocument()
   })
 
   test('the partner sees that nothing is set, not a pointer to their own Settings', async () => {
-    vi.mocked(fetchGoals).mockResolvedValue([{ ...GOAL, kcalBurned: null }])
+    vi.mocked(fetchMembers).mockResolvedValue([PROFILE, { ...PARTNER, kcal_burned: null }])
     renderWeek('/history/week-2026-43', { person: 'u2' })
 
     expect(await screen.findByText('No calories burned are set for baby.')).toBeInTheDocument()
@@ -302,19 +304,12 @@ describe('saved card', () => {
     ).toBeInTheDocument()
   })
 
-  test('says how many counted days have no calories burned', async () => {
-    vi.mocked(fetchGoals).mockResolvedValue([
-      { ...GOAL, validFrom: '2026-10-01', kcalBurned: null },
-      { ...GOAL, validFrom: '2026-10-21', kcalBurned: 2600 },
-    ])
-    renderWeek('/history/week-2026-43')
+  test('the partner’s week uses the partner’s own figure', async () => {
+    vi.mocked(fetchMembers).mockResolvedValue([PROFILE, { ...PARTNER, kcal_burned: 2000 }])
+    renderWeek('/history/week-2026-43', { person: 'u2' })
 
     const card = await screen.findByRole('region', { name: 'Saved this week' })
-    expect(
-      within(card).getByText(
-        'Burned 2,600 · ate 2,100 · 1 of 3 counted days (2 without calories burned)',
-      ),
-    ).toBeInTheDocument()
+    expect(within(card).getByText('Burned 6,000 · ate 5,900 · 3 counted days')).toBeInTheDocument()
   })
 
   test('a past week has no days left', async () => {

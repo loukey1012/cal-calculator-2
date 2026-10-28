@@ -25,7 +25,6 @@ const GOAL: Goal = {
   proteinG: 120,
   carbsG: null,
   fatG: null,
-  kcalBurned: null,
   fiberG: null,
   weightGoalKg: 68,
 }

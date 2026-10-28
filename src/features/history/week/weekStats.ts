@@ -28,10 +28,8 @@ export type SavedKcal = {
   readonly saved: number
   readonly burned: number
   readonly eaten: number
-  /** the counted days the figure is made of (those whose goal sets a burned figure) */
+  /** the counted days the figure is made of */
   readonly days: number
-  /** all counted days; more than `days` when some have no burned figure */
-  readonly counted: number
 }
 
 export function countedOf<T extends DayTotal>(days: readonly T[], today: string): T[] {
@@ -39,23 +37,19 @@ export function countedOf<T extends DayTotal>(days: readonly T[], today: string)
 }
 
 /**
- * Over the counted days: what the goal valid that day says was burned, minus what was eaten.
- * A counted day whose goal has no burned figure is left out; null when no day is left.
+ * Over the counted days: the person's calories burned per day (one figure for every day) minus
+ * what was eaten. Null when no figure is set or no day counts.
  */
 export function savedKcal(
   days: readonly DayTotal[],
-  goals: readonly Goal[],
+  kcalBurned: number | null,
   today: string,
 ): SavedKcal | null {
   const counted = countedOf(days, today)
-  const figures = counted.flatMap((day) => {
-    const burned = goalForDate(goals, day.date)?.kcalBurned
-    return burned === null || burned === undefined ? [] : [{ burned, eaten: toWholeKcal(day.kcal) }]
-  })
-  if (figures.length === 0) return null
-  const burned = figures.reduce((sum, figure) => sum + figure.burned, 0)
-  const eaten = figures.reduce((sum, figure) => sum + figure.eaten, 0)
-  return { saved: burned - eaten, burned, eaten, days: figures.length, counted: counted.length }
+  if (kcalBurned == null || counted.length === 0) return null
+  const burned = kcalBurned * counted.length
+  const eaten = counted.reduce((sum, day) => sum + toWholeKcal(day.kcal), 0)
+  return { saved: burned - eaten, burned, eaten, days: counted.length }
 }
 
 export type DailyBudget = {

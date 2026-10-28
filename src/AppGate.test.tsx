@@ -67,6 +67,7 @@ const PROFILE = {
   household_id: null,
   display_name: 'Lukas',
   accent_color: '#007aff',
+  kcal_burned: null,
   appearance: {},
   created_at: '',
   updated_at: '',

@@ -811,6 +811,7 @@ export type Database = {
           display_name: string
           household_id: string | null
           id: string
+          kcal_burned: number | null
           updated_at: string
         }
         Insert: {
@@ -820,6 +821,7 @@ export type Database = {
           display_name?: string
           household_id?: string | null
           id: string
+          kcal_burned?: number | null
           updated_at?: string
         }
         Update: {
@@ -829,6 +831,7 @@ export type Database = {
           display_name?: string
           household_id?: string | null
           id?: string
+          kcal_burned?: number | null
           updated_at?: string
         }
         Relationships: [

@@ -283,6 +283,54 @@ describe('goals', () => {
     expect(stillSet.data).toEqual({ kcal_burned: 2600 })
   })
 
+  test('calories burned is a per-person profile setting: optional, more than 0, own to change', async () => {
+    const set = await alice.client
+      .from('profiles')
+      .update({ kcal_burned: 2600 })
+      .eq('id', alice.id)
+      .select('kcal_burned')
+      .single()
+    const zero = await alice.client.from('profiles').update({ kcal_burned: 0 }).eq('id', alice.id)
+    const negative = await alice.client
+      .from('profiles')
+      .update({ kcal_burned: -100 })
+      .eq('id', alice.id)
+    const partnerSees = await bob.client
+      .from('profiles')
+      .select('kcal_burned')
+      .eq('id', alice.id)
+      .single()
+    const outsiderSees = await carol.client
+      .from('profiles')
+      .select('kcal_burned')
+      .eq('id', alice.id)
+    const partnerWrites = await bob.client
+      .from('profiles')
+      .update({ kcal_burned: 1 })
+      .eq('id', alice.id)
+      .select()
+    const stillSet = await alice.client
+      .from('profiles')
+      .select('kcal_burned')
+      .eq('id', alice.id)
+      .single()
+    const cleared = await alice.client
+      .from('profiles')
+      .update({ kcal_burned: null })
+      .eq('id', alice.id)
+      .select('kcal_burned')
+      .single()
+
+    expect(set.data).toEqual({ kcal_burned: 2600 })
+    expect(zero.error?.code).toBe('23514')
+    expect(negative.error?.code).toBe('23514')
+    expect(partnerSees.data).toEqual({ kcal_burned: 2600 })
+    expect(outsiderSees.data).toEqual([])
+    expect(partnerWrites.data ?? []).toEqual([])
+    expect(stillSet.data).toEqual({ kcal_burned: 2600 })
+    expect(cleared.data).toEqual({ kcal_burned: null })
+  })
+
   test('nobody can set goals for another user', async () => {
     const { error } = await bob.client
       .from('goal_history')

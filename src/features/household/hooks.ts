@@ -16,10 +16,29 @@ import {
   type Profile,
   type ProfilePatch,
 } from './householdApi'
-import { householdKeys, PROFILE_QUERY_PREFIX } from './queryKeys'
+import { householdKeys, legacyHouseholdKeys, PROFILE_QUERY_PREFIX } from './queryKeys'
+
+const withKcalBurned = (profile: Profile): Profile => ({
+  ...profile,
+  kcal_burned: profile.kcal_burned ?? null,
+})
+
+// An app just updated without a connection still opens: the copy the previous version cached
+// stands in (calories burned not set) until the current profile can be fetched (it counts as
+// stale at once).
+const FETCH_AT_ONCE = 0
 
 export function useProfile(userId: string): UseQueryResult<Profile> {
-  return useQuery({ queryKey: householdKeys.profile(userId), queryFn: () => fetchProfile(userId) })
+  const queryClient = useQueryClient()
+  return useQuery({
+    queryKey: householdKeys.profile(userId),
+    queryFn: () => fetchProfile(userId),
+    initialData: () => {
+      const old = queryClient.getQueryData<Profile>(legacyHouseholdKeys.profile(userId))
+      return old && withKcalBurned(old)
+    },
+    initialDataUpdatedAt: FETCH_AT_ONCE,
+  })
 }
 
 export function useHousehold(householdId: string): UseQueryResult<Household> {
@@ -30,9 +49,15 @@ export function useHousehold(householdId: string): UseQueryResult<Household> {
 }
 
 export function useMembers(householdId: string): UseQueryResult<Profile[]> {
+  const queryClient = useQueryClient()
   return useQuery({
     queryKey: householdKeys.members(householdId),
     queryFn: () => fetchMembers(householdId),
+    initialData: () =>
+      queryClient
+        .getQueryData<Profile[]>(legacyHouseholdKeys.members(householdId))
+        ?.map(withKcalBurned),
+    initialDataUpdatedAt: FETCH_AT_ONCE,
   })
 }
 

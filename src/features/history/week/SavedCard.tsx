@@ -7,9 +7,9 @@ import { formatSaved, plural } from './weekFormat'
 import type { DailyBudget, SavedKcal } from './weekStats'
 
 type SavedCardProps = {
-  /** this week's figure; null when no counted day has a burned figure */
+  /** this week's figure; null when the person has no calories burned set or no day counts */
   readonly saved: SavedKcal | null
-  /** some goal of the person sets calories burned */
+  /** the person has set their calories burned per day */
   readonly hasBurned: boolean
   readonly personName: string
   readonly isOwn: boolean
@@ -46,7 +46,7 @@ export function SavedCard({
             {formatSaved(saved.saved)}
           </p>
           <p className="mt-1 text-[14px] text-label-secondary">
-            {`Burned ${formatKcal(saved.burned)} · ate ${formatKcal(saved.eaten)} · ${countedDaysOf(saved)}`}
+            {`Burned ${formatKcal(saved.burned)} · ate ${formatKcal(saved.eaten)} · ${plural(saved.days, 'counted day', 'counted days')}`}
           </p>
         </>
       ) : (
@@ -54,7 +54,7 @@ export function SavedCard({
           {hasBurned
             ? 'No counted days to add up yet.'
             : isOwn
-              ? 'Set your calories burned in Settings › Goals to see calories saved'
+              ? 'Set your calories burned per day in Settings to see calories saved'
               : `No calories burned are set for ${personName}.`}
         </p>
       )}
@@ -68,12 +68,6 @@ export function SavedCard({
       {isRunning && budget && <BudgetLines budget={budget} />}
     </section>
   )
-}
-
-/** "3 counted days", or "3 of 5 counted days (2 without calories burned)" when some lack the figure. */
-function countedDaysOf({ days, counted }: SavedKcal): string {
-  if (counted <= days) return plural(days, 'counted day', 'counted days')
-  return `${days} of ${counted} counted days (${counted - days} without calories burned)`
 }
 
 function BudgetLines({ budget }: { readonly budget: DailyBudget }) {

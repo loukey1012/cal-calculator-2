@@ -17,6 +17,7 @@ function profile(id: string, name: string, accent = '#007aff'): Profile {
     household_id: 'h1',
     display_name: name,
     accent_color: accent,
+    kcal_burned: null,
     appearance: {},
     created_at: '',
     updated_at: '',

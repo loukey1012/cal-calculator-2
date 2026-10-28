@@ -11,6 +11,7 @@ function profile(id: string, name: string, appearance: Profile['appearance'] = {
     household_id: 'h1',
     display_name: name,
     accent_color: '#007aff',
+    kcal_burned: null,
     appearance,
     created_at: '',
     updated_at: '',

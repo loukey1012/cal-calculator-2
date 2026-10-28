@@ -8,7 +8,6 @@ const GOAL: Goal = {
   proteinG: null,
   carbsG: null,
   fatG: null,
-  kcalBurned: null,
   fiberG: null,
   weightGoalKg: null,
 }

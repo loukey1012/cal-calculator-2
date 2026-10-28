@@ -22,7 +22,6 @@ const STATUS: DayStatusInput = {
     proteinG: null,
     carbsG: null,
     fatG: null,
-    kcalBurned: null,
     fiberG: null,
     weightGoalKg: null,
   },

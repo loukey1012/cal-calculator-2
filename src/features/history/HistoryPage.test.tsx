@@ -66,6 +66,7 @@ const PROFILE = {
   household_id: 'h1',
   display_name: 'Lukas',
   accent_color: '#007aff',
+  kcal_burned: null as number | null,
   appearance: {},
   created_at: '',
   updated_at: '',
@@ -90,7 +91,6 @@ const GOAL = {
   proteinG: null,
   carbsG: null,
   fatG: null,
-  kcalBurned: null,
   fiberG: null,
   weightGoalKg: null,
 }
@@ -125,9 +125,9 @@ function KeyedByPath({ children }: { readonly children: ReactNode }) {
   return <Fragment key={useLocation().pathname}>{children}</Fragment>
 }
 
-function renderPage(route = '/history') {
+function renderPage(route = '/history', profile: typeof PROFILE = PROFILE) {
   return renderWithProviders(
-    <CurrentUserContext value={{ profile: PROFILE, householdId: 'h1' }}>
+    <CurrentUserContext value={{ profile, householdId: 'h1' }}>
       <AddFoodSession>
         <KeyedByPath>
           <HistoryPage />
@@ -219,7 +219,7 @@ describe('HistoryPage', () => {
   })
 
   describe('the saved figure at the end of a week', () => {
-    const BURNING = { ...GOAL, kcalBurned: 2600 }
+    const BURNING = { ...PROFILE, kcal_burned: 2600 }
     const days = [complete('2026-10-01'), complete('2026-10-02'), complete('2026-10-05')]
     const serve = (failEdges = false) =>
       vi.mocked(fetchDailyTotals).mockImplementation(async (_userId, first, last) => {
@@ -228,9 +228,8 @@ describe('HistoryPage', () => {
       })
 
     test('is burned minus eaten over the counted days of the row', async () => {
-      vi.mocked(fetchGoals).mockResolvedValue([BURNING])
       serve()
-      renderPage()
+      renderPage('/history', BURNING)
 
       // Oct 1 and 2 (the first row), Oct 5 (the second)
       await waitFor(() =>
@@ -242,9 +241,8 @@ describe('HistoryPage', () => {
     })
 
     test('is left out of a row across two months when the other month’s days failed to load', async () => {
-      vi.mocked(fetchGoals).mockResolvedValue([BURNING])
       serve(true)
-      renderPage()
+      renderPage('/history', BURNING)
 
       await waitFor(() =>
         expect(screen.getAllByTestId('week-saved').map((cell) => cell.textContent)).toEqual([
@@ -255,40 +253,13 @@ describe('HistoryPage', () => {
       expect(screen.getAllByTestId('week-average')[0]).toHaveTextContent(/^$/)
     })
 
-    test('is left out when the goals failed to load', async () => {
-      vi.mocked(fetchGoals).mockRejectedValue(new Error('offline'))
-      serve()
-      renderPage()
-
-      await waitFor(() =>
-        expect(screen.getAllByTestId('week-average').map((cell) => cell.textContent)).toContain(
-          '1,800',
-        ),
-      )
-      expect(screen.queryAllByTestId('week-saved')).toHaveLength(0)
-    })
-
-    test('is left out while the goals load', async () => {
-      vi.mocked(fetchGoals).mockReturnValue(new Promise(() => {}))
-      serve()
-      renderPage()
-
-      await waitFor(() =>
-        expect(screen.getAllByTestId('week-average').map((cell) => cell.textContent)).toContain(
-          '1,800',
-        ),
-      )
-      expect(screen.queryAllByTestId('week-saved')).toHaveLength(0)
-    })
-
     test('is left out of the first row while the other month’s days load', async () => {
-      vi.mocked(fetchGoals).mockResolvedValue([BURNING])
       vi.mocked(fetchDailyTotals).mockImplementation(async (_userId, first, last) =>
         first < '2026-10-01'
           ? new Promise(() => {})
           : days.filter((day) => day.date >= first && day.date <= last),
       )
-      renderPage()
+      renderPage('/history', BURNING)
 
       await waitFor(() =>
         expect(screen.getAllByTestId('week-saved').map((cell) => cell.textContent)).toEqual([
@@ -1211,16 +1182,15 @@ describe('the year overview', () => {
 })
 
 describe('HistoryPage weeks', () => {
-  const BURNING = { ...GOAL, kcalBurned: 2500 }
+  const BURNING = { ...PROFILE, kcal_burned: 2500 }
 
   test('shows the calories saved under each week average', async () => {
-    vi.mocked(fetchGoals).mockResolvedValue([BURNING])
     vi.mocked(fetchDailyTotals).mockResolvedValue([
       complete('2026-10-01'),
       complete('2026-10-02'),
       { ...complete('2026-10-03'), cheatDay: true },
     ])
-    renderPage()
+    renderPage('/history', BURNING)
 
     // two counted days: 2 × (2,500 − 1,800); the cheat day is not part of it
     await waitFor(() => expect(screen.getByTestId('week-saved')).toHaveTextContent('−1,400'))
@@ -1237,8 +1207,7 @@ describe('HistoryPage weeks', () => {
 
   test('the week button opens the week page, and Back returns to the same month', async () => {
     const user = userEvent.setup()
-    vi.mocked(fetchGoals).mockResolvedValue([BURNING])
-    renderPage()
+    renderPage('/history', BURNING)
     await user.click(await screen.findByRole('button', { name: 'Previous month' }))
     await screen.findByRole('heading', { name: /September 2026/ })
 
@@ -1269,14 +1238,13 @@ describe('HistoryPage weeks', () => {
 
   test('Calendar options › This week opens the running week, with what it saved so far', async () => {
     const user = userEvent.setup()
-    vi.mocked(fetchGoals).mockResolvedValue([BURNING])
     vi.mocked(fetchWeekData).mockResolvedValue({
       days: [{ ...complete('2026-10-13'), carbs: 0, fat: 0, fiber: 0 }],
       meals: [],
       foods: [],
       notes: [],
     })
-    renderPage()
+    renderPage('/history', BURNING)
 
     await user.click(await screen.findByRole('button', { name: 'Calendar options' }))
     const row = await within(screen.getByRole('dialog')).findByRole('button', {

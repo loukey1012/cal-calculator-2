@@ -10,7 +10,7 @@ import type { GoalInput } from './goalForm'
 import { fetchGoals, saveGoal } from './goalsApi'
 
 // Bump when the cached goals change shape, so an old copy on the phone is ignored.
-const GOALS_SHAPE = 'v2'
+const GOALS_SHAPE = 'v3'
 
 export const goalKeys = {
   goals: (userId: string) => ['goals', GOALS_SHAPE, userId] as const,
@@ -20,7 +20,6 @@ export const goalKeys = {
 function withAllTargets(goal: Goal): Goal {
   return {
     ...goal,
-    kcalBurned: goal.kcalBurned ?? null,
     fiberG: goal.fiberG ?? null,
     weightGoalKg: goal.weightGoalKg ?? null,
   }

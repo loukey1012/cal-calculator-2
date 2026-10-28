@@ -30,6 +30,14 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-28T15:25',
+    kind: 'new',
+    title: 'Calories burned is one setting',
+    items: [
+      'Calories burned per day is now a single setting in Settings › Goals (“Calories burned per day”), no longer part of the daily goal; it applies to every day, also past weeks. The value you had is kept',
+    ],
+  },
+  {
     at: '2026-10-28T14:55',
     kind: 'new',
     title: 'Calories burned and the week page',

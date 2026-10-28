@@ -22,14 +22,14 @@ test('the week page adds up the calories saved over the counted days, opens from
   const tuesday = dateString(lastWeekDay(1))
   const cheatDay = dateString(lastWeekDay(2))
 
-  // Arrange: a goal that says 2,500 kcal burned a day, two complete days (1,800 and 2,000 kcal)
+  // Arrange: 2,500 kcal burned a day (a profile setting), a goal, two complete days (1,800 and 2,000 kcal)
   // and a cheat day with a lot of food, which must not take part in any figure
   await backend.admin.from('goal_history').insert({
     user_id: me.id,
     valid_from: dateString(lastWeekDay(-14)),
     kcal: 2000,
-    kcal_burned: 2500,
   })
+  await backend.admin.from('profiles').update({ kcal_burned: 2500 }).eq('id', me.id)
   const seeded: ReadonlyArray<readonly [string, number, number]> = [
     [monday, 800, 1000],
     [tuesday, 1000, 1000],

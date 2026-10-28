@@ -90,6 +90,7 @@ export function WeekRoute({ week }: { readonly week: IsoWeek }) {
             <WeekBody
               data={data.data}
               goals={goals.data}
+              kcalBurned={person.kcal_burned}
               dates={weekDatesOf(isoWeekOf(data.shown.first))}
               today={today}
               person={{ name: lookOf(person).name, isOwn: person.id === profile.id }}
@@ -118,6 +119,8 @@ type WeekBodyProps = {
   readonly data: NonNullable<ReturnType<typeof useWeekData>['data']>
   /** undefined when they could not be read: the parts that depend on them are left out */
   readonly goals: ReturnType<typeof useGoals>['data']
+  /** the person's calories burned per day */
+  readonly kcalBurned: number | null
   readonly dates: readonly string[]
   readonly today: string
   readonly person: { readonly name: string; readonly isOwn: boolean }
@@ -131,6 +134,7 @@ type WeekBodyProps = {
 function WeekBody({
   data,
   goals: knownGoals,
+  kcalBurned,
   dates,
   today,
   person,
@@ -138,7 +142,7 @@ function WeekBody({
   onOpenDay,
 }: WeekBodyProps) {
   const goals = knownGoals ?? []
-  const figures = weekFigures(data, goals, today, dates)
+  const figures = weekFigures(data, goals, kcalBurned, today, dates)
   if (!figures.hasFood && data.notes.length === 0) {
     return (
       <EmptyState
@@ -148,13 +152,13 @@ function WeekBody({
     )
   }
   const total =
-    sinceStart.totals === undefined ? undefined : savedKcal(sinceStart.totals, goals, today)
+    sinceStart.totals === undefined ? undefined : savedKcal(sinceStart.totals, kcalBurned, today)
   return (
     <>
       {knownGoals && (
         <SavedCard
           saved={figures.saved}
-          hasBurned={goals.some((goal) => goal.kcalBurned !== null)}
+          hasBurned={kcalBurned != null}
           personName={person.name}
           isOwn={person.isOwn}
           isRunning={figures.isRunning}

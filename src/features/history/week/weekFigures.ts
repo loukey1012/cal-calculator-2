@@ -19,6 +19,7 @@ const TOP_FOODS = 5
 export function weekFigures(
   data: WeekData,
   goals: readonly Goal[],
+  kcalBurned: number | null,
   today: string,
   dates: readonly string[],
 ) {
@@ -29,7 +30,7 @@ export function weekFigures(
     counted,
     isRunning: dates.includes(today),
     hasFood: data.days.some((day) => day.mealCount > 0),
-    saved: savedKcal(data.days, goals, today),
+    saved: savedKcal(data.days, kcalBurned, today),
     budget: dailyBudget(data.days, goals, today, dates),
     averages: weekAverages(counted, goals),
     within: withinGoal(counted, goals, today),

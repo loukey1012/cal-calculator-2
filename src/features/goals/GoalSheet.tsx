@@ -14,7 +14,6 @@ const FORM_ID = 'goal-form'
 
 const ROWS: ReadonlyArray<{ field: keyof GoalFormValues; label: string; suffix: string }> = [
   { field: 'kcal', label: 'Calories', suffix: 'kcal' },
-  { field: 'kcalBurned', label: 'Calories burned per day', suffix: 'kcal' },
   { field: 'protein', label: 'Protein', suffix: 'g' },
   { field: 'carbs', label: 'Carbs', suffix: 'g' },
   { field: 'fat', label: 'Fat', suffix: 'g' },
@@ -83,7 +82,7 @@ function GoalForm({ initialValues, onSubmit }: GoalFormProps) {
 
   return (
     <form id={FORM_ID} noValidate onSubmit={handleSubmit}>
-      <GroupedSection footer="Only calories are required. Calories burned is your total daily energy use, used for calories saved. Applies from today on; past days keep the goal they had.">
+      <GroupedSection footer="Only calories are required. Applies from today on; past days keep the goal they had.">
         {ROWS.map(({ field, label, suffix }) => (
           <InputRow
             key={field}

@@ -51,7 +51,7 @@ const settle = () => act(() => vi.advanceTimersByTimeAsync(0))
 async function setup() {
   const queryClient = new QueryClient()
   queryClient.setQueryData(['day', PARTNER, DAY], [])
-  queryClient.setQueryData(['goals', 'v2', ME], [])
+  queryClient.setQueryData(['goals', 'v3', ME], [])
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   )
@@ -93,7 +93,7 @@ describe('useLiveUpdates', async () => {
     expect(isStale(['day', PARTNER, DAY])).toBe(false)
     act(() => vi.advanceTimersByTime(BATCH_DELAY_MS))
     expect(isStale(['day', PARTNER, DAY])).toBe(true)
-    expect(isStale(['goals', 'v2', ME])).toBe(false)
+    expect(isStale(['goals', 'v3', ME])).toBe(false)
   })
 
   test('malformed messages are ignored', async () => {
@@ -145,7 +145,7 @@ describe('useLiveUpdates', async () => {
     // Arrange: connected, then the app was in the background
     const { isStale } = await setup()
     act(() => current().handlers.onConnected())
-    expect(isStale(['goals', 'v2', ME])).toBe(false)
+    expect(isStale(['goals', 'v3', ME])).toBe(false)
     await setVisibility('hidden')
     await setVisibility('visible')
 
@@ -154,7 +154,7 @@ describe('useLiveUpdates', async () => {
     act(() => vi.advanceTimersByTime(BATCH_DELAY_MS))
 
     // Assert
-    expect(isStale(['goals', 'v2', ME])).toBe(true)
+    expect(isStale(['goals', 'v3', ME])).toBe(true)
     expect(isStale(['day', PARTNER, DAY])).toBe(true)
   })
 
@@ -164,7 +164,7 @@ describe('useLiveUpdates', async () => {
     act(() => current().handlers.onConnected())
     act(() => vi.advanceTimersByTime(BATCH_DELAY_MS))
 
-    expect(isStale(['goals', 'v2', ME])).toBe(false)
+    expect(isStale(['goals', 'v3', ME])).toBe(false)
   })
 
   test('a quick hide and show opens the new channel only once the old one has left', async () => {
@@ -205,7 +205,7 @@ describe('useLiveUpdates', async () => {
     act(() => current().handlers.onHint({ table: 'goal_history', user_id: ME, actor: ME }))
     act(() => vi.advanceTimersByTime(BATCH_DELAY_MS))
 
-    expect(isStale(['goals', 'v2', ME])).toBe(true)
+    expect(isStale(['goals', 'v3', ME])).toBe(true)
   })
 
   test('signing out closes the channel', async () => {

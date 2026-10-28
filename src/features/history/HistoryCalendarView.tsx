@@ -91,7 +91,7 @@ function HistoryMonthView({
   const byDateInWeeks = new Map(
     [...(edgeTotals.data ?? []), ...(totals.data ?? [])].map((total) => [total.date, total]),
   )
-  // a row's figures need every day of it: its other month's days too, and (saved) the goals
+  // a row's figures need every day of it: its other month's days too,
   const monthPrefix = month.slice(0, MONTH_PREFIX_LENGTH)
   const rowReady = (week: ReadonlyArray<string>) =>
     totals.data !== undefined &&
@@ -124,10 +124,10 @@ function HistoryMonthView({
         fadedOf={fadedOf}
         averageOf={(week) => (rowReady(week) ? weekAverageKcal(week, byDateInWeeks, today) : null)}
         savedOf={(week) =>
-          rowReady(week) && goals.data !== undefined
+          rowReady(week)
             ? (savedKcal(
                 week.flatMap((day) => byDateInWeeks.get(day) ?? []),
-                goals.data,
+                person.kcal_burned,
                 today,
               )?.saved ?? null)
             : null

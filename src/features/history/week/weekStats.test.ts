@@ -35,7 +35,6 @@ const PAST_WEEK = [
 const GOAL: Goal = {
   validFrom: '2026-10-01',
   kcal: 2000,
-  kcalBurned: 2500,
   proteinG: 100,
   carbsG: null,
   fatG: 70,
@@ -62,25 +61,26 @@ function day(date: string, kcal: number, overrides: Partial<WeekDay> = {}): Week
   }
 }
 
+const BURNED = 2500
+
 describe('savedKcal', () => {
   test('sums burned minus eaten over counted days', () => {
     const days = [day('2026-10-19', 2000), day('2026-10-20', 1800), day('2026-10-21', 2600)]
 
-    expect(savedKcal(days, [GOAL], TODAY)).toEqual({
+    expect(savedKcal(days, BURNED, TODAY)).toEqual({
       saved: 500 + 700 - 100,
       burned: 7500,
       eaten: 6400,
       days: 3,
-      counted: 3,
     })
   })
 
   test('a surplus is negative', () => {
-    expect(savedKcal([day('2026-10-19', 3700)], [GOAL], TODAY)?.saved).toBe(-1200)
+    expect(savedKcal([day('2026-10-19', 3700)], BURNED, TODAY)?.saved).toBe(-1200)
   })
 
   test('rounds each day up like the displayed calories', () => {
-    expect(savedKcal([day('2026-10-19', 1999.2)], [GOAL], TODAY)?.eaten).toBe(2000)
+    expect(savedKcal([day('2026-10-19', 1999.2)], BURNED, TODAY)?.eaten).toBe(2000)
   })
 
   test('never takes cheat days, alcohol days, cheat meals, missing meals or today', () => {
@@ -95,48 +95,24 @@ describe('savedKcal', () => {
       day(TODAY, 900),
     ]
 
-    expect(savedKcal(days, [GOAL], TODAY)).toEqual({
+    expect(savedKcal(days, BURNED, TODAY)).toEqual({
       saved: 500,
       burned: 2500,
       eaten: 2000,
       days: 1,
-      counted: 1,
     })
   })
 
-  test('a counted day whose goal has no burned figure is left out', () => {
-    const old: Goal = { ...GOAL, validFrom: '2026-09-01', kcalBurned: null }
-    const days = [day('2026-09-30', 2000), day('2026-10-02', 2000)]
+  test('the one figure holds for every day, however far back', () => {
+    const days = [day('2025-12-01', 2000), day('2026-10-20', 2000)]
 
-    expect(savedKcal(days, [old, GOAL], TODAY)).toEqual({
-      saved: 500,
-      burned: 2500,
-      eaten: 2000,
-      days: 1,
-      counted: 2,
-    })
+    expect(savedKcal(days, 3000, TODAY)).toMatchObject({ burned: 6000, days: 2 })
   })
 
-  test('uses the goal that was valid on each day', () => {
-    const later: Goal = { ...GOAL, validFrom: '2026-10-20', kcalBurned: 3000 }
-    const days = [day('2026-10-19', 2000), day('2026-10-20', 2000)]
-
-    expect(savedKcal(days, [GOAL, later], TODAY)?.burned).toBe(5500)
-  })
-
-  test('says how many counted days had no burned figure', () => {
-    const noBurned = { ...GOAL, validFrom: '2026-10-01', kcalBurned: null }
-    const burned = { ...GOAL, validFrom: '2026-10-21' }
-    const days = [day('2026-10-19', 2000), day('2026-10-20', 1800), day('2026-10-21', 2100)]
-
-    expect(savedKcal(days, [noBurned, burned], TODAY)).toMatchObject({ days: 1, counted: 3 })
-  })
-
-  test('is null when nothing counts or nothing is burned', () => {
-    expect(savedKcal([], [GOAL], TODAY)).toBeNull()
-    expect(savedKcal([day('2026-10-19', 2000)], [], TODAY)).toBeNull()
-    expect(savedKcal([day('2026-10-19', 2000)], [{ ...GOAL, kcalBurned: null }], TODAY)).toBeNull()
-    expect(savedKcal([day('2026-10-20', 1, { cheatDay: true })], [GOAL], TODAY)).toBeNull()
+  test('is null when nothing counts or no figure is set', () => {
+    expect(savedKcal([], BURNED, TODAY)).toBeNull()
+    expect(savedKcal([day('2026-10-19', 2000)], null, TODAY)).toBeNull()
+    expect(savedKcal([day('2026-10-20', 1, { cheatDay: true })], BURNED, TODAY)).toBeNull()
   })
 })
 

@@ -11,8 +11,6 @@ const MAX_GRAMS = 99_999.9
 
 export type GoalFormValues = {
   readonly kcal: string
-  /** calories burned per day */
-  readonly kcalBurned: string
   readonly protein: string
   readonly carbs: string
   readonly fat: string
@@ -23,7 +21,6 @@ export type GoalFormValues = {
 
 export const EMPTY_GOAL_FORM: GoalFormValues = {
   kcal: '',
-  kcalBurned: '',
   protein: '',
   carbs: '',
   fat: '',
@@ -69,27 +66,8 @@ const kcal = z.string().transform((raw, ctx) => {
   return toWholeKcal(value)
 })
 
-const kcalBurned = z.string().transform((raw, ctx) => {
-  if (raw.trim() === '') return null
-  const value = parseDecimal(raw)
-  const problem =
-    value === null
-      ? 'Enter a number'
-      : value <= 0
-        ? 'Must be more than 0'
-        : value > MAX_KCAL
-          ? 'Too large'
-          : null
-  if (problem !== null || value === null) {
-    ctx.addIssue({ code: 'custom', message: problem ?? 'Enter a number' })
-    return z.NEVER
-  }
-  return toWholeKcal(value)
-})
-
 const goalFormSchema = z.object({
   kcal,
-  kcalBurned,
   protein: grams(),
   carbs: grams(),
   fat: grams(),
@@ -113,7 +91,6 @@ export function parseGoalForm(values: GoalFormValues): GoalFormResult {
     success: true,
     data: {
       kcal: result.data.kcal,
-      kcalBurned: result.data.kcalBurned,
       proteinG: protein,
       carbsG: carbs,
       fatG: fat,
@@ -129,7 +106,6 @@ export function toGoalFormValues(goal: Goal | null): GoalFormValues {
   if (!goal) return EMPTY_GOAL_FORM
   return {
     kcal: String(goal.kcal),
-    kcalBurned: asText(goal.kcalBurned),
     protein: asText(goal.proteinG),
     carbs: asText(goal.carbsG),
     fat: asText(goal.fatG),

@@ -16,6 +16,8 @@ import { CategoriesPage } from '../categories/CategoriesPage'
 import { useSignOut } from '../auth/useSignOut'
 import { describeGoal } from '../goals/goalForm'
 import { GoalSheet } from '../goals/GoalSheet'
+import { describeKcalBurned } from '../goals/kcalBurned'
+import { KcalBurnedSheet } from '../goals/KcalBurnedSheet'
 import { useGoals } from '../goals/hooks'
 import { useHousehold, useMembers } from '../household/hooks'
 import { OWN_LOOK_PATH, OwnLookPage } from '../household/OwnLookPage'
@@ -68,6 +70,7 @@ function SettingsOverview() {
   const [copied, setCopied] = useState(false)
   const [shareError, setShareError] = useState<string | null>(null)
   const [editingGoal, setEditingGoal] = useState(false)
+  const [editingBurned, setEditingBurned] = useState(false)
   const today = useToday()
   const goals = useGoals(profile.id)
   const currentGoal = goalForDate(goals.data ?? [], today)
@@ -109,6 +112,11 @@ function SettingsOverview() {
           detail={goalDetail(goals.isPending, goals.data === undefined, currentGoal)}
           onClick={() => setEditingGoal(true)}
         />
+        <ListRow
+          title="Calories burned per day"
+          detail={describeKcalBurned(profile.kcal_burned)}
+          onClick={() => setEditingBurned(true)}
+        />
       </GroupedSection>
       <GroupedSection header="Data">
         <ListRow title="Export" onClick={() => navigate(EXPORT_PATH, { replace: true })} />
@@ -119,6 +127,12 @@ function SettingsOverview() {
         date={today}
         current={currentGoal}
         onClose={() => setEditingGoal(false)}
+      />
+      <KcalBurnedSheet
+        open={editingBurned}
+        userId={profile.id}
+        current={profile.kcal_burned}
+        onClose={() => setEditingBurned(false)}
       />
       {loadError && <ErrorBanner message={toUserMessage(loadError)} />}
       {household.data && (

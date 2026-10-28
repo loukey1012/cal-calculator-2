@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { CurrentUserContext } from '../../app/currentUser'
@@ -28,6 +28,7 @@ const ME = {
   household_id: 'h1',
   display_name: 'Lukas',
   accent_color: '#007aff',
+  kcal_burned: null as number | null,
   appearance: {},
   created_at: '',
   updated_at: '',
@@ -35,9 +36,9 @@ const ME = {
 const PARTNER = { ...ME, id: 'u2', display_name: 'Anna' }
 const HOUSEHOLD = { id: 'h1', name: 'Home', invite_code: '4Y5RFXKYMJ4P', created_at: '' }
 
-function renderPage() {
+function renderPage(profile: typeof ME = ME) {
   return renderWithProviders(
-    <CurrentUserContext value={{ profile: ME, householdId: 'h1' }}>
+    <CurrentUserContext value={{ profile, householdId: 'h1' }}>
       <SettingsPage />
     </CurrentUserContext>,
   )
@@ -54,7 +55,6 @@ beforeEach(() => {
       proteinG: 120,
       carbsG: null,
       fatG: null,
-      kcalBurned: null,
       fiberG: null,
       weightGoalKg: null,
     },
@@ -181,6 +181,29 @@ describe('SettingsPage', () => {
 
     expect(screen.getByRole('dialog', { name: 'Daily Goal' })).toBeInTheDocument()
     expect(screen.getByLabelText('Calories')).toHaveValue('2000')
+  })
+
+  test('shows the calories burned per day and saves a new figure on the profile', async () => {
+    vi.mocked(updateProfile).mockResolvedValue()
+    const user = userEvent.setup()
+    renderPage()
+
+    const row = await screen.findByRole('button', { name: /Calories burned per day/ })
+    expect(row).toHaveTextContent('Not set')
+    await user.click(row)
+    const sheet = screen.getByRole('dialog', { name: 'Calories Burned' })
+    await user.type(within(sheet).getByLabelText('Calories burned per day'), '2600')
+    await user.click(within(sheet).getByRole('button', { name: 'Save' }))
+
+    await waitFor(() => expect(updateProfile).toHaveBeenCalledWith('u1', { kcal_burned: 2600 }))
+  })
+
+  test('shows a figure that is set', async () => {
+    renderPage({ ...ME, kcal_burned: 2600 })
+
+    expect(
+      await screen.findByRole('button', { name: /Calories burned per day/ }),
+    ).toHaveTextContent('2,600 kcal')
   })
 
   test('says when the goal could not be loaded instead of pretending none is set', async () => {
