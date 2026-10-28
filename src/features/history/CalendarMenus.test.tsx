@@ -102,6 +102,29 @@ describe('CalendarOptionsMenu', () => {
 
     expect(onChange).toHaveBeenCalledWith(false)
   })
+
+  test('offers the year overview and closes the menu when it is picked', async () => {
+    const user = userEvent.setup()
+    const onShowYear = vi.fn()
+    render(
+      <CalendarOptionsMenu keyShown={false} onChangeKeyShown={vi.fn()} onShowYear={onShowYear} />,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Calendar options' }))
+    await user.click(screen.getByRole('button', { name: 'Year overview' }))
+
+    expect(onShowYear).toHaveBeenCalledTimes(1)
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  test('has no year overview row where it is not offered', async () => {
+    const user = userEvent.setup()
+    render(<CalendarOptionsMenu keyShown={false} onChangeKeyShown={vi.fn()} />)
+
+    await user.click(screen.getByRole('button', { name: 'Calendar options' }))
+
+    expect(screen.queryByRole('button', { name: 'Year overview' })).not.toBeInTheDocument()
+  })
 })
 
 describe('FilterPill', () => {

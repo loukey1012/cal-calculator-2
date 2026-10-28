@@ -4,7 +4,6 @@ import { toWholeKcal } from '../nutrition/format'
 import { goalForDate, type Goal } from '../nutrition/goals'
 import {
   countsInAverages,
-  isLeftOut,
   isMissingMeals,
   type CountedDay,
 } from '../../../supabase/functions/_shared/dayCounting'
@@ -40,17 +39,6 @@ export type DayMarks = {
   /** a weight was entered on that very day */
   readonly weighed: boolean
   /** some of the day's calories are an estimate */
-  readonly estimated: boolean
-}
-
-export type MonthSummary = {
-  /** days with something logged that count (see dayCounting) */
-  readonly loggedDays: number
-  /** past days with something logged that don't count: cheat and alcohol days, a meal missing */
-  readonly leftOutDays: number
-  readonly averageKcal: number
-  readonly averageProtein: number
-  /** a logged day had estimated calories, so the average is approximate too */
   readonly estimated: boolean
 }
 
@@ -133,26 +121,6 @@ export function dayStatus(
   const level = calorieOverLevel(kcal, goal.kcal)
   if (level === 'none') return 'onTarget'
   return level === 'well' ? 'wellOver' : 'over'
-}
-
-export function monthSummary(totals: readonly DayTotal[], today: string): MonthSummary {
-  const logged = totals.filter((day) => countsInAverages(day, today))
-  const leftOutDays = totals.filter(
-    (day) =>
-      day.date < today && (day.mealCount > 0 || isLeftOut(day)) && !countsInAverages(day, today),
-  ).length
-  if (logged.length === 0) {
-    return { loggedDays: 0, leftOutDays, averageKcal: 0, averageProtein: 0, estimated: false }
-  }
-  const sum = (pick: (day: DayTotal) => number) =>
-    logged.reduce((total, day) => total + pick(day), 0)
-  return {
-    loggedDays: logged.length,
-    leftOutDays,
-    averageKcal: sum((day) => day.kcal) / logged.length,
-    averageProtein: sum((day) => day.protein) / logged.length,
-    estimated: logged.some((day) => day.kcalEstimated),
-  }
 }
 
 /** The average calories of the days of one calendar week that count; null when none does. */

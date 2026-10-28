@@ -5,7 +5,6 @@ import {
   monthWeeks,
   monthRange,
   monthStart,
-  monthSummary,
   weekAverageKcal,
   weekEdgeRanges,
   type DayTotal,
@@ -132,70 +131,6 @@ describe('dayStatus', () => {
     expect(statusOf({ ...over, alcoholDay: true })).toBe('alcoholDay')
     expect(statusOf({ ...over, mealCount: 0, kcal: 0, alcoholDay: true })).toBe('alcoholDay')
     expect(statusOf({ ...over, alcoholDay: true, cheatMeal: true })).toBe('alcoholDay')
-  })
-})
-
-describe('monthSummary', () => {
-  test('averages over the complete past days', () => {
-    expect(
-      monthSummary(
-        [
-          total({ date: '2026-10-01', kcal: 2000, protein: 100 }),
-          total({ date: '2026-10-02', kcal: 1000, protein: 50 }),
-          total({ date: '2026-10-03', kcal: 0, protein: 0, mealCount: 0 }),
-        ],
-        TODAY,
-      ),
-    ).toEqual({
-      loggedDays: 2,
-      leftOutDays: 0,
-      averageKcal: 1500,
-      averageProtein: 75,
-      estimated: false,
-    })
-    expect(monthSummary([], TODAY)).toEqual({
-      loggedDays: 0,
-      leftOutDays: 0,
-      averageKcal: 0,
-      averageProtein: 0,
-      estimated: false,
-    })
-  })
-
-  test('cheat days, days with a cheat meal and days missing a meal are left out; today too', () => {
-    const summary = monthSummary(
-      [
-        total({ date: '2026-10-01', kcal: 2000, protein: 100 }),
-        total({ date: '2026-10-02', kcal: 4000, kcalEstimated: true, cheatDay: true }),
-        total({ date: '2026-10-03', kcal: 300, cheatMeal: true }),
-        total({ date: '2026-10-04', kcal: 0, mealCount: 0, cheatDay: true }),
-        total({ date: '2026-10-05', kcal: 0, mealCount: 0, alcoholDay: true }),
-        total({ date: '2026-10-12', kcal: 700, dinnerLogged: false }),
-        // today is still going: neither counted nor left out
-        total({ date: TODAY, kcal: 400, dinnerLogged: false }),
-      ],
-      TODAY,
-    )
-
-    expect(summary).toEqual({
-      loggedDays: 1,
-      leftOutDays: 5,
-      averageKcal: 2000,
-      averageProtein: 100,
-      estimated: false,
-    })
-  })
-
-  test('one logged day with estimated calories makes the average an estimate', () => {
-    const summary = monthSummary(
-      [
-        total({ date: '2026-10-01', kcal: 2000, kcalEstimated: true }),
-        total({ date: '2026-10-02', kcal: 1000 }),
-      ],
-      TODAY,
-    )
-
-    expect(summary).toMatchObject({ averageKcal: 1500, estimated: true })
   })
 })
 

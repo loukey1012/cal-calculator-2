@@ -1,6 +1,10 @@
 import type { MonthFilter } from './monthStats'
+import { FIRST_YEAR } from './yearOverview'
 
 export type HistoryView = 'calendar' | 'notes' | 'trends'
+
+/** The calendar shows one month, or the twelve months of a year in small. */
+export type CalendarZoom = 'month' | 'year'
 
 /** What History showed, kept in the navigation state; `person` as for any page of the stack. */
 export type HistoryState = {
@@ -8,6 +12,9 @@ export type HistoryState = {
   readonly month: string
   readonly filter: MonthFilter | null
   readonly view: HistoryView
+  readonly calendarZoom: CalendarZoom
+  /** the year the overview shows (also kept while the month is shown) */
+  readonly year: number
   /** the search text of the Notes view */
   readonly notesQuery: string
   /** the opened day scrolls into view once (a note was tapped); later navigation carries false */
@@ -37,4 +44,24 @@ export function scrollToDayOf(state: unknown): boolean {
 export function viewOf(state: unknown): HistoryView {
   if (typeof state !== 'object' || state === null || !('view' in state)) return 'calendar'
   return state.view === 'notes' || state.view === 'trends' ? state.view : 'calendar'
+}
+
+/** The calendar zoom kept in the navigation state; anything else (or nothing) reads as the month. */
+export function calendarZoomOf(state: unknown): CalendarZoom {
+  if (typeof state !== 'object' || state === null || !('calendarZoom' in state)) return 'month'
+  return state.calendarZoom === 'year' ? 'year' : 'month'
+}
+
+const LAST_YEAR = 2999
+
+/** The year of the overview kept in the navigation state; null when it is missing or not a year. */
+export function yearOf(state: unknown): number | null {
+  if (typeof state !== 'object' || state === null || !('year' in state)) return null
+  const { year } = state
+  return typeof year === 'number' &&
+    Number.isInteger(year) &&
+    year >= FIRST_YEAR &&
+    year <= LAST_YEAR
+    ? year
+    : null
 }

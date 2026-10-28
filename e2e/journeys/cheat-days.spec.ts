@@ -69,7 +69,8 @@ test('a cheat meal today, and a past cheat day in History', async ({ page, backe
 
   await expect(day.getByTestId('day-total')).toContainText('Cheat day')
   await expect(history.getByRole('button', { name: /cheat day/, pressed: true })).toBeVisible()
-  await expect(history.getByTestId('month-summary')).toContainText('left out')
+  // left out of the averages: the open day says so, and the calendar cell is the cheat day
+  await expect(day.getByTestId('day-status')).toContainText('Cheat day · not counted')
   await expect
     .poll(async () => {
       const { data } = await backend.admin.from('cheat_days').select('date').eq('user_id', me.id)

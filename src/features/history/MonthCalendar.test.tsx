@@ -22,6 +22,7 @@ const MARKS_OF: Record<string, DayMarks> = {
 function renderCalendar(today = '2026-10-15', month = '2026-10-01') {
   const onSelectDay = vi.fn()
   const onChangeMonth = vi.fn()
+  const onShowYear = vi.fn()
   render(
     <MonthCalendar
       month={month}
@@ -32,9 +33,10 @@ function renderCalendar(today = '2026-10-15', month = '2026-10-01') {
       averageOf={(week) => (week.includes('2026-10-07') ? 1850 : null)}
       onSelectDay={onSelectDay}
       onChangeMonth={onChangeMonth}
+      onShowYear={onShowYear}
     />,
   )
-  return { onSelectDay, onChangeMonth }
+  return { onSelectDay, onChangeMonth, onShowYear }
 }
 
 describe('MonthCalendar', () => {
@@ -106,6 +108,19 @@ describe('MonthCalendar', () => {
     for (const name of ['Previous month', 'Next month']) {
       expect(screen.getByRole('button', { name })).toHaveClass('h-11', 'w-11')
     }
+  })
+
+  test('the month title opens the year overview and stays a heading', async () => {
+    const user = userEvent.setup()
+    const { onShowYear } = renderCalendar()
+
+    const heading = screen.getByRole('heading', { level: 2, name: 'October 2026' })
+    const button = within(heading).getByRole('button', { name: 'October 2026' })
+    expect(button).toHaveAccessibleDescription('Show year')
+    expect(button).toHaveClass('h-11')
+    await user.click(button)
+
+    expect(onShowYear).toHaveBeenCalledTimes(1)
   })
 
   test('moves between months', async () => {

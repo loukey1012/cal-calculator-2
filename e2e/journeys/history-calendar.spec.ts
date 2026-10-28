@@ -138,9 +138,39 @@ test('the calendar shows symbols and weekly averages; swipe turns the month; hol
     'true',
   )
 
+  // the year overview (⋯ menu): twelve small months in the days' colors; a tap opens a month
+  await history.getByRole('button', { name: 'Calendar options' }).click()
+  await page
+    .getByRole('dialog', { name: 'Calendar' })
+    .getByRole('button', { name: 'Year overview' })
+    .click()
+  const seededYear = completeDay.slice(0, 4)
+  await expect(history.getByRole('heading', { name: seededYear, exact: true })).toBeVisible()
+  await expect(
+    history.getByRole('button', { name: new RegExp(`^\\w+ ${seededYear}$`) }),
+  ).toHaveCount(12)
+  await expect(history.locator(`[data-date="${completeDay}"]`)).toHaveAttribute(
+    'data-status',
+    'onTarget',
+  )
+  await expect(history.locator(`[data-date="${alcoholDay}"]`)).toHaveAttribute(
+    'data-status',
+    'alcoholDay',
+  )
+  await history.getByRole('button', { name: monthTitle(completeDay), exact: true }).click()
+  await expect(history.getByRole('heading', { name: monthTitle(completeDay) })).toBeVisible()
+  await expect(history.locator(`button[data-date="${completeDay}"]`)).toBeVisible()
+
   // Today brings the current month back
   await history.getByRole('button', { name: 'Today', exact: true }).click()
   await expect(history.getByRole('heading', { name: currentTitle })).toBeVisible()
+
+  // the month title (a button inside the heading) opens the year again
+  await history.getByRole('button', { name: currentTitle, exact: true }).click()
+  await expect(
+    history.getByRole('heading', { name: String(new Date().getFullYear()), exact: true }),
+  ).toBeVisible()
+  await expect(history.getByRole('button', { name: 'Previous month' })).toHaveCount(0)
 })
 
 test('the Notes tab lists and searches the notes and opens their day; the Notes filter fades the other days and stays on', async ({

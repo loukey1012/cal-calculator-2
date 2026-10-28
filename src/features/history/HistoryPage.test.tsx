@@ -226,24 +226,15 @@ describe('HistoryPage', () => {
     renderPage()
 
     await waitFor(() => expect(screen.getAllByTestId('week-average')[0]).toHaveTextContent('2,000'))
-    // the days of the neighbouring month are not drawn, and don't join the month's summary
-    expect(screen.getByTestId('month-summary')).toHaveTextContent('1 day logged · Ø 3,000 kcal')
+    // the days of the neighbouring month are not drawn
+    expect(screen.queryByRole('button', { name: /September 29/ })).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Previous month' }))
 
     await waitFor(() =>
       expect(screen.getAllByTestId('week-average').at(-1)).toHaveTextContent('2,000'),
     )
-    expect(screen.getByTestId('month-summary')).toHaveTextContent('1 day logged · Ø 1,000 kcal')
-  })
-
-  test('summarises the logged days of the month', async () => {
-    renderPage()
-
-    const summary = await screen.findByTestId('month-summary')
-    await waitFor(() => expect(summary).toHaveTextContent('2 days logged'))
-    expect(summary).toHaveTextContent('Ø 2,100 kcal')
-    expect(summary).toHaveTextContent('Ø 80.0 g protein')
+    expect(screen.queryByRole('button', { name: /October 1\b/ })).not.toBeInTheDocument()
   })
 
   test('a tapped day opens beneath the calendar and can be edited like today', async () => {
@@ -272,17 +263,6 @@ describe('HistoryPage', () => {
     expect(screen.getByTestId('path').textContent).toBe(
       '/history/2026-10-01/meal-dinner-2026-10-01-u1',
     )
-  })
-
-  test('the protein average is left out when nothing logged had protein data', async () => {
-    vi.mocked(fetchDailyTotals).mockResolvedValue([
-      { date: '2026-10-01', kcal: 1850, protein: 0, mealCount: 1, kcalEstimated: false },
-    ])
-    renderPage()
-
-    const summary = await screen.findByTestId('month-summary')
-    await waitFor(() => expect(summary).toHaveTextContent('1 day logged · Ø 1,850 kcal'))
-    expect(summary).not.toHaveTextContent('protein')
   })
 
   test('cheat days and days with a cheat meal are marked and left out of the average', async () => {
@@ -315,10 +295,7 @@ describe('HistoryPage', () => {
     ])
     renderPage()
 
-    const summary = await screen.findByTestId('month-summary')
-    await waitFor(() =>
-      expect(summary).toHaveTextContent('1 day logged · Ø 1,850 kcal · 3 days left out'),
-    )
+    await screen.findByRole('button', { name: /October 4.*alcohol day/ })
     expect(screen.getByRole('button', { name: /October 4.*alcohol day/ })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /October 2.*cheat day/ })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /October 3.*cheat meal/ })).toBeInTheDocument()
@@ -333,10 +310,7 @@ describe('HistoryPage', () => {
     ])
     renderPage()
 
-    const summary = await screen.findByTestId('month-summary')
-    await waitFor(() =>
-      expect(summary).toHaveTextContent('1 day logged · Ø 1,800 kcal · 1 day left out'),
-    )
+    await screen.findByRole('button', { name: /October 11.*lunch or dinner missing/ })
     expect(
       screen.getByRole('button', { name: /October 11.*lunch or dinner missing/ }),
     ).toBeVisible()
@@ -358,16 +332,6 @@ describe('HistoryPage', () => {
     await waitFor(() =>
       expect(within(day).getByTestId('day-total')).toHaveTextContent('Dinner missing'),
     )
-  })
-
-  test('the average is marked as approximate when a day had estimated calories', async () => {
-    vi.mocked(fetchDailyTotals).mockResolvedValue([
-      { date: '2026-10-01', kcal: 1850, protein: 0, mealCount: 1, kcalEstimated: true },
-    ])
-    renderPage()
-
-    const summary = await screen.findByTestId('month-summary')
-    await waitFor(() => expect(summary).toHaveTextContent('1 day logged · Ø ~1,850 kcal'))
   })
 
   test('tapping another day switches the details; tapping the open day closes them', async () => {
@@ -562,37 +526,19 @@ describe('HistoryPage', () => {
 })
 
 describe('the month below the calendar', () => {
-  test('the summary adds the days within goal, the longest streak and the weight change', async () => {
-    vi.mocked(fetchDailyTotals).mockResolvedValue([
-      complete('2026-10-01'),
-      { ...complete('2026-10-02'), kcal: 2600 },
-      complete('2026-10-03'),
-      complete('2026-10-04'),
-      // left out: neither in the figures nor in the way of the streak
-      { ...complete('2026-10-05'), alcoholDay: true },
-      complete('2026-10-06'),
-    ])
-    vi.mocked(fetchWeights).mockResolvedValue([
-      { date: '2026-09-28', weightKg: 90 },
-      { date: '2026-10-02', weightKg: 80 },
-      { date: '2026-10-12', weightKg: 78.8 },
-    ])
+  test('shows no summary lines under the calendar', async () => {
     renderPage()
 
-    const highlights = await screen.findByTestId('month-highlights')
-    await waitFor(() => expect(highlights).toHaveTextContent('4 of 5 days within goal'))
-    expect(highlights).toHaveTextContent('Longest streak 3 days')
-    expect(highlights).toHaveTextContent('Weight −1.2 kg')
+    await screen.findByRole('button', { name: /^October 1,/ })
+    expect(screen.queryByTestId('month-summary')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('month-highlights')).not.toBeInTheDocument()
   })
 
-  test('leaves out the streak and the weight change when there is none', async () => {
-    vi.mocked(fetchDailyTotals).mockResolvedValue([{ ...complete('2026-10-02'), kcal: 2600 }])
+  test('shows an error when the totals of the month fail to load', async () => {
+    vi.mocked(fetchDailyTotals).mockRejectedValue(new Error('boom'))
     renderPage()
 
-    const highlights = await screen.findByTestId('month-highlights')
-    await waitFor(() => expect(highlights).toHaveTextContent('0 of 1 day within goal'))
-    expect(highlights).not.toHaveTextContent('streak')
-    expect(highlights).not.toHaveTextContent('Weight')
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
   })
 
   test('a filter fades the days that do not match and survives opening a day', async () => {
@@ -650,7 +596,7 @@ describe('the month below the calendar', () => {
     renderPage()
 
     await pickFilter(user, 'Notes')
-    await screen.findByText(/days? logged/)
+    await screen.findByRole('button', { name: /^October 1,/ })
 
     expect(screen.getByRole('button', { name: /^October 1,/ })).not.toHaveAttribute('data-faded')
   })
@@ -747,11 +693,12 @@ describe('the views of History', () => {
     vi.mocked(fetchMonthNotes).mockResolvedValue([...OCTOBER_NOTES])
     renderPage()
 
-    await screen.findByTestId('month-summary')
+    await screen.findByRole('button', { name: /^October 1,/ })
+    expect(screen.queryByTestId('month-summary')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('month-highlights')).not.toBeInTheDocument()
     expect(screen.queryByRole('region', { name: 'Notes of the month' })).not.toBeInTheDocument()
     expect(screen.queryByRole('group', { name: 'Highlight days' })).not.toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Key' })).not.toBeInTheDocument()
-    expect(await screen.findByTestId('month-highlights')).toBeInTheDocument()
   })
 
   test('the calendar options menu shows the key and hides it again', async () => {
@@ -912,5 +859,215 @@ describe('the views of History', () => {
       'aria-checked',
       'true',
     )
+  })
+})
+
+describe('the year overview', () => {
+  async function openYear(user: User) {
+    await user.click(await screen.findByRole('button', { name: 'Calendar options' }))
+    await user.click(screen.getByRole('button', { name: 'Year overview' }))
+  }
+  const cell = (date: string) => document.querySelector(`[data-date="${date}"]`)
+
+  test('opens from the calendar options and shows the twelve months of the year, colored', async () => {
+    vi.mocked(fetchDailyTotals).mockResolvedValue([
+      complete('2026-09-05'),
+      { ...complete('2026-10-02'), kcal: 2600 },
+      { ...complete('2026-10-03'), alcoholDay: true },
+    ])
+    const user = userEvent.setup()
+    renderPage()
+
+    await openYear(user)
+
+    expect(await screen.findByRole('heading', { level: 2, name: '2026' })).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: /^\w+ 2026$/ })).toHaveLength(12)
+    expect(fetchDailyTotals).toHaveBeenCalledWith('u1', '2026-01-01', '2026-12-31')
+    await waitFor(() => expect(cell('2026-09-05')).toHaveAttribute('data-status', 'onTarget'))
+    expect(cell('2026-10-02')).toHaveAttribute('data-status', 'wellOver')
+    expect(cell('2026-10-03')).toHaveAttribute('data-status', 'alcoholDay')
+    expect(screen.queryByRole('button', { name: 'Previous month' })).not.toBeInTheDocument()
+  })
+
+  test('opens from the month title too', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: 'October 2026' }))
+
+    expect(await screen.findByRole('heading', { level: 2, name: '2026' })).toBeInTheDocument()
+  })
+
+  test('tapping a month opens it in the calendar', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await openYear(user)
+
+    await user.click(await screen.findByRole('button', { name: 'March 2026' }))
+
+    expect(await screen.findByRole('heading', { level: 2, name: 'March 2026' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Previous year' })).not.toBeInTheDocument()
+  })
+
+  test('turns to earlier years, and has no next year beyond the current one', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await openYear(user)
+
+    expect(await screen.findByRole('button', { name: 'Next year' })).toBeDisabled()
+    await user.click(screen.getByRole('button', { name: 'Previous year' }))
+
+    expect(await screen.findByRole('heading', { level: 2, name: '2025' })).toBeInTheDocument()
+    expect(fetchDailyTotals).toHaveBeenCalledWith('u1', '2025-01-01', '2025-12-31')
+    expect(screen.getByRole('button', { name: 'Next year' })).toBeEnabled()
+  })
+
+  test('shows the month shown before as the year, and stays in the year when a day is opened elsewhere', async () => {
+    const user = userEvent.setup()
+    renderPage('/history/2025-12-10')
+    await openYear(user)
+
+    expect(await screen.findByRole('heading', { level: 2, name: '2025' })).toBeInTheDocument()
+    // no day card and no hint below the year
+    expect(screen.queryByRole('region', { name: /December 10/ })).not.toBeInTheDocument()
+    expect(screen.queryByText('Tap a day to see what was eaten.')).not.toBeInTheDocument()
+
+    // opening a month brings the open day back with the month
+    await user.click(screen.getByRole('button', { name: 'December 2025' }))
+    expect(await screen.findByRole('region', { name: /December 10/ })).toBeInTheDocument()
+  })
+
+  test('shows no hint below the year when no day is open', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    expect(await screen.findByText('Tap a day to see what was eaten.')).toBeInTheDocument()
+    await openYear(user)
+
+    await screen.findByRole('heading', { level: 2, name: '2026' })
+    expect(screen.queryByText('Tap a day to see what was eaten.')).not.toBeInTheDocument()
+  })
+
+  test('shows an error when the goals fail to load', async () => {
+    vi.mocked(fetchGoals).mockRejectedValue(new Error('boom'))
+    const user = userEvent.setup()
+    renderPage()
+    await openYear(user)
+
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+  })
+
+  test('marks the year busy while it loads, and not afterwards', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await openYear(user)
+
+    const section = (await screen.findByRole('heading', { level: 2, name: '2026' })).closest(
+      'section',
+    )
+    await waitFor(() => expect(section).toHaveAttribute('aria-busy', 'false'))
+  })
+
+  test('is busy while the totals are on their way', async () => {
+    vi.mocked(fetchDailyTotals).mockReturnValue(new Promise(() => {}))
+    const user = userEvent.setup()
+    renderPage()
+    await openYear(user)
+
+    const heading = await screen.findByRole('heading', { level: 2, name: '2026' })
+    expect(heading.closest('section')).toHaveAttribute('aria-busy', 'true')
+  })
+
+  test('the Notes filter fades the small days without a note', async () => {
+    vi.mocked(fetchAllNotes).mockResolvedValue([
+      { date: '2026-03-04', mealType: null, text: 'Spring' },
+    ])
+    const user = userEvent.setup()
+    renderPage()
+    await openYear(user)
+    await screen.findByRole('heading', { level: 2, name: '2026' })
+
+    await pickFilter(user, 'Notes')
+
+    await waitFor(() => expect(cell('2026-03-05')).toHaveAttribute('data-faded', 'true'))
+    expect(cell('2026-03-04')).not.toHaveAttribute('data-faded')
+  })
+
+  test('the Notes filter fades nothing while the notes load, and shows their error', async () => {
+    vi.mocked(fetchAllNotes).mockRejectedValue(new Error('boom'))
+    const user = userEvent.setup()
+    renderPage()
+    await openYear(user)
+    await screen.findByRole('heading', { level: 2, name: '2026' })
+
+    await pickFilter(user, 'Notes')
+
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+    expect(cell('2026-03-05')).not.toHaveAttribute('data-faded')
+  })
+
+  test('a year after the current one in the state falls back to the shown month’s year', async () => {
+    renderWithProviders(
+      <CurrentUserContext value={{ profile: PROFILE, householdId: 'h1' }}>
+        <AddFoodSession>
+          <HistoryPage />
+        </AddFoodSession>
+      </CurrentUserContext>,
+      { route: '/history', state: { calendarZoom: 'year', year: 2030 } },
+    )
+
+    expect(await screen.findByRole('heading', { level: 2, name: '2026' })).toBeInTheDocument()
+  })
+
+  test('shows an error when the totals of the year fail to load', async () => {
+    vi.mocked(fetchDailyTotals).mockImplementation(async (_userId, first) => {
+      if (first === '2026-01-01') throw new Error('boom')
+      return []
+    })
+    const user = userEvent.setup()
+    renderPage()
+    await openYear(user)
+
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: /^\w+ 2026$/ })).toHaveLength(12)
+  })
+
+  test('shows neutral cells while the year loads', async () => {
+    vi.mocked(fetchDailyTotals).mockReturnValue(new Promise(() => {}))
+    const user = userEvent.setup()
+    renderPage()
+    await openYear(user)
+
+    await screen.findByRole('heading', { level: 2, name: '2026' })
+    expect(cell('2026-10-02')).toHaveAttribute('data-status', 'none')
+  })
+
+  test('a filter fades the small days that do not match', async () => {
+    vi.mocked(fetchDailyTotals).mockResolvedValue([
+      { ...complete('2026-10-02'), alcoholDay: true },
+      complete('2026-10-03'),
+    ])
+    const user = userEvent.setup()
+    renderPage()
+    await openYear(user)
+    await waitFor(() => expect(cell('2026-10-02')).toHaveAttribute('data-status', 'alcoholDay'))
+
+    await pickFilter(user, 'Alcohol')
+
+    expect(cell('2026-10-02')).not.toHaveAttribute('data-faded')
+    expect(cell('2026-10-03')).toHaveAttribute('data-faded', 'true')
+  })
+
+  test('stays on the year shown after another navigation of the page', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await openYear(user)
+    await user.click(await screen.findByRole('button', { name: 'Previous year' }))
+    await screen.findByRole('heading', { level: 2, name: '2025' })
+
+    // the page remounts for another address: the zoom and year ride in the state
+    await user.click(screen.getByRole('button', { name: 'Filter' }))
+    await user.click(screen.getByRole('button', { name: 'Missing' }))
+
+    expect(screen.getByRole('heading', { level: 2, name: '2025' })).toBeInTheDocument()
   })
 })

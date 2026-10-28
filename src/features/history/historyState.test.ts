@@ -1,5 +1,12 @@
 import { describe, expect, test } from 'vitest'
-import { monthOf, notesQueryOf, scrollToDayOf, viewOf } from './historyState'
+import {
+  calendarZoomOf,
+  monthOf,
+  notesQueryOf,
+  scrollToDayOf,
+  viewOf,
+  yearOf,
+} from './historyState'
 
 describe('viewOf', () => {
   test('reads the notes and trends views from the state', () => {
@@ -65,4 +72,38 @@ describe('notesQueryOf', () => {
       expect(notesQueryOf(state)).toBe('')
     },
   )
+})
+
+describe('calendarZoomOf', () => {
+  test('reads the year zoom from the state', () => {
+    expect(calendarZoomOf({ calendarZoom: 'year' })).toBe('year')
+  })
+
+  test.each([undefined, null, 'year', 5, {}, { calendarZoom: 'week' }, { calendarZoom: 1 }])(
+    'reads %j as the month',
+    (state) => {
+      expect(calendarZoomOf(state)).toBe('month')
+    },
+  )
+})
+
+describe('yearOf', () => {
+  test('reads the shown year from the state', () => {
+    expect(yearOf({ year: 2025 })).toBe(2025)
+  })
+
+  test.each([
+    undefined,
+    null,
+    'x',
+    {},
+    { year: '2026' },
+    { year: 2026.5 },
+    { year: 20 },
+    { year: 99999 },
+    { year: Number.NaN },
+    { year: null },
+  ])('reads %j as none', (state) => {
+    expect(yearOf(state)).toBeNull()
+  })
 })

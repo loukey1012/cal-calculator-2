@@ -1,10 +1,20 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react'
 import { Button } from '../../components/ios/Button'
-import { ChevronLeftIcon, ChevronRightIcon } from '../../components/ios/icons'
+import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from '../../components/ios/icons'
 import { fromLocalDateString } from '../../lib/dates'
 import { formatKcal } from '../nutrition/format'
 import { addMonths, monthStart, monthWeeks, type DayMarks, type DayStatus } from './calendar'
 import { ScaleSymbol, StarSymbol, WineGlassSymbol } from './calendarSymbols'
+import { isOutlined, STATUS_CLASSES } from './statusClasses'
 import { useMonthPress } from './useMonthPress'
 
 // a known Monday, to name the weekdays in the device language
@@ -29,22 +39,6 @@ const STATUS_TEXT: Record<DayStatus, string> = {
   missing: ', lunch or dinner missing',
 }
 
-const STATUS_CLASSES: Record<DayStatus, string> = {
-  none: 'text-label',
-  logged: 'bg-fill text-label',
-  onTarget: 'bg-success/25 text-label',
-  // the rings' over colors (Appearance), or red when those are switched off
-  over: 'day-over text-label',
-  wellOver: 'day-well-over text-label',
-  // left out of the averages: an outline instead of a fill
-  cheatDay: 'border-2 border-dashed border-label-secondary/60 text-label-secondary',
-  // purple instead of grey, with a wine glass in the corner
-  alcoholDay: 'border-2 border-dashed border-alcohol text-label-secondary',
-  cheatMeal: 'bg-fill text-label',
-  // not judged against the goal: it doesn't count until lunch and dinner are logged
-  missing: 'bg-fill text-label',
-}
-
 type MonthCalendarProps = {
   /** YYYY-MM-01 */
   readonly month: string
@@ -59,6 +53,8 @@ type MonthCalendarProps = {
   readonly averageOf: (week: ReadonlyArray<string>) => number | null
   readonly onSelectDay: (date: string) => void
   readonly onChangeMonth: (month: string) => void
+  /** the month title turns into a button that shows the year overview */
+  readonly onShowYear?: () => void
   /** the card shown while a day is held; it calls `close` when it wants to go away */
   readonly renderQuickLook?: (date: string, close: () => void) => ReactNode
   /** buttons at the end of the month header row (outside the grid, so no swipe or hold) */
@@ -75,6 +71,7 @@ export function MonthCalendar({
   averageOf,
   onSelectDay,
   onChangeMonth,
+  onShowYear,
   renderQuickLook,
   headerActions,
 }: MonthCalendarProps) {
@@ -104,6 +101,7 @@ export function MonthCalendar({
   })
 
   const title = MONTH_TITLE.format(fromLocalDateString(month))
+  const showYearHintId = useId()
 
   return (
     <section className="mt-4 rounded-[28px] bg-bg-elevated p-4 shadow-card">
@@ -117,9 +115,31 @@ export function MonthCalendar({
           <ChevronLeftIcon className="h-5 w-5" />
         </Button>
         <div className="flex min-w-0 flex-col items-center px-1">
-          <h2 className="max-w-full truncate font-display text-[17px] font-bold whitespace-nowrap">
-            {title}
+          {/* the button inside the heading is one stop for a screen reader, named by the title; its
+              44 px touch target reaches past the heading's own height (negative margin) */}
+          <h2 className="-my-2.5 max-w-full font-display text-[17px] font-bold whitespace-nowrap">
+            {onShowYear ? (
+              <button
+                type="button"
+                aria-describedby={showYearHintId}
+                onClick={onShowYear}
+                className="flex h-11 max-w-full items-center gap-1 rounded-lg px-2 font-[inherit] active:bg-fill"
+              >
+                <span className="truncate">{title}</span>
+                <ChevronDownIcon
+                  aria-hidden="true"
+                  className="h-3.5 w-3.5 shrink-0 text-label-secondary"
+                />
+              </button>
+            ) : (
+              <span className="block truncate">{title}</span>
+            )}
           </h2>
+          {onShowYear && (
+            <span id={showYearHintId} className="sr-only">
+              Show year
+            </span>
+          )}
           {month !== monthStart(today) && (
             <button
               type="button"
@@ -254,7 +274,7 @@ const DayButton = memo(function DayButton({
         // the selected day is filled with the accent color; today is only a ring around its fill
         selected
           ? 'accent-edge bg-accent font-extrabold text-on-accent'
-          : `${STATUS_CLASSES[status]} ${isToday ? 'ring-2 ring-accent-ink ring-offset-1 ring-offset-bg-elevated' : ''}`
+          : `${STATUS_CLASSES[status]} ${isOutlined(status) ? 'border-2' : ''} ${isToday ? 'ring-2 ring-accent-ink ring-offset-1 ring-offset-bg-elevated' : ''}`
       }`}
     >
       {Number(date.slice(8))}

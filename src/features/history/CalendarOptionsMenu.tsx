@@ -7,10 +7,16 @@ import { Sheet } from '../../components/ios/Sheet'
 type CalendarOptionsMenuProps = {
   readonly keyShown: boolean
   readonly onChangeKeyShown: (shown: boolean) => void
+  /** shows the year overview; left out where the year overview is what is shown */
+  readonly onShowYear?: () => void
 }
 
-/** The ⋯ button of the calendar: its options (for now the key; the year overview will join). */
-export function CalendarOptionsMenu({ keyShown, onChangeKeyShown }: CalendarOptionsMenuProps) {
+/** The ⋯ button of the calendar: its options (the key, the year overview). */
+export function CalendarOptionsMenu({
+  keyShown,
+  onChangeKeyShown,
+  onShowYear,
+}: CalendarOptionsMenuProps) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -26,6 +32,16 @@ export function CalendarOptionsMenu({ keyShown, onChangeKeyShown }: CalendarOpti
       </button>
       <Sheet open={open} onClose={() => setOpen(false)} title="Calendar">
         <GroupedSection>
+          {onShowYear && (
+            <ListRow
+              title="Year overview"
+              hideChevron
+              onClick={() => {
+                onShowYear()
+                setOpen(false)
+              }}
+            />
+          )}
           <ListRow
             title={keyShown ? 'Hide key' : 'Show key'}
             hideChevron

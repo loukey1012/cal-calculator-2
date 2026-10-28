@@ -1,60 +1,11 @@
-import { countsInAverages } from '../../../supabase/functions/_shared/dayCounting'
 import type { MealType } from '../meals/dayModel'
-import type { Goal } from '../nutrition/goals'
-import type { WeightEntry } from '../weight/weight'
-import { dayStatus, type DayStatus, type DayTotal } from './calendar'
+import type { DayStatus, DayTotal } from './calendar'
 
 /** A note of the month: on the day itself (`mealType` null) or on one of its meals. */
 export type MonthNote = {
   readonly date: string
   readonly mealType: MealType | null
   readonly text: string
-}
-
-export type MonthGoalStats = {
-  /** counted days (see dayCounting) within the goal that was valid that day */
-  readonly withinGoal: number
-  /** counted days that had a goal */
-  readonly judgedDays: number
-  /** most consecutive counted days within goal; days that don't count are passed over */
-  readonly longestStreak: number
-}
-
-/** Only counted days are looked at: the others are never part of a figure. */
-export function monthGoalStats(
-  totals: readonly DayTotal[],
-  goals: readonly Goal[],
-  today: string,
-): MonthGoalStats {
-  const judged = totals
-    .filter((total) => countsInAverages(total, today))
-    .toSorted((a, b) => a.date.localeCompare(b.date))
-    .map((total) => dayStatus(total.date, total, goals, today))
-    // a counted day without a goal valid that day is in neither number
-    .filter((status) => status !== 'logged' && status !== 'none')
-  let streak = 0
-  let longestStreak = 0
-  for (const status of judged) {
-    streak = status === 'onTarget' ? streak + 1 : 0
-    longestStreak = Math.max(longestStreak, streak)
-  }
-  return {
-    withinGoal: judged.filter((status) => status === 'onTarget').length,
-    judgedDays: judged.length,
-    longestStreak,
-  }
-}
-
-/** Last weigh-in of the month minus the first; null with fewer than two in the month. */
-export function weightChangeInMonth(entries: readonly WeightEntry[], month: string): number | null {
-  const prefix = month.slice(0, 7)
-  const inMonth = entries
-    .filter((entry) => entry.date.startsWith(prefix))
-    .toSorted((a, b) => a.date.localeCompare(b.date))
-  const first = inMonth.at(0)
-  const last = inMonth.at(-1)
-  if (inMonth.length < 2 || !first || !last) return null
-  return last.weightKg - first.weightKg
 }
 
 export function noteDatesOf(notes: readonly MonthNote[]): ReadonlySet<string> {

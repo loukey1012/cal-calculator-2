@@ -15,7 +15,16 @@ import { useToday } from '../today/useToday'
 import { monthStart } from './calendar'
 import { HistoryCalendarView } from './HistoryCalendarView'
 import { HistoryNotesView } from './HistoryNotesView'
-import { monthOf, notesQueryOf, viewOf, type HistoryState, type HistoryView } from './historyState'
+import {
+  calendarZoomOf,
+  monthOf,
+  notesQueryOf,
+  viewOf,
+  yearOf,
+  type CalendarZoom,
+  type HistoryState,
+  type HistoryView,
+} from './historyState'
 import { monthFilterOf, type MonthFilter } from './monthStats'
 import { SelectedDay } from './SelectedDay'
 
@@ -51,6 +60,7 @@ function HistoryMonth() {
   const [selectedId, setSelectedId] = useState(() => personOf(location.state) ?? profile.id)
   const [filter, setFilter] = useState(() => monthFilterOf(location.state))
   const [view, setView] = useState<HistoryView>(() => viewOf(location.state))
+  const [zoom, setZoom] = useState<CalendarZoom>(() => calendarZoomOf(location.state))
   // kept here (not in the Notes view) so it survives opening a note and coming back
   const [notesQuery, setNotesQuery] = useState(() => notesQueryOf(location.state))
   const person = people.find((member) => member.id === selectedId) ?? profile
@@ -65,6 +75,14 @@ function HistoryMonth() {
     () => monthOf(location.state) ?? monthStart(selectedDay ?? today),
   )
 
+  const currentYear = Number(today.slice(0, 4))
+  // a year in the future has no days: the year of the shown month stands in
+  const stateYear = (state: unknown, fallbackMonth: string) => {
+    const stated = yearOf(state)
+    return stated !== null && stated <= currentYear ? stated : Number(fallbackMonth.slice(0, 4))
+  }
+  const [year, setYear] = useState(() => stateYear(location.state, month))
+
   // opened from elsewhere for someone's day (the review's Open day): that person and its month
   const [seenNavigation, setSeenNavigation] = useState(location.key)
   if (seenNavigation !== location.key) {
@@ -76,10 +94,12 @@ function HistoryMonth() {
     // a filter and the view are part of what was shown too: coming from elsewhere carries none
     setFilter(monthFilterOf(location.state))
     setView(viewOf(location.state))
+    setZoom(calendarZoomOf(location.state))
+    setYear(stateYear(location.state, shownMonth || month))
     setNotesQuery(notesQueryOf(location.state))
   }
 
-  // The picked person, the month, the filter, the view and the notes search ride along in the navigation state:
+  // The picked person, the month, the calendar zoom and year, the filter, the view and the notes search ride along in the navigation state:
   // another day is another address, which mounts the page again, and only the state tells it
   // what was shown. Selecting replaces the entry: browsing days builds no back stack.
   function goTo(path: string, changes: Partial<HistoryState>) {
@@ -88,6 +108,8 @@ function HistoryMonth() {
       month,
       filter,
       view,
+      calendarZoom: zoom,
+      year,
       notesQuery,
       scrollToDay: false,
       ...changes,
@@ -99,7 +121,12 @@ function HistoryMonth() {
   }
   // a note was tapped: its day opens in the calendar (and stays open when it already was)
   function openDayOfNote(day: string) {
-    goTo(`/history/${day}`, { month: monthStart(day), view: 'calendar', scrollToDay: true })
+    goTo(`/history/${day}`, {
+      month: monthStart(day),
+      view: 'calendar',
+      calendarZoom: 'month',
+      scrollToDay: true,
+    })
   }
   function selectPerson(personId: string) {
     setSelectedId(personId)
@@ -108,6 +135,22 @@ function HistoryMonth() {
   function changeMonth(shown: string) {
     setMonth(shown)
     goTo(pathname, { month: shown })
+  }
+  function showYear() {
+    const shownYear = Number(month.slice(0, 4))
+    setZoom('year')
+    setYear(shownYear)
+    goTo(pathname, { calendarZoom: 'year', year: shownYear })
+  }
+  function changeYear(shown: number) {
+    setYear(shown)
+    goTo(pathname, { year: shown })
+  }
+  // a month of the overview opens in the calendar
+  function openMonth(shown: string) {
+    setMonth(shown)
+    setZoom('month')
+    goTo(pathname, { month: shown, calendarZoom: 'month' })
   }
   function changeView(chosen: HistoryView) {
     setView(chosen)
@@ -148,14 +191,19 @@ function HistoryMonth() {
             key={person.id}
             person={person}
             month={month}
+            zoom={zoom}
+            year={year}
             today={today}
             selectedDay={selectedDay}
             filter={filter}
             onChangeMonth={changeMonth}
+            onShowYear={showYear}
+            onOpenMonth={openMonth}
+            onChangeYear={changeYear}
             onChangeFilter={changeFilter}
             onSelectDay={toggleDay}
           />
-          {selectedDay ? (
+          {zoom === 'year' ? null : selectedDay ? (
             <SelectedDay
               day={selectedDay}
               today={today}

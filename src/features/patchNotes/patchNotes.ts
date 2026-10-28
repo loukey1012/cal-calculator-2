@@ -30,6 +30,15 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-28T13:43',
+    kind: 'new',
+    title: 'History: year overview, month summary removed',
+    items: [
+      'Year overview: ⋯ › Year overview, or tap the month name; ‹ 2026 › shows 12 small months with every day in its color (missing meals, cheat meals, cheat and alcohol days tinted); tap a month to open it. The filter works there too',
+      'The two summary lines under the calendar are gone, so the open day starts right under the calendar',
+    ],
+  },
+  {
     at: '2026-10-28T13:20',
     kind: 'internal',
     title: 'History journey test corrected (the open day is never faded)',

@@ -2,6 +2,7 @@ import { ErrorBanner } from '../../components/ios/ErrorBanner'
 import { toUserMessage } from '../../lib/errors'
 import { useGoals } from '../goals/hooks'
 import type { Profile } from '../household/householdApi'
+import type { CalendarZoom } from './historyState'
 import { useWeights } from '../weight/hooks'
 import { dayStatus, weekAverageKcal } from './calendar'
 import { CalendarKey } from './CalendarKey'
@@ -11,32 +12,68 @@ import { FilterPill } from './FilterPill'
 import { useMonthNotes, useMonthTotals, useWeekEdgeTotals } from './hooks'
 import { MonthCalendar } from './MonthCalendar'
 import { MonthQuickLook } from './MonthQuickLook'
-import { MonthSummaryBlock } from './MonthSummaryBlock'
+import { HistoryYearView } from './HistoryYearView'
 import { filterMatches, noteDatesOf, type MonthFilter } from './monthStats'
 import { useKeyShown } from './useKeyShown'
 
 type HistoryCalendarViewProps = {
   readonly person: Profile
   readonly month: string
+  readonly zoom: CalendarZoom
+  readonly year: number
   readonly today: string
   readonly selectedDay: string | null
   readonly filter: MonthFilter | null
   readonly onChangeMonth: (month: string) => void
+  readonly onShowYear: () => void
+  readonly onOpenMonth: (month: string) => void
+  readonly onChangeYear: (year: number) => void
   readonly onChangeFilter: (filter: MonthFilter | null) => void
   readonly onSelectDay: (day: string) => void
 }
 
-/** The calendar with its filter and options, the key (when shown) and the month's summary. */
+/** The month, or the year in small, with its filter and options and the key (when shown). */
 export function HistoryCalendarView({
+  zoom,
+  year,
+  onOpenMonth,
+  onChangeYear,
+  ...props
+}: HistoryCalendarViewProps) {
+  if (zoom === 'year') {
+    return (
+      <HistoryYearView
+        person={props.person}
+        year={year}
+        today={props.today}
+        selectedDay={props.selectedDay}
+        filter={props.filter}
+        onOpenMonth={onOpenMonth}
+        onChangeYear={onChangeYear}
+        onChangeFilter={props.onChangeFilter}
+      />
+    )
+  }
+  return <HistoryMonthView {...props} />
+}
+
+type HistoryMonthViewProps = Omit<
+  HistoryCalendarViewProps,
+  'zoom' | 'year' | 'onOpenMonth' | 'onChangeYear'
+>
+
+/** The month calendar with its filter and options, the key (when shown) and the error of the month's totals. */
+function HistoryMonthView({
   person,
   month,
   today,
   selectedDay,
   filter,
   onChangeMonth,
+  onShowYear,
   onChangeFilter,
   onSelectDay,
-}: HistoryCalendarViewProps) {
+}: HistoryMonthViewProps) {
   const totals = useMonthTotals(person.id, month)
   const goals = useGoals(person.id)
   const edgeTotals = useWeekEdgeTotals(person.id, month, today)
@@ -77,10 +114,15 @@ export function HistoryCalendarView({
         averageOf={(week) => weekAverageKcal(week, byDateInWeeks, today)}
         onSelectDay={onSelectDay}
         onChangeMonth={onChangeMonth}
+        onShowYear={onShowYear}
         headerActions={
           <>
             <FilterMenu filter={filter} onChange={onChangeFilter} />
-            <CalendarOptionsMenu keyShown={keyShown} onChangeKeyShown={setKeyShown} />
+            <CalendarOptionsMenu
+              keyShown={keyShown}
+              onChangeKeyShown={setKeyShown}
+              onShowYear={onShowYear}
+            />
           </>
         }
         renderQuickLook={(day, close) => (
@@ -100,13 +142,9 @@ export function HistoryCalendarView({
       )}
       <FilterPill filter={filter} onClear={() => onChangeFilter(null)} />
       {keyShown && <CalendarKey />}
-      <MonthSummaryBlock
-        totals={totals}
-        goals={goals.data}
-        weights={weights.data}
-        month={month}
-        today={today}
-      />
+      {totals.isError && totals.data === undefined && (
+        <ErrorBanner message={toUserMessage(totals.error)} />
+      )}
     </>
   )
 }

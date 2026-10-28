@@ -1,6 +1,7 @@
 import { useQuery, type UseQueryResult } from '@tanstack/react-query'
 import type { DayTotal } from './calendar'
 import { monthRange, weekEdgeRanges } from './calendar'
+import { yearRange } from './yearOverview'
 import type { MonthNote } from './monthStats'
 import { fetchAllNotes, fetchDailyTotals, fetchMonthNotes } from './historyApi'
 
@@ -66,5 +67,17 @@ export function useWeekEdgeTotals(
       (
         await Promise.all(ranges.map(({ first, last }) => fetchDailyTotals(userId, first, last)))
       ).flat(),
+  })
+}
+
+/**
+ * The totals of a whole year, for the year overview; only mounted while that is shown. Under
+ * the person's month prefix, so a changed meal refreshes it with the months.
+ */
+export function useYearTotals(userId: string, year: number): UseQueryResult<DayTotal[]> {
+  const { first, last } = yearRange(year)
+  return useQuery({
+    queryKey: [...monthKeys.person(userId), 'year', year],
+    queryFn: () => fetchDailyTotals(userId, first, last),
   })
 }
