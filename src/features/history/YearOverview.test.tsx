@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, test, vi } from 'vitest'
 import type { DayStatus } from './calendar'
@@ -133,16 +133,5 @@ describe('YearOverview', () => {
     expect(cell('2026-10-03')).toHaveClass('bg-fill')
     expect(cell('2026-10-04')).toHaveClass('border-dashed', 'bg-label/10')
     expect(cell('2026-10-05')).toHaveClass('border-alcohol', 'bg-alcohol/25')
-  })
-
-  test('shows the actions given for the header', () => {
-    renderYear({ headerActions: <button type="button">Extra</button> })
-
-    expect(
-      within(screen.getByRole('heading', { name: '2026' }).closest('section')!).getByRole(
-        'button',
-        { name: 'Extra' },
-      ),
-    ).toBeInTheDocument()
   })
 })

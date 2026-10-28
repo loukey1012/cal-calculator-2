@@ -4,12 +4,9 @@ import { useGoals } from '../goals/hooks'
 import type { Profile } from '../household/householdApi'
 import { dayStatus, type DayStatus } from './calendar'
 import { CalendarKey } from './CalendarKey'
-import { CalendarOptionsMenu } from './CalendarOptionsMenu'
-import { FilterMenu } from './FilterMenu'
 import { FilterPill } from './FilterPill'
 import { useAllNotes, useYearTotals } from './hooks'
 import { filterMatches, noteDatesOf, type MonthFilter } from './monthStats'
-import { useKeyShown } from './useKeyShown'
 import { YearOverview } from './YearOverview'
 
 type HistoryYearViewProps = {
@@ -21,6 +18,7 @@ type HistoryYearViewProps = {
   readonly onOpenMonth: (month: string) => void
   readonly onChangeYear: (year: number) => void
   readonly onChangeFilter: (filter: MonthFilter | null) => void
+  readonly keyShown: boolean
 }
 
 /** The year overview with the filter, the key (when shown) and the error of the year's totals. */
@@ -33,11 +31,11 @@ export function HistoryYearView({
   onOpenMonth,
   onChangeYear,
   onChangeFilter,
+  keyShown,
 }: HistoryYearViewProps) {
   const totals = useYearTotals(person.id, year)
   const goals = useGoals(person.id)
   const notes = useAllNotes(person.id)
-  const [keyShown, setKeyShown] = useKeyShown()
   const byDate = new Map((totals.data ?? []).map((total) => [total.date, total]))
   const notedDays = noteDatesOf(notes.data ?? [])
   const loaded = totals.data !== undefined && goals.data !== undefined
@@ -63,12 +61,6 @@ export function HistoryYearView({
         loading={totals.isPending || goals.isPending}
         onOpenMonth={onOpenMonth}
         onChangeYear={onChangeYear}
-        headerActions={
-          <>
-            <FilterMenu filter={filter} onChange={onChangeFilter} />
-            <CalendarOptionsMenu keyShown={keyShown} onChangeKeyShown={setKeyShown} />
-          </>
-        }
       />
       {totals.isError && totals.data === undefined && (
         <ErrorBanner message={toUserMessage(totals.error)} />

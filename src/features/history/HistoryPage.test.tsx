@@ -701,6 +701,60 @@ describe('the views of History', () => {
     expect(screen.queryByRole('heading', { name: 'Key' })).not.toBeInTheDocument()
   })
 
+  test('the filter and options buttons sit in the page header, not in the month header', async () => {
+    renderPage()
+
+    const header = (await screen.findByRole('heading', { name: 'History' })).closest('header')!
+    expect(within(header).getByRole('button', { name: 'Filter' })).toBeInTheDocument()
+    expect(within(header).getByRole('button', { name: 'Calendar options' })).toBeInTheDocument()
+
+    const monthSection = screen.getByRole('heading', { name: 'October 2026' }).closest('section')!
+    expect(within(monthSection).queryByRole('button', { name: /^Filter/ })).not.toBeInTheDocument()
+    expect(
+      within(monthSection).queryByRole('button', { name: 'Calendar options' }),
+    ).not.toBeInTheDocument()
+    const monthHeaderRow = screen
+      .getByRole('heading', { name: 'October 2026' })
+      .closest('.flex')!.parentElement!
+    const names = within(monthHeaderRow)
+      .getAllByRole('button')
+      .map((button) => button.getAttribute('aria-label') ?? button.textContent)
+      .slice(0, 3)
+    expect(names).toEqual(['Previous month', expect.stringContaining('October 2026'), 'Next month'])
+  })
+
+  test('the year overview keeps the buttons in the page header only', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByRole('button', { name: 'Calendar options' }))
+    await user.click(screen.getByRole('button', { name: 'Year overview' }))
+
+    const yearSection = (await screen.findByRole('heading', { name: '2026' })).closest('section')!
+    expect(within(yearSection).queryByRole('button', { name: /^Filter/ })).not.toBeInTheDocument()
+    expect(
+      within(yearSection).queryByRole('button', { name: 'Calendar options' }),
+    ).not.toBeInTheDocument()
+    const header = screen.getByRole('heading', { name: 'History' }).closest('header')!
+    expect(within(header).getByRole('button', { name: 'Filter' })).toBeInTheDocument()
+    await user.click(within(header).getByRole('button', { name: 'Calendar options' }))
+    expect(screen.queryByRole('button', { name: 'Year overview' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Show key' })).toBeInTheDocument()
+  })
+
+  test('the Notes and Trends views have no filter or options buttons', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByRole('button', { name: 'Calendar options' })
+
+    await user.click(screen.getByRole('radio', { name: 'Notes' }))
+    expect(screen.queryByRole('button', { name: /^Filter/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Calendar options' })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('radio', { name: 'Trends' }))
+    expect(screen.queryByRole('button', { name: /^Filter/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Calendar options' })).not.toBeInTheDocument()
+  })
+
   test('the calendar options menu shows the key and hides it again', async () => {
     const user = userEvent.setup()
     renderPage()

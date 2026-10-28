@@ -6,15 +6,12 @@ import type { CalendarZoom } from './historyState'
 import { useWeights } from '../weight/hooks'
 import { dayStatus, weekAverageKcal } from './calendar'
 import { CalendarKey } from './CalendarKey'
-import { CalendarOptionsMenu } from './CalendarOptionsMenu'
-import { FilterMenu } from './FilterMenu'
 import { FilterPill } from './FilterPill'
 import { useMonthNotes, useMonthTotals, useWeekEdgeTotals } from './hooks'
 import { MonthCalendar } from './MonthCalendar'
 import { MonthQuickLook } from './MonthQuickLook'
 import { HistoryYearView } from './HistoryYearView'
 import { filterMatches, noteDatesOf, type MonthFilter } from './monthStats'
-import { useKeyShown } from './useKeyShown'
 
 type HistoryCalendarViewProps = {
   readonly person: Profile
@@ -30,6 +27,7 @@ type HistoryCalendarViewProps = {
   readonly onChangeYear: (year: number) => void
   readonly onChangeFilter: (filter: MonthFilter | null) => void
   readonly onSelectDay: (day: string) => void
+  readonly keyShown: boolean
 }
 
 /** The month, or the year in small, with its filter and options and the key (when shown). */
@@ -51,6 +49,7 @@ export function HistoryCalendarView({
         onOpenMonth={onOpenMonth}
         onChangeYear={onChangeYear}
         onChangeFilter={props.onChangeFilter}
+        keyShown={props.keyShown}
       />
     )
   }
@@ -73,13 +72,13 @@ function HistoryMonthView({
   onShowYear,
   onChangeFilter,
   onSelectDay,
+  keyShown,
 }: HistoryMonthViewProps) {
   const totals = useMonthTotals(person.id, month)
   const goals = useGoals(person.id)
   const edgeTotals = useWeekEdgeTotals(person.id, month, today)
   const notes = useMonthNotes(person.id, month)
   const weights = useWeights(person.id)
-  const [keyShown, setKeyShown] = useKeyShown()
   const byDate = new Map((totals.data ?? []).map((total) => [total.date, total]))
   // a week across two months averages all its days: the edge days only count there
   const byDateInWeeks = new Map(
@@ -115,16 +114,6 @@ function HistoryMonthView({
         onSelectDay={onSelectDay}
         onChangeMonth={onChangeMonth}
         onShowYear={onShowYear}
-        headerActions={
-          <>
-            <FilterMenu filter={filter} onChange={onChangeFilter} />
-            <CalendarOptionsMenu
-              keyShown={keyShown}
-              onChangeKeyShown={setKeyShown}
-              onShowYear={onShowYear}
-            />
-          </>
-        }
         renderQuickLook={(day, close) => (
           <MonthQuickLook
             userId={person.id}

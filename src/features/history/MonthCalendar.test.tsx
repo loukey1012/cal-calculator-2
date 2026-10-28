@@ -284,26 +284,4 @@ describe('MonthCalendar', () => {
     expect(tinted).toHaveLength(1)
     expect(within(tinted[0]).getByRole('button', { name: 'Today, October 15' })).toBeInTheDocument()
   })
-
-  test('shows the header actions in the month header row, outside the swipe grid', () => {
-    render(
-      <MonthCalendar
-        month="2026-10-01"
-        today="2026-10-15"
-        selectedDay={null}
-        statusOf={() => 'none'}
-        marksOf={() => NO_MARKS}
-        averageOf={() => null}
-        onSelectDay={vi.fn()}
-        onChangeMonth={vi.fn()}
-        headerActions={<button type="button">Header action</button>}
-      />,
-    )
-
-    const action = screen.getByRole('button', { name: 'Header action' })
-    expect(action.closest('[data-swipe-lock]')).toBeNull()
-    expect(action.parentElement?.parentElement).toContainElement(
-      screen.getByRole('heading', { name: 'October 2026' }),
-    )
-  })
 })

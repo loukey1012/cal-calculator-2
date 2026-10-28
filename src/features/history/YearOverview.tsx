@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react'
 import { Button } from '../../components/ios/Button'
 import { ChevronLeftIcon, ChevronRightIcon } from '../../components/ios/icons'
 import { fromLocalDateString } from '../../lib/dates'
@@ -19,8 +18,6 @@ type YearOverviewProps = {
   readonly loading?: boolean
   readonly onOpenMonth: (month: string) => void
   readonly onChangeYear: (year: number) => void
-  /** buttons at the end of the header row */
-  readonly headerActions?: ReactNode
 }
 
 /** The twelve months of a year in small, colored like the month calendar; a tap opens a month. */
@@ -32,13 +29,12 @@ export function YearOverview({
   loading = false,
   onOpenMonth,
   onChangeYear,
-  headerActions,
 }: YearOverviewProps) {
   const isCurrentYear = year >= Number(today.slice(0, 4))
 
   return (
     <section aria-busy={loading} className="mt-4 rounded-[28px] bg-bg-elevated p-4 shadow-card">
-      <div className="flex items-center">
+      <div className="flex items-center justify-between">
         <Button
           variant="plain"
           className="grid h-11 w-11 shrink-0 place-items-center !p-0"
@@ -58,7 +54,6 @@ export function YearOverview({
         >
           <ChevronRightIcon className="h-5 w-5" />
         </Button>
-        {headerActions && <div className="ml-auto flex items-center">{headerActions}</div>}
       </div>
       <div className={`mt-2 grid grid-cols-3 gap-x-3 gap-y-3 ${loading ? 'opacity-60' : ''}`}>
         {monthsOfYear(year).map((month) => (

@@ -13,6 +13,7 @@ import { mealPageOf } from '../meals/mealPages'
 import { TrendsView } from '../trends/TrendsView'
 import { useToday } from '../today/useToday'
 import { monthStart } from './calendar'
+import { CalendarActions } from './CalendarActions'
 import { HistoryCalendarView } from './HistoryCalendarView'
 import { HistoryNotesView } from './HistoryNotesView'
 import {
@@ -27,6 +28,7 @@ import {
 } from './historyState'
 import { monthFilterOf, type MonthFilter } from './monthStats'
 import { SelectedDay } from './SelectedDay'
+import { useKeyShown } from './useKeyShown'
 
 const DAY_ROUTE = /^\/history\/(\d{4}-\d{2}-\d{2})$/
 
@@ -63,6 +65,7 @@ function HistoryMonth() {
   const [zoom, setZoom] = useState<CalendarZoom>(() => calendarZoomOf(location.state))
   // kept here (not in the Notes view) so it survives opening a note and coming back
   const [notesQuery, setNotesQuery] = useState(() => notesQueryOf(location.state))
+  const [keyShown, setKeyShown] = useKeyShown()
   const person = people.find((member) => member.id === selectedId) ?? profile
 
   const requestedDay = DAY_ROUTE.exec(pathname)?.[1]
@@ -163,7 +166,20 @@ function HistoryMonth() {
 
   return (
     <>
-      <PageHeader title="History" />
+      <PageHeader
+        title="History"
+        titleAccessory={
+          view === 'calendar' ? (
+            <CalendarActions
+              filter={filter}
+              onChangeFilter={changeFilter}
+              keyShown={keyShown}
+              onChangeKeyShown={setKeyShown}
+              onShowYear={zoom === 'month' ? showYear : undefined}
+            />
+          ) : undefined
+        }
+      />
       <PersonSwitch people={people} selectedId={person.id} onChange={selectPerson} />
       <div className="mt-3">
         <SegmentedControl label="View" options={VIEW_OPTIONS} value={view} onChange={changeView} />
@@ -202,6 +218,7 @@ function HistoryMonth() {
             onChangeYear={changeYear}
             onChangeFilter={changeFilter}
             onSelectDay={toggleDay}
+            keyShown={keyShown}
           />
           {zoom === 'year' ? null : selectedDay ? (
             <SelectedDay

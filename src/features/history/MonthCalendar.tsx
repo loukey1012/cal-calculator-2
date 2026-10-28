@@ -57,8 +57,6 @@ type MonthCalendarProps = {
   readonly onShowYear?: () => void
   /** the card shown while a day is held; it calls `close` when it wants to go away */
   readonly renderQuickLook?: (date: string, close: () => void) => ReactNode
-  /** buttons at the end of the month header row (outside the grid, so no swipe or hold) */
-  readonly headerActions?: ReactNode
 }
 
 export function MonthCalendar({
@@ -73,7 +71,6 @@ export function MonthCalendar({
   onChangeMonth,
   onShowYear,
   renderQuickLook,
-  headerActions,
 }: MonthCalendarProps) {
   const [heldDay, setHeldDay] = useState<string | null>(null)
   const [slide, setSlide] = useState({ month, direction: 'none' as 'none' | 'next' | 'previous' })
@@ -105,7 +102,7 @@ export function MonthCalendar({
 
   return (
     <section className="mt-4 rounded-[28px] bg-bg-elevated p-4 shadow-card">
-      <div className="flex items-center">
+      <div className="flex items-center justify-between">
         <Button
           variant="plain"
           className="grid h-11 w-11 shrink-0 place-items-center !p-0"
@@ -159,7 +156,6 @@ export function MonthCalendar({
         >
           <ChevronRightIcon className="h-5 w-5" />
         </Button>
-        {headerActions && <div className="ml-auto flex items-center">{headerActions}</div>}
       </div>
       {/* sideways drags here turn the month: they never switch tabs or go back (data-swipe-lock) */}
       <div

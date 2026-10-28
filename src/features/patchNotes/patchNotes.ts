@@ -30,6 +30,14 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-28T13:55',
+    kind: 'fix',
+    title: 'History: the month name fits again',
+    items: [
+      'The filter and ⋯ buttons moved up next to the History title (in the calendar only), so the month row has room for “September 2026”',
+    ],
+  },
+  {
     at: '2026-10-28T13:43',
     kind: 'new',
     title: 'History: year overview, month summary removed',
