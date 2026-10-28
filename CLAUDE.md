@@ -26,6 +26,9 @@ Data the app keeps on the phone (TanStack Query persistence) survives updates: w
 a cached query changes, give its query key a new version (like `RECIPES_SHAPE` in
 `src/features/recipes/hooks.ts`), so an old copy is ignored instead of crashing the new version.
 Don't bump `CACHE_BUSTER` for that: it would also drop changes still waiting to be sent.
+A query whose data is parsed with defaults (e.g. notification settings) re-parses in `select`, so a new
+field missing from the phone's old copy gets its default (a missing `weekly` crashed Settings ›
+Notifications on 2026-10-28). A crash while rendering shows `CrashBoundary` (Reload), never a black screen.
 
 **State (2026-10-28):** items 1–47 built and confirmed. Items 48–56 (README ›
 Coming next) are planned in `docs/plan-2026-10-27.md` (batches A–G, each with its decisions and

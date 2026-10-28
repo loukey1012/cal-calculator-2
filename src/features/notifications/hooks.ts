@@ -5,6 +5,7 @@ import {
   type UseMutationResult,
   type UseQueryResult,
 } from '@tanstack/react-query'
+import { parseNotificationSettings } from '../../../supabase/functions/_shared/notificationSettings.ts'
 import { fetchPreferences, savePreferences, type Preferences } from './preferencesApi'
 import { deviceState, refreshSubscription, sendTest, turnOff, turnOn } from './pushDevice'
 import type { DeviceState, TestResult } from './pushDevice'
@@ -42,10 +43,18 @@ export function useSendTest(): UseMutationResult<TestResult, Error, void> {
   return useMutation({ mutationFn: sendTest })
 }
 
+// the copy kept on the phone may come from a version that knew fewer settings: parsing it again
+// fills in the defaults of what's new (parsing is idempotent)
+const withAllSettings = (preferences: Preferences): Preferences => ({
+  ...preferences,
+  settings: parseNotificationSettings(preferences.settings),
+})
+
 export function usePreferences(userId: string): UseQueryResult<Preferences> {
   return useQuery({
     queryKey: notificationKeys.preferences(userId),
     queryFn: () => fetchPreferences(userId),
+    select: withAllSettings,
   })
 }
 

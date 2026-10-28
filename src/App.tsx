@@ -1,6 +1,7 @@
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import { BrowserRouter } from 'react-router'
 import { AppGate } from './AppGate'
+import { CrashBoundary } from './components/ios/CrashBoundary'
 import { AuthProvider } from './features/auth/AuthProvider'
 import { registerDishChangeDefaults } from './features/dishes/dishChanges'
 import { registerDayChangeDefaults } from './features/meals/dayChanges'
@@ -27,7 +28,9 @@ export default function App() {
     <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
       <BrowserRouter>
         <AuthProvider>
-          <AppGate />
+          <CrashBoundary>
+            <AppGate />
+          </CrashBoundary>
         </AuthProvider>
       </BrowserRouter>
     </PersistQueryClientProvider>

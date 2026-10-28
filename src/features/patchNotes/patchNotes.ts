@@ -30,6 +30,15 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-28T15:52',
+    kind: 'fix',
+    title: 'Settings › Notifications opens again',
+    items: [
+      'The page crashed with the settings saved on the phone before the weekly summary existed; it now fills in the new setting',
+      'If a page ever crashes, the app shows “Something went wrong” with Reload instead of a black screen',
+    ],
+  },
+  {
     at: '2026-10-28T15:35',
     kind: 'new',
     title: 'Weekly summary notification',

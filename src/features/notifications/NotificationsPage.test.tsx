@@ -86,6 +86,22 @@ beforeEach(() => {
 })
 
 describe('what to be notified about', () => {
+  test('opens with settings an older version kept on the phone (no weekly summary yet)', async () => {
+    // Arrange: the cached copy from before the weekly summary, never parsed again
+    const { weekly: _missing, ...older } = DEFAULT_SETTINGS
+    vi.mocked(fetchPreferences).mockResolvedValue({
+      settings: older as typeof DEFAULT_SETTINGS,
+      timeZone: 'Europe/Vienna',
+    })
+
+    // Act
+    renderPage()
+
+    // Assert: the page shows, the weekly summary with its default
+    expect(await screen.findByRole('switch', { name: 'Weekly summary' })).toBeChecked()
+    expect(screen.getByLabelText('Weekly summary time')).toHaveValue('08:00')
+  })
+
   test('a meal reminder is switched off and saved to my account', async () => {
     // Arrange
     const user = userEvent.setup()
