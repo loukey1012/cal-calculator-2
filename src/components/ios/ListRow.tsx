@@ -14,6 +14,8 @@ type ListRowProps = {
   readonly leading?: ReactNode
   /** makes the row tappable and adds a disclosure chevron */
   readonly onClick?: () => void
+  /** no chevron on a tappable row, e.g. for choices that show a check instead */
+  readonly hideChevron?: boolean
 }
 
 /** A row inside a GroupedSection. */
@@ -26,6 +28,7 @@ export function ListRow({
   ariaLabel,
   leading,
   onClick,
+  hideChevron = false,
 }: ListRowProps) {
   const content = (
     <>
@@ -51,7 +54,7 @@ export function ListRow({
           {detail}
         </span>
       )}
-      {onClick && (
+      {onClick && !hideChevron && (
         <ChevronRightIcon data-testid="chevron" className="h-4 w-4 shrink-0 text-label-secondary" />
       )}
     </>

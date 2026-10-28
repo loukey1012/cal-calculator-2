@@ -2,7 +2,7 @@ import { useQuery, type UseQueryResult } from '@tanstack/react-query'
 import type { DayTotal } from './calendar'
 import { monthRange, weekEdgeRanges } from './calendar'
 import type { MonthNote } from './monthStats'
-import { fetchDailyTotals, fetchMonthNotes } from './historyApi'
+import { fetchAllNotes, fetchDailyTotals, fetchMonthNotes } from './historyApi'
 
 /** Prefix of month queries; meal changes refresh every month of their person. */
 export const monthKeys = {
@@ -30,6 +30,20 @@ export function useMonthNotes(userId: string, month: string): UseQueryResult<Mon
   return useQuery({
     queryKey: [...monthKeys.month(userId, month), 'notes', NOTES_SHAPE],
     queryFn: () => fetchMonthNotes(userId, first, last),
+  })
+}
+
+/** Bump when the shape of the cached notes of all months changes (see NOTES_SHAPE). */
+const ALL_NOTES_SHAPE = 1
+
+/**
+ * Every note of the person, for the Notes view. Under the person's month prefix as well, so a
+ * changed meal or note refreshes it with the months.
+ */
+export function useAllNotes(userId: string): UseQueryResult<MonthNote[]> {
+  return useQuery({
+    queryKey: [...monthKeys.person(userId), 'all-notes', ALL_NOTES_SHAPE],
+    queryFn: () => fetchAllNotes(userId),
   })
 }
 

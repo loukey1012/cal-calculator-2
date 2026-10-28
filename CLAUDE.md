@@ -32,8 +32,9 @@ Coming next) are planned in `docs/plan-2026-10-27.md` (batches A–G, each with 
 status). **Done and pushed, CI green:** A (54, 52, 51), B (50, 49), C (55, migration on prod), the
 Save button in the day options, D (53 part 1: calendar symbols, key, swipe, hold, status pill).
 The user confirmed A–D and the Save button on the iPhone (the calendar's readability gets changes
-later, when the user brings them). **Now:** E (53 part 2) in two pushes: E1 month summary, filter
-chips, notes list; E2 note search, year overview. Then F (56: sketch the week page FIRST, user wants it), then G (48). Sketch of D:
+later, when the user brings them). E1 shipped; History then reorganised
+into Calendar | Notes | Trends (user's option 2; a week-strip calendar maybe later). **Next:** E2 (year
+overview), then F (56: sketch the week page FIRST, user wants it), then G (48). Sketch of D:
 https://claude.ai/artifact/Sp4cvXiKk3us9kXNUTrT6g. Working rhythm that worked: `ecc:tdd-guide`
 agents build (in parallel only on separate files), then `ecc:typescript-reviewer` +
 `ecc:react-reviewer` (+ `ecc:database-reviewer`/`ecc:security-reviewer` for SQL) +

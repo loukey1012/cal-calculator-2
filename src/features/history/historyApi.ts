@@ -37,29 +37,24 @@ export async function fetchDailyTotals(
 const mealOrder = (type: MealType | null) =>
   type === null ? -1 : MEAL_TYPES.findIndex((meal) => meal.type === type)
 
-/**
- * The notes (on a day or on a meal) of the days between two local dates (inclusive), by date:
- * the day's own note first, then its meals' notes in meal order.
- */
-export async function fetchMonthNotes(
-  userId: string,
-  first: string,
-  last: string,
-): Promise<MonthNote[]> {
+type DateRange = { readonly first: string; readonly last: string }
+
+/** Every non-blank day note and meal note, in no particular order; `range` null reads them all. */
+async function fetchNotes(userId: string, range: DateRange | null): Promise<MonthNote[]> {
+  const dayNotesQuery = supabase.from('day_notes').select('date, note').eq('user_id', userId)
+  const mealsQuery = supabase
+    .from('meals')
+    .select('date, meal_type, note')
+    .eq('user_id', userId)
+    .not('note', 'is', null)
+  // reading everything can hit the row cap: newest first, so a cut loses the oldest notes
   const [dayNotes, meals] = await Promise.all([
-    supabase
-      .from('day_notes')
-      .select('date, note')
-      .eq('user_id', userId)
-      .gte('date', first)
-      .lte('date', last),
-    supabase
-      .from('meals')
-      .select('date, meal_type, note')
-      .eq('user_id', userId)
-      .not('note', 'is', null)
-      .gte('date', first)
-      .lte('date', last),
+    range
+      ? dayNotesQuery.gte('date', range.first).lte('date', range.last)
+      : dayNotesQuery.order('date', { ascending: false }),
+    range
+      ? mealsQuery.gte('date', range.first).lte('date', range.last)
+      : mealsQuery.order('date', { ascending: false }),
   ])
   if (dayNotes.error) throw ApiError.from(dayNotes.error)
   if (meals.error) throw ApiError.from(meals.error)
@@ -71,9 +66,26 @@ export async function fetchMonthNotes(
       text: (row.note ?? '').trim(),
     })),
   ]
-  return notes
-    .filter((note) => note.text !== '')
-    .toSorted(
-      (a, b) => a.date.localeCompare(b.date) || mealOrder(a.mealType) - mealOrder(b.mealType),
-    )
+  return notes.filter((note) => note.text !== '')
+}
+
+const byMealOrder = (a: MonthNote, b: MonthNote) => mealOrder(a.mealType) - mealOrder(b.mealType)
+
+/**
+ * The notes (on a day or on a meal) of the days between two local dates (inclusive), by date:
+ * the day's own note first, then its meals' notes in meal order.
+ */
+export async function fetchMonthNotes(
+  userId: string,
+  first: string,
+  last: string,
+): Promise<MonthNote[]> {
+  const notes = await fetchNotes(userId, { first, last })
+  return notes.toSorted((a, b) => a.date.localeCompare(b.date) || byMealOrder(a, b))
+}
+
+/** Every note of the person, the newest day first; within a day as in `fetchMonthNotes`. */
+export async function fetchAllNotes(userId: string): Promise<MonthNote[]> {
+  const notes = await fetchNotes(userId, null)
+  return notes.toSorted((a, b) => b.date.localeCompare(a.date) || byMealOrder(a, b))
 }

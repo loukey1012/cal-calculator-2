@@ -143,7 +143,7 @@ test('the calendar shows symbols and weekly averages; swipe turns the month; hol
   await expect(history.getByRole('heading', { name: currentTitle })).toBeVisible()
 })
 
-test('the notes of the month open their day, and the Notes filter fades the other days and stays on', async ({
+test('the Notes tab lists and searches the notes and opens their day; the Notes filter fades the other days and stays on', async ({
   page,
   backend,
 }) => {
@@ -165,26 +165,36 @@ test('the notes of the month open their day, and the Notes filter fades the othe
     .getByRole('button', { name: 'History' })
     .click()
   const history = activePage(page)
-  await history.getByRole('button', { name: 'Previous month' }).click()
-  await expect(history.getByRole('heading', { name: monthTitle(noteDay) })).toBeVisible()
 
-  // the note is listed with its day; a tap opens that day
-  const notes = history.getByRole('region', { name: 'Notes of the month' })
-  await expect(notes).toContainText(noteText)
-  await notes.getByRole('button', { name: new RegExp(noteText) }).click()
+  // the note is listed in the Notes tab under its month, and found by a search without accents
+  await history.getByRole('radio', { name: 'Notes' }).click()
+  await expect(history.getByRole('heading', { name: monthTitle(noteDay) })).toBeVisible()
+  const note = history.getByRole('button', { name: new RegExp(noteText) })
+  await expect(note).toBeVisible()
+  await history.getByRole('searchbox', { name: 'Search notes' }).fill('DÍNNER')
+  await expect(note).toBeVisible()
+  await history.getByRole('searchbox', { name: 'Search notes' }).fill('sushi')
+  await expect(note).toHaveCount(0)
+  await history.getByRole('searchbox', { name: 'Search notes' }).fill('lake')
+
+  // a tap opens that day in the calendar
+  await note.click()
+  await expect(history.getByRole('radio', { name: 'Calendar' })).toBeChecked()
+  await expect(history.getByRole('heading', { name: monthTitle(noteDay) })).toBeVisible()
   await expect(history.locator(`button[data-date="${noteDay}"]`)).toHaveAttribute(
     'aria-pressed',
     'true',
   )
   await expect(page).toHaveURL(new RegExp(`/history/${noteDay}`))
 
-  // the Notes chip fades the days without a note, and stays on after opening another day
-  const chips = history.getByRole('group', { name: 'Highlight days' })
-  await chips.getByRole('button', { name: 'Notes', exact: true }).click()
-  await expect(chips.getByRole('button', { name: 'Notes', exact: true })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  )
+  // the Notes filter fades the days without a note, and stays on after opening another day
+  await history.getByRole('button', { name: 'Filter', exact: true }).click()
+  await page
+    .getByRole('dialog', { name: 'Highlight days' })
+    .getByRole('button', { name: 'Notes' })
+    .click()
+  await expect(history.getByRole('button', { name: 'Filter: Notes' })).toBeVisible()
+  await expect(history.getByText('Notes highlighted')).toBeVisible()
   await expect(history.locator(`button[data-date="${plainDay}"]`)).toHaveAttribute(
     'data-faded',
     'true',
@@ -195,11 +205,16 @@ test('the notes of the month open their day, and the Notes filter fades the othe
   )
   await history.locator(`button[data-date="${plainDay}"]`).click()
   await expect(page).toHaveURL(new RegExp(`/history/${plainDay}`))
-  await expect(chips.getByRole('button', { name: 'Notes', exact: true })).toHaveAttribute(
-    'aria-pressed',
+  await expect(history.getByRole('button', { name: 'Filter: Notes' })).toBeVisible()
+  await expect(history.locator(`button[data-date="${plainDay}"]`)).toHaveAttribute(
+    'data-faded',
     'true',
   )
-  await expect(history.locator(`button[data-date="${plainDay}"]`)).toHaveAttribute(
+
+  // Clear in the pill removes the filter
+  await history.getByRole('button', { name: 'Clear', exact: true }).click()
+  await expect(history.getByRole('button', { name: 'Filter', exact: true })).toBeVisible()
+  await expect(history.locator(`button[data-date="${noteDay}"]`)).not.toHaveAttribute(
     'data-faded',
     'true',
   )

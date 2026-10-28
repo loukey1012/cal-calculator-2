@@ -1,5 +1,6 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { Fragment, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { CurrentUserContext } from '../../app/currentUser'
@@ -15,7 +16,9 @@ vi.mock('../dishes/dishesApi', () => ({
 vi.mock('./historyApi', () => ({
   fetchDailyTotals: vi.fn(),
   fetchMonthNotes: vi.fn().mockResolvedValue([]),
+  fetchAllNotes: vi.fn().mockResolvedValue([]),
 }))
+vi.mock('../trends/trendsApi', () => ({ fetchNutritionDays: vi.fn().mockResolvedValue([]) }))
 vi.mock('../weight/weightApi', () => ({
   fetchWeights: vi.fn().mockResolvedValue([{ date: '2026-09-28', weightKg: 72.4 }]),
   saveWeight: vi.fn(),
@@ -51,7 +54,7 @@ vi.mock('../ingredients/ingredientsApi', () => ({
 import { fetchGoals } from '../goals/goalsApi'
 import { fetchMembers } from '../household/householdApi'
 import { addMealItem, fetchDay, fetchDayMark, fetchDayNote } from '../meals/mealsApi'
-import { fetchDailyTotals, fetchMonthNotes } from './historyApi'
+import { fetchAllNotes, fetchDailyTotals, fetchMonthNotes } from './historyApi'
 import { fetchWeights } from '../weight/weightApi'
 import { AddFoodSession } from '../addFood/AddFoodSession'
 import { HistoryPage } from './HistoryPage'
@@ -106,11 +109,26 @@ function OpenPartnersDay() {
   )
 }
 
+type User = ReturnType<typeof userEvent.setup>
+
+/** Opens the filter menu of the calendar and picks one of its entries. */
+async function pickFilter(user: User, name: string | RegExp) {
+  await user.click(await screen.findByRole('button', { name: /^Filter/ }))
+  await user.click(within(screen.getByRole('dialog')).getByRole('button', { name }))
+}
+
+/** Like the page stack: another address is another mounted page. */
+function KeyedByPath({ children }: { readonly children: ReactNode }) {
+  return <Fragment key={useLocation().pathname}>{children}</Fragment>
+}
+
 function renderPage(route = '/history') {
   return renderWithProviders(
     <CurrentUserContext value={{ profile: PROFILE, householdId: 'h1' }}>
       <AddFoodSession>
-        <HistoryPage />
+        <KeyedByPath>
+          <HistoryPage />
+        </KeyedByPath>
       </AddFoodSession>
       <LocationProbe />
       <OpenPartnersDay />
@@ -133,6 +151,7 @@ beforeEach(() => {
   vi.mocked(fetchGoals).mockResolvedValue([GOAL])
   vi.mocked(fetchWeights).mockResolvedValue([{ date: '2026-09-28', weightKg: 72.4 }])
   vi.mocked(fetchMonthNotes).mockResolvedValue([])
+  vi.mocked(fetchAllNotes).mockResolvedValue([])
   vi.mocked(fetchMembers).mockResolvedValue([PROFILE])
   vi.mocked(fetchDay).mockResolvedValue([
     dayMeal('m1', 'lunch', [mealItem({ id: 'a', name: 'Pasta', kcal: 350, basis_multiplier: 2 })]),
@@ -583,12 +602,12 @@ describe('the month below the calendar', () => {
     ])
     const user = userEvent.setup()
     renderPage()
-    const alcohol = await screen.findByRole('button', { name: 'Alcohol' })
-    expect(alcohol).toHaveAttribute('aria-pressed', 'false')
+    expect(await screen.findByRole('button', { name: 'Filter' })).toBeInTheDocument()
 
-    await user.click(alcohol)
+    await pickFilter(user, 'Alcohol')
 
-    expect(screen.getByRole('button', { name: 'Alcohol' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Filter: Alcohol' })).toBeInTheDocument()
+    expect(screen.getByText('Alcohol highlighted')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^October 1,/ })).toHaveAttribute(
       'data-faded',
       'true',
@@ -598,13 +617,14 @@ describe('the month below the calendar', () => {
     // the page mounts again for another address: the filter rides along
     await user.click(screen.getByRole('button', { name: /^October 2,/ }))
     expect(screen.getByTestId('path')).toHaveTextContent('/history/2026-10-02')
-    expect(screen.getByRole('button', { name: 'Alcohol' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Filter: Alcohol' })).toBeInTheDocument()
 
-    // one at a time, and tapping the active one clears it
-    await user.click(screen.getByRole('button', { name: 'Notes' }))
-    expect(screen.getByRole('button', { name: 'Alcohol' })).toHaveAttribute('aria-pressed', 'false')
-    await user.click(screen.getByRole('button', { name: 'Notes' }))
-    expect(screen.getByRole('button', { name: 'Notes' })).toHaveAttribute('aria-pressed', 'false')
+    // one at a time, and picking the active one again clears it
+    await pickFilter(user, 'Notes')
+    expect(screen.getByRole('button', { name: 'Filter: Notes' })).toBeInTheDocument()
+    await pickFilter(user, 'Notes, selected')
+    expect(screen.getByRole('button', { name: 'Filter' })).toBeInTheDocument()
+    expect(screen.queryByText(/highlighted/)).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^October 1,/ })).not.toHaveAttribute('data-faded')
   })
 
@@ -616,7 +636,7 @@ describe('the month below the calendar', () => {
     const user = userEvent.setup()
     renderPage()
 
-    await user.click(await screen.findByRole('button', { name: 'Notes' }))
+    await pickFilter(user, 'Notes')
 
     await waitFor(() =>
       expect(screen.getByRole('button', { name: /^October 1,/ })).toHaveAttribute('data-faded'),
@@ -629,7 +649,7 @@ describe('the month below the calendar', () => {
     const user = userEvent.setup()
     renderPage()
 
-    await user.click(await screen.findByRole('button', { name: 'Notes' }))
+    await pickFilter(user, 'Notes')
     await screen.findByText(/days? logged/)
 
     expect(screen.getByRole('button', { name: /^October 1,/ })).not.toHaveAttribute('data-faded')
@@ -640,17 +660,17 @@ describe('the month below the calendar', () => {
     const user = userEvent.setup()
     renderPage()
 
-    await user.click(await screen.findByRole('button', { name: 'Missing' }))
+    await pickFilter(user, 'Missing')
 
     expect(screen.getByRole('button', { name: /^October 1\b/ })).not.toHaveAttribute('data-faded')
   })
 
-  test('shows an error instead of the notes list, and fades nothing, when the notes fail', async () => {
+  test('shows an error, and fades nothing, when the notes of the month fail', async () => {
     vi.mocked(fetchMonthNotes).mockRejectedValue(new Error('boom'))
     const user = userEvent.setup()
     renderPage()
 
-    await user.click(await screen.findByRole('button', { name: 'Notes' }))
+    await pickFilter(user, 'Notes')
 
     expect(await screen.findByRole('alert')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^October 1,/ })).not.toHaveAttribute('data-faded')
@@ -664,7 +684,7 @@ describe('the month below the calendar', () => {
     const user = userEvent.setup()
     renderPage()
 
-    await user.click(await screen.findByRole('button', { name: 'Cheat' }))
+    await pickFilter(user, 'Cheat')
 
     await waitFor(() =>
       expect(screen.getByRole('button', { name: /^October 1,/ })).toHaveAttribute('data-faded'),
@@ -677,7 +697,7 @@ describe('the month below the calendar', () => {
     const user = userEvent.setup()
     renderPage('/history/2026-10-01')
 
-    await user.click(await screen.findByRole('button', { name: 'Alcohol' }))
+    await pickFilter(user, 'Alcohol')
 
     await waitFor(() =>
       expect(screen.getByRole('button', { name: /^October 2,/ })).toHaveAttribute('data-faded'),
@@ -688,54 +708,209 @@ describe('the month below the calendar', () => {
   test('opening a day from outside takes the filter of that navigation, none when absent', async () => {
     const user = userEvent.setup()
     renderPage()
-    await user.click(await screen.findByRole('button', { name: 'Alcohol' }))
-    expect(screen.getByRole('button', { name: 'Alcohol' })).toHaveAttribute('aria-pressed', 'true')
+    await pickFilter(user, 'Alcohol')
+    expect(screen.getByRole('button', { name: 'Filter: Alcohol' })).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Open partner’s day' }))
 
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Alcohol' })).toHaveAttribute(
-        'aria-pressed',
-        'false',
-      ),
-    )
+    expect(await screen.findByRole('button', { name: 'Filter' })).toBeInTheDocument()
   })
+})
 
-  test('lists the notes of the month and a tap opens that day', async () => {
-    vi.mocked(fetchMonthNotes).mockResolvedValue([
-      { date: '2026-10-12', mealType: null, text: 'Birthday at Oma’s' },
-      { date: '2026-10-12', mealType: 'dinner', text: 'Pizza' },
-    ])
-    const user = userEvent.setup()
+describe('the views of History', () => {
+  const OCTOBER_NOTES = [
+    { date: '2026-10-12', mealType: null, text: 'Birthday at Oma’s' },
+    { date: '2026-10-12', mealType: 'dinner', text: 'Pizza' },
+  ] as const
+  const SEPTEMBER_NOTE = { date: '2026-09-03', mealType: 'lunch', text: 'Salad' } as const
+
+  async function openNotes(user: User) {
+    await user.click(await screen.findByRole('radio', { name: 'Notes' }))
+  }
+
+  test('offers Calendar, Notes and Trends, starting on the calendar', async () => {
     renderPage()
 
-    const list = await screen.findByRole('region', { name: 'Notes of the month' })
-    expect(within(list).getByText('Birthday at Oma’s')).toBeInTheDocument()
-    expect(within(list).getByText('Dinner · Pizza')).toBeInTheDocument()
-
-    expect(within(list).getByRole('list')).toBeInTheDocument()
-    expect(within(list).getAllByRole('listitem')).toHaveLength(2)
-
-    await user.click(within(list).getByRole('button', { name: /Pizza/ }))
-    expect(screen.getByTestId('path')).toHaveTextContent('/history/2026-10-12')
-    await waitFor(() => expect(scrollIntoView).toHaveBeenCalledTimes(1))
-    expect(scrollIntoView.mock.contexts[0]).toBe(screen.getByRole('region', { name: /October 12/ }))
-
-    // the day is open already: tapping again keeps it open
-    await user.click(
-      within(screen.getByRole('region', { name: 'Notes of the month' })).getByRole('button', {
-        name: /Pizza/,
-      }),
+    const view = await screen.findByRole('radiogroup', { name: 'View' })
+    expect(
+      within(view)
+        .getAllByRole('radio')
+        .map((radio) => radio.getAttribute('aria-label') ?? radio.textContent),
+    ).toEqual(['Calendar', 'Notes', 'Trends'])
+    expect(within(view).getByRole('radio', { name: 'Calendar' })).toHaveAttribute(
+      'aria-checked',
+      'true',
     )
-    expect(screen.getByTestId('path')).toHaveTextContent('/history/2026-10-12')
-    // and it scrolls to the open day again, as feedback
-    await waitFor(() => expect(scrollIntoView).toHaveBeenCalledTimes(2))
   })
 
-  test('shows no list without notes', async () => {
+  test('the calendar view has no list of notes, no chips and no key until asked for', async () => {
+    vi.mocked(fetchMonthNotes).mockResolvedValue([...OCTOBER_NOTES])
     renderPage()
 
     await screen.findByTestId('month-summary')
     expect(screen.queryByRole('region', { name: 'Notes of the month' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Highlight days' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Key' })).not.toBeInTheDocument()
+    expect(await screen.findByTestId('month-highlights')).toBeInTheDocument()
+  })
+
+  test('the calendar options menu shows the key and hides it again', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: 'Calendar options' }))
+    await user.click(screen.getByRole('button', { name: 'Show key' }))
+    expect(screen.getByRole('heading', { name: 'Key' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Calendar options' }))
+    await user.click(screen.getByRole('button', { name: 'Hide key' }))
+    expect(screen.queryByRole('heading', { name: 'Key' })).not.toBeInTheDocument()
+  })
+
+  test('the Notes view lists every month’s notes, and a tap opens that day in the calendar', async () => {
+    vi.mocked(fetchAllNotes).mockResolvedValue([...OCTOBER_NOTES, SEPTEMBER_NOTE])
+    const user = userEvent.setup()
+    renderPage()
+    await openNotes(user)
+
+    expect(await screen.findByRole('heading', { name: 'September 2026' })).toBeInTheDocument()
+    expect(fetchAllNotes).toHaveBeenCalledWith('u1')
+    await user.click(screen.getByRole('button', { name: /Salad/ }))
+
+    expect(screen.getByTestId('path')).toHaveTextContent('/history/2026-09-03')
+    expect(screen.getByRole('radio', { name: 'Calendar' })).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByRole('heading', { level: 2, name: 'September 2026' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: /September 3/ })).toBeInTheDocument()
+    await waitFor(() => expect(scrollIntoView).toHaveBeenCalledTimes(1))
+  })
+
+  test('a tap on a note of another day scrolls that day’s section into view, after the page remounts', async () => {
+    vi.mocked(fetchAllNotes).mockResolvedValue([...OCTOBER_NOTES, SEPTEMBER_NOTE])
+    const user = userEvent.setup()
+    renderPage('/history/2026-10-05')
+    await screen.findByRole('region', { name: /October 5/ })
+    expect(scrollIntoView).not.toHaveBeenCalled()
+    await openNotes(user)
+
+    await user.click(await screen.findByRole('button', { name: /Salad/ }))
+
+    const section = await screen.findByRole('region', { name: /September 3/ })
+    await waitFor(() => expect(scrollIntoView).toHaveBeenCalledTimes(1))
+    expect(scrollIntoView.mock.contexts[0]).toBe(section)
+  })
+
+  test('a tap on a note of the day already open scrolls too, and later day taps do not', async () => {
+    vi.mocked(fetchAllNotes).mockResolvedValue([...OCTOBER_NOTES])
+    const user = userEvent.setup()
+    renderPage('/history/2026-10-12')
+    await screen.findByRole('region', { name: /October 12/ })
+    await openNotes(user)
+
+    await user.click(await screen.findByRole('button', { name: /Pizza/ }))
+    await waitFor(() => expect(scrollIntoView).toHaveBeenCalledTimes(1))
+
+    await user.click(await screen.findByRole('button', { name: /October 13/ }))
+    await screen.findByRole('region', { name: /October 13/ })
+    await user.click(screen.getByRole('button', { name: /October 12/ }))
+    await screen.findByRole('region', { name: /October 12/ })
+    expect(scrollIntoView).toHaveBeenCalledTimes(1)
+  })
+
+  test('typing in the notes search keeps the focus', async () => {
+    vi.mocked(fetchAllNotes).mockResolvedValue([...OCTOBER_NOTES])
+    const user = userEvent.setup()
+    renderPage()
+    await openNotes(user)
+    const search = await screen.findByRole('searchbox', { name: 'Search notes' })
+
+    await user.type(search, 'Piz')
+
+    expect(screen.getByRole('searchbox', { name: 'Search notes' })).toHaveFocus()
+    expect(screen.getByRole('searchbox', { name: 'Search notes' })).toHaveValue('Piz')
+  })
+
+  test('the notes search is still there after a note was opened and Notes is chosen again', async () => {
+    vi.mocked(fetchAllNotes).mockResolvedValue([...OCTOBER_NOTES])
+    const user = userEvent.setup()
+    renderPage()
+    await openNotes(user)
+    await user.type(await screen.findByRole('searchbox', { name: 'Search notes' }), 'Piz')
+    await user.click(screen.getByRole('button', { name: /Pizza/ }))
+    await screen.findByRole('region', { name: /October 12/ })
+
+    await openNotes(user)
+
+    expect(await screen.findByRole('searchbox', { name: 'Search notes' })).toHaveValue('Piz')
+  })
+
+  test('a note keeps the filter when it opens its day', async () => {
+    vi.mocked(fetchAllNotes).mockResolvedValue([...OCTOBER_NOTES])
+    const user = userEvent.setup()
+    renderPage()
+    await pickFilter(user, 'Cheat')
+    await openNotes(user)
+
+    await user.click(await screen.findByRole('button', { name: /Pizza/ }))
+
+    expect(await screen.findByRole('button', { name: 'Filter: Cheat' })).toBeInTheDocument()
+  })
+
+  test('the Notes view stays after switching person, and shows the partner’s notes', async () => {
+    vi.mocked(fetchMembers).mockResolvedValue([PROFILE, PARTNER])
+    vi.mocked(fetchAllNotes).mockImplementation(async (userId) =>
+      userId === 'u2'
+        ? [{ date: '2026-10-05', mealType: null, text: 'Partner note' }]
+        : [...OCTOBER_NOTES],
+    )
+    const user = userEvent.setup()
+    renderPage()
+    await openNotes(user)
+    await screen.findByText('Birthday at Oma’s')
+
+    await user.click(screen.getByRole('radio', { name: 'baby' }))
+
+    expect(await screen.findByText('Partner note')).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: 'Notes' })).toHaveAttribute('aria-checked', 'true')
+    expect(screen.queryByText('Birthday at Oma’s')).not.toBeInTheDocument()
+  })
+
+  test('the Trends view stays after switching person too', async () => {
+    vi.mocked(fetchMembers).mockResolvedValue([PROFILE, PARTNER])
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByRole('radio', { name: 'Trends' }))
+
+    await user.click(screen.getByRole('radio', { name: 'baby' }))
+
+    expect(screen.getByRole('radio', { name: 'Trends' })).toHaveAttribute('aria-checked', 'true')
+  })
+
+  test('coming from elsewhere shows the calendar, whatever view was open', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await openNotes(user)
+
+    await user.click(screen.getByRole('button', { name: 'Open partner’s day' }))
+
+    expect(await screen.findByRole('radio', { name: 'Calendar' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    )
+  })
+
+  test('opened with a view in the navigation state, shows that view; anything else the calendar', async () => {
+    renderWithProviders(
+      <CurrentUserContext value={{ profile: PROFILE, householdId: 'h1' }}>
+        <AddFoodSession>
+          <HistoryPage />
+        </AddFoodSession>
+      </CurrentUserContext>,
+      { route: '/history', state: { view: 'notes' } },
+    )
+
+    expect(await screen.findByRole('radio', { name: 'Notes' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    )
   })
 })

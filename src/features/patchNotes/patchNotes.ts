@@ -30,6 +30,17 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-28T12:50',
+    kind: 'new',
+    title: 'History reorganised: Calendar, Notes and Trends',
+    items: [
+      'History has three views: Calendar, Notes and Trends; an opened day now starts right under the calendar and its month summary',
+      'The filter (Notes, Alcohol, Cheat, Missing) moved to the funnel button at the month title; while one is on, a pill under the calendar says so, with Clear',
+      'The key to the colors and symbols is under ⋯ at the month title (hidden at first)',
+      'Notes lists every note of all months, newest first, with a search; tap one to open its day in the calendar',
+    ],
+  },
+  {
     at: '2026-10-28T12:00',
     kind: 'new',
     title: 'History: month summary, filters and notes',

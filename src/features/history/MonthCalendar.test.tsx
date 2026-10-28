@@ -99,6 +99,15 @@ describe('MonthCalendar', () => {
     expect(screen.getByRole('button', { name: /October 16/ })).toBeDisabled()
   })
 
+  test('keeps the month title on one line and the month buttons 44 px wide to touch', () => {
+    renderCalendar()
+
+    expect(screen.getByRole('heading', { level: 2 })).toHaveClass('whitespace-nowrap')
+    for (const name of ['Previous month', 'Next month']) {
+      expect(screen.getByRole('button', { name })).toHaveClass('h-11', 'w-11')
+    }
+  })
+
   test('moves between months', async () => {
     const user = userEvent.setup()
     const { onChangeMonth } = renderCalendar()
@@ -259,5 +268,27 @@ describe('MonthCalendar', () => {
     const tinted = screen.getAllByTestId('week-row').filter((row) => row.dataset.current === 'true')
     expect(tinted).toHaveLength(1)
     expect(within(tinted[0]).getByRole('button', { name: 'Today, October 15' })).toBeInTheDocument()
+  })
+
+  test('shows the header actions in the month header row, outside the swipe grid', () => {
+    render(
+      <MonthCalendar
+        month="2026-10-01"
+        today="2026-10-15"
+        selectedDay={null}
+        statusOf={() => 'none'}
+        marksOf={() => NO_MARKS}
+        averageOf={() => null}
+        onSelectDay={vi.fn()}
+        onChangeMonth={vi.fn()}
+        headerActions={<button type="button">Header action</button>}
+      />,
+    )
+
+    const action = screen.getByRole('button', { name: 'Header action' })
+    expect(action.closest('[data-swipe-lock]')).toBeNull()
+    expect(action.parentElement?.parentElement).toContainElement(
+      screen.getByRole('heading', { name: 'October 2026' }),
+    )
   })
 })

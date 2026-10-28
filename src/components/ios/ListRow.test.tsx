@@ -29,4 +29,14 @@ describe('ListRow', () => {
     expect(onClick).toHaveBeenCalled()
     expect(screen.getByTestId('chevron')).toBeInTheDocument()
   })
+
+  test('is a button without a chevron when asked to hide it', async () => {
+    const onClick = vi.fn()
+    render(<ListRow title="Lunch" onClick={onClick} hideChevron />)
+
+    await userEvent.click(screen.getByRole('button', { name: /Lunch/ }))
+
+    expect(onClick).toHaveBeenCalled()
+    expect(screen.queryByTestId('chevron')).not.toBeInTheDocument()
+  })
 })

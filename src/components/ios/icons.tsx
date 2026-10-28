@@ -96,6 +96,15 @@ export function EllipsisIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
+/** Three lines getting shorter, like iOS "line.3.horizontal.decrease": filter the list */
+export function FilterIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Icon {...props}>
+      <path d="M4 7h16M7 12h10M10 17h4" />
+    </Icon>
+  )
+}
+
 /** A pencil on a square, like iOS compose: write something of your own */
 export function ComposeIcon(props: SVGProps<SVGSVGElement>) {
   return (

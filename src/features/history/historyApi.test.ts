@@ -5,7 +5,7 @@ const { supabaseMock } = vi.hoisted(() => ({ supabaseMock: { from: vi.fn() } }))
 vi.mock('../../lib/supabase', () => ({ supabase: supabaseMock }))
 
 import { ApiError } from '../../lib/errors'
-import { fetchDailyTotals, fetchMonthNotes } from './historyApi'
+import { fetchAllNotes, fetchDailyTotals, fetchMonthNotes } from './historyApi'
 
 beforeEach(() => vi.clearAllMocks())
 
@@ -124,5 +124,56 @@ describe('fetchMonthNotes', () => {
     supabaseMock.from.mockImplementation((table: string) => (table === 'meals' ? failing : fine))
 
     await expect(fetchMonthNotes('u1', '2026-10-01', '2026-10-31')).rejects.toBeInstanceOf(ApiError)
+  })
+})
+
+describe('fetchAllNotes', () => {
+  test('lists every note of the person without a date range, newest day first', async () => {
+    const queries = {
+      day_notes: fakeQuery({
+        data: [
+          { date: '2026-09-03', note: ' Birthday ' },
+          { date: '2026-10-09', note: 'Hike' },
+          { date: '2026-10-10', note: '  ' },
+        ],
+        error: null,
+      }),
+      meals: fakeQuery({
+        data: [
+          { date: '2026-10-09', meal_type: 'dinner', note: 'late' },
+          { date: '2026-10-09', meal_type: 'breakfast', note: 'early' },
+          { date: '2026-08-01', meal_type: 'lunch', note: 'big lunch' },
+          { date: '2026-08-02', meal_type: 'lunch', note: null },
+        ],
+        error: null,
+      }),
+    }
+    supabaseMock.from.mockImplementation((table: keyof typeof queries) => queries[table])
+
+    await expect(fetchAllNotes('u1')).resolves.toEqual([
+      { date: '2026-10-09', mealType: null, text: 'Hike' },
+      { date: '2026-10-09', mealType: 'breakfast', text: 'early' },
+      { date: '2026-10-09', mealType: 'dinner', text: 'late' },
+      { date: '2026-09-03', mealType: null, text: 'Birthday' },
+      { date: '2026-08-01', mealType: 'lunch', text: 'big lunch' },
+    ])
+    expect(queries.day_notes.eq).toHaveBeenCalledWith('user_id', 'u1')
+    expect(queries.meals.eq).toHaveBeenCalledWith('user_id', 'u1')
+    expect(queries.meals.not).toHaveBeenCalledWith('note', 'is', null)
+    expect(queries.day_notes.gte).not.toHaveBeenCalled()
+    expect(queries.meals.lte).not.toHaveBeenCalled()
+    // a cut at the row cap must lose the oldest notes, not an arbitrary part
+    expect(queries.day_notes.order).toHaveBeenCalledWith('date', { ascending: false })
+    expect(queries.meals.order).toHaveBeenCalledWith('date', { ascending: false })
+  })
+
+  test('turns database errors into ApiError', async () => {
+    const failing = fakeQuery({ data: null, error: { message: 'x', code: '42501' } })
+    const fine = fakeQuery({ data: [], error: null })
+    supabaseMock.from.mockImplementation((table: string) =>
+      table === 'day_notes' ? failing : fine,
+    )
+
+    await expect(fetchAllNotes('u1')).rejects.toBeInstanceOf(ApiError)
   })
 })

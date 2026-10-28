@@ -61,6 +61,8 @@ type MonthCalendarProps = {
   readonly onChangeMonth: (month: string) => void
   /** the card shown while a day is held; it calls `close` when it wants to go away */
   readonly renderQuickLook?: (date: string, close: () => void) => ReactNode
+  /** buttons at the end of the month header row (outside the grid, so no swipe or hold) */
+  readonly headerActions?: ReactNode
 }
 
 export function MonthCalendar({
@@ -74,6 +76,7 @@ export function MonthCalendar({
   onSelectDay,
   onChangeMonth,
   renderQuickLook,
+  headerActions,
 }: MonthCalendarProps) {
   const [heldDay, setHeldDay] = useState<string | null>(null)
   const [slide, setSlide] = useState({ month, direction: 'none' as 'none' | 'next' | 'previous' })
@@ -104,16 +107,19 @@ export function MonthCalendar({
 
   return (
     <section className="mt-4 rounded-[28px] bg-bg-elevated p-4 shadow-card">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center">
         <Button
           variant="plain"
+          className="grid h-11 w-11 shrink-0 place-items-center !p-0"
           aria-label="Previous month"
           onClick={() => onChangeMonth(addMonths(month, -1))}
         >
           <ChevronLeftIcon className="h-5 w-5" />
         </Button>
-        <div className="flex flex-col items-center">
-          <h2 className="font-display text-[17px] font-bold">{title}</h2>
+        <div className="flex min-w-0 flex-col items-center px-1">
+          <h2 className="max-w-full truncate font-display text-[17px] font-bold whitespace-nowrap">
+            {title}
+          </h2>
           {month !== monthStart(today) && (
             <button
               type="button"
@@ -126,12 +132,14 @@ export function MonthCalendar({
         </div>
         <Button
           variant="plain"
+          className="grid h-11 w-11 shrink-0 place-items-center !p-0"
           aria-label="Next month"
           disabled={isCurrentMonth}
           onClick={() => onChangeMonth(addMonths(month, 1))}
         >
           <ChevronRightIcon className="h-5 w-5" />
         </Button>
+        {headerActions && <div className="ml-auto flex items-center">{headerActions}</div>}
       </div>
       {/* sideways drags here turn the month: they never switch tabs or go back (data-swipe-lock) */}
       <div
