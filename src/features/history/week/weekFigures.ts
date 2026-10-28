@@ -33,7 +33,7 @@ export function weekFigures(
     saved: savedKcal(data.days, kcalBurned, today),
     budget: dailyBudget(data.days, goals, today, dates),
     averages: weekAverages(counted, goals),
-    within: withinGoal(counted, goals, today),
+    within: withinGoal(counted, goals),
     extremes: extremes(counted),
     meals: mealAverages(data.meals, counted),
     foods: topFoods(data.foods, counted, TOP_FOODS),

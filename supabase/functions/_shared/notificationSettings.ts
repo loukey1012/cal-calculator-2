@@ -22,6 +22,8 @@ export type NotificationSettings = {
   readonly unsavedDish: { readonly on: boolean; readonly afterMinutes: number }
   /** the weekly review found something new */
   readonly weeklyReview: boolean
+  /** every Monday: the week before (calories saved, average, days within goal) */
+  readonly weekly: TimedSwitch
 }
 
 export const DEFAULT_SETTINGS: NotificationSettings = {
@@ -34,6 +36,7 @@ export const DEFAULT_SETTINGS: NotificationSettings = {
   summary: { on: true, day: 'previous', time: '08:00' },
   unsavedDish: { on: true, afterMinutes: 30 },
   weeklyReview: true,
+  weekly: { on: true, time: '08:00' },
 }
 
 export const UNSAVED_DISH_MINUTES = [15, 30, 60, 120] as const
@@ -80,6 +83,7 @@ export function parseNotificationSettings(value: unknown): NotificationSettings 
         : DEFAULT_SETTINGS.unsavedDish.afterMinutes,
     },
     weeklyReview: booleanOr(raw.weeklyReview, DEFAULT_SETTINGS.weeklyReview),
+    weekly: timedSwitch(raw.weekly, DEFAULT_SETTINGS.weekly),
   }
 }
 

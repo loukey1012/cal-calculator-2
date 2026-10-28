@@ -210,11 +210,11 @@ describe('withinGoal', () => {
   test('counts days judged within the goal', () => {
     const counted = [day('2026-10-19', 2000), day('2026-10-20', 2100), day('2026-10-21', 2900)]
 
-    expect(withinGoal(counted, [GOAL], TODAY)).toEqual({ within: 2, of: 3 })
+    expect(withinGoal(counted, [GOAL])).toEqual({ within: 2, of: 3 })
   })
 
   test('is null without a goal', () => {
-    expect(withinGoal([day('2026-10-19', 2000)], [], TODAY)).toBeNull()
+    expect(withinGoal([day('2026-10-19', 2000)], [])).toBeNull()
   })
 })
 

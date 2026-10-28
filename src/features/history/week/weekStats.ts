@@ -1,8 +1,14 @@
 import { countsInAverages } from '../../../../supabase/functions/_shared/dayCounting'
+import {
+  countedOf,
+  savedKcal,
+  withinGoal,
+  type SavedKcal,
+} from '../../../../supabase/functions/_shared/weekSummary'
 import { MEAL_TYPES, type MealType } from '../../meals/dayModel'
 import { toWholeKcal } from '../../nutrition/format'
 import { goalForDate, type Goal } from '../../nutrition/goals'
-import { dayStatus, type DayTotal } from '../calendar'
+import type { DayTotal } from '../calendar'
 
 /**
  * The figures of a week. One rule runs through all of them: only days that count (see
@@ -23,34 +29,7 @@ export type MealKcal = { readonly date: string; readonly mealType: MealType; rea
 /** A food (by name) logged on a day. */
 export type LoggedFood = { readonly date: string; readonly name: string }
 
-export type SavedKcal = {
-  /** burned minus eaten; negative is a surplus */
-  readonly saved: number
-  readonly burned: number
-  readonly eaten: number
-  /** the counted days the figure is made of */
-  readonly days: number
-}
-
-export function countedOf<T extends DayTotal>(days: readonly T[], today: string): T[] {
-  return days.filter((day) => countsInAverages(day, today))
-}
-
-/**
- * Over the counted days: the person's calories burned per day (one figure for every day) minus
- * what was eaten. Null when no figure is set or no day counts.
- */
-export function savedKcal(
-  days: readonly DayTotal[],
-  kcalBurned: number | null,
-  today: string,
-): SavedKcal | null {
-  const counted = countedOf(days, today)
-  if (kcalBurned == null || counted.length === 0) return null
-  const burned = kcalBurned * counted.length
-  const eaten = counted.reduce((sum, day) => sum + toWholeKcal(day.kcal), 0)
-  return { saved: burned - eaten, burned, eaten, days: counted.length }
-}
+export { countedOf, savedKcal, type SavedKcal }
 
 export type DailyBudget = {
   /** today and the rest of the week */
@@ -130,17 +109,7 @@ export function weekAverages(
   }
 }
 
-/** How many of the counted days (those with a goal) were within it; null when none has a goal. */
-export function withinGoal(
-  counted: readonly DayTotal[],
-  goals: readonly Goal[],
-  today: string,
-): { readonly within: number; readonly of: number } | null {
-  const judged = counted.filter((day) => goalForDate(goals, day.date) !== null)
-  if (judged.length === 0) return null
-  const within = judged.filter((day) => dayStatus(day.date, day, goals, today) === 'onTarget')
-  return { within: within.length, of: judged.length }
-}
+export { withinGoal }
 
 /** The days with the most and the fewest calories; null with fewer than two days. */
 export function extremes<T extends DayTotal>(

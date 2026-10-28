@@ -30,6 +30,14 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-28T15:35',
+    kind: 'new',
+    title: 'Weekly summary notification',
+    items: [
+      'Every Monday at 08:00 (Settings › Notifications › Weekly summary: on or off, any time): last week’s calories saved, the Ø calories and the days within goal, counted days only; tap it to open that week',
+    ],
+  },
+  {
     at: '2026-10-28T15:25',
     kind: 'new',
     title: 'Calories burned is one setting',

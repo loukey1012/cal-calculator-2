@@ -14,6 +14,7 @@ import {
   reviewMessage,
   summaryMessage,
   unsavedDishMessage,
+  weeklyMessage,
   type DaySummary,
 } from './schedule'
 
@@ -83,6 +84,73 @@ describe('plannedByClock', () => {
     expect(plannedByClock(settings, at('2026-10-20', '23:10'))).toEqual([
       { kind: 'summary', key: '2026-10-20', date: '2026-10-20' },
     ])
+  })
+
+  describe('the weekly summary', () => {
+    const MONDAY = '2026-10-26'
+    const weekly = (key: string, week: number, year = 2026) => ({
+      kind: 'weekly',
+      key,
+      week: { year, week },
+    })
+
+    test('on Monday from its time on, about the week before', () => {
+      expect(plannedByClock(DEFAULT_SETTINGS, at(MONDAY, '08:00'))).toContainEqual(
+        weekly('2026-10-19', 43),
+      )
+      expect(plannedByClock(DEFAULT_SETTINGS, at(MONDAY, '09:55'))).toContainEqual(
+        weekly('2026-10-19', 43),
+      )
+    })
+
+    test('not before its time or when it is long past', () => {
+      expect(
+        plannedByClock(DEFAULT_SETTINGS, at(MONDAY, '07:59')).map((item) => item.kind),
+      ).not.toContain('weekly')
+      expect(
+        plannedByClock(DEFAULT_SETTINGS, at(MONDAY, '10:00')).map((item) => item.kind),
+      ).not.toContain('weekly')
+    })
+
+    test('not on any other weekday', () => {
+      for (const date of [
+        '2026-10-27',
+        '2026-10-28',
+        '2026-10-29',
+        '2026-10-30',
+        '2026-10-31',
+        '2026-11-01',
+      ]) {
+        expect(
+          plannedByClock(DEFAULT_SETTINGS, at(date, '08:00')).map((item) => item.kind),
+        ).not.toContain('weekly')
+      }
+    })
+
+    test('uses the chosen time and can be switched off', () => {
+      const later: NotificationSettings = {
+        ...DEFAULT_SETTINGS,
+        weekly: { on: true, time: '18:30' },
+      }
+      const off: NotificationSettings = {
+        ...DEFAULT_SETTINGS,
+        weekly: { on: false, time: '08:00' },
+      }
+
+      expect(plannedByClock(later, at(MONDAY, '08:00')).map((item) => item.kind)).not.toContain(
+        'weekly',
+      )
+      expect(plannedByClock(later, at(MONDAY, '18:31'))).toContainEqual(weekly('2026-10-19', 43))
+      expect(plannedByClock(off, at(MONDAY, '08:00')).map((item) => item.kind)).not.toContain(
+        'weekly',
+      )
+    })
+
+    test('the first Monday of a year is about the last week of the year before', () => {
+      expect(plannedByClock(DEFAULT_SETTINGS, at('2027-01-04', '08:00'))).toContainEqual(
+        weekly('2026-12-28', 53),
+      )
+    })
   })
 
   test('switched off: nothing', () => {
@@ -231,5 +299,56 @@ describe('weekly review', () => {
       url: '/ingredients',
       tag: 'review',
     })
+  })
+})
+
+describe('weeklyMessage', () => {
+  const week = { year: 2026, week: 43 }
+  const within = { within: 4, of: 5 }
+
+  test('saved calories in the title, average and days within goal in the body', () => {
+    expect(weeklyMessage(week, { counted: 5, averageKcal: 1982, within, saved: 3090 })).toEqual({
+      title: 'Week 43: 3,090 kcal saved',
+      body: 'Ø 1,982 kcal · 4 of 5 days within goal',
+      url: '/history/week-2026-43',
+      tag: 'weekly',
+    })
+  })
+
+  test('a surplus is worded as one', () => {
+    expect(
+      weeklyMessage(week, { counted: 5, averageKcal: 2500, within, saved: -1200 })?.title,
+    ).toBe('Week 43: 1,200 kcal surplus')
+  })
+
+  test('without calories burned the average moves to the title', () => {
+    const message = weeklyMessage(week, { counted: 5, averageKcal: 1982, within, saved: null })
+
+    expect(message?.title).toBe('Week 43: Ø 1,982 kcal')
+    expect(message?.body).toBe('4 of 5 days within goal')
+  })
+
+  test('one day within goal is worded in the singular, no goal leaves it out', () => {
+    expect(
+      weeklyMessage(week, {
+        counted: 1,
+        averageKcal: 1900,
+        within: { within: 1, of: 1 },
+        saved: null,
+      })?.body,
+    ).toBe('1 of 1 day within goal')
+    const noGoal = weeklyMessage(week, { counted: 1, averageKcal: 1900, within: null, saved: 100 })
+    expect(noGoal?.body).toBe('Ø 1,900 kcal')
+    expect(
+      weeklyMessage(week, { counted: 1, averageKcal: 1900, within: null, saved: null })?.body,
+    ).toBeUndefined()
+  })
+
+  test('nothing to tell when no day counted, and never a weight', () => {
+    expect(weeklyMessage(week, null)).toBeNull()
+    const text = JSON.stringify(
+      weeklyMessage(week, { counted: 5, averageKcal: 1982, within, saved: 3090 }),
+    )
+    expect(text).not.toMatch(/kg/i)
   })
 })

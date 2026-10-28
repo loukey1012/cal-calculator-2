@@ -13,16 +13,19 @@ import {
   reviewMessage,
   summaryMessage,
   unsavedDishMessage,
+  weeklyMessage,
   type MealType,
   type Planned,
   type PushMessage,
 } from '../_shared/schedule.ts'
+import { weekDatesOf, type IsoWeek } from '../_shared/isoWeek.ts'
 import { sendToAll, type Subscription } from '../_shared/sendPush.ts'
+import { weekFigures, type WeekDayRow } from '../_shared/weekSummary.ts'
 
 /**
  * Runs every 5 minutes (pg_cron → pg_net, see the notification_schedule migration) and sends
  * what is due for everyone with a phone that has notifications on: meal reminders, the day
- * summary, the partner's changes, a dish left in Add food and new weekly review findings. Only
+ * summary, the weekly summary (Mondays), the partner's changes, a dish left in Add food and new weekly review findings. Only
  * callable with the shared tick secret.
  */
 
@@ -37,6 +40,8 @@ type Profile = {
   readonly appearance: unknown
   readonly notification_settings: unknown
   readonly time_zone: string | null
+  /** calories burned per day, or null when not set */
+  readonly kcal_burned: number | null
 }
 
 type Outgoing = { readonly kind: string; readonly key: string; readonly message: PushMessage }
@@ -98,10 +103,51 @@ async function summaryFor(admin: SupabaseClient, userId: string, date: string) {
   }
 }
 
+/** The week's figures for the weekly notification; null when no day counted. */
+async function weeklyFor(admin: SupabaseClient, profile: Profile, week: IsoWeek, today: string) {
+  const dates = weekDatesOf(week)
+  const first = dates[0] ?? ''
+  const last = dates.at(-1) ?? ''
+  const totals = await admin
+    .from('daily_totals')
+    .select(
+      'date, kcal, meal_count, cheat_day, cheat_meal, alcohol_day, lunch_logged, dinner_logged',
+    )
+    .eq('user_id', profile.id)
+    .gte('date', first)
+    .lte('date', last)
+  if (totals.error) throw new Error(`daily_totals: ${totals.error.message}`)
+  // every goal up to the week's end: each day is judged against the goal valid on it
+  const goals = await admin
+    .from('goal_history')
+    .select('valid_from, kcal')
+    .eq('user_id', profile.id)
+    .lte('valid_from', last)
+  if (goals.error) throw new Error(`goal_history: ${goals.error.message}`)
+  // same defaults as the app's week data (src/features/history/week/weekApi.ts)
+  const days: WeekDayRow[] = totals.data.map((row) => ({
+    date: row.date ?? '',
+    kcal: row.kcal ?? 0,
+    mealCount: row.meal_count ?? 0,
+    cheatDay: row.cheat_day ?? false,
+    cheatMeal: row.cheat_meal ?? false,
+    alcoholDay: row.alcohol_day ?? false,
+    lunchLogged: row.lunch_logged ?? false,
+    dinnerLogged: row.dinner_logged ?? false,
+  }))
+  return weekFigures(
+    days,
+    goals.data.map((row) => ({ validFrom: row.valid_from, kcal: row.kcal })),
+    profile.kcal_burned,
+    today,
+  )
+}
+
 async function timedMessages(
   admin: SupabaseClient,
   profile: Profile,
   planned: readonly Planned[],
+  today: string,
 ): Promise<Outgoing[]> {
   const settings = parseNotificationSettings(profile.notification_settings)
   const outgoing: Outgoing[] = []
@@ -113,6 +159,14 @@ async function timedMessages(
         key: item.key,
         message: reminderMessage(profile.id, item.meal, item.date),
       })
+    } else if (item.kind === 'weekly') {
+      // a failed week only skips the weekly summary (tried again next tick), never the reminders
+      try {
+        const message = weeklyMessage(item.week, await weeklyFor(admin, profile, item.week, today))
+        if (message) outgoing.push({ kind: 'weekly', key: item.key, message })
+      } catch (error) {
+        console.error('weekly summary failed for', profile.id, (error as Error).message)
+      }
     } else {
       const summary = await summaryFor(admin, profile.id, item.date)
       if (!summary) continue
@@ -239,7 +293,7 @@ async function tickFor(
   const local = localNow(now, profile.time_zone)
   const settings = parseNotificationSettings(profile.notification_settings)
   const outgoing = [
-    ...(await timedMessages(admin, profile, plannedByClock(settings, local))),
+    ...(await timedMessages(admin, profile, plannedByClock(settings, local), local.date)),
     ...(await partnerMessages(admin, profile, local.date, now)),
     ...(await unsavedMessages(admin, profile, now)),
     ...(await reviewMessages(admin, profile, now)),
@@ -290,7 +344,9 @@ Deno.serve(async (request) => {
       ? { data: [], error: null }
       : await admin
           .from('profiles')
-          .select('id, household_id, appearance, notification_preferences(settings, time_zone)')
+          .select(
+            'id, household_id, appearance, kcal_burned, notification_preferences(settings, time_zone)',
+          )
           .in('id', userIds)
   if (loaded.error) {
     console.error('could not load profiles', loaded.error.message)
@@ -306,6 +362,7 @@ Deno.serve(async (request) => {
       id: row.id,
       household_id: row.household_id,
       appearance: row.appearance,
+      kcal_burned: row.kcal_burned,
       notification_settings: preferences?.settings ?? {},
       time_zone: preferences?.time_zone ?? null,
     }

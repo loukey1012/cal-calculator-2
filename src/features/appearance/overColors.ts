@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { calorieOverLevel, type OverLevel } from '../../../supabase/functions/_shared/calorieGoal'
 import type { GoalProgress, RingKey } from '../nutrition/goals'
 
 /**
@@ -29,21 +30,7 @@ export const DEFAULT_OVER_COLORS: OverColors = { mode: 'signal', ...OVER_PRESET_
 
 /** Only these change: for them, over the goal is too much. */
 const OVER_RING_KEYS: readonly RingKey[] = ['kcal']
-/** Up to this share of the calorie goal still counts as within it. */
-const WITHIN_GOAL_RATIO = 1.1
-/** More calories over the goal than this is "well over" (the second color), whatever the goal. */
-const RED_OVER_KCAL = 300
-
-type OverLevel = 'none' | 'full' | 'well'
-
-/**
- * The one calorie rule behind rings, History's calendar and Trends: none while within the goal
- * (up to 10 % over), the first color beyond that, the second once more than 300 kcal over.
- */
-export function calorieOverLevel(consumed: number, target: number): OverLevel {
-  if (consumed - target > RED_OVER_KCAL) return 'well'
-  return consumed > target * WITHIN_GOAL_RATIO ? 'full' : 'none'
-}
+export { calorieOverLevel }
 
 export function overLevel(goal: GoalProgress): OverLevel {
   if (!OVER_RING_KEYS.includes(goal.key)) return 'none'

@@ -1,3 +1,5 @@
+import { type WeekFigures } from './weekSummary.ts'
+import { addDays, isoWeekday, previousIsoWeek, weekPath, type IsoWeek } from './isoWeek.ts'
 import {
   minutesOf,
   REMINDER_MEALS,
@@ -51,10 +53,7 @@ export function localNow(now: Date, timeZone: string | null): LocalNow {
   }
 }
 
-export function addDays(date: string, days: number): string {
-  const [year = 0, month = 1, day = 1] = date.split('-').map(Number)
-  return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10)
-}
+export { addDays }
 
 export function isDue(time: string, now: LocalNow): boolean {
   const from = minutesOf(time)
@@ -69,6 +68,10 @@ export type Planned =
       readonly date: string
     }
   | { readonly kind: 'summary'; readonly key: string; readonly date: string }
+  /** key: the Monday of the week it is about */
+  | { readonly kind: 'weekly'; readonly key: string; readonly week: IsoWeek }
+
+const MONDAY = 1
 
 /** What the clock says is due now (the tick then checks the sent-log and the day's food). */
 export function plannedByClock(settings: NotificationSettings, now: LocalNow): Planned[] {
@@ -78,10 +81,18 @@ export function plannedByClock(settings: NotificationSettings, now: LocalNow): P
       ? [{ kind: 'reminder', key: `${now.date}:${meal}`, meal, date: now.date }]
       : []
   })
-  const { summary } = settings
-  if (!summary.on || !isDue(summary.time, now)) return reminders
-  const date = summary.day === 'previous' ? addDays(now.date, -1) : now.date
-  return [...reminders, { kind: 'summary', key: date, date }]
+  const { summary, weekly } = settings
+  const planned: Planned[] = [...reminders]
+  if (summary.on && isDue(summary.time, now)) {
+    const date = summary.day === 'previous' ? addDays(now.date, -1) : now.date
+    planned.push({ kind: 'summary', key: date, date })
+  }
+  // Mondays only: about the week that ended yesterday
+  if (weekly.on && isoWeekday(now.date) === MONDAY && isDue(weekly.time, now)) {
+    const week = previousIsoWeek(now.date)
+    planned.push({ kind: 'weekly', key: addDays(now.date, -7), week })
+  }
+  return planned
 }
 
 const MEAL_LABELS: Readonly<Record<MealType, string>> = {
@@ -159,6 +170,32 @@ export function summaryMessage(
     body: body.join(' · '),
     url: which === 'previous' ? `/history/${day.date}` : '/today',
     tag: 'summary',
+  }
+}
+
+const kcalText = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 })
+
+/** The week before, never a weight. Null when no day counted: nothing to tell. */
+export function weeklyMessage(week: IsoWeek, figures: WeekFigures | null): PushMessage | null {
+  if (!figures) return null
+  const average = `Ø ${kcalText.format(figures.averageKcal)} kcal`
+  const within = figures.within
+    ? `${figures.within.within} of ${figures.within.of} ${figures.within.of === 1 ? 'day' : 'days'} within goal`
+    : null
+  const prefix = `Week ${week.week}:`
+  const saved = figures.saved
+  const title =
+    saved === null
+      ? `${prefix} ${average}`
+      : saved >= 0
+        ? `${prefix} ${kcalText.format(saved)} kcal saved`
+        : `${prefix} ${kcalText.format(-saved)} kcal surplus`
+  const body = (saved === null ? [within] : [average, within]).filter((part) => part !== null)
+  return {
+    title,
+    ...(body.length > 0 && { body: body.join(' · ') }),
+    url: weekPath(week),
+    tag: 'weekly',
   }
 }
 

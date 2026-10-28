@@ -1,14 +1,10 @@
+import { toWholeKcal } from '../../../supabase/functions/_shared/calorieGoal'
 import { roundTo } from '../../lib/numbers'
 import type { NutritionTotals } from './types'
 
-// sums like 3 × 0.1 × 100 give 30.000000000000004; strip that before rounding up
-const FLOAT_NOISE_DECIMALS = 6
 const NUTRIENT_DECIMALS = 1
 
-/** Calories are always whole numbers, rounded up. */
-export function toWholeKcal(value: number): number {
-  return Math.ceil(roundTo(value, FLOAT_NOISE_DECIMALS))
-}
+export { toWholeKcal }
 
 /** `locale` defaults to the device language, e.g. "2.000" on a German iPhone. */
 export function formatKcal(value: number, locale?: string): string {

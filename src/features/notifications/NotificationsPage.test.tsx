@@ -121,6 +121,29 @@ describe('what to be notified about', () => {
     expect(screen.getByText('About the same day, at the time you choose.')).toBeVisible()
   })
 
+  test('the weekly summary is on at 08:00 and gets another time', async () => {
+    renderPage()
+
+    const time = await screen.findByLabelText('Weekly summary time')
+    expect(time).toHaveValue('08:00')
+    expect(
+      screen.getByText(/Every Monday: last week.s calories saved, average and days within goal/),
+    ).toBeVisible()
+    fireEvent.change(time, { target: { value: '09:30' } })
+
+    await vi.waitFor(() => expect(lastSaved().settings.weekly).toEqual({ on: true, time: '09:30' }))
+  })
+
+  test('the weekly summary can be switched off', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('switch', { name: 'Weekly summary' }))
+
+    expect(lastSaved().settings.weekly).toEqual({ on: false, time: '08:00' })
+    expect(screen.queryByLabelText('Weekly summary time')).not.toBeInTheDocument()
+  })
+
   test('the unsaved dish waits an hour instead; the weekly review is switched off', async () => {
     // Arrange
     const user = userEvent.setup()

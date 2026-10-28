@@ -140,6 +140,16 @@ export function NotificationKinds() {
         </div>
       )}
       <GroupedSection
+        header="Weekly summary"
+        footer="Every Monday: last week’s calories saved, average and days within goal."
+      >
+        <TimedRows
+          label="Weekly summary"
+          value={settings.weekly}
+          onChange={(weekly) => change({ ...settings, weekly })}
+        />
+      </GroupedSection>
+      <GroupedSection
         header="Unsaved dish"
         footer="When a dish waits in Add food without being logged."
       >

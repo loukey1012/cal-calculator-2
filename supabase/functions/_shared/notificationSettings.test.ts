@@ -14,6 +14,7 @@ describe('parseNotificationSettings', () => {
       summary: { on: true, day: 'same', time: '23:00' },
       unsavedDish: { on: false, afterMinutes: 60 },
       weeklyReview: false,
+      weekly: { on: false, time: '09:30' },
     }
 
     expect(parseNotificationSettings(chosen)).toEqual({
@@ -22,6 +23,20 @@ describe('parseNotificationSettings', () => {
       summary: { on: true, day: 'same', time: '23:00' },
       unsavedDish: { on: false, afterMinutes: 60 },
       weeklyReview: false,
+      weekly: { on: false, time: '09:30' },
+    })
+  })
+
+  test('settings saved before the weekly summary existed get its default', () => {
+    const old = { partnerChanges: false, summary: { on: false, day: 'same', time: '22:00' } }
+
+    expect(parseNotificationSettings(old).weekly).toEqual({ on: true, time: '08:00' })
+  })
+
+  test('an invalid weekly time falls back to the default', () => {
+    expect(parseNotificationSettings({ weekly: { on: false, time: '8am' } }).weekly).toEqual({
+      on: false,
+      time: '08:00',
     })
   })
 
@@ -31,6 +46,7 @@ describe('parseNotificationSettings', () => {
       reminders: { dinner: { on: 1, time: '25:00' } },
       summary: { day: 'tomorrow', time: '8:00' },
       unsavedDish: { afterMinutes: 7 },
+      weekly: { on: 'sure', time: 800 },
     }
 
     expect(parseNotificationSettings(broken)).toEqual(DEFAULT_SETTINGS)

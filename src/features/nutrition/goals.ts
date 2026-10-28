@@ -1,4 +1,5 @@
 import type { Tables } from '../../lib/database.types'
+import { goalOn } from '../../../supabase/functions/_shared/weekSummary'
 import { toWholeKcal } from './format'
 import type { NutritionTotals } from './types'
 
@@ -45,13 +46,7 @@ export function goalFromRow(row: Tables<'goal_history'>): Goal {
 
 /** The goal that applied on `date`, so past days are judged against the goal valid back then. */
 export function goalForDate(goals: readonly Goal[], date: string): Goal | null {
-  // ISO dates compare correctly as strings
-  return goals
-    .filter((goal) => goal.validFrom <= date)
-    .reduce<Goal | null>(
-      (latest, goal) => (latest === null || goal.validFrom > latest.validFrom ? goal : latest),
-      null,
-    )
+  return goalOn(goals, date)
 }
 
 function progress(
