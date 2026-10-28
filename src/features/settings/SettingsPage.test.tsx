@@ -54,6 +54,7 @@ beforeEach(() => {
       proteinG: 120,
       carbsG: null,
       fatG: null,
+      kcalBurned: null,
       fiberG: null,
       weightGoalKg: null,
     },

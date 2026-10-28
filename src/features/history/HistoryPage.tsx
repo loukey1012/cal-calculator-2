@@ -29,6 +29,9 @@ import {
 import { monthFilterOf, type MonthFilter } from './monthStats'
 import { SelectedDay } from './SelectedDay'
 import { useKeyShown } from './useKeyShown'
+import { useThisWeekSaved } from './week/useThisWeekSaved'
+import { isoWeekOf, weekPageOf, weekPath } from './week/weekPages'
+import { WeekRoute } from './week/WeekPage'
 
 const DAY_ROUTE = /^\/history\/(\d{4}-\d{2}-\d{2})$/
 
@@ -47,8 +50,11 @@ const VIEW_OPTIONS = [
  * with a search, or the trends of calories, nutrients and weight.
  */
 export function HistoryPage() {
-  const page = mealPageOf(usePagePath())
-  return page ? <MealRoute page={page} /> : <HistoryMonth />
+  const path = usePagePath()
+  const page = mealPageOf(path)
+  const week = weekPageOf(path, useToday())
+  if (page) return <MealRoute page={page} />
+  return week ? <WeekRoute week={week} /> : <HistoryMonth />
 }
 
 function HistoryMonth() {
@@ -67,6 +73,7 @@ function HistoryMonth() {
   const [notesQuery, setNotesQuery] = useState(() => notesQueryOf(location.state))
   const [keyShown, setKeyShown] = useKeyShown()
   const person = people.find((member) => member.id === selectedId) ?? profile
+  const thisWeekDetail = useThisWeekSaved(person.id, today)
 
   const requestedDay = DAY_ROUTE.exec(pathname)?.[1]
   // only real days up to today can be opened; anything else shows just the calendar
@@ -131,6 +138,10 @@ function HistoryMonth() {
       scrollToDay: true,
     })
   }
+  // a week of the calendar (or the running one) opens as a page over History
+  function openWeek(weekDay: string) {
+    goTo(weekPath(isoWeekOf(weekDay)), { weekOrigin: pathname })
+  }
   function selectPerson(personId: string) {
     setSelectedId(personId)
     goTo(pathname, { person: personId })
@@ -176,6 +187,8 @@ function HistoryMonth() {
               keyShown={keyShown}
               onChangeKeyShown={setKeyShown}
               onShowYear={zoom === 'month' ? showYear : undefined}
+              onOpenThisWeek={() => openWeek(today)}
+              thisWeekDetail={thisWeekDetail}
             />
           ) : undefined
         }
@@ -218,6 +231,7 @@ function HistoryMonth() {
             onChangeYear={changeYear}
             onChangeFilter={changeFilter}
             onSelectDay={toggleDay}
+            onOpenWeek={(week) => openWeek(week[0] ?? today)}
             keyShown={keyShown}
           />
           {zoom === 'year' ? null : selectedDay ? (

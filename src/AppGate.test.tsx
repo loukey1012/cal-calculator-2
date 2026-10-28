@@ -42,6 +42,9 @@ vi.mock('./features/meals/mealsApi', () => ({
 vi.mock('./features/goals/goalsApi', () => ({
   fetchGoals: vi.fn().mockResolvedValue([]),
 }))
+vi.mock('./features/history/week/weekApi', () => ({
+  fetchWeekData: vi.fn().mockResolvedValue({ days: [], meals: [], foods: [], notes: [] }),
+}))
 vi.mock('./features/history/historyApi', () => ({
   fetchDailyTotals: vi.fn().mockResolvedValue([]),
   fetchMonthNotes: vi.fn().mockResolvedValue([]),
@@ -108,7 +111,11 @@ describe('AppGate', () => {
     vi.mocked(fetchMembers).mockResolvedValue([])
     renderWithProviders(<AppGate />)
 
-    expect(await screen.findByRole('navigation', { name: 'Tabs' })).toBeInTheDocument()
+    // the tabs are loaded lazily: their first import transforms the whole app, which takes
+    // longer than findBy's default second on a busy machine
+    expect(
+      await screen.findByRole('navigation', { name: 'Tabs' }, { timeout: 10_000 }),
+    ).toBeInTheDocument()
   })
 
   test('keeps using the cached profile when a refresh fails (e.g. offline)', async () => {

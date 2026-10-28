@@ -7,11 +7,15 @@ import { useWeights } from '../weight/hooks'
 import { dayStatus, weekAverageKcal } from './calendar'
 import { CalendarKey } from './CalendarKey'
 import { FilterPill } from './FilterPill'
+import { savedKcal } from './week/weekStats'
 import { useMonthNotes, useMonthTotals, useWeekEdgeTotals } from './hooks'
 import { MonthCalendar } from './MonthCalendar'
 import { MonthQuickLook } from './MonthQuickLook'
 import { HistoryYearView } from './HistoryYearView'
 import { filterMatches, noteDatesOf, type MonthFilter } from './monthStats'
+
+// "2026-10" of "2026-10-01"
+const MONTH_PREFIX_LENGTH = 7
 
 type HistoryCalendarViewProps = {
   readonly person: Profile
@@ -27,6 +31,8 @@ type HistoryCalendarViewProps = {
   readonly onChangeYear: (year: number) => void
   readonly onChangeFilter: (filter: MonthFilter | null) => void
   readonly onSelectDay: (day: string) => void
+  /** a week row's end was tapped; gets the row's dates, Monday first */
+  readonly onOpenWeek: (week: ReadonlyArray<string>) => void
   readonly keyShown: boolean
 }
 
@@ -72,6 +78,7 @@ function HistoryMonthView({
   onShowYear,
   onChangeFilter,
   onSelectDay,
+  onOpenWeek,
   keyShown,
 }: HistoryMonthViewProps) {
   const totals = useMonthTotals(person.id, month)
@@ -84,6 +91,11 @@ function HistoryMonthView({
   const byDateInWeeks = new Map(
     [...(edgeTotals.data ?? []), ...(totals.data ?? [])].map((total) => [total.date, total]),
   )
+  // a row's figures need every day of it: its other month's days too, and (saved) the goals
+  const monthPrefix = month.slice(0, MONTH_PREFIX_LENGTH)
+  const rowReady = (week: ReadonlyArray<string>) =>
+    totals.data !== undefined &&
+    (edgeTotals.data !== undefined || week.every((day) => day.startsWith(monthPrefix)))
   const notedDays = noteDatesOf(notes.data ?? [])
   const statusOf = (day: string) => dayStatus(day, byDate.get(day), goals.data ?? [], today)
   const weighedDays = new Set((weights.data ?? []).map((entry) => entry.date))
@@ -110,7 +122,17 @@ function HistoryMonthView({
           estimated: byDate.get(day)?.kcalEstimated === true,
         })}
         fadedOf={fadedOf}
-        averageOf={(week) => weekAverageKcal(week, byDateInWeeks, today)}
+        averageOf={(week) => (rowReady(week) ? weekAverageKcal(week, byDateInWeeks, today) : null)}
+        savedOf={(week) =>
+          rowReady(week) && goals.data !== undefined
+            ? (savedKcal(
+                week.flatMap((day) => byDateInWeeks.get(day) ?? []),
+                goals.data,
+                today,
+              )?.saved ?? null)
+            : null
+        }
+        onOpenWeek={onOpenWeek}
         onSelectDay={onSelectDay}
         onChangeMonth={onChangeMonth}
         onShowYear={onShowYear}

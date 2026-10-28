@@ -9,11 +9,21 @@ import type { Goal } from '../nutrition/goals'
 import type { GoalInput } from './goalForm'
 import { fetchGoals, saveGoal } from './goalsApi'
 
-export const goalKeys = { goals: (userId: string) => ['goals', userId] as const }
+// Bump when the cached goals change shape, so an old copy on the phone is ignored.
+const GOALS_SHAPE = 'v2'
+
+export const goalKeys = {
+  goals: (userId: string) => ['goals', GOALS_SHAPE, userId] as const,
+}
 
 /** Goals cached by an older app version lack the newer targets: those are simply not set. */
 function withAllTargets(goal: Goal): Goal {
-  return { ...goal, fiberG: goal.fiberG ?? null, weightGoalKg: goal.weightGoalKg ?? null }
+  return {
+    ...goal,
+    kcalBurned: goal.kcalBurned ?? null,
+    fiberG: goal.fiberG ?? null,
+    weightGoalKg: goal.weightGoalKg ?? null,
+  }
 }
 
 const withAllTargetsEach = (goals: Goal[]) => goals.map(withAllTargets)

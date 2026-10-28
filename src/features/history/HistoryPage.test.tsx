@@ -18,6 +18,7 @@ vi.mock('./historyApi', () => ({
   fetchMonthNotes: vi.fn().mockResolvedValue([]),
   fetchAllNotes: vi.fn().mockResolvedValue([]),
 }))
+vi.mock('./week/weekApi', () => ({ fetchWeekData: vi.fn() }))
 vi.mock('../trends/trendsApi', () => ({ fetchNutritionDays: vi.fn().mockResolvedValue([]) }))
 vi.mock('../weight/weightApi', () => ({
   fetchWeights: vi.fn().mockResolvedValue([{ date: '2026-09-28', weightKg: 72.4 }]),
@@ -56,6 +57,7 @@ import { fetchMembers } from '../household/householdApi'
 import { addMealItem, fetchDay, fetchDayMark, fetchDayNote } from '../meals/mealsApi'
 import { fetchAllNotes, fetchDailyTotals, fetchMonthNotes } from './historyApi'
 import { fetchWeights } from '../weight/weightApi'
+import { fetchWeekData } from './week/weekApi'
 import { AddFoodSession } from '../addFood/AddFoodSession'
 import { HistoryPage } from './HistoryPage'
 
@@ -88,6 +90,7 @@ const GOAL = {
   proteinG: null,
   carbsG: null,
   fatG: null,
+  kcalBurned: null,
   fiberG: null,
   weightGoalKg: null,
 }
@@ -152,6 +155,7 @@ beforeEach(() => {
   vi.mocked(fetchWeights).mockResolvedValue([{ date: '2026-09-28', weightKg: 72.4 }])
   vi.mocked(fetchMonthNotes).mockResolvedValue([])
   vi.mocked(fetchAllNotes).mockResolvedValue([])
+  vi.mocked(fetchWeekData).mockResolvedValue({ days: [], meals: [], foods: [], notes: [] })
   vi.mocked(fetchMembers).mockResolvedValue([PROFILE])
   vi.mocked(fetchDay).mockResolvedValue([
     dayMeal('m1', 'lunch', [mealItem({ id: 'a', name: 'Pasta', kcal: 350, basis_multiplier: 2 })]),
@@ -212,6 +216,86 @@ describe('HistoryPage', () => {
     expect(
       screen.getAllByTestId('week-average').filter((cell) => cell.textContent !== ''),
     ).toHaveLength(1)
+  })
+
+  describe('the saved figure at the end of a week', () => {
+    const BURNING = { ...GOAL, kcalBurned: 2600 }
+    const days = [complete('2026-10-01'), complete('2026-10-02'), complete('2026-10-05')]
+    const serve = (failEdges = false) =>
+      vi.mocked(fetchDailyTotals).mockImplementation(async (_userId, first, last) => {
+        if (failEdges && first < '2026-10-01') throw new Error('offline')
+        return days.filter((day) => day.date >= first && day.date <= last)
+      })
+
+    test('is burned minus eaten over the counted days of the row', async () => {
+      vi.mocked(fetchGoals).mockResolvedValue([BURNING])
+      serve()
+      renderPage()
+
+      // Oct 1 and 2 (the first row), Oct 5 (the second)
+      await waitFor(() =>
+        expect(screen.getAllByTestId('week-saved').map((cell) => cell.textContent)).toEqual([
+          '−1,600',
+          '−800',
+        ]),
+      )
+    })
+
+    test('is left out of a row across two months when the other month’s days failed to load', async () => {
+      vi.mocked(fetchGoals).mockResolvedValue([BURNING])
+      serve(true)
+      renderPage()
+
+      await waitFor(() =>
+        expect(screen.getAllByTestId('week-saved').map((cell) => cell.textContent)).toEqual([
+          '−800',
+        ]),
+      )
+      // nor does that row show an average made of only some of its days
+      expect(screen.getAllByTestId('week-average')[0]).toHaveTextContent(/^$/)
+    })
+
+    test('is left out when the goals failed to load', async () => {
+      vi.mocked(fetchGoals).mockRejectedValue(new Error('offline'))
+      serve()
+      renderPage()
+
+      await waitFor(() =>
+        expect(screen.getAllByTestId('week-average').map((cell) => cell.textContent)).toContain(
+          '1,800',
+        ),
+      )
+      expect(screen.queryAllByTestId('week-saved')).toHaveLength(0)
+    })
+
+    test('is left out while the goals load', async () => {
+      vi.mocked(fetchGoals).mockReturnValue(new Promise(() => {}))
+      serve()
+      renderPage()
+
+      await waitFor(() =>
+        expect(screen.getAllByTestId('week-average').map((cell) => cell.textContent)).toContain(
+          '1,800',
+        ),
+      )
+      expect(screen.queryAllByTestId('week-saved')).toHaveLength(0)
+    })
+
+    test('is left out of the first row while the other month’s days load', async () => {
+      vi.mocked(fetchGoals).mockResolvedValue([BURNING])
+      vi.mocked(fetchDailyTotals).mockImplementation(async (_userId, first, last) =>
+        first < '2026-10-01'
+          ? new Promise(() => {})
+          : days.filter((day) => day.date >= first && day.date <= last),
+      )
+      renderPage()
+
+      await waitFor(() =>
+        expect(screen.getAllByTestId('week-saved').map((cell) => cell.textContent)).toEqual([
+          '−800',
+        ]),
+      )
+    })
   })
 
   test('a week across two months averages all its days, whichever month shows it', async () => {
@@ -1123,5 +1207,91 @@ describe('the year overview', () => {
     await user.click(screen.getByRole('button', { name: 'Missing' }))
 
     expect(screen.getByRole('heading', { level: 2, name: '2025' })).toBeInTheDocument()
+  })
+})
+
+describe('HistoryPage weeks', () => {
+  const BURNING = { ...GOAL, kcalBurned: 2500 }
+
+  test('shows the calories saved under each week average', async () => {
+    vi.mocked(fetchGoals).mockResolvedValue([BURNING])
+    vi.mocked(fetchDailyTotals).mockResolvedValue([
+      complete('2026-10-01'),
+      complete('2026-10-02'),
+      { ...complete('2026-10-03'), cheatDay: true },
+    ])
+    renderPage()
+
+    // two counted days: 2 × (2,500 − 1,800); the cheat day is not part of it
+    await waitFor(() => expect(screen.getByTestId('week-saved')).toHaveTextContent('−1,400'))
+    expect(screen.getAllByTestId('week-saved')).toHaveLength(1)
+  })
+
+  test('shows no saved figure without a burned goal', async () => {
+    vi.mocked(fetchDailyTotals).mockResolvedValue([complete('2026-10-01')])
+    renderPage()
+
+    await screen.findByRole('button', { name: /October 1\b/ })
+    expect(screen.queryByTestId('week-saved')).not.toBeInTheDocument()
+  })
+
+  test('the week button opens the week page, and Back returns to the same month', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchGoals).mockResolvedValue([BURNING])
+    renderPage()
+    await user.click(await screen.findByRole('button', { name: 'Previous month' }))
+    await screen.findByRole('heading', { name: /September 2026/ })
+
+    await user.click(await screen.findByRole('button', { name: /^Week 39/ }))
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Week 39' })).toBeInTheDocument()
+    expect(screen.getByTestId('path')).toHaveTextContent('/history/week-2026-39')
+    expect(fetchWeekData).toHaveBeenCalledWith('u1', '2026-09-21', '2026-09-27')
+
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+
+    expect(await screen.findByRole('heading', { name: /September 2026/ })).toBeInTheDocument()
+    expect(screen.getByTestId('path')).toHaveTextContent(/^\/history$/)
+  })
+
+  test('the week of the partner opens for the partner', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchMembers).mockResolvedValue([PROFILE, PARTNER])
+    renderPage()
+    await user.click(await screen.findByRole('radio', { name: 'baby' }))
+
+    await user.click(await screen.findByRole('button', { name: /^Week 41/ }))
+
+    await waitFor(() =>
+      expect(fetchWeekData).toHaveBeenCalledWith('u2', '2026-10-05', '2026-10-11'),
+    )
+  })
+
+  test('Calendar options › This week opens the running week, with what it saved so far', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchGoals).mockResolvedValue([BURNING])
+    vi.mocked(fetchWeekData).mockResolvedValue({
+      days: [{ ...complete('2026-10-13'), carbs: 0, fat: 0, fiber: 0 }],
+      meals: [],
+      foods: [],
+      notes: [],
+    })
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: 'Calendar options' }))
+    const row = await within(screen.getByRole('dialog')).findByRole('button', {
+      name: /This week.*700 kcal saved so far/,
+    })
+    await user.click(row)
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'This week' })).toBeInTheDocument()
+    expect(screen.getByTestId('path')).toHaveTextContent('/history/week-2026-42')
+    expect(fetchWeekData).toHaveBeenCalledWith('u1', '2026-10-12', '2026-10-18')
+  })
+
+  test('an address of a week that does not exist shows the calendar', async () => {
+    renderPage('/history/week-2026-54')
+
+    expect(await screen.findByRole('heading', { name: /October 2026/ })).toBeInTheDocument()
   })
 })

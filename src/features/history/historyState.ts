@@ -19,6 +19,8 @@ export type HistoryState = {
   readonly notesQuery: string
   /** the opened day scrolls into view once (a note was tapped); later navigation carries false */
   readonly scrollToDay: boolean
+  /** set when a week page is opened: the History address it was opened from, where Back leads */
+  readonly weekOrigin?: string
 }
 
 const MONTH_START = /^\d{4}-(0[1-9]|1[0-2])-01$/
@@ -64,4 +66,13 @@ export function yearOf(state: unknown): number | null {
     year <= LAST_YEAR
     ? year
     : null
+}
+
+const HISTORY_ADDRESS = /^\/history(\/\d{4}-\d{2}-\d{2})?$/
+
+/** The History address a week page was opened from; none (or anything else) reads as null. */
+export function weekOriginOf(state: unknown): string | null {
+  if (typeof state !== 'object' || state === null || !('weekOrigin' in state)) return null
+  const { weekOrigin } = state
+  return typeof weekOrigin === 'string' && HISTORY_ADDRESS.test(weekOrigin) ? weekOrigin : null
 }

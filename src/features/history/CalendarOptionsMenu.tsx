@@ -9,13 +9,19 @@ type CalendarOptionsMenuProps = {
   readonly onChangeKeyShown: (shown: boolean) => void
   /** shows the year overview; left out where the year overview is what is shown */
   readonly onShowYear?: () => void
+  /** opens the running week's page; the row is left out where that is not offered */
+  readonly onOpenThisWeek?: () => void
+  /** e.g. "750 kcal saved so far"; none while unknown */
+  readonly thisWeekDetail?: string
 }
 
-/** The ⋯ button of the calendar: its options (the key, the year overview). */
+/** The ⋯ button of the calendar: its options (this week, the key, the year overview). */
 export function CalendarOptionsMenu({
   keyShown,
   onChangeKeyShown,
   onShowYear,
+  onOpenThisWeek,
+  thisWeekDetail,
 }: CalendarOptionsMenuProps) {
   const [open, setOpen] = useState(false)
 
@@ -32,6 +38,16 @@ export function CalendarOptionsMenu({
       </button>
       <Sheet open={open} onClose={() => setOpen(false)} title="Calendar">
         <GroupedSection>
+          {onOpenThisWeek && (
+            <ListRow
+              title="This week"
+              detail={thisWeekDetail}
+              onClick={() => {
+                onOpenThisWeek()
+                setOpen(false)
+              }}
+            />
+          )}
           {onShowYear && (
             <ListRow
               title="Year overview"

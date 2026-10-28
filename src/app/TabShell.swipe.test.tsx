@@ -67,6 +67,9 @@ vi.mock('../features/weight/weightApi', () => ({
   saveWeight: vi.fn(),
   deleteWeight: vi.fn(),
 }))
+vi.mock('../features/history/week/weekApi', () => ({
+  fetchWeekData: vi.fn().mockResolvedValue({ days: [], meals: [], foods: [], notes: [] }),
+}))
 vi.mock('../features/history/historyApi', () => ({
   fetchDailyTotals: vi.fn().mockResolvedValue([]),
   fetchMonthNotes: vi.fn().mockResolvedValue([]),
@@ -90,13 +93,13 @@ function LocationProbe() {
   return <output data-testid="path">{useLocation().pathname}</output>
 }
 
-function renderShell(route: string) {
+function renderShell(route: string, state?: unknown) {
   return renderWithProviders(
     <CurrentUserContext value={{ profile: PROFILE, householdId: 'h1' }}>
       <TabShell />
       <LocationProbe />
     </CurrentUserContext>,
-    { route },
+    { route, state },
   )
 }
 
@@ -280,6 +283,42 @@ describe('TabShell swiping', () => {
 
       await waitFor(() => expect(screen.getByTestId('path').textContent).toBe('/today'))
       expect(watchDrag()(embla.api, { target: document.body } as unknown as Event)).toBe(true)
+    })
+  })
+
+  describe('on a week page', () => {
+    const WEEK = '/history/week-2026-44'
+    const ORIGIN = { person: 'u1', weekOrigin: '/history/2026-10-27' }
+    beforeEach(() => vi.spyOn(window, 'innerWidth', 'get').mockReturnValue(390))
+    afterEach(() => vi.restoreAllMocks())
+
+    test('Back slides the page away to the History day it was opened from', async () => {
+      const user = userEvent.setup()
+      renderShell(WEEK, ORIGIN)
+
+      await user.click(within(activePage()).getByRole('button', { name: 'Back' }))
+
+      expect(layers()).toHaveLength(2)
+      await waitFor(() => expect(layers()).toHaveLength(1))
+      expect(screen.getByTestId('path')).toHaveTextContent('/history/2026-10-27')
+    })
+
+    test('swiping right goes back to the same day', async () => {
+      renderShell(WEEK, ORIGIN)
+
+      drag({ x: 30, y: 300 }, { x: 200, y: 320 })
+
+      await waitFor(() =>
+        expect(screen.getByTestId('path')).toHaveTextContent('/history/2026-10-27'),
+      )
+    })
+
+    test('without an origin Back and the swipe lead to History', async () => {
+      renderShell(WEEK, { person: 'u1' })
+
+      drag({ x: 30, y: 300 }, { x: 200, y: 320 })
+
+      await waitFor(() => expect(screen.getByTestId('path')).toHaveTextContent(/^\/history$/))
     })
   })
 

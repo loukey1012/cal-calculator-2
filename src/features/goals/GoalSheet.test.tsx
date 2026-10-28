@@ -14,6 +14,7 @@ const CURRENT = {
   proteinG: 120,
   carbsG: null,
   fatG: null,
+  kcalBurned: null,
   fiberG: null,
   weightGoalKg: null,
 }
@@ -56,9 +57,37 @@ describe('GoalSheet', () => {
       proteinG: 120,
       carbsG: null,
       fatG: 60,
+      kcalBurned: null,
       fiberG: 30,
       weightGoalKg: 68.5,
     })
+  })
+
+  test('saves the calories burned per day with the goal', async () => {
+    const user = userEvent.setup()
+    renderSheet()
+
+    await user.type(screen.getByLabelText('Calories burned per day'), '2600')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() =>
+      expect(saveGoal).toHaveBeenCalledWith(
+        'u1',
+        '2026-10-02',
+        expect.objectContaining({ kcal: 2000, kcalBurned: 2600 }),
+      ),
+    )
+  })
+
+  test('refuses calories burned of 0', async () => {
+    const user = userEvent.setup()
+    renderSheet()
+
+    await user.type(screen.getByLabelText('Calories burned per day'), '0')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(screen.getByText('Must be more than 0')).toBeInTheDocument()
+    expect(saveGoal).not.toHaveBeenCalled()
   })
 
   test('requires a calorie goal', async () => {

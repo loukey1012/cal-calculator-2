@@ -4,23 +4,42 @@ import { MEAL_TYPES, type MealType } from '../meals/dayModel'
 import type { DayTotal } from './calendar'
 import type { MonthNote } from './monthStats'
 
-/** Totals per day of one person between two local dates (inclusive), from the daily_totals view. */
+// the API returns at most this many rows per request; a full page may have more behind it
+const PAGE_SIZE = 1000
+
+const DAILY_TOTALS_COLUMNS =
+  'date, kcal, protein, meal_count, kcal_estimated, cheat_day, cheat_meal, alcohol_day, lunch_logged, dinner_logged'
+
+async function fetchTotalsPage(userId: string, range: DateRange, from: number) {
+  const { data, error } = await supabase
+    .from('daily_totals')
+    .select(DAILY_TOTALS_COLUMNS)
+    .eq('user_id', userId)
+    .gte('date', range.first)
+    .lte('date', range.last)
+    .order('date')
+    .range(from, from + PAGE_SIZE - 1)
+  if (error) throw ApiError.from(error)
+  return data
+}
+
+/**
+ * Totals per day of one person between two local dates (inclusive), by date, from the
+ * daily_totals view. A long range is read page by page, as long as a page comes back full.
+ */
 export async function fetchDailyTotals(
   userId: string,
   first: string,
   last: string,
 ): Promise<DayTotal[]> {
-  const { data, error } = await supabase
-    .from('daily_totals')
-    .select(
-      'date, kcal, protein, meal_count, kcal_estimated, cheat_day, cheat_meal, alcohol_day, lunch_logged, dinner_logged',
-    )
-    .eq('user_id', userId)
-    .gte('date', first)
-    .lte('date', last)
-  if (error) throw ApiError.from(error)
+  const rows: Awaited<ReturnType<typeof fetchTotalsPage>> = []
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const page = await fetchTotalsPage(userId, { first, last }, from)
+    rows.push(...page)
+    if (page.length < PAGE_SIZE) break
+  }
   // view columns are nullable in the generated types; aggregates are never null in practice
-  return data.map((row) => ({
+  return rows.map((row) => ({
     date: row.date ?? '',
     kcal: row.kcal ?? 0,
     protein: row.protein ?? 0,
@@ -34,10 +53,10 @@ export async function fetchDailyTotals(
   }))
 }
 
+type DateRange = { readonly first: string; readonly last: string }
+
 const mealOrder = (type: MealType | null) =>
   type === null ? -1 : MEAL_TYPES.findIndex((meal) => meal.type === type)
-
-type DateRange = { readonly first: string; readonly last: string }
 
 /** Every non-blank day note and meal note, in no particular order; `range` null reads them all. */
 async function fetchNotes(userId: string, range: DateRange | null): Promise<MonthNote[]> {

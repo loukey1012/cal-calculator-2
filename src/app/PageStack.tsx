@@ -157,7 +157,7 @@ function motionFor(
 ): Motion {
   // a swipe or Back that already slid the page away
   if (current.kind === 'gone' && current.under === to) return { kind: 'idle' }
-  const change = isRoot(from) && isRoot(to) ? null : stackChange(from, to)
+  const change = stackChange(from, to, isRoot)
   if (!animated || !change || prefersReducedMotion()) return { kind: 'idle' }
   return change === 'push'
     ? { kind: 'slide', top: to, under: from, from: 1, to: 0, thenBack: false }

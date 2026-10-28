@@ -14,6 +14,8 @@ import { TabBar } from '../components/ios/TabBar'
 import { AddFoodSession } from '../features/addFood/AddFoodSession'
 import { useLegacyCookTarget } from '../features/addFood/legacyCookLink'
 import { HistoryPage } from '../features/history/HistoryPage'
+import { weekOriginOf } from '../features/history/historyState'
+import { isWeekPath } from '../features/history/week/weekPages'
 import { IngredientsPage } from '../features/ingredients/IngredientsPage'
 import { SettingsPage } from '../features/settings/SettingsPage'
 import { TodayPage } from '../features/today/TodayPage'
@@ -108,9 +110,11 @@ function isRootPath(pathname: string): boolean {
  * On a page opened on top (e.g. a meal, Settings › Appearance) the page one level up a back
  * swipe leads to, otherwise null.
  */
-function backPathFor(pathname: string): string | null {
+function backPathFor(pathname: string, state: unknown): string | null {
   const trimmed = pathname.replace(/\/+$/, '')
   if (isRootPath(trimmed)) return null
+  // a week page leads back to the History address it was opened from (the day that was open)
+  if (isWeekPath(trimmed)) return weekOriginOf(state) ?? '/history'
   return trimmed.replace(/\/[^/]*$/, '')
 }
 
@@ -150,7 +154,7 @@ function ShellContent() {
   useSaveWhenHidden()
   useLiveUpdates(householdId)
 
-  const { pathname } = useLocation()
+  const { pathname, state: locationState } = useLocation()
   const navigate = useNavigate()
   const legacyCookTarget = useLegacyCookTarget()
   // a swipe back keeps the navigation state (whose meal it is), like Back on the page does
@@ -170,7 +174,7 @@ function ShellContent() {
   const [stackContainers, setStackContainers] = useState<Readonly<Record<string, HTMLDivElement>>>(
     {},
   )
-  const backPath = backPathFor(pathname)
+  const backPath = backPathFor(pathname, locationState)
   const backPathRef = useRef(backPath)
 
   // created once: new options make Embla re-init, which jumps and cuts the settle animation

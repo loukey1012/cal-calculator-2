@@ -11,11 +11,11 @@ import {
 import { Button } from '../../components/ios/Button'
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from '../../components/ios/icons'
 import { fromLocalDateString } from '../../lib/dates'
-import { formatKcal } from '../nutrition/format'
 import { addMonths, monthStart, monthWeeks, type DayMarks, type DayStatus } from './calendar'
 import { ScaleSymbol, StarSymbol, WineGlassSymbol } from './calendarSymbols'
-import { isOutlined, STATUS_CLASSES } from './statusClasses'
+import { isOutlined, STATUS_CLASSES, STATUS_TEXT } from './statusClasses'
 import { useMonthPress } from './useMonthPress'
+import { WeekAverageCell } from './WeekAverageCell'
 
 // a known Monday, to name the weekdays in the device language
 const A_MONDAY = new Date(2024, 0, 1)
@@ -26,18 +26,6 @@ const WEEKDAYS = Array.from({ length: 7 }, (_, index) =>
 )
 const MONTH_TITLE = new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' })
 const DAY_LABEL = new Intl.DateTimeFormat(undefined, { month: 'long', day: 'numeric' })
-
-const STATUS_TEXT: Record<DayStatus, string> = {
-  none: '',
-  logged: ', logged',
-  onTarget: ', within goal',
-  over: ', over goal',
-  wellOver: ', well over goal',
-  cheatDay: ', cheat day',
-  alcoholDay: ', alcohol day',
-  cheatMeal: ', cheat meal',
-  missing: ', lunch or dinner missing',
-}
 
 type MonthCalendarProps = {
   /** YYYY-MM-01 */
@@ -51,6 +39,10 @@ type MonthCalendarProps = {
   readonly fadedOf?: (date: string) => boolean
   /** the average calories of the counted days of one week row; null when none counts */
   readonly averageOf: (week: ReadonlyArray<string>) => number | null
+  /** the calories saved over the counted days of one week row (negative: a surplus); null when unknown */
+  readonly savedOf?: (week: ReadonlyArray<string>) => number | null
+  /** the average at the end of a row turns into a button that opens the week */
+  readonly onOpenWeek?: (week: ReadonlyArray<string>) => void
   readonly onSelectDay: (date: string) => void
   readonly onChangeMonth: (month: string) => void
   /** the month title turns into a button that shows the year overview */
@@ -67,6 +59,8 @@ export function MonthCalendar({
   marksOf,
   fadedOf,
   averageOf,
+  savedOf,
+  onOpenWeek,
   onSelectDay,
   onChangeMonth,
   onShowYear,
@@ -205,13 +199,14 @@ export function MonthCalendar({
                       )}
                     </td>
                   ))}
-                  {/* a second small line (calories saved) will come under the average */}
-                  <td
-                    data-testid="week-average"
-                    className={`rounded-r-2xl p-0.5 text-[11px] font-semibold whitespace-nowrap text-label-secondary tabular-nums ${tint}`}
-                  >
-                    {average !== null && formatKcal(average)}
-                  </td>
+                  <WeekAverageCell
+                    week={week}
+                    today={today}
+                    average={average}
+                    saved={savedOf?.(week) ?? null}
+                    tint={tint}
+                    onOpenWeek={onOpenWeek}
+                  />
                 </tr>
               )
             })}

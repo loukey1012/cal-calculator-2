@@ -6,6 +6,8 @@ export type Goal = {
   /** First day (YYYY-MM-DD) this goal applies to. */
   readonly validFrom: string
   readonly kcal: number
+  /** total calories burned per day (energy use); null = not set */
+  readonly kcalBurned: number | null
   readonly proteinG: number | null
   readonly carbsG: number | null
   readonly fatG: number | null
@@ -35,6 +37,7 @@ export function goalFromRow(row: Tables<'goal_history'>): Goal {
   return {
     validFrom: row.valid_from,
     kcal: row.kcal,
+    kcalBurned: row.kcal_burned,
     proteinG: row.protein_g,
     carbsG: row.carbs_g,
     fatG: row.fat_g,

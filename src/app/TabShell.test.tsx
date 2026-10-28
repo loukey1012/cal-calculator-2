@@ -50,6 +50,9 @@ vi.mock('../features/weight/weightApi', () => ({
   saveWeight: vi.fn(),
   deleteWeight: vi.fn(),
 }))
+vi.mock('../features/history/week/weekApi', () => ({
+  fetchWeekData: vi.fn().mockResolvedValue({ days: [], meals: [], foods: [], notes: [] }),
+}))
 vi.mock('../features/history/historyApi', () => ({
   fetchDailyTotals: vi.fn().mockResolvedValue([]),
   fetchMonthNotes: vi.fn().mockResolvedValue([]),

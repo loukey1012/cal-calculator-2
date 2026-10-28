@@ -10,6 +10,7 @@ describe('parseGoalForm', () => {
         proteinG: null,
         carbsG: null,
         fatG: null,
+        kcalBurned: null,
         fiberG: null,
         weightGoalKg: null,
       },
@@ -23,6 +24,7 @@ describe('parseGoalForm', () => {
         protein: '120,5',
         carbs: '200',
         fat: '',
+        kcalBurned: '',
         fiber: '',
         weight: '',
       }),
@@ -33,6 +35,7 @@ describe('parseGoalForm', () => {
         proteinG: 120.5,
         carbsG: 200,
         fatG: null,
+        kcalBurned: null,
         fiberG: null,
         weightGoalKg: null,
       },
@@ -50,9 +53,38 @@ describe('parseGoalForm', () => {
     })
   })
 
+  test('calories burned is optional, whole, more than 0 and capped like the calorie goal', () => {
+    expect(parseGoalForm({ ...EMPTY_GOAL_FORM, kcal: '2000', kcalBurned: '2600,2' })).toMatchObject(
+      { success: true, data: { kcalBurned: 2601 } },
+    )
+    expect(parseGoalForm({ ...EMPTY_GOAL_FORM, kcal: '2000', kcalBurned: '0' })).toEqual({
+      success: false,
+      errors: { kcalBurned: 'Must be more than 0' },
+    })
+    expect(parseGoalForm({ ...EMPTY_GOAL_FORM, kcal: '2000', kcalBurned: '-5' })).toMatchObject({
+      success: false,
+    })
+    expect(parseGoalForm({ ...EMPTY_GOAL_FORM, kcal: '2000', kcalBurned: 'lots' })).toEqual({
+      success: false,
+      errors: { kcalBurned: 'Enter a number' },
+    })
+    expect(parseGoalForm({ ...EMPTY_GOAL_FORM, kcal: '2000', kcalBurned: '100000' })).toEqual({
+      success: false,
+      errors: { kcalBurned: 'Too large' },
+    })
+  })
+
   test('explains what is wrong', () => {
     expect(
-      parseGoalForm({ kcal: '', protein: 'lots', carbs: '100000', fat: '', fiber: '', weight: '' }),
+      parseGoalForm({
+        kcal: '',
+        protein: 'lots',
+        carbs: '100000',
+        fat: '',
+        kcalBurned: '',
+        fiber: '',
+        weight: '',
+      }),
     ).toEqual({
       success: false,
       errors: {
@@ -77,10 +109,31 @@ describe('toGoalFormValues', () => {
         proteinG: 120,
         carbsG: null,
         fatG: 60.5,
+        kcalBurned: null,
         fiberG: 30,
         weightGoalKg: null,
       }),
-    ).toEqual({ kcal: '2000', protein: '120', carbs: '', fat: '60.5', fiber: '30', weight: '' })
+    ).toEqual({
+      kcal: '2000',
+      protein: '120',
+      carbs: '',
+      fat: '60.5',
+      kcalBurned: '',
+      fiber: '30',
+      weight: '',
+    })
+    expect(
+      toGoalFormValues({
+        validFrom: '2026-10-01',
+        kcal: 2000,
+        kcalBurned: 2600,
+        proteinG: null,
+        carbsG: null,
+        fatG: null,
+        fiberG: null,
+        weightGoalKg: null,
+      }).kcalBurned,
+    ).toBe('2600')
     expect(toGoalFormValues(null)).toEqual(EMPTY_GOAL_FORM)
   })
 })
@@ -94,6 +147,7 @@ describe('describeGoal', () => {
         proteinG: 120,
         carbsG: null,
         fatG: 60.5,
+        kcalBurned: null,
         fiberG: 30,
         weightGoalKg: 68,
       }),

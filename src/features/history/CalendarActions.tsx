@@ -9,6 +9,8 @@ type CalendarActionsProps = {
   readonly onChangeKeyShown: (shown: boolean) => void
   /** shows the year overview; left out while the year overview is what is shown */
   readonly onShowYear?: () => void
+  readonly onOpenThisWeek?: () => void
+  readonly thisWeekDetail?: string
 }
 
 /** The filter and ⋯ buttons of the calendar, beside the large History title. */
@@ -18,6 +20,8 @@ export function CalendarActions({
   keyShown,
   onChangeKeyShown,
   onShowYear,
+  onOpenThisWeek,
+  thisWeekDetail,
 }: CalendarActionsProps) {
   return (
     <div className="-my-1 flex shrink-0 items-center">
@@ -26,6 +30,8 @@ export function CalendarActions({
         keyShown={keyShown}
         onChangeKeyShown={onChangeKeyShown}
         onShowYear={onShowYear}
+        onOpenThisWeek={onOpenThisWeek}
+        thisWeekDetail={thisWeekDetail}
       />
     </div>
   )

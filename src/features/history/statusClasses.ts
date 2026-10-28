@@ -34,3 +34,16 @@ export const MINI_STATUS_CLASSES: Record<DayStatus, string> = {
 export function isOutlined(status: DayStatus): boolean {
   return status === 'cheatDay' || status === 'alcoholDay'
 }
+
+/** What a screen reader adds to a day's date for its status. */
+export const STATUS_TEXT: Record<DayStatus, string> = {
+  none: '',
+  logged: ', logged',
+  onTarget: ', within goal',
+  over: ', over goal',
+  wellOver: ', well over goal',
+  cheatDay: ', cheat day',
+  alcoholDay: ', alcohol day',
+  cheatMeal: ', cheat meal',
+  missing: ', lunch or dinner missing',
+}

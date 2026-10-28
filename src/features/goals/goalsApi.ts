@@ -21,6 +21,7 @@ export async function saveGoal(userId: string, validFrom: string, goal: GoalInpu
       user_id: userId,
       valid_from: validFrom,
       kcal: goal.kcal,
+      kcal_burned: goal.kcalBurned,
       protein_g: goal.proteinG,
       carbs_g: goal.carbsG,
       fat_g: goal.fatG,

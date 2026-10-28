@@ -95,7 +95,7 @@ export function weekEdgeRanges(
   ].filter((range) => range !== null)
 }
 
-function addDays(date: string, count: number): string {
+export function addDays(date: string, count: number): string {
   const day = fromLocalDateString(date)
   return toLocalDateString(new Date(day.getFullYear(), day.getMonth(), day.getDate() + count))
 }

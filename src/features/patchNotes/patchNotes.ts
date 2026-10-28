@@ -30,6 +30,17 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-28T14:55',
+    kind: 'new',
+    title: 'Calories burned and the week page',
+    items: [
+      'Settings › Goals: Calories burned per day (optional), kept with the goal’s history',
+      'Week page: tap a week’s Ø in the calendar, or ⋯ › This week. It shows the calories saved that week (burned − eaten, counted days only) and since October 10, the days of the week, the averages against your goals, highest and lowest day, Ø per meal, most eaten foods and the week’s notes; for the running week also how much a day keeps the week within goal',
+      'Each calendar row shows the week’s calories saved under its Ø',
+      'Back from the week returns to the day that was open; pages now also slide in when a day is open',
+    ],
+  },
+  {
     at: '2026-10-28T13:55',
     kind: 'fix',
     title: 'History: the month name fits again',

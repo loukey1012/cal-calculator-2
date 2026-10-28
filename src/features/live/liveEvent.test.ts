@@ -114,7 +114,7 @@ describe('keysForHint', () => {
   test("a partner's new goal refreshes their goals", () => {
     const keys = keysForHint({ table: 'goal_history', user_id: PARTNER, actor: PARTNER }, HOUSEHOLD)
 
-    expect(keys).toEqual([['goals', PARTNER]])
+    expect(keys).toEqual([['goals', 'v2', PARTNER]])
   })
 
   test("a partner's new weight refreshes their weights", () => {

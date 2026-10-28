@@ -27,7 +27,7 @@ test('set a goal, see the rings, and log a meal for the partner', async ({ page,
   const sheet = page.getByRole('dialog')
 
   await today.getByRole('button', { name: 'Set goal' }).click()
-  await sheet.getByLabel('Calories').fill('2000')
+  await sheet.getByLabel('Calories', { exact: true }).fill('2000')
   await sheet.getByLabel('Protein').fill('120')
   await sheet.getByRole('button', { name: 'Save' }).click()
   await addToEmptyMeal(today, page, /Lunch/)

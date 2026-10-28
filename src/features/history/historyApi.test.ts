@@ -66,6 +66,63 @@ describe('fetchDailyTotals', () => {
     expect(query.eq).toHaveBeenCalledWith('user_id', 'u1')
   })
 
+  test('orders by date and reads page after page while a page comes back full', async () => {
+    const PAGE = 1000
+    const rows = (from: number, count: number) =>
+      Array.from({ length: count }, (_, index) => ({
+        date: `d${from + index}`,
+        kcal: 1,
+        protein: 1,
+        meal_count: 1,
+      }))
+    const pages = [rows(0, PAGE), rows(PAGE, PAGE), rows(2 * PAGE, 5)]
+    const ranges: Array<readonly [number, number]> = []
+    const query = fakeQuery({ data: [], error: null })
+    Object.assign(query, {
+      gte: vi.fn(() => query),
+      lte: vi.fn(() => query),
+      range: vi.fn((from: number, to: number) => {
+        ranges.push([from, to])
+        const page = pages[ranges.length - 1]
+        return Promise.resolve({ data: page, error: null })
+      }),
+    })
+    supabaseMock.from.mockReturnValue(query)
+
+    const totals = await fetchDailyTotals('u1', '2020-01-01', '2026-10-27')
+
+    expect(totals).toHaveLength(2 * PAGE + 5)
+    expect(totals[0]?.date).toBe('d0')
+    expect(totals.at(-1)?.date).toBe(`d${2 * PAGE + 4}`)
+    expect(query.order).toHaveBeenCalledWith('date')
+    expect(ranges).toEqual([
+      [0, PAGE - 1],
+      [PAGE, 2 * PAGE - 1],
+      [2 * PAGE, 3 * PAGE - 1],
+    ])
+  })
+
+  test('a later page that fails fails the whole read', async () => {
+    const PAGE = 1000
+    const full = Array.from({ length: PAGE }, (_, index) => ({ date: `d${index}`, kcal: 1 }))
+    const query = fakeQuery({ data: [], error: null })
+    Object.assign(query, {
+      gte: vi.fn(() => query),
+      lte: vi.fn(() => query),
+      range: vi
+        .fn()
+        .mockReturnValueOnce(Promise.resolve({ data: full, error: null }))
+        .mockReturnValueOnce(
+          Promise.resolve({ data: null, error: { message: 'x', code: '42501' } }),
+        ),
+    })
+    supabaseMock.from.mockReturnValue(query)
+
+    await expect(fetchDailyTotals('u1', '2020-01-01', '2026-10-27')).rejects.toBeInstanceOf(
+      ApiError,
+    )
+  })
+
   test('turns database errors into ApiError', async () => {
     const query = fakeQuery({ data: null, error: { message: 'x', code: '42501' } })
     Object.assign(query, { gte: vi.fn(() => query), lte: vi.fn(() => query) })

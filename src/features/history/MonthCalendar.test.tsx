@@ -23,6 +23,7 @@ function renderCalendar(today = '2026-10-15', month = '2026-10-01') {
   const onSelectDay = vi.fn()
   const onChangeMonth = vi.fn()
   const onShowYear = vi.fn()
+  const onOpenWeek = vi.fn()
   render(
     <MonthCalendar
       month={month}
@@ -31,12 +32,16 @@ function renderCalendar(today = '2026-10-15', month = '2026-10-01') {
       statusOf={(date) => STATUS_OF[date] ?? 'none'}
       marksOf={(date) => MARKS_OF[date] ?? NO_MARKS}
       averageOf={(week) => (week.includes('2026-10-07') ? 1850 : null)}
+      savedOf={(week) =>
+        week.includes('2026-10-07') ? 3090 : week.includes('2026-10-14') ? -1200 : null
+      }
+      onOpenWeek={onOpenWeek}
       onSelectDay={onSelectDay}
       onChangeMonth={onChangeMonth}
       onShowYear={onShowYear}
     />,
   )
-  return { onSelectDay, onChangeMonth, onShowYear }
+  return { onSelectDay, onChangeMonth, onShowYear, onOpenWeek }
 }
 
 describe('MonthCalendar', () => {
@@ -212,7 +217,7 @@ describe('MonthCalendar', () => {
     renderCalendar()
 
     const firstRow = screen.getAllByTestId('week-row')[0]
-    expect(within(firstRow).getAllByRole('button')).toHaveLength(4)
+    expect(firstRow.querySelectorAll('button[data-date]')).toHaveLength(4)
     expect(screen.queryByRole('button', { name: /September 30/ })).not.toBeInTheDocument()
   })
 
@@ -283,5 +288,62 @@ describe('MonthCalendar', () => {
     const tinted = screen.getAllByTestId('week-row').filter((row) => row.dataset.current === 'true')
     expect(tinted).toHaveLength(1)
     expect(within(tinted[0]).getByRole('button', { name: 'Today, October 15' })).toBeInTheDocument()
+  })
+
+  describe('week buttons', () => {
+    test('the average opens its week, named with the average and the saved calories', async () => {
+      const user = userEvent.setup()
+      const { onOpenWeek } = renderCalendar()
+
+      const button = screen.getByRole('button', {
+        name: 'Week 41, average 1,850 kcal, 3,090 kcal saved',
+      })
+      expect(button).toHaveClass('h-11')
+      await user.click(button)
+
+      expect(onOpenWeek).toHaveBeenCalledWith([
+        '2026-10-05',
+        '2026-10-06',
+        '2026-10-07',
+        '2026-10-08',
+        '2026-10-09',
+        '2026-10-10',
+        '2026-10-11',
+      ])
+    })
+
+    test('shows the saved figure under the average: green saved, a surplus in the secondary color', () => {
+      renderCalendar()
+
+      const saved = screen.getAllByTestId('week-saved').map((cell) => cell.textContent)
+      expect(saved).toEqual(['−3,090', '+1,200'])
+      expect(screen.getAllByTestId('week-saved')[0]).toHaveClass('text-success')
+      expect(screen.getAllByTestId('week-saved')[1]).toHaveClass('text-label-secondary')
+    })
+
+    test('a week without data is still a button, named by its number; a surplus says so', () => {
+      renderCalendar()
+
+      expect(screen.getByRole('button', { name: 'Week 40' })).toBeEnabled()
+      expect(
+        screen.getByRole('button', { name: 'Week 42, 1,200 kcal surplus' }),
+      ).toBeInTheDocument()
+    })
+
+    test('a week that has not begun cannot be opened', () => {
+      renderCalendar('2026-10-15')
+
+      expect(screen.getByRole('button', { name: 'Week 43' })).toBeDisabled()
+      expect(screen.getByRole('button', { name: 'Week 42, 1,200 kcal surplus' })).toBeEnabled()
+    })
+
+    test('tapping it selects no day', async () => {
+      const user = userEvent.setup()
+      const { onSelectDay } = renderCalendar()
+
+      await user.click(screen.getByRole('button', { name: /^Week 41/ }))
+
+      expect(onSelectDay).not.toHaveBeenCalled()
+    })
   })
 })

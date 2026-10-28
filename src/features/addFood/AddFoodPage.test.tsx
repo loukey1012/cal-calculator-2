@@ -255,6 +255,7 @@ describe('choosing an amount', () => {
         proteinG: 150,
         carbsG: null,
         fatG: 70,
+        kcalBurned: null,
         fiberG: null,
         weightGoalKg: null,
       },

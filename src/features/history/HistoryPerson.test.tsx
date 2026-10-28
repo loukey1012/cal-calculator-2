@@ -12,6 +12,9 @@ vi.mock('../dishes/dishesApi', () => ({
   saveDish: vi.fn(),
   deleteDish: vi.fn(),
 }))
+vi.mock('./week/weekApi', () => ({
+  fetchWeekData: vi.fn().mockResolvedValue({ days: [], meals: [], foods: [], notes: [] }),
+}))
 vi.mock('./historyApi', () => ({
   fetchDailyTotals: vi.fn(),
   fetchMonthNotes: vi.fn().mockResolvedValue([]),
@@ -72,6 +75,7 @@ const GOAL = {
   proteinG: null,
   carbsG: null,
   fatG: null,
+  kcalBurned: null,
   fiberG: null,
   weightGoalKg: null,
 }

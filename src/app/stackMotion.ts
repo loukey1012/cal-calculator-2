@@ -44,10 +44,23 @@ function isInside(child: string, parent: string): boolean {
   return child.startsWith(`${parent}/`)
 }
 
-/** A deeper page opened (push), back to a page above (pop), or neither. */
-export function stackChange(from: string, to: string): 'push' | 'pop' | null {
+/**
+ * A deeper page opened (push), back to a page above (pop), or neither. `isRoot` names the tab's
+ * own pages (e.g. History with a day picked): they are one level, so from one to a page on top
+ * is a push and back to one a pop, even when the address is no prefix; two of them move nothing.
+ */
+export function stackChange(
+  from: string,
+  to: string,
+  isRoot: (path: string) => boolean = () => false,
+): 'push' | 'pop' | null {
+  const fromRoot = isRoot(from)
+  const toRoot = isRoot(to)
+  if (fromRoot && toRoot) return null
   if (isInside(to, from)) return 'push'
   if (isInside(from, to)) return 'pop'
+  if (fromRoot) return 'push'
+  if (toRoot) return 'pop'
   return null
 }
 

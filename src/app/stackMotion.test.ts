@@ -46,6 +46,37 @@ describe('stackChange', () => {
   ])('%s → %s is %s', (from, to, expected) => {
     expect(stackChange(from, to)).toBe(expected)
   })
+
+  describe("with the tab's own pages (roots)", () => {
+    const isRoot = (path: string) => /^\/history(\/\d{4}-\d{2}-\d{2})?$/.test(path)
+
+    test.each([
+      [
+        'a root with a day opens a week page',
+        '/history/2026-10-27',
+        '/history/week-2026-44',
+        'push',
+      ],
+      [
+        'the week page goes back to a root with a day',
+        '/history/week-2026-44',
+        '/history/2026-10-27',
+        'pop',
+      ],
+      ['the week page goes back to the plain root', '/history/week-2026-44', '/history', 'pop'],
+      ['the plain root opens a week page', '/history', '/history/week-2026-44', 'push'],
+      ['week to week is neither', '/history/week-2026-44', '/history/week-2026-43', null],
+      [
+        'a meal page of a day goes back to another root',
+        '/history/2026-10-26/meal-lunch-2026-10-26-u1',
+        '/history/2026-10-27',
+        'pop',
+      ],
+      ['two roots', '/history/2026-10-26', '/history/2026-10-27', null],
+    ])('%s', (_name, from, to, expected) => {
+      expect(stackChange(from, to, isRoot)).toBe(expected)
+    })
+  })
 })
 
 describe('layerTransforms', () => {
