@@ -149,36 +149,6 @@ describe('live updates', () => {
     expect(hint).toMatchObject({ table: 'meals', user_id: alice.id, date: noteDay })
   })
 
-  test('a saved recipe is announced to the household', async () => {
-    expect(await bobListens.status).toBe('SUBSCRIBED')
-
-    const { error } = await alice.client.rpc('save_recipe', {
-      p_recipe: {
-        id: crypto.randomUUID(),
-        name: 'Live soup',
-        split_mode: 'equal',
-        portions: [{ id: crypto.randomUUID(), user_id: alice.id, split_value: null }],
-        lines: [
-          {
-            id: crypto.randomUUID(),
-            allocation: 'shared',
-            ingredient_id: null,
-            name: 'Tomato',
-            entered_amount: 400,
-            entered_unit: 'g',
-            basis: 'per_100g',
-            basis_multiplier: 4,
-            kcal: 18,
-          },
-        ],
-      },
-    })
-
-    expect(error).toBeNull()
-    const hint = await waitFor(bobListens.hints, (h) => h.table === 'recipes')
-    expect(hint).toMatchObject({ table: 'recipes', actor: alice.id })
-  })
-
   test("someone from another household can't listen in", async () => {
     // Act
     const carolListens = await listen(carol, householdId)

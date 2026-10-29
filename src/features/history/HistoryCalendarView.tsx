@@ -3,6 +3,7 @@ import { toUserMessage } from '../../lib/errors'
 import { useGoals } from '../goals/hooks'
 import type { Profile } from '../household/householdApi'
 import type { CalendarZoom } from './historyState'
+import { useMonthGymDates, useMonthSexDates } from '../dayMarks/hooks'
 import { useWeights } from '../weight/hooks'
 import { dayStatus, monthWeeks, weekAverageKcal } from './calendar'
 import { CalendarKey } from './CalendarKey'
@@ -87,6 +88,8 @@ function HistoryMonthView({
   const edgeTotals = useWeekEdgeTotals(person.id, month, today)
   const notes = useMonthNotes(person.id, month)
   const weights = useWeights(person.id)
+  const gymDates = useMonthGymDates(person.id, month)
+  const sexDates = useMonthSexDates(person.household_id, month)
   const byDate = new Map((totals.data ?? []).map((total) => [total.date, total]))
   // a week across two months averages all its days: the edge days only count there
   const byDateInWeeks = new Map(
@@ -100,14 +103,31 @@ function HistoryMonthView({
   const notedDays = noteDatesOf(notes.data ?? [])
   const statusOf = (day: string) => dayStatus(day, byDate.get(day), goals.data ?? [], today)
   const weighedDays = new Set((weights.data ?? []).map((entry) => entry.date))
+  const gymDays = new Set(gymDates.data ?? [])
+  const sexDays = new Set(sexDates.data ?? [])
   // nothing is faded while the data the filter needs is not there; the open day never is
-  const filterReady =
-    filter === 'notes' ? notes.data !== undefined : filter !== null && totals.data !== undefined
+  const totalsReady = totals.data !== undefined
+  const dataReady: Record<MonthFilter, boolean> = {
+    notes: notes.data !== undefined,
+    alcohol: totalsReady,
+    cheat: totalsReady,
+    missing: totalsReady,
+    gym: gymDates.data !== undefined,
+    sex: sexDates.data !== undefined,
+  }
+  const filterReady = filter !== null && dataReady[filter]
   const fadedOf =
     filter !== null && filterReady
       ? (day: string) =>
           day !== selectedDay &&
-          !filterMatches(filter, statusOf(day), notedDays.has(day), byDate.get(day))
+          !filterMatches({
+            filter,
+            status: statusOf(day),
+            hasNote: notedDays.has(day),
+            total: byDate.get(day),
+            hasGym: gymDays.has(day),
+            hasSex: sexDays.has(day),
+          })
       : undefined
 
   // the bar belongs to the open day's week when that day is in the shown month (a day of a
@@ -151,6 +171,8 @@ function HistoryMonthView({
           hasNote: notedDays.has(day),
           weighed: weighedDays.has(day),
           estimated: byDate.get(day)?.kcalEstimated === true,
+          gym: gymDays.has(day),
+          sex: sexDays.has(day),
         })}
         fadedOf={fadedOf}
         footer={weekBar}
@@ -165,6 +187,8 @@ function HistoryMonthView({
             total={byDate.get(day)}
             goals={goals.data}
             hasNote={notedDays.has(day)}
+            gym={gymDays.has(day)}
+            sex={sexDays.has(day)}
             onClose={close}
           />
         )}

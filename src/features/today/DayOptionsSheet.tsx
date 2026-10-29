@@ -4,6 +4,7 @@ import { GroupedSection } from '../../components/ios/GroupedSection'
 import { SegmentedControl } from '../../components/ios/SegmentedControl'
 import { ToggleRow } from '../../components/ios/FormRows'
 import { Sheet } from '../../components/ios/Sheet'
+import { useGymDay, useSetGymDay, useSetSexDay, useSexDay } from '../dayMarks/hooks'
 import { cheatMeals, MEAL_TYPES, type MealType } from '../meals/dayModel'
 import type { DayMark } from '../meals/mealsApi'
 import { useDay, useDayMark, useSetCheatMeal, useSetDayMark } from '../meals/hooks'
@@ -22,6 +23,8 @@ const markOf = (choice: MarkChoice): DayMark => (choice === 'none' ? null : choi
 type DayOptionsSheetProps = {
   readonly open: boolean
   readonly userId: string
+  /** the household the sex mark belongs to */
+  readonly householdId: string | null
   /** local YYYY-MM-DD */
   readonly date: string
   readonly onClose: () => void
@@ -33,6 +36,8 @@ type DayOptionsSheetProps = {
  */
 type Draft = {
   readonly mark?: MarkChoice
+  readonly gym?: boolean
+  readonly sex?: boolean
   readonly cheatMeals: Readonly<Partial<Record<MealType, boolean>>>
 }
 
@@ -68,16 +73,28 @@ export function DayOptionsSheet({ open, ...rest }: DayOptionsSheetProps) {
   return open ? <DayOptionsPanel {...rest} /> : null
 }
 
-function DayOptionsPanel({ userId, date, onClose }: Omit<DayOptionsSheetProps, 'open'>) {
+function DayOptionsPanel({
+  userId,
+  householdId,
+  date,
+  onClose,
+}: Omit<DayOptionsSheetProps, 'open'>) {
   const day = useDay(userId, date)
   const dayMark = useDayMark(userId, date)
   const markHelpId = useId()
   const setDayMark = useSetDayMark(userId, date)
   const setCheatMeal = useSetCheatMeal(userId, date)
+  const gymDay = useGymDay(userId, date)
+  const sexDay = useSexDay(householdId, date)
+  const setGymDay = useSetGymDay(userId, date)
+  const setSexDay = useSetSexDay(householdId, date, userId)
+  const marksHelpId = useId()
   const [draft, setDraft] = useState(EMPTY_DRAFT)
 
   const savedMark: MarkChoice = dayMark.data ?? 'none'
   const savedCheatMeals = cheatMeals(day.data ?? [])
+  const savedGym = gymDay.data ?? false
+  const savedSex = sexDay.data ?? false
 
   // only what differs from what is saved
   const markChanged = draft.mark !== undefined && draft.mark !== savedMark
@@ -85,9 +102,14 @@ function DayOptionsPanel({ userId, date, onClose }: Omit<DayOptionsSheetProps, '
     ({ type }) =>
       draft.cheatMeals[type] !== undefined && draft.cheatMeals[type] !== savedCheatMeals.has(type),
   )
-  const hasChanges = markChanged || changedCheatMeals.length > 0
-  // until the day is known, a save could overwrite or clear what is there
-  const loaded = dayMark.data !== undefined && day.data !== undefined
+  const gymChanged = draft.gym !== undefined && draft.gym !== savedGym
+  const sexChanged = draft.sex !== undefined && draft.sex !== savedSex
+  const hasChanges = markChanged || changedCheatMeals.length > 0 || gymChanged || sexChanged
+  // each control stays off until its own data is known (a tap could overwrite or clear what is
+  // there), so an edit exists only for what has loaded and Save needs nothing more
+  const gymLoaded = gymDay.data !== undefined
+  const sexLoaded = sexDay.data !== undefined
+  const dayErrors = [dayMark.error, day.error].filter((error) => error !== null)
 
   function close() {
     if (hasChanges && !window.confirm(DISCARD_QUESTION)) return
@@ -99,6 +121,8 @@ function DayOptionsPanel({ userId, date, onClose }: Omit<DayOptionsSheetProps, '
     for (const { type } of changedCheatMeals) {
       setCheatMeal.mutate({ mealType: type, cheatMeal: draft.cheatMeals[type] === true })
     }
+    if (gymChanged && draft.gym !== undefined) setGymDay.mutate(draft.gym)
+    if (sexChanged && draft.sex !== undefined) setSexDay?.mutate(draft.sex)
     // the edits are in the mutations now (optimistic, queued offline); what shows follows the data again
     setDraft(EMPTY_DRAFT)
     onClose()
@@ -112,7 +136,7 @@ function DayOptionsPanel({ userId, date, onClose }: Omit<DayOptionsSheetProps, '
       action={
         <Button
           variant="plain"
-          disabled={!hasChanges || !loaded}
+          disabled={!hasChanges}
           onClick={save}
           className="-mr-2 font-semibold"
         >
@@ -120,6 +144,11 @@ function DayOptionsPanel({ userId, date, onClose }: Omit<DayOptionsSheetProps, '
         </Button>
       }
     >
+      {dayErrors.map((error) => (
+        <p key={error.message} role="alert" className="px-4 pb-2 text-[13px] text-destructive">
+          {error.message}
+        </p>
+      ))}
       <GroupedSection
         footerId={markHelpId}
         footer="A cheat day is off plan. On an alcohol day the calories are not known. Either is left out of averages and the weekly review, and the rings show no over colors."
@@ -146,6 +175,7 @@ function DayOptionsPanel({ userId, date, onClose }: Omit<DayOptionsSheetProps, '
           <ToggleRow
             key={type}
             label={label}
+            disabled={day.data === undefined}
             checked={draft.cheatMeals[type] ?? savedCheatMeals.has(type)}
             onChange={(checked) =>
               setDraft((current) => ({
@@ -155,6 +185,28 @@ function DayOptionsPanel({ userId, date, onClose }: Omit<DayOptionsSheetProps, '
             }
           />
         ))}
+      </GroupedSection>
+      <GroupedSection
+        header="Marks"
+        footerId={marksHelpId}
+        footer="Gym is per person. Sex shows on both calendars. Neither changes any figure."
+      >
+        <ToggleRow
+          label="Gym"
+          disabled={!gymLoaded}
+          error={gymDay.error?.message}
+          checked={draft.gym ?? savedGym}
+          onChange={(gym) => setDraft((current) => ({ ...current, gym: editOf(gym, savedGym) }))}
+        />
+        {householdId !== null && (
+          <ToggleRow
+            label="Sex"
+            disabled={!sexLoaded}
+            error={sexDay.error?.message}
+            checked={draft.sex ?? savedSex}
+            onChange={(sex) => setDraft((current) => ({ ...current, sex: editOf(sex, savedSex) }))}
+          />
+        )}
       </GroupedSection>
     </Sheet>
   )

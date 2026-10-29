@@ -40,6 +40,10 @@ export type DayMarks = {
   readonly weighed: boolean
   /** some of the day's calories are an estimate */
   readonly estimated: boolean
+  /** the person's gym day */
+  readonly gym: boolean
+  /** the household's sex day: both calendars show it */
+  readonly sex: boolean
 }
 
 /** First day (YYYY-MM-01) of the month containing `date`. */

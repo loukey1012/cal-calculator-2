@@ -13,6 +13,12 @@ vi.mock('../dishes/dishesApi', () => ({
   saveDish: vi.fn(),
   deleteDish: vi.fn(),
 }))
+vi.mock('../dayMarks/dayMarksApi', () => ({
+  fetchGymDay: vi.fn().mockResolvedValue(false),
+  fetchSexDay: vi.fn().mockResolvedValue(false),
+  setGymDay: vi.fn(),
+  setSexDay: vi.fn(),
+}))
 vi.mock('../meals/mealsApi', () => ({
   fetchDay: vi.fn(),
   addMealItem: vi.fn(),
@@ -41,6 +47,7 @@ vi.mock('../ingredients/ingredientsApi', () => ({
   fetchCategories: vi.fn().mockResolvedValue([]),
 }))
 
+import { fetchGymDay, fetchSexDay } from '../dayMarks/dayMarksApi'
 import { fetchGoals } from '../goals/goalsApi'
 import { fetchMembers } from '../household/householdApi'
 import {
@@ -222,6 +229,29 @@ describe('TodayPage', () => {
     const goals = await screen.findByRole('list', { name: 'Goals' })
     const ring = within(goals).getAllByTestId('ring')[0]
     expect(ring?.querySelectorAll('circle')[1]?.style.stroke).toBe('var(--goal-kcal)')
+  })
+
+  test('gym and sex show as badges on the day and leave its figures alone', async () => {
+    vi.mocked(fetchGymDay).mockResolvedValue(true)
+    vi.mocked(fetchSexDay).mockResolvedValue(true)
+    vi.mocked(fetchDay).mockResolvedValue([
+      LUNCH,
+      dayMeal('m2', 'dinner', [mealItem({ id: 'cake', kcal: 2000 })]),
+    ])
+
+    renderPage()
+
+    const total = screen.getByTestId('day-total')
+    await waitFor(() => expect(total).toHaveTextContent('Gym'))
+    expect(total).toHaveTextContent('Sex')
+    expect(screen.getByTestId('gym-badge-symbol')).toBeInTheDocument()
+    expect(screen.getByTestId('sex-badge-symbol')).toBeInTheDocument()
+    // not a left-out day: over colors still apply
+    expect(total).not.toHaveTextContent('Cheat day')
+    expect(total).not.toHaveTextContent('Alcohol day')
+    const goals = await screen.findByRole('list', { name: 'Goals' })
+    const ring = within(goals).getAllByTestId('ring')[0]
+    expect(ring?.querySelectorAll('circle')[1]?.style.stroke).not.toBe('var(--goal-kcal)')
   })
 
   test('an alcohol day says so, and its rings show no over colors', async () => {

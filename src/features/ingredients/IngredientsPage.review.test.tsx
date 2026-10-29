@@ -144,15 +144,14 @@ describe('Ingredients › Review', () => {
     expect(screen.queryByRole('button', { name: /^Review/ })).not.toBeInTheDocument()
   })
 
-  test('the Review button sits in the page header next to +, not in the brand and sort line', async () => {
+  test('the Review button sits on the title row next to +, not in the brand and sort line', async () => {
     renderPage()
 
     const review = await screen.findByRole('button', { name: 'Review: 2' })
 
-    expect(screen.getByTestId('page-header-bar')).toContainElement(review)
-    expect(screen.getByTestId('page-header-bar')).toContainElement(
-      screen.getByRole('button', { name: 'Add ingredient' }),
-    )
+    const titleRow = screen.getByRole('heading', { name: 'Ingredients' }).parentElement
+    expect(titleRow).toContainElement(review)
+    expect(titleRow).toContainElement(screen.getByRole('button', { name: 'Add ingredient' }))
   })
 
   test('lists each finding with its ingredient, reason and the suggested change', async () => {

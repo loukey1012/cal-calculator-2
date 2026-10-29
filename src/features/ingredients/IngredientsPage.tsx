@@ -123,7 +123,7 @@ function IngredientList() {
     <>
       <PageHeader
         title="Ingredients"
-        action={
+        titleAccessory={
           <div className="flex items-center gap-1">
             <ReviewButton count={openFindings} onClick={() => setReviewing(true)} />
             <Button

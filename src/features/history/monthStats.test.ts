@@ -1,6 +1,14 @@
 import { describe, expect, test } from 'vitest'
 import type { DayTotal } from './calendar'
-import { filterMatches, monthFilterOf, noteDatesOf, type MonthNote } from './monthStats'
+import {
+  filterMatches,
+  MONTH_FILTERS,
+  monthFilterOf,
+  noteDatesOf,
+  type FilterInput,
+  type MonthFilter,
+  type MonthNote,
+} from './monthStats'
 
 function day(date: string, kcal: number, extra: Partial<DayTotal> = {}): DayTotal {
   return {
@@ -27,39 +35,50 @@ describe('notes and filters', () => {
   })
 
   test('matches days by their status or note', () => {
-    expect(filterMatches('notes', 'logged', true)).toBe(true)
-    expect(filterMatches('notes', 'logged', false)).toBe(false)
-    expect(
-      filterMatches('alcohol', 'alcoholDay', false, day('2026-10-01', 0, { alcoholDay: true })),
-    ).toBe(true)
-    expect(
-      filterMatches('alcohol', 'cheatDay', false, day('2026-10-01', 0, { cheatDay: true })),
-    ).toBe(false)
-    expect(filterMatches('alcohol', 'none', false)).toBe(false)
-    expect(
-      filterMatches('cheat', 'cheatDay', false, day('2026-10-01', 0, { cheatDay: true })),
-    ).toBe(true)
-    expect(
-      filterMatches('cheat', 'cheatMeal', false, day('2026-10-01', 0, { cheatMeal: true })),
-    ).toBe(true)
+    const base = { status: 'none', hasNote: false, hasGym: false, hasSex: false } as const
+    const match = (filter: MonthFilter, extra: Partial<FilterInput>) =>
+      filterMatches({ ...base, filter, ...extra })
+    const flagged = (extra: Partial<DayTotal>) => day('2026-10-01', 0, extra)
+
+    expect(match('notes', { status: 'logged', hasNote: true })).toBe(true)
+    expect(match('notes', { status: 'logged' })).toBe(false)
+    expect(match('alcohol', { status: 'alcoholDay', total: flagged({ alcoholDay: true }) })).toBe(
+      true,
+    )
+    expect(match('alcohol', { status: 'cheatDay', total: flagged({ cheatDay: true }) })).toBe(false)
+    expect(match('alcohol', {})).toBe(false)
+    expect(match('cheat', { status: 'cheatDay', total: flagged({ cheatDay: true }) })).toBe(true)
+    expect(match('cheat', { status: 'cheatMeal', total: flagged({ cheatMeal: true }) })).toBe(true)
     // the status shows alcohol first, the flags still say there was a cheat meal
     expect(
-      filterMatches(
-        'cheat',
-        'alcoholDay',
-        false,
-        day('2026-10-01', 0, { alcoholDay: true, cheatMeal: true }),
-      ),
+      match('cheat', {
+        status: 'alcoholDay',
+        total: flagged({ alcoholDay: true, cheatMeal: true }),
+      }),
     ).toBe(true)
-    expect(
-      filterMatches('cheat', 'alcoholDay', false, day('2026-10-01', 0, { alcoholDay: true })),
-    ).toBe(false)
-    expect(filterMatches('missing', 'missing', false)).toBe(true)
-    expect(filterMatches('missing', 'none', false)).toBe(false)
+    expect(match('cheat', { status: 'alcoholDay', total: flagged({ alcoholDay: true }) })).toBe(
+      false,
+    )
+    expect(match('missing', { status: 'missing' })).toBe(true)
+    expect(match('missing', {})).toBe(false)
+  })
+
+  test('matches gym and sex days by their own marks, whatever the status', () => {
+    const base = { status: 'logged', hasNote: false, hasGym: false, hasSex: false } as const
+
+    expect(filterMatches({ ...base, filter: 'gym', hasGym: true })).toBe(true)
+    expect(filterMatches({ ...base, filter: 'gym', hasSex: true })).toBe(false)
+    expect(filterMatches({ ...base, filter: 'sex', hasSex: true })).toBe(true)
+    expect(filterMatches({ ...base, filter: 'sex', hasGym: true })).toBe(false)
+  })
+
+  test('the filters offer Gym and Sex', () => {
+    expect(MONTH_FILTERS.map(({ label }) => label)).toEqual(expect.arrayContaining(['Gym', 'Sex']))
   })
 
   test('reads the filter from navigation state defensively', () => {
     expect(monthFilterOf({ filter: 'cheat' })).toBe('cheat')
+    expect(monthFilterOf({ filter: 'gym' })).toBe('gym')
     expect(monthFilterOf({ filter: 'bogus' })).toBeNull()
     expect(monthFilterOf({ filter: 3 })).toBeNull()
     expect(monthFilterOf({})).toBeNull()

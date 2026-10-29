@@ -1,5 +1,11 @@
 import type { ReactNode } from 'react'
-import { ScaleSymbol, ForkKnifeSymbol, WineGlassSymbol } from './calendarSymbols'
+import {
+  DumbbellSymbol,
+  ForkKnifeSymbol,
+  HeartSymbol,
+  ScaleSymbol,
+  WineGlassSymbol,
+} from './calendarSymbols'
 
 const CIRCLE = 'flex h-4 w-4 shrink-0 items-center justify-center rounded-full'
 const DASHED = 'border-2 border-dashed'
@@ -41,6 +47,14 @@ const ENTRIES: readonly KeyEntry[] = [
   {
     label: 'Weigh-in',
     sample: <ScaleSymbol className="h-3.5 w-3.5 shrink-0 text-label-secondary" />,
+  },
+  {
+    label: 'Gym',
+    sample: <DumbbellSymbol className="h-3.5 w-3.5 shrink-0 text-label-secondary" />,
+  },
+  {
+    label: 'Sex',
+    sample: <HeartSymbol className="h-3.5 w-3.5 shrink-0 text-heart" />,
   },
   {
     label: 'Estimated calories',

@@ -1,4 +1,4 @@
-import { useState, type ComponentType, type SVGProps } from 'react'
+import { useState, type ComponentType, type ReactNode, type SVGProps } from 'react'
 import { usePagePath } from '../../app/pagePath'
 import { useStackNavigate } from '../../app/stackNavigate'
 import { Button } from '../../components/ios/Button'
@@ -11,6 +11,8 @@ import {
   SnackIcon,
 } from '../../components/ios/icons'
 import { toUserMessage } from '../../lib/errors'
+import { DumbbellSymbol, HeartSymbol } from '../history/calendarSymbols'
+import { useGymDay, useSexDay } from '../dayMarks/hooks'
 import { useGoals } from '../goals/hooks'
 import { DayStatusPill } from '../history/DayStatusPill'
 import { useAddFoodSession } from '../addFood/addFoodSessionContext'
@@ -82,9 +84,10 @@ function missingLabel(missing: readonly MainMeal[]): string {
 }
 
 /** A small neutral label beside the day's macros, e.g. "Cheat day". */
-function DayBadge({ label }: { readonly label: string }) {
+function DayBadge({ label, symbol }: { readonly label: string; readonly symbol?: ReactNode }) {
   return (
-    <span className="shrink-0 rounded-full bg-fill px-2 py-0.5 text-[12px] font-bold text-label-secondary">
+    <span className="flex shrink-0 items-center gap-1 rounded-full bg-fill px-2 py-0.5 text-[12px] font-bold text-label-secondary">
+      {symbol}
       {label}
     </span>
   )
@@ -156,6 +159,8 @@ export function DayView({ person, isOwnDay, date, showStatus = false }: DayViewP
   const day = useDay(person.id, date)
   const dayMark = useDayMark(person.id, date).data ?? null
   const dayNote = useDayNote(person.id, date).data ?? null
+  const gymDay = useGymDay(person.id, date).data === true
+  const sexDay = useSexDay(person.household_id, date).data === true
   const today = useToday()
   const goals = useGoals(person.id)
   const lookOf = useLookOf()
@@ -268,12 +273,29 @@ export function DayView({ person, isOwnDay, date, showStatus = false }: DayViewP
                 </button>
               </div>
               {/* the day's kcal and macros are on the goal card above, not repeated here */}
-              {(dayMark !== null || hasCheatMeal || missing.length > 0) && (
+              {(dayMark !== null || hasCheatMeal || missing.length > 0 || gymDay || sexDay) && (
                 <div className="flex flex-wrap items-center gap-2">
                   {dayMark === 'cheat' && <DayBadge label="Cheat day" />}
                   {dayMark === 'alcohol' && <DayBadge label="Alcohol day" />}
                   {hasCheatMeal && <DayBadge label="Cheat meal" />}
                   {missing.length > 0 && <DayBadge label={missingLabel(missing)} />}
+                  {gymDay && (
+                    <DayBadge
+                      label="Gym"
+                      symbol={<DumbbellSymbol data-testid="gym-badge-symbol" className="h-3 w-3" />}
+                    />
+                  )}
+                  {sexDay && (
+                    <DayBadge
+                      label="Sex"
+                      symbol={
+                        <HeartSymbol
+                          data-testid="sex-badge-symbol"
+                          className="h-3 w-3 text-heart"
+                        />
+                      }
+                    />
+                  )}
                 </div>
               )}
             </div>
@@ -297,6 +319,7 @@ export function DayView({ person, isOwnDay, date, showStatus = false }: DayViewP
       <DayOptionsSheet
         open={optionsOpen}
         userId={person.id}
+        householdId={person.household_id}
         date={date}
         onClose={() => setOptionsOpen(false)}
       />

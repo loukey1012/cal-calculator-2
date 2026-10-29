@@ -13,7 +13,13 @@ const STATUS_OF: Record<string, DayStatus> = {
   '2026-10-06': 'alcoholDay',
 }
 
-const NO_MARKS: DayMarks = { hasNote: false, weighed: false, estimated: false }
+const NO_MARKS: DayMarks = {
+  hasNote: false,
+  weighed: false,
+  estimated: false,
+  gym: false,
+  sex: false,
+}
 const MARKS_OF: Record<string, DayMarks> = {
   '2026-10-06': { ...NO_MARKS, hasNote: true, weighed: true },
   '2026-10-07': { ...NO_MARKS, estimated: true },

@@ -49,3 +49,21 @@ export function ScaleSymbol(props: SVGProps<SVGSVGElement>) {
     </Symbol>
   )
 }
+
+/** Sex day: an outlined heart. */
+export function HeartSymbol(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Symbol {...props}>
+      <path d="M6 10.3 1.9 6.4a2.4 2.4 0 0 1 3.4-3.4L6 3.7l.7-.7a2.4 2.4 0 0 1 3.4 3.4z" />
+    </Symbol>
+  )
+}
+
+/** Gym day: a dumbbell, kept to a bar and two plates so it stays legible at 9 px. */
+export function DumbbellSymbol(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Symbol {...props}>
+      <path d="M1 6h10M3 3.5v5M9 3.5v5" />
+    </Symbol>
+  )
+}

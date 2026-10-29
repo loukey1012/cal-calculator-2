@@ -50,6 +50,10 @@ export type ExportData = {
     readonly date: string
     readonly weight_kg: number
   }>
+  /** each person's own gym days */
+  readonly gymDays: ReadonlyArray<{ readonly user_id: string; readonly date: string }>
+  /** the household's sex days: they belong to both people */
+  readonly sexDays: ReadonlyArray<{ readonly date: string }>
 }
 
 const NUTRIENT_COLUMNS = [
@@ -85,6 +89,8 @@ export const DAY_HEADER = [
   'Cheat day',
   'Cheat meal',
   'Alcohol day',
+  'Gym',
+  'Sex',
 ]
 
 const UNIT_NAMES: Record<Enums<'amount_unit'>, string> = { g: 'g', ml: 'ml', unit: 'pieces' }
@@ -131,8 +137,16 @@ export function dayRows(data: ExportData): CsvValue[][] {
   const keyOf = ({ user_id, date }: { user_id: string; date: string }) => `${user_id}|${date}`
   const totals = new Map(data.days.map((day) => [keyOf(day), day]))
   const weights = new Map(data.weights.map((entry) => [keyOf(entry), entry.weight_kg]))
+  const gymKeys = new Set(data.gymDays.map(keyOf))
+  const sexDates = new Set(data.sexDays.map(({ date }) => date))
+  // a sex day is listed for both people, even when nothing else happened that day
+  const sexRows = data.sexDays.flatMap(({ date }) =>
+    data.people.map(({ id }) => ({ user_id: id, date })),
+  )
   const days = [
-    ...new Map([...data.days, ...data.weights].map((row) => [keyOf(row), row])).values(),
+    ...new Map(
+      [...data.days, ...data.weights, ...data.gymDays, ...sexRows].map((row) => [keyOf(row), row]),
+    ).values(),
   ]
   return days.sort(byDayAndPerson(data)).map((day) => {
     const total = totals.get(keyOf(day))
@@ -146,6 +160,8 @@ export function dayRows(data: ExportData): CsvValue[][] {
       total?.cheat_day ?? false,
       total?.cheat_meal ?? false,
       total?.alcohol_day ?? false,
+      gymKeys.has(keyOf(day)),
+      sexDates.has(day.date),
     ]
   })
 }

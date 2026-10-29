@@ -92,3 +92,12 @@ describe('isLeftOut', () => {
     expect(isLeftOut({ date: '2026-10-15', mealCount: 1, cheatDay: false })).toBe(false)
   })
 })
+
+describe('gym and sex days', () => {
+  test('a day with either mark still counts normally: counting does not know them', () => {
+    const marked = { ...day(), gymDay: true, sexDay: true }
+
+    expect(isLeftOut(marked)).toBe(false)
+    expect(countsInAverages(marked, TODAY)).toBe(true)
+  })
+})

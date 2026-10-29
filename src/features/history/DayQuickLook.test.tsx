@@ -41,6 +41,8 @@ function renderLook(props: Partial<React.ComponentProps<typeof DayQuickLook>> = 
         status={STATUS}
         hasFood
         hasNote
+        gym={false}
+        sex={false}
         onClose={onClose}
         {...props}
       />
@@ -62,6 +64,21 @@ describe('DayQuickLook', () => {
     const dialog = screen.getByRole('dialog', { name: /October 2/ })
     expect(dialog).toHaveTextContent(/Within goal/)
     expect(dialog).toHaveTextContent('1,850 of 2,000 kcal')
+  })
+
+  test('names the gym and sex marks in one small line', () => {
+    renderLook({ gym: true, sex: true })
+    expect(screen.getByTestId('quick-look-marks')).toHaveTextContent('Gym · Sex')
+  })
+
+  test('names only the mark that is set', () => {
+    renderLook({ sex: true })
+    expect(screen.getByTestId('quick-look-marks')).toHaveTextContent(/^Sex$/)
+  })
+
+  test('has no marks line when neither is set', () => {
+    renderLook()
+    expect(screen.queryByTestId('quick-look-marks')).not.toBeInTheDocument()
   })
 
   test('shows just the calories without a goal', () => {
@@ -141,6 +158,8 @@ describe('DayQuickLook', () => {
           status={STATUS}
           hasFood
           hasNote={false}
+          gym={false}
+          sex={false}
           onClose={close}
         />
       )

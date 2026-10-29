@@ -72,6 +72,8 @@ const DATA: ExportData = {
       kcal_estimated: false,
     },
   ],
+  gymDays: [],
+  sexDays: [],
   weights: [
     { user_id: 'u1', date: '2026-10-02', weight_kg: 81.4 },
     { user_id: 'u2', date: '2026-10-03', weight_kg: 63 },
@@ -176,6 +178,8 @@ describe('dayRows', () => {
       'Cheat day',
       'Cheat meal',
       'Alcohol day',
+      'Gym',
+      'Sex',
     ])
     expect(dayRows(DATA)).toEqual([
       [
@@ -190,6 +194,8 @@ describe('dayRows', () => {
         1,
         0,
         81.4,
+        false,
+        false,
         false,
         false,
         false,
@@ -211,6 +217,8 @@ describe('dayRows', () => {
         false,
         false,
         false,
+        false,
+        false,
       ],
     ])
   })
@@ -227,10 +235,27 @@ describe('dayRows', () => {
       ],
     }
 
-    expect(dayRows(data).map((row) => [row[0], ...row.slice(-3)])).toEqual([
+    expect(dayRows(data).map((row) => [row[0], ...row.slice(-5, -2)])).toEqual([
       ['Lukas', true, false, false],
       ['Anna', false, true, false],
       ['Lukas', false, false, true],
+    ])
+  })
+
+  test('Gym is each person’s own, Sex is on both people’s rows, even on a day with nothing else', () => {
+    const data: ExportData = {
+      ...DATA,
+      days: [],
+      weights: [],
+      gymDays: [{ user_id: 'u2', date: '2026-10-05' }],
+      sexDays: [{ date: '2026-10-05' }, { date: '2026-10-06' }],
+    }
+
+    expect(dayRows(data).map((row) => [row[0], row[1], ...row.slice(-2)])).toEqual([
+      ['Lukas', '2026-10-05', false, true],
+      ['Anna', '2026-10-05', true, true],
+      ['Lukas', '2026-10-06', false, true],
+      ['Anna', '2026-10-06', false, true],
     ])
   })
 

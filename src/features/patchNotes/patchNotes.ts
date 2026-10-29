@@ -30,6 +30,18 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-29T17:00',
+    kind: 'new',
+    title: 'Gym and Sex marks on a day',
+    items: [
+      'Day options › Marks: Gym (per person) and Sex (shown on both calendars); neither changes any figure or appears in a notification',
+      'History: a small dumbbell and a rose heart in the bottom-right corner of a day, in the key, as filters, and in the hold-a-day look',
+      'Export: Gym and Sex columns',
+      'Ingredients: the title and the + button share one row',
+      'The saved recipes were deleted from the database (recipes were removed from the app earlier today)',
+    ],
+  },
+  {
     at: '2026-10-29T15:10',
     kind: 'new',
     title: 'Recipes removed; History menu shorter; Clear in notes',

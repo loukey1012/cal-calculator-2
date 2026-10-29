@@ -18,6 +18,14 @@ vi.mock('./historyApi', () => ({
   fetchMonthNotes: vi.fn().mockResolvedValue([]),
   fetchAllNotes: vi.fn().mockResolvedValue([]),
 }))
+vi.mock('../dayMarks/dayMarksApi', () => ({
+  fetchGymDay: vi.fn().mockResolvedValue(false),
+  fetchSexDay: vi.fn().mockResolvedValue(false),
+  fetchGymDates: vi.fn().mockResolvedValue([]),
+  fetchSexDates: vi.fn().mockResolvedValue([]),
+  setGymDay: vi.fn(),
+  setSexDay: vi.fn(),
+}))
 vi.mock('./week/weekApi', () => ({ fetchWeekData: vi.fn() }))
 vi.mock('../trends/trendsApi', () => ({ fetchNutritionDays: vi.fn().mockResolvedValue([]) }))
 vi.mock('../weight/weightApi', () => ({

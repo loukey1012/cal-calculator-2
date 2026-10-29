@@ -45,6 +45,12 @@ vi.mock('../features/weight/weightApi', () => ({
   saveWeight: vi.fn(),
   deleteWeight: vi.fn(),
 }))
+vi.mock('../features/dayMarks/dayMarksApi', () => ({
+  fetchGymDay: vi.fn().mockResolvedValue(false),
+  fetchSexDay: vi.fn().mockResolvedValue(false),
+  fetchGymDates: vi.fn().mockResolvedValue([]),
+  fetchSexDates: vi.fn().mockResolvedValue([]),
+}))
 vi.mock('../features/history/week/weekApi', () => ({
   fetchWeekData: vi.fn().mockResolvedValue({ days: [], meals: [], foods: [], notes: [] }),
 }))

@@ -12,7 +12,7 @@ export function noteDatesOf(notes: readonly MonthNote[]): ReadonlySet<string> {
   return new Set(notes.map((note) => note.date))
 }
 
-export type MonthFilter = 'notes' | 'alcohol' | 'cheat' | 'missing'
+export type MonthFilter = 'notes' | 'alcohol' | 'cheat' | 'missing' | 'gym' | 'sex'
 
 export const MONTH_FILTERS: ReadonlyArray<{ readonly value: MonthFilter; readonly label: string }> =
   [
@@ -20,6 +20,8 @@ export const MONTH_FILTERS: ReadonlyArray<{ readonly value: MonthFilter; readonl
     { value: 'alcohol', label: 'Alcohol' },
     { value: 'cheat', label: 'Cheat' },
     { value: 'missing', label: 'Missing' },
+    { value: 'gym', label: 'Gym' },
+    { value: 'sex', label: 'Sex' },
   ]
 
 /** The filter kept in the navigation state; anything else reads as none. */
@@ -28,13 +30,19 @@ export function monthFilterOf(state: unknown): MonthFilter | null {
   return MONTH_FILTERS.find((option) => option.value === state.filter)?.value ?? null
 }
 
+export type FilterInput = {
+  readonly filter: MonthFilter
+  readonly status: DayStatus
+  readonly hasNote: boolean
+  readonly total?: DayTotal
+  /** the person's gym day */
+  readonly hasGym: boolean
+  /** the household's sex day */
+  readonly hasSex: boolean
+}
+
 /** Alcohol and cheat look at the day's flags: a status shows only one of them. */
-export function filterMatches(
-  filter: MonthFilter,
-  status: DayStatus,
-  hasNote: boolean,
-  total?: DayTotal,
-): boolean {
+export function filterMatches({ filter, status, hasNote, total, hasGym, hasSex }: FilterInput) {
   switch (filter) {
     case 'notes':
       return hasNote
@@ -44,5 +52,9 @@ export function filterMatches(
       return total?.cheatDay === true || total?.cheatMeal === true
     case 'missing':
       return status === 'missing'
+    case 'gym':
+      return hasGym
+    case 'sex':
+      return hasSex
   }
 }

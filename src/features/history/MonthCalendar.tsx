@@ -12,7 +12,13 @@ import { Button } from '../../components/ios/Button'
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from '../../components/ios/icons'
 import { fromLocalDateString } from '../../lib/dates'
 import { addMonths, monthStart, monthWeeks, type DayMarks, type DayStatus } from './calendar'
-import { ScaleSymbol, ForkKnifeSymbol, WineGlassSymbol } from './calendarSymbols'
+import {
+  DumbbellSymbol,
+  ForkKnifeSymbol,
+  HeartSymbol,
+  ScaleSymbol,
+  WineGlassSymbol,
+} from './calendarSymbols'
 import { isOutlined, STATUS_CLASSES, STATUS_TEXT } from './statusClasses'
 import { useMonthPress } from './useMonthPress'
 
@@ -212,8 +218,8 @@ type DayButtonProps = DayMarks & {
 }
 
 /** The text a screen reader adds to the date for what the cell shows. */
-function marksText({ hasNote, weighed, estimated }: DayMarks): string {
-  return `${hasNote ? ', has a note' : ''}${weighed ? ', weigh-in' : ''}${estimated ? ', estimated calories' : ''}`
+function marksText({ hasNote, weighed, estimated, gym, sex }: DayMarks): string {
+  return `${hasNote ? ', has a note' : ''}${weighed ? ', weigh-in' : ''}${estimated ? ', estimated calories' : ''}${gym ? ', gym' : ''}${sex ? ', sex' : ''}`
 }
 
 // props are primitives and `onSelect` is stable, so a cell only renders again when it changes
@@ -226,6 +232,8 @@ const DayButton = memo(function DayButton({
   hasNote,
   weighed,
   estimated,
+  gym,
+  sex,
   onSelect,
 }: DayButtonProps) {
   const isToday = date === today
@@ -241,7 +249,7 @@ const DayButton = memo(function DayButton({
       data-faded={faded ? 'true' : undefined}
       aria-current={isToday ? 'date' : undefined}
       aria-pressed={selected}
-      aria-label={`${isToday ? 'Today, ' : ''}${label}${STATUS_TEXT[status]}${marksText({ hasNote, weighed, estimated })}`}
+      aria-label={`${isToday ? 'Today, ' : ''}${label}${STATUS_TEXT[status]}${marksText({ hasNote, weighed, estimated, gym, sex })}`}
       // a future day takes no touches itself, so a swipe starting on it still reaches the grid
       disabled={isFuture}
       onClick={() => onSelect(date)}
@@ -284,18 +292,46 @@ const DayButton = memo(function DayButton({
           ~
         </span>
       )}
-      {weighed && (
-        <ScaleSymbol
-          data-testid="weigh-in-mark"
-          className={`absolute bottom-[3px] left-[3px] h-3 w-3 ${markColor('text-label-secondary')}`}
-        />
-      )}
-      {hasNote && (
+      {/* one bottom row keeps the weigh-in (left), the note dot (middle) and the gym and sex
+          pair (right) apart, whatever the cell is: it is inset from the padding box, which an
+          outlined cell's border-2 makes 4 px narrower */}
+      {(weighed || hasNote || gym || sex) && (
         <span
-          aria-hidden="true"
-          data-testid="note-dot"
-          className={`absolute bottom-[5px] left-1/2 h-1 w-1 -translate-x-1/2 rounded-full ${selected ? 'bg-on-accent' : 'bg-accent-ink'}`}
-        />
+          data-testid="day-marks-row"
+          className={`absolute flex items-end justify-between ${isOutlined(status) && !selected ? 'inset-x-[1px] bottom-[1px]' : 'inset-x-[3px] bottom-[3px]'}`}
+        >
+          {weighed && (
+            <ScaleSymbol
+              data-testid="weigh-in-mark"
+              className={`h-3 w-3 shrink-0 ${markColor('text-label-secondary')}`}
+            />
+          )}
+          <span className="flex min-w-0 flex-1 justify-center">
+            {hasNote && (
+              <span
+                aria-hidden="true"
+                data-testid="note-dot"
+                className={`mb-[2px] h-1 w-1 rounded-full ${selected ? 'bg-on-accent' : 'bg-accent-ink'}`}
+              />
+            )}
+          </span>
+          {(gym || sex) && (
+            <span data-testid="day-marks-pair" className="flex shrink-0 gap-px">
+              {gym && (
+                <DumbbellSymbol
+                  data-testid="gym-mark"
+                  className={`h-[9px] w-[9px] ${markColor('text-label-secondary')}`}
+                />
+              )}
+              {sex && (
+                <HeartSymbol
+                  data-testid="sex-mark"
+                  className={`h-[9px] w-[9px] ${markColor('text-heart')}`}
+                />
+              )}
+            </span>
+          )}
+        </span>
       )}
     </button>
   )

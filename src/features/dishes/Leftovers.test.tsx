@@ -11,6 +11,10 @@ vi.mock('../weight/weightApi', () => ({
   saveWeight: vi.fn(),
   deleteWeight: vi.fn(),
 }))
+vi.mock('../dayMarks/dayMarksApi', () => ({
+  fetchGymDay: vi.fn().mockResolvedValue(false),
+  fetchSexDay: vi.fn().mockResolvedValue(false),
+}))
 vi.mock('../meals/mealsApi', () => ({
   fetchDay: vi.fn(),
   addMealItem: vi.fn(),

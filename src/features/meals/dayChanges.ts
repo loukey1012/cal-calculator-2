@@ -1,5 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query'
 import { isNetworkError } from '../../lib/errors'
+import { setGymDay, setSexDay } from '../dayMarks/dayMarksApi'
+import { householdMarkKeys } from '../dayMarks/keys'
 import { monthKeys } from '../history/hooks'
 import type { MealItemDraft } from '../nutrition/fromIngredient'
 import {
@@ -80,6 +82,21 @@ export type DayChange =
       readonly date: string
       readonly note: string
     }
+  // a person's own gym day
+  | {
+      readonly kind: 'gymDay'
+      readonly userId: string
+      readonly date: string
+      readonly on: boolean
+    }
+  // one per household day; `userId` is whose day was open when it was set
+  | {
+      readonly kind: 'sexDay'
+      readonly householdId: string
+      readonly userId: string
+      readonly date: string
+      readonly on: boolean
+    }
 
 /** Prefix of every day change's mutation key. */
 const DAY_CHANGES_KEY = ['day'] as const
@@ -125,7 +142,18 @@ export async function applyDayChange(change: DayChange): Promise<void> {
       })
     case 'dayNote':
       return setDayNote(change.userId, change.date, change.note)
+    case 'gymDay':
+      return setGymDay(change.userId, change.date, change.on)
+    case 'sexDay':
+      return setSexDay(change.householdId, change.date, change.on)
+    default:
+      return unknownChange(change)
   }
+}
+
+/** A kind no case handles (a new one, or an old one restored from the phone) must not vanish. */
+function unknownChange(change: never): never {
+  throw new Error(`Unknown day change ${(change as { kind: string }).kind}`)
 }
 
 function optimisticItem(id: string, draft: MealItemDraft): MealItem {
@@ -158,7 +186,11 @@ export function applyDayChangeLocally(meals: readonly DayMeal[], change: DayChan
     case 'dayMark':
     case 'cheatDay':
     case 'dayNote':
+    case 'gymDay':
+    case 'sexDay':
       return [...meals]
+    default:
+      return unknownChange(change)
   }
 }
 
@@ -199,6 +231,9 @@ export function registerDayChangeDefaults(queryClient: QueryClient): void {
       Promise.all([
         queryClient.invalidateQueries({ queryKey: dayChangeKey(change.userId, change.date) }),
         queryClient.invalidateQueries({ queryKey: monthKeys.person(change.userId) }),
+        ...(change.kind === 'sexDay'
+          ? [queryClient.invalidateQueries({ queryKey: householdMarkKeys.all(change.householdId) })]
+          : []),
       ]),
   })
 }

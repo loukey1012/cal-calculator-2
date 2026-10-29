@@ -49,8 +49,11 @@ colors, 61 Spot brightness, 57 fork-and-knife cheat meal mark) confirmed; H2 (62
 without the table, 63 Review stays open) built. I (67 taller calendar days + `WeekBar`, 68 notes as
 full-screen pages: `notes/*`, per-page `app/leaveGuard.ts`, drafts in sessionStorage, tab bar hidden
 on note pages) confirmed; then the History ⋯ menu lost This week / Year overview, notes got Clear, and L1 (69:
-recipes removed from the app; tables stay until L2) built, awaits the iPhone test. **Next:** L2
-(migration dropping the recipe tables, once both phones run L1), then J. Sketch of F: https://claude.ai/artifact/KJ5V6j5PCBaN35MXmATmmE. Sketch of D:
+recipes removed from the app) confirmed. L2 (`20261029160000_drop_recipes`) and J (58/59 Gym and Sex marks:
+`gym_days` per person, `sex_days` per household, `20261029150000_day_marks`, both migrations on dev
+and prod; `src/features/dayMarks/*`, queued kinds `gymDay`/`sexDay`, live hint `sex_days`) built,
+await the iPhone test; then check with the user whether the calendar symbols look crowded.
+**Next:** K (66 vegan/halal, 65 merge yourself, 64 Review re-checks). Sketch of F: https://claude.ai/artifact/KJ5V6j5PCBaN35MXmATmmE. Sketch of D:
 https://claude.ai/artifact/Sp4cvXiKk3us9kXNUTrT6g. Working rhythm that worked: `ecc:tdd-guide`
 agents build (in parallel only on separate files), then `ecc:typescript-reviewer` +
 `ecc:react-reviewer` (+ `ecc:database-reviewer`/`ecc:security-reviewer` for SQL) +

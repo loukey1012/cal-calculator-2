@@ -40,6 +40,22 @@ describe('parseHint', () => {
   })
 })
 
+describe('sex day hints', () => {
+  test('are read with their date', () => {
+    expect(parseHint({ table: 'sex_days', date: '2026-10-06', actor: PARTNER })).toEqual({
+      table: 'sex_days',
+      date: '2026-10-06',
+      actor: PARTNER,
+    })
+    expect(parseHint({ table: 'sex_days', actor: PARTNER })).toBeNull()
+  })
+
+  test("refresh the household's marks", () => {
+    const keys = keysForHint({ table: 'sex_days', date: '2026-10-06', actor: PARTNER }, HOUSEHOLD)
+    expect(keys).toEqual([['householdMarks', HOUSEHOLD]])
+  })
+})
+
 describe('keysForHint', () => {
   test("a partner's day change refreshes that day and their History months", () => {
     // Act

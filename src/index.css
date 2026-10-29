@@ -21,6 +21,7 @@
   --destructive: #d4313a;
   --success: #1f9d6b;
   --alcohol: #7c4dcc;
+  --heart: #a62d65;
   --warning: #b86a00;
   /* calendar marks: graphics need 3:1 on the card; the badge's "!" is small text, 4.5:1 */
   --missing: #c2410c;
@@ -76,6 +77,7 @@
   --fill: rgb(122 40 80 / 0.07);
   --track: rgb(214 64 140 / 0.14);
   --segment-selected: #fff8fb;
+  --heart: #b0305f;
   --card-shadow: 0 1px 2px rgb(122 40 80 / 0.06), 0 8px 24px rgb(122 40 80 / 0.08);
   --bar-bg: rgb(255 248 251 / 0.9);
   --bar-shadow: 0 2px 6px rgb(122 40 80 / 0.08), 0 12px 32px rgb(122 40 80 / 0.12);
@@ -97,6 +99,7 @@
   --destructive: #ff6369;
   --success: #3cc48a;
   --alcohol: #b38cff;
+  --heart: #ff7aa8;
   --warning: #f0a63a;
   --missing: #f0a63a;
   --on-missing: #1b1204;
@@ -124,6 +127,7 @@
   --destructive: #ff6369;
   --success: #5ee0a0;
   --alcohol: #b38cff;
+  --heart: #ff7aa8;
   --warning: #f0a63a;
   --missing: #f0a63a;
   --on-missing: #1b1204;
@@ -563,6 +567,7 @@
   --color-destructive: var(--destructive);
   --color-success: var(--success);
   --color-alcohol: var(--alcohol);
+  --color-heart: var(--heart);
   --color-warning: var(--warning);
   --color-missing: var(--missing);
   --color-on-missing: var(--on-missing);

@@ -3,6 +3,12 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { renderWithProviders } from '../../test/render'
 
+vi.mock('../dayMarks/dayMarksApi', () => ({
+  fetchGymDay: vi.fn(),
+  fetchSexDay: vi.fn(),
+  setGymDay: vi.fn(),
+  setSexDay: vi.fn(),
+}))
 vi.mock('../meals/mealsApi', () => ({
   fetchDay: vi.fn(),
   fetchDayMark: vi.fn(),
@@ -10,6 +16,7 @@ vi.mock('../meals/mealsApi', () => ({
   setDayMark: vi.fn(),
 }))
 
+import { fetchGymDay, fetchSexDay, setGymDay, setSexDay } from '../dayMarks/dayMarksApi'
 import { fetchDay, fetchDayMark, setCheatMeal, setDayMark } from '../meals/mealsApi'
 import type { MealType } from '../meals/dayModel'
 import type { DayMark } from '../meals/mealsApi'
@@ -19,12 +26,24 @@ import { DayOptionsSheet } from './DayOptionsSheet'
 // a small server: what was saved is what the next fetch returns
 let markOnServer: DayMark = null
 let cheatMealsOnServer = new Set<MealType>(['dinner'])
+let gymOnServer = false
+let sexOnServer = false
 
 beforeEach(() => {
   vi.clearAllMocks()
   vi.spyOn(window, 'confirm').mockReturnValue(true)
   markOnServer = null
+  gymOnServer = false
+  sexOnServer = false
   cheatMealsOnServer = new Set(['dinner'])
+  vi.mocked(fetchGymDay).mockImplementation(async () => gymOnServer)
+  vi.mocked(fetchSexDay).mockImplementation(async () => sexOnServer)
+  vi.mocked(setGymDay).mockImplementation(async (_userId, _date, on) => {
+    gymOnServer = on
+  })
+  vi.mocked(setSexDay).mockImplementation(async (_householdId, _date, on) => {
+    sexOnServer = on
+  })
   vi.mocked(fetchDay).mockImplementation(async () => [
     {
       ...dayMeal('m1', 'dinner', []),
@@ -48,10 +67,16 @@ beforeEach(() => {
   })
 })
 
-function renderSheet() {
+function renderSheet(householdId: string | null = 'h1') {
   const onClose = vi.fn()
   const { queryClient } = renderWithProviders(
-    <DayOptionsSheet open userId="u1" date="2026-10-02" onClose={onClose} />,
+    <DayOptionsSheet
+      open
+      userId="u1"
+      householdId={householdId}
+      date="2026-10-02"
+      onClose={onClose}
+    />,
   )
   return { onClose, queryClient }
 }
@@ -254,5 +279,100 @@ describe('DayOptionsSheet', () => {
 
     expect(window.confirm).not.toHaveBeenCalled()
     expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  describe('Marks', () => {
+    test('shows Gym and Sex as they are saved, with what they do and do not do', async () => {
+      gymOnServer = true
+      renderSheet()
+
+      await waitFor(() => expect(switchNamed('Gym')).toHaveAttribute('aria-checked', 'true'))
+      expect(switchNamed('Sex')).toHaveAttribute('aria-checked', 'false')
+      expect(
+        screen.getByText(
+          'Gym is per person. Sex shows on both calendars. Neither changes any figure.',
+        ),
+      ).toBeInTheDocument()
+    })
+
+    test('has no Sex row without a household', async () => {
+      renderSheet(null)
+
+      await waitFor(() => expect(switchNamed('Gym')).toBeEnabled())
+      expect(screen.queryByRole('switch', { name: 'Sex' })).not.toBeInTheDocument()
+      expect(fetchSexDay).not.toHaveBeenCalled()
+    })
+
+    test('Gym and Sex can only be switched once their data has loaded', async () => {
+      vi.mocked(fetchGymDay).mockImplementation(() => new Promise(() => {}))
+      vi.mocked(fetchSexDay).mockImplementation(() => new Promise(() => {}))
+      renderSheet()
+
+      await waitFor(() => expect(radioNamed('None')).toBeEnabled())
+      expect(switchNamed('Gym')).toBeDisabled()
+      expect(switchNamed('Sex')).toBeDisabled()
+    })
+
+    test('a failed marks query shows its error and the other fields can still be saved', async () => {
+      const user = userEvent.setup()
+      vi.mocked(fetchGymDay).mockRejectedValue(new Error('Gym days could not be loaded'))
+      renderSheet()
+
+      expect(await screen.findByText('Gym days could not be loaded')).toBeInTheDocument()
+      expect(switchNamed('Gym')).toBeDisabled()
+      await waitFor(() => expect(radioNamed('None')).toBeEnabled())
+      await user.click(radioNamed('Cheat day'))
+      await user.click(saveButton())
+
+      await waitFor(() => expect(setDayMark).toHaveBeenCalledWith('u1', '2026-10-02', 'cheat'))
+      expect(setGymDay).not.toHaveBeenCalled()
+    })
+
+    test('the switches are kept only on Save', async () => {
+      const user = userEvent.setup()
+      renderSheet()
+      await waitFor(() => expect(saveButton()).toBeDisabled())
+      await waitFor(() => expect(switchNamed('Gym')).toBeEnabled())
+
+      await user.click(switchNamed('Gym'))
+      await user.click(switchNamed('Sex'))
+
+      expect(switchNamed('Gym')).toHaveAttribute('aria-checked', 'true')
+      expect(setGymDay).not.toHaveBeenCalled()
+      expect(setSexDay).not.toHaveBeenCalled()
+      await user.click(saveButton())
+      await waitFor(() => expect(setGymDay).toHaveBeenCalledWith('u1', '2026-10-02', true))
+      expect(setSexDay).toHaveBeenCalledWith('h1', '2026-10-02', true)
+    })
+
+    test('a switch put back counts as no change; closing with a change asks first', async () => {
+      const user = userEvent.setup()
+      const { onClose } = renderSheet()
+      await waitFor(() => expect(radioNamed('None')).toBeEnabled())
+
+      await user.click(switchNamed('Sex'))
+      await user.click(switchNamed('Sex'))
+      expect(saveButton()).toBeDisabled()
+
+      await user.click(switchNamed('Gym'))
+      vi.mocked(window.confirm).mockReturnValueOnce(false)
+      await user.click(closeButton())
+      expect(window.confirm).toHaveBeenCalledWith('Discard changes?')
+      expect(onClose).not.toHaveBeenCalled()
+      expect(setGymDay).not.toHaveBeenCalled()
+    })
+
+    test('only the changed mark is sent, and a mark can be taken back', async () => {
+      const user = userEvent.setup()
+      sexOnServer = true
+      renderSheet()
+      await waitFor(() => expect(switchNamed('Sex')).toHaveAttribute('aria-checked', 'true'))
+
+      await user.click(switchNamed('Sex'))
+      await user.click(saveButton())
+
+      await waitFor(() => expect(setSexDay).toHaveBeenCalledWith('h1', '2026-10-02', false))
+      expect(setGymDay).not.toHaveBeenCalled()
+    })
   })
 })

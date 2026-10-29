@@ -12,6 +12,12 @@ vi.mock('../dishes/dishesApi', () => ({
   saveDish: vi.fn(),
   deleteDish: vi.fn(),
 }))
+vi.mock('../dayMarks/dayMarksApi', () => ({
+  fetchGymDay: vi.fn().mockResolvedValue(false),
+  fetchSexDay: vi.fn().mockResolvedValue(false),
+  fetchGymDates: vi.fn().mockResolvedValue([]),
+  fetchSexDates: vi.fn().mockResolvedValue([]),
+}))
 vi.mock('./week/weekApi', () => ({
   fetchWeekData: vi.fn().mockResolvedValue({ days: [], meals: [], foods: [], notes: [] }),
 }))

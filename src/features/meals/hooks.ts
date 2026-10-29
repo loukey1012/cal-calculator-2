@@ -67,12 +67,22 @@ function useDayChange(userId: string, date: string): DayChangeMutation {
   )
 }
 
+/** A cached list of dates that shows the change too (a calendar month or year). */
+type DateListMirror = {
+  readonly queryKey: QueryKey
+  readonly apply: (dates: readonly string[], change: DayChange) => string[]
+}
+
 /** Like useDayChange, for a change shown in another cached query of the day. */
-function useCachedDayChange<TCached>(
+export function useCachedDayChange<TCached>(
   userId: string,
   date: string,
   queryKey: QueryKey,
   applyLocally: (cached: TCached | undefined, change: DayChange) => TCached,
+  /** other cached queries this change makes out of date once it is saved */
+  alsoRefresh: readonly QueryKey[] = [],
+  /** cached date lists that show the change at once; one that was never loaded stays unloaded */
+  mirrors: readonly DateListMirror[] = [],
 ): DayChangeMutation {
   const queryClient = useQueryClient()
   const mutationKey = dayChangeKey(userId, date)
@@ -89,10 +99,24 @@ function useCachedDayChange<TCached>(
       await queryClient.cancelQueries({ queryKey })
       const previous = queryClient.getQueryData<TCached>(queryKey)
       queryClient.setQueryData<TCached>(queryKey, applyLocally(previous, change))
-      return { previous }
+      const previousLists = await Promise.all(
+        mirrors.map(async ({ queryKey: listKey, apply }) => {
+          await queryClient.cancelQueries({ queryKey: listKey })
+          const before = queryClient.getQueryData<string[]>(listKey)
+          if (before !== undefined)
+            queryClient.setQueryData<string[]>(listKey, apply(before, change))
+          return before
+        }),
+      )
+      return { previous, previousLists }
     },
     onError: (_error, _change, rollback) => {
-      if (isOnlyPendingChange()) queryClient.setQueryData(queryKey, rollback?.previous)
+      if (!isOnlyPendingChange()) return
+      queryClient.setQueryData(queryKey, rollback?.previous)
+      mirrors.forEach(({ queryKey: listKey }, index) => {
+        const before = rollback?.previousLists[index]
+        if (before !== undefined) queryClient.setQueryData(listKey, before)
+      })
     },
     onSettled: () => {
       if (!isOnlyPendingChange()) return
@@ -100,6 +124,9 @@ function useCachedDayChange<TCached>(
       return Promise.all([
         queryClient.invalidateQueries({ queryKey }),
         queryClient.invalidateQueries({ queryKey: monthKeys.person(userId) }),
+        ...[...alsoRefresh, ...mirrors.map((mirror) => mirror.queryKey)].map((key) =>
+          queryClient.invalidateQueries({ queryKey: key }),
+        ),
       ])
     },
   })
@@ -118,7 +145,7 @@ export function useLatestDayChangeError(userId: string, date: string): Error | n
   return latest?.status === 'error' ? latest.error : null
 }
 
-type DayChangeActions<TInput> = Omit<DayChangeMutation, 'mutate'> & {
+export type DayChangeActions<TInput> = Omit<DayChangeMutation, 'mutate'> & {
   readonly mutate: (input: TInput) => void
 }
 

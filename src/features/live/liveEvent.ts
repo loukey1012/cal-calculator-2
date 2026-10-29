@@ -1,5 +1,6 @@
 import type { QueryKey } from '@tanstack/react-query'
 import { z } from 'zod'
+import { householdMarkKeys } from '../dayMarks/keys'
 import { dishKey, LEFTOVERS_KEY } from '../dishes/dishChanges'
 import { goalKeys } from '../goals/hooks'
 import { monthKeys } from '../history/hooks'
@@ -19,6 +20,7 @@ const actor = id.nullable()
  */
 const hintSchema = z.discriminatedUnion('table', [
   z.object({ table: z.literal('meals'), user_id: id, date: z.iso.date(), actor }),
+  z.object({ table: z.literal('sex_days'), date: z.iso.date(), actor }),
   z.object({ table: z.literal('dishes'), dish_id: id, actor }),
   z.object({
     table: z.enum([
@@ -51,6 +53,8 @@ export function keysForHint(hint: LiveHint, householdId: string): readonly Query
   switch (hint.table) {
     case 'meals':
       return [dayChangeKey(hint.user_id, hint.date), monthKeys.person(hint.user_id)]
+    case 'sex_days':
+      return [householdMarkKeys.all(householdId)]
     case 'dishes':
       return [dishKey(hint.dish_id), LEFTOVERS_KEY]
     case 'ingredients':

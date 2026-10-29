@@ -10,6 +10,8 @@ type MonthQuickLookProps = {
   /** undefined while the goals load: the verdict is left out then */
   readonly goals: readonly Goal[] | undefined
   readonly hasNote: boolean
+  readonly gym: boolean
+  readonly sex: boolean
   readonly onClose: () => void
 }
 
@@ -21,6 +23,8 @@ export function MonthQuickLook({
   total,
   goals,
   hasNote,
+  gym,
+  sex,
   onClose,
 }: MonthQuickLookProps) {
   const goal = goalForDate(goals ?? [], date)
@@ -40,6 +44,8 @@ export function MonthQuickLook({
       }
       hasFood={(total?.mealCount ?? 0) > 0}
       hasNote={hasNote}
+      gym={gym}
+      sex={sex}
       onClose={onClose}
     />
   )

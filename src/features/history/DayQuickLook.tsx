@@ -27,6 +27,10 @@ type DayQuickLookProps = {
   readonly hasFood: boolean
   /** a note on the day or on one of its meals */
   readonly hasNote: boolean
+  /** the person's gym day */
+  readonly gym: boolean
+  /** the household's sex day */
+  readonly sex: boolean
   readonly onClose: () => void
 }
 
@@ -45,6 +49,8 @@ export function DayQuickLook({
   status,
   hasFood,
   hasNote,
+  gym,
+  sex,
   onClose,
 }: DayQuickLookProps) {
   const cardRef = useRef<HTMLDivElement>(null)
@@ -89,6 +95,14 @@ export function DayQuickLook({
       <p className="text-[15px] font-semibold tabular-nums">
         {hasFood ? calories : 'Nothing logged'}
       </p>
+      {(gym || sex) && (
+        <p
+          data-testid="quick-look-marks"
+          className="text-[13px] font-semibold text-label-secondary"
+        >
+          {[gym && 'Gym', sex && 'Sex'].filter(Boolean).join(' · ')}
+        </p>
+      )}
       {hasNote && <QuickLookNotes userId={userId} date={date} />}
     </div>,
     document.body,

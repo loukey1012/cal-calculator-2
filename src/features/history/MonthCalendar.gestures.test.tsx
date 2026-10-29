@@ -16,7 +16,13 @@ function calendar(
       today={today}
       selectedDay={null}
       statusOf={() => 'none'}
-      marksOf={() => ({ hasNote: false, weighed: false, estimated: false })}
+      marksOf={() => ({
+        hasNote: false,
+        weighed: false,
+        estimated: false,
+        gym: false,
+        sex: false,
+      })}
       onSelectDay={onSelectDay}
       onChangeMonth={onChangeMonth}
       renderQuickLook={(date, close) => (

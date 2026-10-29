@@ -20,7 +20,7 @@ export async function fetchExportData(
   to: string,
 ): Promise<ExportData> {
   const ids = people.map(({ id }) => id)
-  const [meals, days, weights] = await Promise.all([
+  const [meals, days, weights, gymDays, sexDays] = await Promise.all([
     allRows((first, last) =>
       supabase
         .from('meals')
@@ -55,6 +55,27 @@ export async function fetchExportData(
         .order('user_id')
         .range(first, last),
     ),
+    allRows((first, last) =>
+      supabase
+        .from('gym_days')
+        .select('user_id, date')
+        .in('user_id', ids)
+        .gte('date', from)
+        .lte('date', to)
+        .order('date')
+        .order('user_id')
+        .range(first, last),
+    ),
+    // only the own household's rows are visible (row level security)
+    allRows((first, last) =>
+      supabase
+        .from('sex_days')
+        .select('date')
+        .gte('date', from)
+        .lte('date', to)
+        .order('date')
+        .range(first, last),
+    ),
   ])
   return {
     people,
@@ -67,5 +88,7 @@ export async function fetchExportData(
     })),
     days: days as unknown as ExportData['days'],
     weights,
+    gymDays,
+    sexDays,
   }
 }

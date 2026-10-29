@@ -93,10 +93,12 @@ type ToggleRowProps = {
   readonly checked: boolean
   readonly onChange: (checked: boolean) => void
   readonly error?: string
+  /** the switch cannot be turned, e.g. until the value it shows has loaded */
+  readonly disabled?: boolean
 }
 
 /** Row with an iOS switch. */
-export function ToggleRow({ label, checked, onChange, error }: ToggleRowProps) {
+export function ToggleRow({ label, checked, onChange, error, disabled = false }: ToggleRowProps) {
   const id = useId()
   return (
     <div className="px-4 py-2">
@@ -111,8 +113,9 @@ export function ToggleRow({ label, checked, onChange, error }: ToggleRowProps) {
           aria-labelledby={`${id}-label`}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? `${id}-error` : undefined}
+          disabled={disabled}
           onClick={() => onChange(!checked)}
-          className={`relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors ${
+          className={`relative h-[31px] w-[51px] shrink-0 rounded-full transition-colors disabled:opacity-50 ${
             checked ? 'bg-success' : 'bg-track'
           }`}
         >

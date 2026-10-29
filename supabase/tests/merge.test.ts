@@ -40,31 +40,6 @@ async function ingredient(fields: Record<string, unknown>): Promise<string> {
   return data.id
 }
 
-function recipeLine(ingredientId: string, name: string, slotId: string, picked: boolean) {
-  return {
-    id: uuid(),
-    allocation: 'shared',
-    ingredient_id: ingredientId,
-    name,
-    brand: null,
-    entered_amount: 20,
-    entered_unit: 'g',
-    basis: 'per_100g',
-    basis_multiplier: 0.2,
-    kcal: 300,
-    protein: null,
-    carbs: null,
-    sugar: null,
-    fat: null,
-    sat_fat: null,
-    fiber: null,
-    salt: null,
-    amounts: [],
-    slot_id: slotId,
-    picked,
-  }
-}
-
 describe('merge_ingredients', () => {
   test('the kept one takes the chosen values and the barcode; everything moves to it', async () => {
     // Arrange: Toastkäse is kept, Toast-Käsescheiben (with a barcode) merged into it
@@ -95,24 +70,6 @@ describe('merge_ingredients', () => {
       })
       .select('id')
       .single()
-    const slot = uuid()
-    const recipeId = uuid()
-    const saved = await alice.client.rpc('save_recipe', {
-      p_recipe: {
-        id: recipeId,
-        name: 'Toast',
-        split_mode: 'equal',
-        cooked_weight_g: null,
-        kcal_estimated: false,
-        portions: [{ id: uuid(), user_id: alice.id, split_value: null }],
-        // both offered for the cheese, the duplicate picked last time
-        lines: [
-          recipeLine(keep, 'Toastkäse', slot, false),
-          recipeLine(drop, 'Toast-Käsescheiben', slot, true),
-        ],
-      },
-    })
-    if (saved.error) throw new Error(saved.error.message)
     const finding = await admin
       .from('review_findings')
       .insert({
@@ -153,11 +110,6 @@ describe('merge_ingredients', () => {
       .eq('id', item.data?.id as string)
       .single()
     expect(moved.data).toEqual({ ingredient_id: keep, kcal: 124 })
-    const lines = await alice.client
-      .from('recipe_lines')
-      .select('ingredient_id, name, picked')
-      .eq('recipe_id', recipeId)
-    expect(lines.data).toEqual([{ ingredient_id: keep, name: 'Toast-Käsescheiben', picked: true }])
     const decided = await alice.client
       .from('review_findings')
       .select('status, decided_by')

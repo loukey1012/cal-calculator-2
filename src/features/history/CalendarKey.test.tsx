@@ -16,6 +16,8 @@ describe('CalendarKey', () => {
       'Lunch or dinner missing',
       'Has a note',
       'Weigh-in',
+      'Gym',
+      'Sex',
       'Estimated calories',
     ]) {
       expect(screen.getByText(text)).toBeInTheDocument()

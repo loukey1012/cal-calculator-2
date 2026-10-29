@@ -35,10 +35,14 @@ describe('fetchExportData', () => {
       error: null,
     })
     const weights = fakeQuery({ data: [], error: null })
+    const gymDays = fakeQuery({ data: [{ user_id: 'u1', date: '2026-10-03' }], error: null })
+    const sexDays = fakeQuery({ data: [{ date: '2026-10-04' }], error: null })
     supabaseMock.from
       .mockReturnValueOnce(meals)
       .mockReturnValueOnce(days)
       .mockReturnValueOnce(weights)
+      .mockReturnValueOnce(gymDays)
+      .mockReturnValueOnce(sexDays)
 
     const data = await fetchExportData(PEOPLE, '2026-10-01', '2026-10-31')
 
@@ -46,9 +50,11 @@ describe('fetchExportData', () => {
       'meals',
       'daily_totals',
       'weight_entries',
+      'gym_days',
+      'sex_days',
     ])
-    for (const query of [meals, days, weights]) {
-      expect(query.in).toHaveBeenCalledWith('user_id', ['u1', 'u2'])
+    for (const query of [meals, days, weights, gymDays, sexDays]) {
+      if (query !== sexDays) expect(query.in).toHaveBeenCalledWith('user_id', ['u1', 'u2'])
       expect(query.gte).toHaveBeenCalledWith('date', '2026-10-01')
       expect(query.lte).toHaveBeenCalledWith('date', '2026-10-31')
     }
@@ -58,6 +64,8 @@ describe('fetchExportData', () => {
       expect.objectContaining({ name: 'Apple', estimated: false }),
     ])
     expect(data.days).toHaveLength(1)
+    expect(data.gymDays).toEqual([{ user_id: 'u1', date: '2026-10-03' }])
+    expect(data.sexDays).toEqual([{ date: '2026-10-04' }])
   })
 
   test('a failed load becomes an ApiError', async () => {

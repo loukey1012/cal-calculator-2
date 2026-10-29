@@ -56,6 +56,8 @@ const DATA = {
   ],
   days: [],
   weights: [],
+  gymDays: [],
+  sexDays: [],
 }
 
 function renderExport(route = '/settings/export') {

@@ -1,6 +1,7 @@
 import { dehydrate, hydrate, onlineManager, QueryClient } from '@tanstack/react-query'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
+vi.mock('../dayMarks/dayMarksApi', () => ({ setGymDay: vi.fn(), setSexDay: vi.fn() }))
 vi.mock('./mealsApi', () => ({
   addMealItem: vi.fn(),
   updateMealItem: vi.fn(),
@@ -32,6 +33,7 @@ import {
   setMealNote,
   updateMealItem,
 } from './mealsApi'
+import { setGymDay, setSexDay } from '../dayMarks/dayMarksApi'
 import { dayMeal, mealItem } from './testData'
 
 const DRAFT = {
@@ -214,6 +216,71 @@ describe('applyDayChangeLocally', () => {
     expect(setDayMark).toHaveBeenNthCalledWith(1, 'u1', '2026-10-01', 'cheat')
     expect(setDayMark).toHaveBeenNthCalledWith(2, 'u1', '2026-10-01', null)
     expect(applyDayChangeLocally(DAY, { ...base, cheatDay: true })).toEqual(DAY)
+  })
+})
+
+describe('gym and sex days', () => {
+  const GYM: DayChange = { kind: 'gymDay', userId: 'u1', date: '2026-10-01', on: true }
+  const SEX: DayChange = {
+    kind: 'sexDay',
+    householdId: 'h1',
+    userId: 'u1',
+    date: '2026-10-01',
+    on: false,
+  }
+
+  test('are sent to their own API, per person and per household', async () => {
+    await applyDayChange(GYM)
+    await applyDayChange(SEX)
+
+    expect(setGymDay).toHaveBeenCalledWith('u1', '2026-10-01', true)
+    expect(setSexDay).toHaveBeenCalledWith('h1', '2026-10-01', false)
+  })
+
+  test('a change of an unknown kind throws instead of being dropped', async () => {
+    const unknown = { kind: 'somethingNew', userId: 'u1', date: '2026-10-01' } as never
+
+    await expect(applyDayChange(unknown)).rejects.toThrow('Unknown day change somethingNew')
+    expect(() => applyDayChangeLocally([], unknown)).toThrow('Unknown day change somethingNew')
+  })
+
+  test('leave the cached meals as they are', () => {
+    const DAY = [dayMeal('m1', 'lunch', [mealItem({ id: 'existing' })])]
+    expect(applyDayChangeLocally(DAY, GYM)).toEqual(DAY)
+    expect(applyDayChangeLocally(DAY, SEX)).toEqual(DAY)
+  })
+
+  test('a restored sex day is resent, then refreshes the household marks too', async () => {
+    onlineManager.setOnline(false)
+    const before = createQueryClient()
+    registerDayChangeDefaults(before)
+    void before
+      .getMutationCache()
+      .build(before, { mutationKey: dayChangeKey('u1', '2026-10-01'), scope: { id: 'x' } })
+      .execute(SEX)
+    await vi.waitFor(() => expect(before.getMutationCache().getAll()[0]?.state.isPaused).toBe(true))
+    const stored = JSON.parse(JSON.stringify(dehydrate(before, DEHYDRATE_OPTIONS)))
+    const after = createQueryClient()
+    registerDayChangeDefaults(after)
+    const invalidate = vi.spyOn(after, 'invalidateQueries')
+    hydrate(after, stored)
+    onlineManager.setOnline(true)
+    await after.resumePausedMutations()
+
+    expect(setSexDay).toHaveBeenCalledWith('h1', '2026-10-01', false)
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['householdMarks', 'h1'] })
+  })
+
+  test('a restored gym day is resent', async () => {
+    const client = createQueryClient()
+    registerDayChangeDefaults(client)
+
+    await client
+      .getMutationCache()
+      .build(client, { mutationKey: dayChangeKey('u1', '2026-10-01') })
+      .execute(GYM)
+
+    expect(setGymDay).toHaveBeenCalledWith('u1', '2026-10-01', true)
   })
 })
 
