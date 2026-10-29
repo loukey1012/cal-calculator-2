@@ -10,8 +10,6 @@ const HEADROOM = 1.08
 // days that don't count are drawn in grey (see TrendBarKind)
 const GREY = 'var(--label-secondary)'
 const GREY_OPACITY = 0.35
-const GHOST_OPACITY = 0.15
-const GHOST_DASH = '3 2'
 
 type BarTrendChartProps = {
   readonly bars: readonly TrendBar[]
@@ -48,16 +46,8 @@ function heightOf(bar: TrendBar): number {
 
 function barStyle(bar: TrendBar, color: string, dimmed: boolean) {
   const dim = dimmed ? 0.5 : 1
-  if (isGhost(bar)) {
-    return {
-      fill: GREY,
-      fillOpacity: GHOST_OPACITY * dim,
-      stroke: GREY,
-      strokeDasharray: GHOST_DASH,
-      strokeOpacity: 0.7 * dim,
-    }
-  }
-  if (bar.kind === 'missing' || bar.kind === 'today') {
+  // one neutral look for every day that does not count (as in the calendar)
+  if (isGhost(bar) || bar.kind === 'missing' || bar.kind === 'today') {
     return { fill: GREY, fillOpacity: GREY_OPACITY * dim }
   }
   return { fill: color, fillOpacity: dimmed ? 0.35 : bar.estimated ? 0.6 : 1 }

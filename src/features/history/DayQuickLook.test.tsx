@@ -69,6 +69,8 @@ describe('DayQuickLook', () => {
   test('names the gym and sex marks in one small line', () => {
     renderLook({ gym: true, sex: true })
     expect(screen.getByTestId('quick-look-marks')).toHaveTextContent('Gym · Sex')
+    expect(screen.getByTestId('quick-look-gym-symbol')).toHaveClass('text-gym')
+    expect(screen.getByTestId('quick-look-sex-symbol')).toHaveClass('text-heart')
   })
 
   test('names only the mark that is set', () => {

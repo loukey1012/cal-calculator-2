@@ -30,6 +30,17 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-29T17:45',
+    kind: 'new',
+    title: 'Calendar symbols, all in one style',
+    items: [
+      'Every day that does not count (cheat day, cheat meal, alcohol day, lunch or dinner missing) is one grey card; a small badge in the top-right corner says why, an outlined fork and knife means a cheat meal',
+      'At the bottom of a day, up to four same-size marks in soft colours: a dial for a weigh-in, lines for a note, a dumbbell for gym and a heart for sex',
+      'The key explains the new marks; the year overview tints cheat and alcohol days',
+      'Trends: days that do not count are plain grey bars instead of dashed ones',
+    ],
+  },
+  {
     at: '2026-10-29T17:00',
     kind: 'new',
     title: 'Gym and Sex marks on a day',

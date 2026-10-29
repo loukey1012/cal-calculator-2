@@ -244,8 +244,9 @@ describe('TodayPage', () => {
     const total = screen.getByTestId('day-total')
     await waitFor(() => expect(total).toHaveTextContent('Gym'))
     expect(total).toHaveTextContent('Sex')
-    expect(screen.getByTestId('gym-badge-symbol')).toBeInTheDocument()
-    expect(screen.getByTestId('sex-badge-symbol')).toBeInTheDocument()
+    // the dumbbell and the heart, in their calendar colors
+    expect(screen.getByTestId('gym-badge-symbol')).toHaveClass('text-gym')
+    expect(screen.getByTestId('sex-badge-symbol')).toHaveClass('text-heart')
     // not a left-out day: over colors still apply
     expect(total).not.toHaveTextContent('Cheat day')
     expect(total).not.toHaveTextContent('Alcohol day')

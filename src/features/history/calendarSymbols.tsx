@@ -30,7 +30,7 @@ export function WineGlassSymbol(props: SVGProps<SVGSVGElement>) {
   )
 }
 
-/** Cheat meal: a fork on the left (two tines joined at the base, handle) and a knife on the right. */
+/** Cheat day and cheat meal: a fork on the left (two tines joined at the base, handle) and a knife on the right. */
 export function ForkKnifeSymbol(props: SVGProps<SVGSVGElement>) {
   return (
     <Symbol {...props}>
@@ -40,12 +40,20 @@ export function ForkKnifeSymbol(props: SVGProps<SVGSVGElement>) {
   )
 }
 
-/** Bathroom scale: a rounded body with the dial on top. */
-export function ScaleSymbol(props: SVGProps<SVGSVGElement>) {
+/** Weigh-in: a dial with its needle. */
+export function DialSymbol(props: SVGProps<SVGSVGElement>) {
   return (
     <Symbol {...props}>
-      <rect x="1.5" y="1.5" width="9" height="9" rx="2" />
-      <path d="M4 5a2 2 0 0 1 4 0M6 5l.9-.9" />
+      <path d="M1.5 9a4.5 4.5 0 0 1 9 0M6 9l2-3" />
+    </Symbol>
+  )
+}
+
+/** Note: three lines of text. */
+export function LinesSymbol(props: SVGProps<SVGSVGElement>) {
+  return (
+    <Symbol {...props}>
+      <path d="M2 3h8M2 6h8M2 9h5" />
     </Symbol>
   )
 }
@@ -59,11 +67,11 @@ export function HeartSymbol(props: SVGProps<SVGSVGElement>) {
   )
 }
 
-/** Gym day: a dumbbell, kept to a bar and two plates so it stays legible at 9 px. */
+/** Gym day: a dumbbell with two plates on each side (small outer, big inner), the bar between. */
 export function DumbbellSymbol(props: SVGProps<SVGSVGElement>) {
   return (
     <Symbol {...props}>
-      <path d="M1 6h10M3 3.5v5M9 3.5v5" />
+      <path d="M1 4.5v3M3.6 2.8v6.4M8.4 2.8v6.4M11 4.5v3M3.6 6h4.8" />
     </Symbol>
   )
 }

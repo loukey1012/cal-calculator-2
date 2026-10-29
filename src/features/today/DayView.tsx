@@ -282,7 +282,12 @@ export function DayView({ person, isOwnDay, date, showStatus = false }: DayViewP
                   {gymDay && (
                     <DayBadge
                       label="Gym"
-                      symbol={<DumbbellSymbol data-testid="gym-badge-symbol" className="h-3 w-3" />}
+                      symbol={
+                        <DumbbellSymbol
+                          data-testid="gym-badge-symbol"
+                          className="h-3 w-3 text-gym"
+                        />
+                      }
                     />
                   )}
                   {sexDay && (

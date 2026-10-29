@@ -22,6 +22,11 @@
   --success: #1f9d6b;
   --alcohol: #7c4dcc;
   --heart: #a62d65;
+  /* calendar marks, muted: cheat (fork and knife), weigh-in, note, gym */
+  --cheat: #a3501f;
+  --weigh: #26706b;
+  --note: #8a5e0c;
+  --gym: #4a64a8;
   --warning: #b86a00;
   /* calendar marks: graphics need 3:1 on the card; the badge's "!" is small text, 4.5:1 */
   --missing: #c2410c;
@@ -100,6 +105,10 @@
   --success: #3cc48a;
   --alcohol: #b38cff;
   --heart: #ff7aa8;
+  --cheat: #e08a55;
+  --weigh: #5cc4bd;
+  --note: #e0b04a;
+  --gym: #8aa4ec;
   --warning: #f0a63a;
   --missing: #f0a63a;
   --on-missing: #1b1204;
@@ -128,6 +137,10 @@
   --success: #5ee0a0;
   --alcohol: #b38cff;
   --heart: #ff7aa8;
+  --cheat: #e08a55;
+  --weigh: #5cc4bd;
+  --note: #e0b04a;
+  --gym: #8aa4ec;
   --warning: #f0a63a;
   --missing: #f0a63a;
   --on-missing: #1b1204;
@@ -568,6 +581,10 @@
   --color-success: var(--success);
   --color-alcohol: var(--alcohol);
   --color-heart: var(--heart);
+  --color-cheat: var(--cheat);
+  --color-weigh: var(--weigh);
+  --color-note: var(--note);
+  --color-gym: var(--gym);
   --color-warning: var(--warning);
   --color-missing: var(--missing);
   --color-on-missing: var(--on-missing);

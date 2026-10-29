@@ -5,6 +5,7 @@ import { MEAL_TYPES } from '../meals/dayModel'
 import { useDay, useDayNote } from '../meals/hooks'
 import { formatKcal } from '../nutrition/format'
 import { DayNoteCard } from '../today/DayNoteCard'
+import { DumbbellSymbol, HeartSymbol } from './calendarSymbols'
 import { DayStatusPill } from './DayStatusPill'
 import type { DayStatusInput } from './dayStatusPill'
 
@@ -98,9 +99,24 @@ export function DayQuickLook({
       {(gym || sex) && (
         <p
           data-testid="quick-look-marks"
-          className="text-[13px] font-semibold text-label-secondary"
+          className="flex items-center gap-1.5 text-[13px] font-semibold text-label-secondary"
         >
-          {[gym && 'Gym', sex && 'Sex'].filter(Boolean).join(' · ')}
+          {gym && (
+            <>
+              <DumbbellSymbol
+                data-testid="quick-look-gym-symbol"
+                className="h-3.5 w-3.5 text-gym"
+              />
+              Gym
+            </>
+          )}
+          {gym && sex && <span aria-hidden="true">{' · '}</span>}
+          {sex && (
+            <>
+              <HeartSymbol data-testid="quick-look-sex-symbol" className="h-3.5 w-3.5 text-heart" />
+              Sex
+            </>
+          )}
         </p>
       )}
       {hasNote && <QuickLookNotes userId={userId} date={date} />}

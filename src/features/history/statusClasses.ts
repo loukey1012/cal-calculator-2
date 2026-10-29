@@ -1,5 +1,7 @@
 import type { DayStatus } from './calendar'
 
+const LEFT_OUT = 'bg-fill text-label-secondary'
+
 /** How each status colors a day, in the month calendar and the year overview alike. */
 export const STATUS_CLASSES: Record<DayStatus, string> = {
   none: 'text-label',
@@ -8,31 +10,25 @@ export const STATUS_CLASSES: Record<DayStatus, string> = {
   // the rings' over colors (Appearance), or red when those are switched off
   over: 'day-over text-label',
   wellOver: 'day-well-over text-label',
-  // left out of the averages: an outline instead of a fill
-  cheatDay: 'border-dashed border-label-secondary/60 text-label-secondary',
-  // purple instead of grey, with a wine glass in the corner
-  alcoholDay: 'border-dashed border-alcohol text-label-secondary',
-  cheatMeal: 'bg-fill text-label',
+  // a day that doesn't count: the same plain grey card whatever the reason; only the corner
+  // mark (LeftOutMark) says why
+  cheatDay: LEFT_OUT,
+  alcoholDay: LEFT_OUT,
+  cheatMeal: LEFT_OUT,
   // not judged against the goal: it doesn't count until lunch and dinner are logged
-  missing: 'bg-fill text-label',
+  missing: LEFT_OUT,
 }
 
 /**
- * The same, for the small days of the year overview: a 1 px dashed outline is illegible at that
- * size, so the outlined days get a faint fill too, and the days the month marks with a symbol
- * (missing, cheat meal) a faint tint of their colors.
+ * The same, for the small days of the year overview: they have no corner marks, so the days that
+ * don't count get a faint tint of their reason's color (cheat day and cheat meal share the cheat
+ * color, as they share the fork and knife).
  */
 export const MINI_STATUS_CLASSES: Record<DayStatus, string> = {
   ...STATUS_CLASSES,
-  cheatDay: 'border-dashed border-label-secondary/60 bg-label/10 text-label-secondary',
-  alcoholDay: 'border-dashed border-alcohol bg-alcohol/25 text-label-secondary',
-  cheatMeal: 'bg-label-secondary/25 text-label',
-  missing: 'bg-missing/25 text-label',
-}
-
-/** Cheat and alcohol days are outlined instead of filled; the caller sets the outline's width. */
-export function isOutlined(status: DayStatus): boolean {
-  return status === 'cheatDay' || status === 'alcoholDay'
+  cheatDay: 'bg-cheat/25 text-label-secondary',
+  alcoholDay: 'bg-alcohol/25 text-label-secondary',
+  cheatMeal: 'bg-cheat/25 text-label-secondary',
 }
 
 /** What a screen reader adds to a day's date for its status. */

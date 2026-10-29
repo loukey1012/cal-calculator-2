@@ -10,10 +10,11 @@ describe('CalendarKey', () => {
       'Within goal (≤ 10 % over)',
       'More than 10 % over',
       'More than 300 kcal over',
+      'Day that does not count',
       'Cheat day',
       'Alcohol day',
-      'Cheat meal',
       'Lunch or dinner missing',
+      'Cheat meal',
       'Has a note',
       'Weigh-in',
       'Gym',
@@ -34,10 +35,18 @@ describe('CalendarKey', () => {
   test('draws its samples in the same themed colors as the cells', () => {
     render(<CalendarKey />)
 
-    expect(document.querySelector('.border-alcohol.text-alcohol')).not.toBeNull()
-    const fork = document.querySelector('svg.text-label-secondary:not(.h-2\\.5)')
-    expect(fork).not.toBeNull()
+    expect(document.querySelector('.bg-fill')).not.toBeNull()
+    expect(document.querySelector('.bg-alcohol.text-on-missing')).not.toBeNull()
+    expect(document.querySelector('.bg-cheat.text-on-missing')).not.toBeNull()
     expect(document.querySelector('.bg-missing.text-on-missing')).not.toBeNull()
-    expect(document.querySelector('.bg-accent-ink')).not.toBeNull()
+    expect(document.querySelector('svg.text-cheat')).not.toBeNull()
+    for (const color of ['weigh', 'note', 'gym', 'heart']) {
+      expect(document.querySelector(`svg.text-${color}`)).not.toBeNull()
+    }
+  })
+
+  test('has no dashed outline samples anymore', () => {
+    render(<CalendarKey />)
+    expect(document.querySelector('[class*="dashed"]')).toBeNull()
   })
 })

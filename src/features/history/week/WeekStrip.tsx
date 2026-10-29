@@ -2,8 +2,8 @@ import { fromLocalDateString } from '../../../lib/dates'
 import { formatKcal } from '../../nutrition/format'
 import type { Goal } from '../../nutrition/goals'
 import { dayStatus } from '../calendar'
-import { ForkKnifeSymbol, WineGlassSymbol } from '../calendarSymbols'
-import { isOutlined, STATUS_CLASSES, STATUS_TEXT } from '../statusClasses'
+import { LeftOutMark } from '../LeftOutMark'
+import { STATUS_CLASSES, STATUS_TEXT } from '../statusClasses'
 import type { WeekDay } from './weekStats'
 
 const WEEKDAY = new Intl.DateTimeFormat(undefined, { weekday: 'short' })
@@ -74,23 +74,10 @@ function DayCell({ date, total, goals, today, onOpen }: DayCellProps) {
     >
       <span className="caption text-[11px]">{WEEKDAY.format(day)}</span>
       <span
-        className={`relative flex h-9 w-9 items-center justify-center rounded-full text-[15px] font-semibold ${STATUS_CLASSES[status]} ${isOutlined(status) ? 'border-2' : ''} ${date === today ? 'ring-2 ring-accent-ink ring-offset-1 ring-offset-bg-elevated' : ''}`}
+        className={`relative flex h-9 w-9 items-center justify-center rounded-full text-[15px] font-semibold ${STATUS_CLASSES[status]} ${date === today ? 'ring-2 ring-accent-ink ring-offset-1 ring-offset-bg-elevated' : ''}`}
       >
         {Number(date.slice(8))}
-        {status === 'alcoholDay' && (
-          <WineGlassSymbol className="absolute -top-0.5 -right-0.5 h-3 w-3 text-alcohol" />
-        )}
-        {status === 'cheatMeal' && (
-          <ForkKnifeSymbol className="absolute -top-0.5 -right-0.5 h-3 w-3 text-label-secondary" />
-        )}
-        {status === 'missing' && (
-          <span
-            aria-hidden="true"
-            className="absolute -top-0.5 -right-0.5 flex h-3 w-3 items-center justify-center rounded-full bg-missing text-[9px] leading-none font-extrabold text-on-missing"
-          >
-            !
-          </span>
-        )}
+        <LeftOutMark status={status} className="absolute -top-0.5 -right-0.5" />
       </span>
       <span className="text-[10px] font-semibold text-label-secondary tabular-nums">
         {kcal ?? ' '}

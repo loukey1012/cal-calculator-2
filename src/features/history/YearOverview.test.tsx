@@ -50,7 +50,8 @@ describe('YearOverview', () => {
     expect(cell('2026-10-01')).toHaveAttribute('data-status', 'onTarget')
     expect(cell('2026-10-01')).toHaveClass('bg-success/25')
     expect(cell('2026-10-02')).toHaveAttribute('data-status', 'alcoholDay')
-    expect(cell('2026-10-02')).toHaveClass('border-dashed', 'border-alcohol')
+    expect(cell('2026-10-02')).toHaveClass('bg-alcohol/25')
+    expect(cell('2026-10-02')).not.toHaveClass('border-dashed')
     expect(cell('2026-10-03')).toHaveAttribute('data-status', 'none')
   })
 
@@ -128,10 +129,13 @@ describe('YearOverview', () => {
     }
     renderYear({ statusOf: (date) => statuses[date] ?? 'none' })
 
-    expect(cell('2026-10-01')).toHaveClass('bg-missing/25')
-    expect(cell('2026-10-02')).toHaveClass('bg-label-secondary/25')
+    expect(cell('2026-10-01')).toHaveClass('bg-fill')
+    expect(cell('2026-10-02')).toHaveClass('bg-cheat/25')
     expect(cell('2026-10-03')).toHaveClass('bg-fill')
-    expect(cell('2026-10-04')).toHaveClass('border-dashed', 'bg-label/10')
-    expect(cell('2026-10-05')).toHaveClass('border-alcohol', 'bg-alcohol/25')
+    expect(cell('2026-10-04')).toHaveClass('bg-cheat/25')
+    expect(cell('2026-10-05')).toHaveClass('bg-alcohol/25')
+    for (const date of ['2026-10-01', '2026-10-02', '2026-10-04', '2026-10-05']) {
+      expect(cell(date)?.className).not.toMatch(/dashed|\bborder\b/)
+    }
   })
 })

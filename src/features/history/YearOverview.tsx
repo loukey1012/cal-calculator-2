@@ -2,7 +2,7 @@ import { Button } from '../../components/ios/Button'
 import { ChevronLeftIcon, ChevronRightIcon } from '../../components/ios/icons'
 import { fromLocalDateString } from '../../lib/dates'
 import type { DayStatus } from './calendar'
-import { isOutlined, MINI_STATUS_CLASSES } from './statusClasses'
+import { MINI_STATUS_CLASSES } from './statusClasses'
 import { FIRST_YEAR, miniMonthOf, monthsOfYear } from './yearOverview'
 
 const MONTH_NAME = new Intl.DateTimeFormat(undefined, { month: 'long' })
@@ -127,7 +127,7 @@ function MiniDay({ date, status, faded, isToday, isFuture }: MiniDayProps) {
       data-date={date}
       data-status={status}
       data-faded={faded ? 'true' : undefined}
-      className={`block aspect-square rounded-[3px] ${look} ${isOutlined(status) ? 'border' : ''} ${isToday ? 'ring-1 ring-inset ring-accent-ink' : ''} ${isFuture ? 'opacity-30' : ''} ${faded ? 'opacity-30' : ''}`}
+      className={`block aspect-square rounded-[3px] ${look} ${isToday ? 'ring-1 ring-inset ring-accent-ink' : ''} ${isFuture ? 'opacity-30' : ''} ${faded ? 'opacity-30' : ''}`}
     />
   )
 }

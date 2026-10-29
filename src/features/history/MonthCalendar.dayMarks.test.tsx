@@ -33,13 +33,33 @@ describe('gym and sex marks in the calendar', () => {
     expect(within(cell).queryByTestId('sex-mark')).not.toBeInTheDocument()
   })
 
-  test('a gym day shows a dumbbell and a sex day a heart, together in the bottom row', () => {
-    const cell = renderWith({ gym: true, sex: true })
+  test('the marks sit in one centred bottom row, each in its own color', () => {
+    const cell = renderWith({ weighed: true, hasNote: true, gym: true, sex: true })
 
-    const pair = within(cell).getByTestId('day-marks-pair')
-    expect(within(cell).getByTestId('day-marks-row')).toContainElement(pair)
-    expect(within(pair).getByTestId('gym-mark')).toHaveClass('text-label-secondary')
-    expect(within(pair).getByTestId('sex-mark')).toHaveClass('text-heart')
+    const row = within(cell).getByTestId('day-marks-row')
+    expect(row).toHaveClass('flex', 'justify-center', 'gap-px')
+    expect(within(row).getByTestId('weigh-in-mark')).toHaveClass('text-weigh')
+    expect(within(row).getByTestId('note-dot')).toHaveClass('text-note')
+    expect(within(row).getByTestId('gym-mark')).toHaveClass('text-gym')
+    expect(within(row).getByTestId('sex-mark')).toHaveClass('text-heart')
+  })
+
+  test('all marks are 9 px symbols in the order weigh-in, note, gym, sex', () => {
+    const cell = renderWith({ weighed: true, hasNote: true, gym: true, sex: true })
+
+    const row = within(cell).getByTestId('day-marks-row')
+    const ids = Array.from(row.children).map((child) => child.getAttribute('data-testid'))
+    expect(ids).toEqual(['weigh-in-mark', 'note-dot', 'gym-mark', 'sex-mark'])
+    for (const child of Array.from(row.children)) {
+      expect(child).toHaveClass('h-[9px]', 'w-[9px]')
+      expect(child).toHaveAttribute('stroke-width', '1.6')
+    }
+  })
+
+  test('the gym mark is a dumbbell with two plates on each side', () => {
+    const cell = renderWith({ gym: true })
+    const path = within(cell).getByTestId('gym-mark').querySelector('path')
+    expect(path).toHaveAttribute('d', 'M1 4.5v3M3.6 2.8v6.4M8.4 2.8v6.4M11 4.5v3M3.6 6h4.8')
   })
 
   test('the screen reader hears what the cell shows', () => {
@@ -49,71 +69,37 @@ describe('gym and sex marks in the calendar', () => {
     ).toBeInTheDocument()
   })
 
-  test('on the selected day both marks take the color of its text', () => {
+  test('on the selected day all marks take the color of its text', () => {
     const cell = renderWith({ gym: true, sex: true }, '2026-10-06')
-    expect(within(cell).getByTestId('gym-mark')).toHaveClass('text-on-accent')
-    expect(within(cell).getByTestId('sex-mark')).toHaveClass('text-on-accent')
+    for (const id of ['gym-mark', 'sex-mark']) {
+      expect(within(cell).getByTestId(id)).toHaveClass('text-on-accent')
+    }
   })
 
-  // The bottom marks share one flex row (weigh-in left, note dot in the middle, pair right), so
-  // the dot can never overlap them whatever the cell's border. The row is inset from the padding
-  // box, which is 4 px narrower on an outlined cell (border-2).
-  const FILLED = 'none' as const
-  const OUTLINED = 'cheatDay' as const
-  const COMBINATIONS = [
-    ['note + gym + sex', { hasNote: true, gym: true, sex: true }],
-    ['note + gym + sex + weigh-in', { hasNote: true, gym: true, sex: true, weighed: true }],
-    ['note + gym', { hasNote: true, gym: true }],
-    ['note + sex', { hasNote: true, sex: true }],
-    ['weigh-in + note', { hasNote: true, weighed: true }],
-    ['note alone', { hasNote: true }],
-  ] as const
+  test('without any mark, no bottom row is drawn', () => {
+    const cell = renderWith({})
+    expect(within(cell).queryByTestId('day-marks-row')).not.toBeInTheDocument()
+  })
 
-  function renderCell(
-    status: 'none' | 'cheatDay' | 'alcoholDay',
-    marks: Partial<DayMarks>,
-    selectedDay: string | null,
-  ) {
+  test.each([
+    ['cheatDay', 'cheat-day-mark'],
+    ['alcoholDay', 'alcohol-mark'],
+    ['missing', 'missing-dot'],
+    ['cheatMeal', 'cheat-meal-mark'],
+  ] as const)('on a %s the bottom row is the same as anywhere', (status, topRightId) => {
     render(
       <MonthCalendar
         month="2026-10-01"
         today="2026-10-15"
-        selectedDay={selectedDay}
+        selectedDay={null}
         statusOf={() => status}
-        marksOf={(date) => (date === '2026-10-06' ? { ...NONE, ...marks } : NONE)}
+        marksOf={(date) => (date === '2026-10-06' ? { ...NONE, gym: true, hasNote: true } : NONE)}
         onSelectDay={() => {}}
         onChangeMonth={() => {}}
       />,
     )
-    return screen.getByRole('button', { name: /^October 6\b/ })
-  }
-
-  describe.each([
-    ['a filled cell', FILLED, null, 'inset-x-[3px]'],
-    ['an outlined cheat day', OUTLINED, null, 'inset-x-[1px]'],
-    ['an outlined alcohol day', 'alcoholDay' as const, null, 'inset-x-[1px]'],
-    ['the selected day', FILLED, '2026-10-06', 'inset-x-[3px]'],
-    ['the selected day that was a cheat day (no border)', OUTLINED, '2026-10-06', 'inset-x-[3px]'],
-  ])('on %s', (_cell, status, selectedDay, inset) => {
-    test.each(COMBINATIONS)('%s: one row keeps the marks apart', (_name, marks) => {
-      const cell = renderCell(status, marks, selectedDay)
-
-      const row = within(cell).getByTestId('day-marks-row')
-      expect(row).toHaveClass('flex', 'justify-between', inset)
-      const children = Array.from(row.children)
-      const dot = within(cell).getByTestId('note-dot')
-      const middle = children.find((child) => child.contains(dot))
-      expect(middle).toHaveClass('flex-1')
-      // order: weigh-in, the middle with the dot, the pair
-      const scale = within(cell).queryByTestId('weigh-in-mark')
-      const pair = within(cell).queryByTestId('day-marks-pair')
-      const expected = [scale, middle, pair].filter((child) => child != null)
-      expect(children).toEqual(expected)
-    })
-  })
-
-  test('without a note, no dot is drawn', () => {
-    const cell = renderCell(FILLED, { gym: true, sex: true }, null)
-    expect(within(cell).queryByTestId('note-dot')).not.toBeInTheDocument()
+    const cell = screen.getByRole('button', { name: /^October 6\b/ })
+    expect(within(cell).getByTestId('day-marks-row')).toHaveClass('inset-x-[2px]')
+    expect(within(cell).getByTestId(topRightId)).toBeInTheDocument()
   })
 })

@@ -12,14 +12,9 @@ import { Button } from '../../components/ios/Button'
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from '../../components/ios/icons'
 import { fromLocalDateString } from '../../lib/dates'
 import { addMonths, monthStart, monthWeeks, type DayMarks, type DayStatus } from './calendar'
-import {
-  DumbbellSymbol,
-  ForkKnifeSymbol,
-  HeartSymbol,
-  ScaleSymbol,
-  WineGlassSymbol,
-} from './calendarSymbols'
-import { isOutlined, STATUS_CLASSES, STATUS_TEXT } from './statusClasses'
+import { DialSymbol, DumbbellSymbol, HeartSymbol, LinesSymbol } from './calendarSymbols'
+import { LeftOutMark } from './LeftOutMark'
+import { STATUS_CLASSES, STATUS_TEXT } from './statusClasses'
 import { useMonthPress } from './useMonthPress'
 
 // a known Monday, to name the weekdays in the device language
@@ -222,6 +217,11 @@ function marksText({ hasNote, weighed, estimated, gym, sex }: DayMarks): string 
   return `${hasNote ? ', has a note' : ''}${weighed ? ', weigh-in' : ''}${estimated ? ', estimated calories' : ''}${gym ? ', gym' : ''}${sex ? ', sex' : ''}`
 }
 
+/** The shared look of the bottom row's symbols: 9 px, stroke 1.6. */
+function bottomMark(color: string) {
+  return { className: `h-[9px] w-[9px] shrink-0 ${color}`, strokeWidth: '1.6' }
+}
+
 // props are primitives and `onSelect` is stable, so a cell only renders again when it changes
 const DayButton = memo(function DayButton({
   date,
@@ -257,32 +257,12 @@ const DayButton = memo(function DayButton({
         // the selected day is filled with the accent color; today is only a ring around its fill
         selected
           ? 'accent-edge bg-accent font-extrabold text-on-accent'
-          : `${STATUS_CLASSES[status]} ${isOutlined(status) ? 'border-2' : ''} ${isToday ? 'ring-2 ring-accent-ink ring-offset-0' : ''}`
+          : `${STATUS_CLASSES[status]} ${isToday ? 'ring-2 ring-accent-ink ring-offset-0' : ''}`
       }`}
     >
       {Number(date.slice(8))}
-      {/* top right: what kind of day it was (a day has at most one of these) */}
-      {status === 'alcoholDay' && (
-        <WineGlassSymbol
-          data-testid="alcohol-mark"
-          className={`absolute top-[3px] right-[2px] h-[11px] w-[11px] ${markColor('text-alcohol')}`}
-        />
-      )}
-      {status === 'cheatMeal' && (
-        <ForkKnifeSymbol
-          data-testid="cheat-meal-mark"
-          className={`absolute top-[3px] right-[2px] h-[11px] w-[11px] ${markColor('text-label-secondary')}`}
-        />
-      )}
-      {status === 'missing' && (
-        <span
-          aria-hidden="true"
-          data-testid="missing-dot"
-          className="absolute top-[3px] right-[2px] flex h-[11px] w-[11px] items-center justify-center rounded-full bg-missing text-[9px] leading-none font-extrabold text-on-missing"
-        >
-          !
-        </span>
-      )}
+      {/* top right: why the day doesn't count, if it doesn't (one mark, by the status priority) */}
+      <LeftOutMark status={status} selected={selected} className="absolute top-[3px] right-[3px]" />
       {estimated && (
         <span
           aria-hidden="true"
@@ -292,45 +272,20 @@ const DayButton = memo(function DayButton({
           ~
         </span>
       )}
-      {/* one bottom row keeps the weigh-in (left), the note dot (middle) and the gym and sex
-          pair (right) apart, whatever the cell is: it is inset from the padding box, which an
-          outlined cell's border-2 makes 4 px narrower */}
+      {/* one centred bottom row: weigh-in, note, gym, sex */}
       {(weighed || hasNote || gym || sex) && (
         <span
           data-testid="day-marks-row"
-          className={`absolute flex items-end justify-between ${isOutlined(status) && !selected ? 'inset-x-[1px] bottom-[1px]' : 'inset-x-[3px] bottom-[3px]'}`}
+          className="absolute inset-x-[2px] bottom-[4px] flex justify-center gap-px"
         >
           {weighed && (
-            <ScaleSymbol
-              data-testid="weigh-in-mark"
-              className={`h-3 w-3 shrink-0 ${markColor('text-label-secondary')}`}
-            />
+            <DialSymbol data-testid="weigh-in-mark" {...bottomMark(markColor('text-weigh'))} />
           )}
-          <span className="flex min-w-0 flex-1 justify-center">
-            {hasNote && (
-              <span
-                aria-hidden="true"
-                data-testid="note-dot"
-                className={`mb-[2px] h-1 w-1 rounded-full ${selected ? 'bg-on-accent' : 'bg-accent-ink'}`}
-              />
-            )}
-          </span>
-          {(gym || sex) && (
-            <span data-testid="day-marks-pair" className="flex shrink-0 gap-px">
-              {gym && (
-                <DumbbellSymbol
-                  data-testid="gym-mark"
-                  className={`h-[9px] w-[9px] ${markColor('text-label-secondary')}`}
-                />
-              )}
-              {sex && (
-                <HeartSymbol
-                  data-testid="sex-mark"
-                  className={`h-[9px] w-[9px] ${markColor('text-heart')}`}
-                />
-              )}
-            </span>
+          {hasNote && (
+            <LinesSymbol data-testid="note-dot" {...bottomMark(markColor('text-note'))} />
           )}
+          {gym && <DumbbellSymbol data-testid="gym-mark" {...bottomMark(markColor('text-gym'))} />}
+          {sex && <HeartSymbol data-testid="sex-mark" {...bottomMark(markColor('text-heart'))} />}
         </span>
       )}
     </button>

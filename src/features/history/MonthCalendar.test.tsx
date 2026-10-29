@@ -25,7 +25,7 @@ const MARKS_OF: Record<string, DayMarks> = {
   '2026-10-07': { ...NO_MARKS, estimated: true },
 }
 
-function renderCalendar(today = '2026-10-15', month = '2026-10-01') {
+function renderCalendar(today = '2026-10-15', month = '2026-10-01', selectedDay = '2026-10-02') {
   const onSelectDay = vi.fn()
   const onChangeMonth = vi.fn()
   const onShowYear = vi.fn()
@@ -33,7 +33,7 @@ function renderCalendar(today = '2026-10-15', month = '2026-10-01') {
     <MonthCalendar
       month={month}
       today={today}
-      selectedDay="2026-10-02"
+      selectedDay={selectedDay}
       statusOf={(date) => STATUS_OF[date] ?? 'none'}
       marksOf={(date) => MARKS_OF[date] ?? NO_MARKS}
       footer={<p>footer</p>}
@@ -175,14 +175,45 @@ describe('MonthCalendar', () => {
     ).toBeInTheDocument()
   })
 
-  test('outlines alcohol days in purple and cheat days in grey, both dashed', () => {
+  test('gives every day that does not count the same plain grey card, without outlines', () => {
     renderCalendar()
 
-    expect(screen.getByRole('button', { name: /October 6,/ }).className).toMatch(
-      /border-dashed.*border-alcohol|border-alcohol.*border-dashed/,
+    for (const name of [/October 3,/, /October 4,/, /October 5,/, /October 6,/]) {
+      const { className } = screen.getByRole('button', { name })
+      expect(className).toMatch(/\bbg-fill\b/)
+      expect(className).toMatch(/\btext-label-secondary\b/)
+      expect(className).not.toMatch(/dashed|border/)
+    }
+  })
+
+  test('names the reason in the top right: a filled badge for a whole day, an outline for a cheat meal', () => {
+    renderCalendar()
+
+    const alcohol = within(screen.getByRole('button', { name: /October 6,/ }))
+    expect(alcohol.getByTestId('alcohol-mark')).toHaveClass('bg-alcohol', 'rounded-full')
+    const cheatDay = within(screen.getByRole('button', { name: /October 3,/ }))
+    expect(cheatDay.getByTestId('cheat-day-mark')).toHaveClass('bg-cheat', 'h-3', 'w-3')
+    const cheatMeal = within(screen.getByRole('button', { name: /October 4,/ }))
+    expect(cheatMeal.getByTestId('cheat-meal-mark')).toHaveClass('text-cheat')
+    expect(cheatMeal.queryByTestId('cheat-day-mark')).not.toBeInTheDocument()
+  })
+
+  test('shows one top-right mark only', () => {
+    renderCalendar()
+
+    const alcohol = within(screen.getByRole('button', { name: /October 6,/ }))
+    expect(alcohol.queryByTestId('missing-dot')).not.toBeInTheDocument()
+    expect(alcohol.queryByTestId('cheat-meal-mark')).not.toBeInTheDocument()
+  })
+
+  test('turns the badge white with an accent glyph on the open day', () => {
+    renderCalendar('2026-10-15', '2026-10-01', '2026-10-06')
+
+    const badge = within(screen.getByRole('button', { name: /October 6,/ })).getByTestId(
+      'alcohol-mark',
     )
-    expect(screen.getByRole('button', { name: /October 3,/ }).className).not.toMatch(/alcohol/)
-    expect(screen.getByRole('button', { name: /October 3,/ }).className).toMatch(/border-dashed/)
+    expect(badge).toHaveClass('bg-on-accent', 'text-accent')
+    expect(badge).not.toHaveClass('bg-alcohol')
   })
 
   test('tells today (a ring) from the selected day (filled)', () => {
@@ -250,19 +281,15 @@ describe('MonthCalendar', () => {
     const forkKnife = within(screen.getByRole('button', { name: /October 4,/ })).getByTestId(
       'cheat-meal-mark',
     )
-    expect(forkKnife).toHaveClass('text-label-secondary')
+    expect(forkKnife).toHaveClass('text-cheat')
     expect(forkKnife).toHaveAttribute('fill', 'none')
     const badge = within(screen.getByRole('button', { name: /October 5,/ })).getByTestId(
       'missing-dot',
     )
     expect(badge).toHaveClass('bg-missing', 'text-on-missing')
-    const wine = within(screen.getByRole('button', { name: /October 6,/ })).getByTestId(
-      'alcohol-mark',
-    )
-    expect(wine).toHaveClass('text-alcohol')
     expect(
       within(screen.getByRole('button', { name: /October 6,/ })).getByTestId('weigh-in-mark'),
-    ).toHaveClass('h-3', 'w-3')
+    ).toHaveClass('h-[9px]', 'w-[9px]', 'text-weigh')
   })
 
   test('tints the row of the current week only', () => {

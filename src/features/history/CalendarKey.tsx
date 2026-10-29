@@ -1,61 +1,32 @@
 import type { ReactNode } from 'react'
-import {
-  DumbbellSymbol,
-  ForkKnifeSymbol,
-  HeartSymbol,
-  ScaleSymbol,
-  WineGlassSymbol,
-} from './calendarSymbols'
+import { DialSymbol, HeartSymbol, DumbbellSymbol, LinesSymbol } from './calendarSymbols'
+import { LeftOutMark } from './LeftOutMark'
 
 const CIRCLE = 'flex h-4 w-4 shrink-0 items-center justify-center rounded-full'
-const DASHED = 'border-2 border-dashed'
+const SYMBOL = 'h-3.5 w-3.5 shrink-0'
 
 type KeyEntry = { readonly label: string; readonly sample: ReactNode }
 
-// the same classes as the cells (MonthCalendar), so a change there shows here too
+// the same classes and marks as the cells (MonthCalendar), so a change there shows here too
 const ENTRIES: readonly KeyEntry[] = [
   { label: 'Within goal (≤ 10 % over)', sample: <span className={`${CIRCLE} bg-success/25`} /> },
   { label: 'More than 10 % over', sample: <span className={`${CIRCLE} day-over`} /> },
   { label: 'More than 300 kcal over', sample: <span className={`${CIRCLE} day-well-over`} /> },
+  { label: 'Day that does not count', sample: <span className={`${CIRCLE} bg-fill`} /> },
+  { label: 'Cheat day', sample: <LeftOutMark status="cheatDay" size="key" /> },
+  { label: 'Alcohol day', sample: <LeftOutMark status="alcoholDay" size="key" /> },
+  { label: 'Lunch or dinner missing', sample: <LeftOutMark status="missing" size="key" /> },
+  { label: 'Cheat meal', sample: <LeftOutMark status="cheatMeal" size="key" /> },
   {
-    label: 'Cheat day',
-    sample: <span className={`${CIRCLE} ${DASHED} border-label-secondary/60`} />,
+    label: 'Has a note',
+    sample: <LinesSymbol strokeWidth="1.6" className={`${SYMBOL} text-note`} />,
   },
-  {
-    label: 'Alcohol day',
-    sample: (
-      <span className={`${CIRCLE} ${DASHED} border-alcohol text-alcohol`}>
-        <WineGlassSymbol className="h-2.5 w-2.5" />
-      </span>
-    ),
-  },
-  {
-    label: 'Cheat meal',
-    sample: <ForkKnifeSymbol className="h-3.5 w-3.5 shrink-0 text-label-secondary" />,
-  },
-  {
-    label: 'Lunch or dinner missing',
-    sample: (
-      <span
-        className={`${CIRCLE} bg-missing text-[10px] leading-none font-extrabold text-on-missing`}
-      >
-        !
-      </span>
-    ),
-  },
-  { label: 'Has a note', sample: <span className="h-1.5 w-1.5 rounded-full bg-accent-ink" /> },
   {
     label: 'Weigh-in',
-    sample: <ScaleSymbol className="h-3.5 w-3.5 shrink-0 text-label-secondary" />,
+    sample: <DialSymbol strokeWidth="1.6" className={`${SYMBOL} text-weigh`} />,
   },
-  {
-    label: 'Gym',
-    sample: <DumbbellSymbol className="h-3.5 w-3.5 shrink-0 text-label-secondary" />,
-  },
-  {
-    label: 'Sex',
-    sample: <HeartSymbol className="h-3.5 w-3.5 shrink-0 text-heart" />,
-  },
+  { label: 'Gym', sample: <DumbbellSymbol strokeWidth="1.6" className={`${SYMBOL} text-gym`} /> },
+  { label: 'Sex', sample: <HeartSymbol strokeWidth="1.6" className={`${SYMBOL} text-heart`} /> },
   {
     label: 'Estimated calories',
     sample: <span className="text-[13px] leading-none font-bold text-label-secondary">~</span>,

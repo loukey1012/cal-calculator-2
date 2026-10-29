@@ -122,6 +122,8 @@ describe('TrendsView', () => {
       'missing',
       'today',
     ])
+    // every day that does not count has the same plain look: no dashed outline
+    for (const bar of bars.slice(1)) expect(bar).not.toHaveAttribute('stroke-dasharray')
     // the cheat day stands as high as its goal, not its 3,500 kcal
     const yIn = (pattern: RegExp, element: Element) =>
       Number(pattern.exec(element.getAttribute('d') ?? '')?.[1])

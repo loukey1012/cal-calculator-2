@@ -52,7 +52,9 @@ on note pages) confirmed; then the History ⋯ menu lost This week / Year overvi
 recipes removed from the app) confirmed. L2 (`20261029160000_drop_recipes`) and J (58/59 Gym and Sex marks:
 `gym_days` per person, `sex_days` per household, `20261029150000_day_marks`, both migrations on dev
 and prod; `src/features/dayMarks/*`, queued kinds `gymDay`/`sexDay`, live hint `sex_days`) built,
-await the iPhone test; then check with the user whether the calendar symbols look crowded.
+confirmed; then the calendar symbols were unified (user's Symbols v2 · B: every left-out day one
+grey card + top-right `LeftOutMark` badge, bottom row dial/lines/two-plate dumbbell/heart in muted
+colour tokens, `markContrast.test.ts` keeps them ≥3:1), awaits the iPhone test.
 **Next:** K (66 vegan/halal, 65 merge yourself, 64 Review re-checks). Sketch of F: https://claude.ai/artifact/KJ5V6j5PCBaN35MXmATmmE. Sketch of D:
 https://claude.ai/artifact/Sp4cvXiKk3us9kXNUTrT6g. Working rhythm that worked: `ecc:tdd-guide`
 agents build (in parallel only on separate files), then `ecc:typescript-reviewer` +
