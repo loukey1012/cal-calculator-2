@@ -30,6 +30,16 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-29T11:00',
+    kind: 'new',
+    title: 'Choose what the weekly summary shows',
+    items: [
+      'Settings › Notifications › Weekly summary › Contents: switch each part on or off and drag the handles to change the order; the first part shown is the headline',
+      'Parts: calories saved, Ø calories, days within goal, burned and eaten, Ø protein, carbs, fat, fiber, sugar and salt, and days not counted',
+      'A preview shows the notification for an example week',
+    ],
+  },
+  {
     at: '2026-10-29T10:00',
     kind: 'new',
     title: 'Choose what the day summary shows',

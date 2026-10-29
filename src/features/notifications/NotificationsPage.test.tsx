@@ -146,12 +146,12 @@ describe('what to be notified about', () => {
 
     const time = await screen.findByLabelText('Weekly summary time')
     expect(time).toHaveValue('08:00')
-    expect(
-      screen.getByText(/Every Monday: last week.s calories saved, average and days within goal/),
-    ).toBeVisible()
+    expect(screen.getByText(/Every Monday, about last week/)).toBeVisible()
     fireEvent.change(time, { target: { value: '09:30' } })
 
-    await vi.waitFor(() => expect(lastSaved().settings.weekly).toEqual({ on: true, time: '09:30' }))
+    await vi.waitFor(() =>
+      expect(lastSaved().settings.weekly).toEqual({ ...DEFAULT_SETTINGS.weekly, time: '09:30' }),
+    )
   })
 
   test('the weekly summary can be switched off', async () => {
@@ -160,7 +160,7 @@ describe('what to be notified about', () => {
 
     await user.click(await screen.findByRole('switch', { name: 'Weekly summary' }))
 
-    expect(lastSaved().settings.weekly).toEqual({ on: false, time: '08:00' })
+    expect(lastSaved().settings.weekly).toEqual({ ...DEFAULT_SETTINGS.weekly, on: false })
     expect(screen.queryByLabelText('Weekly summary time')).not.toBeInTheDocument()
   })
 
@@ -322,10 +322,37 @@ describe('Day summary contents', () => {
       { route: '/settings/notifications' },
     )
 
-    await user.click(await screen.findByRole('button', { name: /Contents/ }))
+    await user.click(await screen.findByRole('button', { name: 'Day summary contents' }))
 
     expect(screen.getByText('4 shown')).toBeVisible()
     expect(screen.getByTestId('where')).toHaveTextContent('/settings/notifications/day-summary')
+  })
+
+  test('the weekly summary has its own Contents row with its count', async () => {
+    const user = userEvent.setup()
+    renderWithProviders(
+      <CurrentUserContext value={{ profile: ME, householdId: 'h1' }}>
+        <NotificationsPage />
+        <Where />
+      </CurrentUserContext>,
+      { route: '/settings/notifications' },
+    )
+
+    const row = await screen.findByRole('button', { name: 'Weekly summary contents' })
+    expect(row).toHaveTextContent('3 shown')
+    await user.click(row)
+
+    expect(screen.getByTestId('where')).toHaveTextContent('/settings/notifications/weekly-summary')
+  })
+
+  test('no Contents row while the weekly summary is off', async () => {
+    renderPage()
+    const user = userEvent.setup()
+
+    await user.click(await screen.findByRole('switch', { name: 'Weekly summary' }))
+
+    expect(screen.queryByRole('button', { name: 'Weekly summary contents' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Day summary contents' })).toBeVisible()
   })
 
   test('no Contents row while the day summary is off', async () => {
@@ -334,6 +361,9 @@ describe('Day summary contents', () => {
 
     await user.click(await screen.findByRole('switch', { name: 'Day summary' }))
 
-    expect(screen.queryByRole('button', { name: /Contents/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Day summary contents' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Weekly summary contents' })).toHaveTextContent(
+      '3 shown',
+    )
   })
 })

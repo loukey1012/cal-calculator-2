@@ -114,15 +114,65 @@ test('the day summary: preview, parts switched on, moved by keyboard and by drag
     'Fat',
   ])
   await expect(summary().getByRole('switch', { name: 'Calories left or over' })).toBeChecked()
+})
 
-  // back to the defaults (the throwaway account goes away anyway; this keeps a rerun honest)
-  await handle('Carbs').focus()
-  await page.keyboard.press('ArrowDown')
-  await handle('Calories left or over').focus()
-  await page.keyboard.press('ArrowDown')
-  await summary().getByRole('switch', { name: 'Calories left or over' }).click()
-  await expect(body()).toHaveText('Protein 121 of 140 g · Carbs 200 of 220 g · Fat 62 of 70 g')
+const WEEKLY_SUMMARY = '/settings/notifications/weekly-summary'
+
+test('the weekly summary: preview, a part switched on and moved, kept in the account', async ({
+  page,
+  backend,
+}) => {
+  const me = await backend.user('Dana')
+  await backend.household([me])
+  await logIn(page, me)
+  await page.goto(WEEKLY_SUMMARY)
+  const weekly = () => activePage(page)
+  const preview = () => weekly().getByRole('group', { name: 'Notification preview' })
+  const body = () => weekly().getByTestId('preview-body')
+  const handle = (label: string) =>
+    weekly().getByRole('button', { name: `Move ${label}`, exact: true })
+  type SavedWeekly = { parts?: { id: string; on: boolean }[]; onlyWithGoal?: boolean }
+  const savedWeekly = async (): Promise<SavedWeekly | undefined> => {
+    const { data } = await backend.admin
+      .from('notification_preferences')
+      .select('settings')
+      .eq('user_id', me.id)
+      .maybeSingle()
+    return (data?.settings as { weekly?: SavedWeekly } | undefined)?.weekly
+  }
+  const savedParts = async () =>
+    ((await savedWeekly())?.parts ?? []).map((part) => `${part.id}:${part.on}`).slice(0, 4)
+  const savedOnlyWithGoal = async () => (await savedWeekly())?.onlyWithGoal
+
+  // the example week with the default parts
+  await expect(preview()).toContainText('Week 43: 2,100 kcal saved')
+  await expect(weekly().getByText('Example week')).toBeVisible()
+  await expect(body()).toHaveText('Ø 1,930 kcal · 5 of 6 days within goal')
+
+  // switching a part on adds it after the others
+  await weekly().getByRole('switch', { name: 'Burned and eaten' }).click()
+  await expect(body()).toHaveText(
+    'Ø 1,930 kcal · 5 of 6 days within goal · Burned 13,680 · ate 11,580 kcal',
+  )
+
+  // the arrow key moves it up one step
+  await handle('Burned and eaten').focus()
+  await page.keyboard.press('ArrowUp')
+  await expect(body()).toHaveText(
+    'Ø 1,930 kcal · Burned 13,680 · ate 11,580 kcal · 5 of 6 days within goal',
+  )
   await expect
-    .poll(savedSummary)
-    .toEqual(['status:true', 'protein:true', 'carbs:true', 'fat:true', 'calories:false'])
+    .poll(savedParts)
+    .toEqual(['saved:true', 'average:true', 'burnedEaten:true', 'withinGoal:true'])
+
+  // still there after a reload
+  await page.reload()
+  await expect(body()).toHaveText(
+    'Ø 1,930 kcal · Burned 13,680 · ate 11,580 kcal · 5 of 6 days within goal',
+  )
+  await expect(weekly().getByRole('switch', { name: 'Burned and eaten' })).toBeChecked()
+
+  // "Only nutrients with a goal" is saved to the account
+  await weekly().getByRole('switch', { name: 'Only nutrients with a goal' }).click()
+  await expect.poll(savedOnlyWithGoal).toBe(true)
 })

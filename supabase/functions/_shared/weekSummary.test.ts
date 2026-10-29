@@ -63,11 +63,13 @@ describe('weekFigures', () => {
       day('2026-10-24', 0, { mealCount: 0 }),
       day('2026-10-25', 1000),
     ]
-    expect(weekFigures(days, GOALS, 2500, TODAY)).toEqual({
+    expect(weekFigures(days, GOALS, 2500, TODAY)).toMatchObject({
       counted: 2,
       averageKcal: 1500,
       within: { within: 2, of: 2 },
       saved: 2000,
+      burned: 5000,
+      eaten: 3000,
     })
   })
 
@@ -87,5 +89,64 @@ describe('weekFigures', () => {
   test('the average is rounded up like the app', () => {
     const days = [day('2026-10-19', 1000), day('2026-10-20', 1001)]
     expect(weekFigures(days, GOALS, null, TODAY)?.averageKcal).toBe(1001)
+  })
+})
+
+describe('weekFigures for the weekly parts', () => {
+  const full = (date: string, kcal: number, extra: Partial<WeekDayRow> = {}) =>
+    day(date, kcal, { protein: 100, carbs: 200, fat: 60, fiber: 20, sugar: 40, salt: 4, ...extra })
+  const goals = [
+    { validFrom: '2026-01-01', kcal: 2000, protein: 140, carbs: 220, fat: 70, fiber: 30 },
+    { validFrom: '2026-10-20', kcal: 2000, protein: 150, carbs: null, fat: 70, fiber: null },
+  ]
+
+  test('nutrient averages over counted days, with the mean of the goals valid on those days', () => {
+    const days = [
+      full('2026-10-19', 1900, { protein: 100 }),
+      full('2026-10-20', 2000, { protein: 140 }),
+      full('2026-10-21', 3000, { protein: 999, cheatDay: true }),
+    ]
+    const figures = weekFigures(days, goals, null, TODAY)
+
+    // 140 on the 19th, 150 on the 20th; carbs and fiber have a goal on the 19th only
+    expect(figures?.nutrients.protein).toEqual({ average: 120, goal: 145 })
+    expect(figures?.nutrients.carbs).toEqual({ average: 200, goal: 220 })
+    expect(figures?.nutrients.fiber).toEqual({ average: 20, goal: 30 })
+    expect(figures?.nutrients.fat).toEqual({ average: 60, goal: 70 })
+    expect(figures?.nutrients.sugar).toEqual({ average: 40, goal: null })
+    expect(figures?.nutrients.salt).toEqual({ average: 4, goal: null })
+  })
+
+  test('a nutrient goal is null when no counted day has one', () => {
+    const noCarbs = [{ ...goals[1]! }]
+    const figures = weekFigures([full('2026-10-21', 1900)], noCarbs, null, TODAY)
+
+    expect(figures?.nutrients.carbs).toEqual({ average: 200, goal: null })
+  })
+
+  test('a nutrient without any value is null', () => {
+    const figures = weekFigures([day('2026-10-19', 1900)], goals, null, TODAY)
+
+    expect(figures?.nutrients.protein).toBeNull()
+  })
+
+  test('burned and eaten are null without a burned figure', () => {
+    const figures = weekFigures([day('2026-10-19', 1900)], goals, null, TODAY)
+
+    expect(figures).toMatchObject({ burned: null, eaten: null })
+  })
+
+  test('counts past days with an entry that do not count', () => {
+    const days = [
+      day('2026-10-19', 1900),
+      day('2026-10-20', 1000, { cheatDay: true }),
+      day('2026-10-21', 0, { mealCount: 0, alcoholDay: true }),
+      day('2026-10-22', 300, { dinnerLogged: false }),
+      day('2026-10-23', 0, { mealCount: 0 }),
+      day('2026-10-26', 300, { dinnerLogged: false }),
+    ]
+
+    expect(weekFigures(days, goals, null, TODAY)?.leftOut).toBe(3)
+    expect(weekFigures([day('2026-10-19', 1900)], goals, null, TODAY)?.leftOut).toBe(0)
   })
 })

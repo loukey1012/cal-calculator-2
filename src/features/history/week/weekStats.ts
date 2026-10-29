@@ -1,6 +1,7 @@
 import { countsInAverages } from '../../../../supabase/functions/_shared/dayCounting'
 import {
   countedOf,
+  meanGoalTarget,
   savedKcal,
   withinGoal,
   type SavedKcal,
@@ -91,14 +92,13 @@ export function weekAverages(
 ): WeekAverages | null {
   if (counted.length === 0) return null
   const dayGoals = counted.flatMap((day) => goalForDate(goals, day.date) ?? [])
+  const dates = counted.map((day) => day.date)
   const nutrients = NUTRIENT_GOALS.flatMap(([key, goalKey]) => {
-    const targets = dayGoals.flatMap((goal) => {
-      const target = goal[goalKey]
-      return typeof target === 'number' ? [target] : []
+    const goal = meanGoalTarget(dates, goals, (candidate) => {
+      const target = candidate[goalKey]
+      return typeof target === 'number' ? target : null
     })
-    return targets.length > 0
-      ? [{ key, average: mean(counted.map((day) => day[key])), goal: mean(targets) }]
-      : []
+    return goal === null ? [] : [{ key, average: mean(counted.map((day) => day[key])), goal }]
   })
   return {
     kcal: {

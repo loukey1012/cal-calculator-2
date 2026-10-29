@@ -29,8 +29,9 @@ import { formatInviteCode } from '../household/inviteCode'
 import { shareInviteCode } from '../household/shareInvite'
 import { goalForDate, type Goal } from '../nutrition/goals'
 import { DaySummaryPage } from '../notifications/DaySummaryPage'
+import { WeeklySummaryPage } from '../notifications/WeeklySummaryPage'
 import { NotificationsPage } from '../notifications/NotificationsPage'
-import { DAY_SUMMARY_PATH, NOTIFICATIONS_PATH } from '../notifications/paths'
+import { DAY_SUMMARY_PATH, NOTIFICATIONS_PATH, WEEKLY_SUMMARY_PATH } from '../notifications/paths'
 import { PATCH_NOTES_PATH, PatchNotesPage } from '../patchNotes/PatchNotesPage'
 import { EXPORT_PATH, ExportPage } from '../export/ExportPage'
 import { useToday } from '../today/useToday'
@@ -60,6 +61,7 @@ export function SettingsPage() {
   if (pathname === EXPORT_PATH) return <ExportPage />
   if (pathname === NOTIFICATIONS_PATH) return <NotificationsPage />
   if (pathname === DAY_SUMMARY_PATH) return <DaySummaryPage />
+  if (pathname === WEEKLY_SUMMARY_PATH) return <WeeklySummaryPage />
   return <SettingsOverview />
 }
 

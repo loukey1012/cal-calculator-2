@@ -15,7 +15,7 @@ import {
   type SummaryDay,
   type TimedSwitch,
 } from '../../../supabase/functions/_shared/notificationSettings.ts'
-import { DAY_SUMMARY_PATH } from './paths'
+import { DAY_SUMMARY_PATH, WEEKLY_SUMMARY_PATH } from './paths'
 import { usePreferences, useSavePreferences } from './hooks'
 import { deviceTimeZone, type Preferences } from './preferencesApi'
 
@@ -135,6 +135,7 @@ export function NotificationKinds() {
         {settings.summary.on && (
           <ListRow
             title="Contents"
+            ariaLabel="Day summary contents"
             detail={`${settings.summary.parts.filter((part) => part.on).length} shown`}
             onClick={() => navigate(DAY_SUMMARY_PATH, { replace: true })}
           />
@@ -152,13 +153,21 @@ export function NotificationKinds() {
       )}
       <GroupedSection
         header="Weekly summary"
-        footer="Every Monday: last week’s calories saved, average and days within goal."
+        footer="Every Monday, about last week. Choose what it shows under Contents."
       >
         <TimedRows
           label="Weekly summary"
           value={settings.weekly}
-          onChange={(weekly) => change({ ...settings, weekly })}
+          onChange={(weekly) => change({ ...settings, weekly: { ...settings.weekly, ...weekly } })}
         />
+        {settings.weekly.on && (
+          <ListRow
+            title="Contents"
+            ariaLabel="Weekly summary contents"
+            detail={`${settings.weekly.parts.filter((part) => part.on).length} shown`}
+            onClick={() => navigate(WEEKLY_SUMMARY_PATH, { replace: true })}
+          />
+        )}
       </GroupedSection>
       <GroupedSection
         header="Unsaved dish"

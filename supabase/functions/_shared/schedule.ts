@@ -1,4 +1,4 @@
-import { type WeekFigures } from './weekSummary.ts'
+import { type WeekFigures, type WeekNutrientId } from './weekSummary.ts'
 import { addDays, isoWeekday, previousIsoWeek, weekPath, type IsoWeek } from './isoWeek.ts'
 import { isMissingMeals, missingMainMeals } from './dayCounting.ts'
 import {
@@ -9,6 +9,8 @@ import {
   type ReminderMeal,
   type SummaryDay,
   type SummaryPartId,
+  type WeeklyPart,
+  type WeeklyPartId,
 } from './notificationSettings.ts'
 
 /**
@@ -152,7 +154,7 @@ export type SummaryGoal = {
 /** The week so far (counted days up to the summary day); null when no day counted. */
 export type SummaryWeek = Pick<WeekFigures, 'averageKcal' | 'saved'> | null
 
-type NutrientId = 'protein' | 'carbs' | 'fat' | 'fiber' | 'sugar' | 'salt'
+type NutrientId = WeekNutrientId
 
 const NUTRIENTS: Readonly<Record<NutrientId, string>> = {
   protein: 'Protein',
@@ -165,9 +167,8 @@ const NUTRIENTS: Readonly<Record<NutrientId, string>> = {
 
 function grams(label: string, value: number | null, goal: number | null): string | null {
   if (value === null) return null
-  return goal === null
-    ? `${label} ${Math.round(value)} g`
-    : `${label} ${Math.round(value)} of ${Math.round(goal)} g`
+  const rounded = Math.round(value)
+  return goal === null ? `${label} ${rounded} g` : `${label} ${rounded} of ${Math.round(goal)} g`
 }
 
 function statusOf(day: DaySummary): string | null {
@@ -195,11 +196,8 @@ function weekAverageOf(week: SummaryWeek): string | null {
 }
 
 function weekSavedOf(week: SummaryWeek): string | null {
-  const saved = week?.saved
-  if (saved == null) return null
-  return saved >= 0
-    ? `Week ${kcalText.format(saved)} kcal saved`
-    : `Week ${kcalText.format(-saved)} kcal surplus`
+  const text = savedText(week?.saved ?? null)
+  return text === null ? null : `Week ${text}`
 }
 
 export function summaryMessage(
@@ -247,28 +245,93 @@ export function summaryMessage(
 
 const kcalText = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 })
 
-/** The week before, never a weight. Null when no day counted: nothing to tell. */
-export function weeklyMessage(week: IsoWeek, figures: WeekFigures | null): PushMessage | null {
-  if (!figures) return null
-  const average = `Ø ${kcalText.format(figures.averageKcal)} kcal`
-  const within = figures.within
-    ? `${figures.within.within} of ${figures.within.of} ${figures.within.of === 1 ? 'day' : 'days'} within goal`
+const WEEKLY_NUTRIENT_LABELS: Readonly<Record<NutrientId, string>> = {
+  protein: 'Ø protein',
+  carbs: 'Ø carbs',
+  fat: 'Ø fat',
+  fiber: 'Ø fiber',
+  sugar: 'Ø sugar',
+  salt: 'Ø salt',
+}
+
+function savedText(saved: number | null): string | null {
+  if (saved === null) return null
+  return saved >= 0
+    ? `${kcalText.format(saved)} kcal saved`
+    : `${kcalText.format(-saved)} kcal surplus`
+}
+
+function withinText(within: WeekFigures['within']): string | null {
+  return within
+    ? `${within.within} of ${within.of} ${within.of === 1 ? 'day' : 'days'} within goal`
     : null
-  const prefix = `Week ${week.week}:`
-  const saved = figures.saved
-  const title =
-    saved === null
-      ? `${prefix} ${average}`
-      : saved >= 0
-        ? `${prefix} ${kcalText.format(saved)} kcal saved`
-        : `${prefix} ${kcalText.format(-saved)} kcal surplus`
-  const body = (saved === null ? [within] : [average, within]).filter((part) => part !== null)
+}
+
+function burnedEatenText(figures: WeekFigures): string | null {
+  const { burned, eaten } = figures
+  if (burned === null || eaten === null) return null
+  return `Burned ${kcalText.format(burned)} · ate ${kcalText.format(eaten)} kcal`
+}
+
+function leftOutText(count: number): string | null {
+  return count > 0 ? `${count} ${count === 1 ? 'day' : 'days'} not counted` : null
+}
+
+function weeklyTextOf(
+  id: WeeklyPartId,
+  figures: WeekFigures,
+  onlyWithGoal: boolean,
+): string | null {
+  switch (id) {
+    case 'saved':
+      return savedText(figures.saved)
+    case 'average':
+      return `Ø ${kcalText.format(figures.averageKcal)} kcal`
+    case 'withinGoal':
+      return withinText(figures.within)
+    case 'burnedEaten':
+      return burnedEatenText(figures)
+    case 'leftOut':
+      return leftOutText(figures.leftOut)
+    default: {
+      const nutrient = figures.nutrients[id]
+      if (!nutrient || (onlyWithGoal && nutrient.goal === null)) return null
+      return grams(WEEKLY_NUTRIENT_LABELS[id], nutrient.average, nutrient.goal)
+    }
+  }
+}
+
+/** The notification for a week with figures; never a weight. */
+export function weeklyMessageOf(
+  week: IsoWeek,
+  figures: WeekFigures,
+  options: {
+    readonly parts?: ReadonlyArray<WeeklyPart>
+    readonly onlyWithGoal?: boolean
+  } = {},
+): PushMessage {
+  const { parts = DEFAULT_SETTINGS.weekly.parts, onlyWithGoal = false } = options
+  const texts = parts
+    .filter((part) => part.on)
+    .map((part) => weeklyTextOf(part.id, figures, onlyWithGoal))
+    .filter((text) => text !== null)
+  const [first, ...rest] = texts
+  const prefix = `Week ${week.week}`
   return {
-    title,
-    ...(body.length > 0 && { body: body.join(' · ') }),
+    title: first === undefined ? prefix : `${prefix}: ${first}`,
+    ...(rest.length > 0 && { body: rest.join(' · ') }),
     url: weekPath(week),
     tag: 'weekly',
   }
+}
+
+/** The week before. Null when no day counted: nothing to tell. */
+export function weeklyMessage(
+  week: IsoWeek,
+  figures: WeekFigures | null,
+  options: Parameters<typeof weeklyMessageOf>[2] = {},
+): PushMessage | null {
+  return figures && weeklyMessageOf(week, figures, options)
 }
 
 type PartnerChange = { readonly date: string; readonly mealType: MealType }

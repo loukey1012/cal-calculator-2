@@ -61,6 +61,50 @@ export const SUMMARY_PART_LABELS: Readonly<Record<SummaryPartId, string>> = {
   weekSaved: 'Week so far: calories saved',
 }
 
+/** What the weekly summary can tell, in the order the person chose. Never a weight. */
+export type WeeklyPartId =
+  | 'saved'
+  | 'average'
+  | 'withinGoal'
+  | 'burnedEaten'
+  | 'protein'
+  | 'carbs'
+  | 'fat'
+  | 'fiber'
+  | 'sugar'
+  | 'salt'
+  | 'leftOut'
+
+export type WeeklyPart = { readonly id: WeeklyPartId; readonly on: boolean }
+
+export const DEFAULT_WEEKLY_PARTS: ReadonlyArray<WeeklyPart> = [
+  { id: 'saved', on: true },
+  { id: 'average', on: true },
+  { id: 'withinGoal', on: true },
+  { id: 'burnedEaten', on: false },
+  { id: 'protein', on: false },
+  { id: 'carbs', on: false },
+  { id: 'fat', on: false },
+  { id: 'fiber', on: false },
+  { id: 'sugar', on: false },
+  { id: 'salt', on: false },
+  { id: 'leftOut', on: false },
+]
+
+export const WEEKLY_PART_LABELS: Readonly<Record<WeeklyPartId, string>> = {
+  saved: 'Calories saved',
+  average: 'Ø calories',
+  withinGoal: 'Days within goal',
+  burnedEaten: 'Burned and eaten',
+  protein: 'Ø protein',
+  carbs: 'Ø carbs',
+  fat: 'Ø fat',
+  fiber: 'Ø fiber',
+  sugar: 'Ø sugar',
+  salt: 'Ø salt',
+  leftOut: 'Days not counted',
+}
+
 export type NotificationSettings = {
   /** the partner logs, changes or deletes food in my meals, or shares a dish with me */
   readonly partnerChanges: boolean
@@ -77,8 +121,13 @@ export type NotificationSettings = {
   readonly unsavedDish: { readonly on: boolean; readonly afterMinutes: number }
   /** the weekly review found something new */
   readonly weeklyReview: boolean
-  /** every Monday: the week before (calories saved, average, days within goal) */
-  readonly weekly: TimedSwitch
+  /** every Monday: the week before, with the parts the person chose */
+  readonly weekly: TimedSwitch & {
+    /** every part exactly once, in the order told */
+    readonly parts: ReadonlyArray<WeeklyPart>
+    /** hide nutrient averages whose goal isn't set (sugar and salt have none) */
+    readonly onlyWithGoal: boolean
+  }
 }
 
 export const DEFAULT_SETTINGS: NotificationSettings = {
@@ -97,7 +146,7 @@ export const DEFAULT_SETTINGS: NotificationSettings = {
   },
   unsavedDish: { on: true, afterMinutes: 30 },
   weeklyReview: true,
-  weekly: { on: true, time: '08:00' },
+  weekly: { on: true, time: '08:00', parts: DEFAULT_WEEKLY_PARTS, onlyWithGoal: false },
 }
 
 export const UNSAVED_DISH_MINUTES = [15, 30, 60, 120] as const
@@ -124,26 +173,32 @@ function timedSwitch(value: unknown, fallback: TimedSwitch): TimedSwitch {
  * Known parts keep their saved order and on-state (unknown and repeated ones are dropped); parts
  * missing from the list (old settings, parts added later) come last with their default state.
  */
-function parseSummaryParts(value: unknown): ReadonlyArray<SummaryPart> {
-  if (!Array.isArray(value)) return DEFAULT_SUMMARY_PARTS
-  const seen = new Set<SummaryPartId>()
-  const kept: SummaryPart[] = []
-  for (const entry of value) {
+const MAX_ENTRIES_PER_PART = 2
+
+function parseParts<Id extends string>(
+  value: unknown,
+  defaults: ReadonlyArray<{ readonly id: Id; readonly on: boolean }>,
+): ReadonlyArray<{ readonly id: Id; readonly on: boolean }> {
+  if (!Array.isArray(value)) return defaults
+  const seen = new Set<Id>()
+  const kept: { id: Id; on: boolean }[] = []
+  // user JSON: look at a bounded number of entries and stop once every part has been seen
+  for (const entry of value.slice(0, defaults.length * MAX_ENTRIES_PER_PART)) {
+    if (seen.size === defaults.length) break
     const raw = objectOf(entry)
-    const id = SUMMARY_PART_IDS.find((candidate) => candidate === raw.id)
-    if (id === undefined || seen.has(id)) continue
-    seen.add(id)
-    const fallback = DEFAULT_SUMMARY_PARTS.find((part) => part.id === id)?.on ?? false
-    kept.push({ id, on: booleanOr(raw.on, fallback) })
+    const known = defaults.find((candidate) => candidate.id === raw.id)
+    if (known === undefined || seen.has(known.id)) continue
+    seen.add(known.id)
+    kept.push({ id: known.id, on: booleanOr(raw.on, known.on) })
   }
-  const missing = DEFAULT_SUMMARY_PARTS.filter((part) => !seen.has(part.id))
-  return [...kept, ...missing]
+  return [...kept, ...defaults.filter((part) => !seen.has(part.id))]
 }
 
 export function parseNotificationSettings(value: unknown): NotificationSettings {
   const raw = objectOf(value)
   const reminders = objectOf(raw.reminders)
   const summary = objectOf(raw.summary)
+  const weekly = objectOf(raw.weekly)
   const unsavedDish = objectOf(raw.unsavedDish)
   const minutes = unsavedDish.afterMinutes
   return {
@@ -156,7 +211,7 @@ export function parseNotificationSettings(value: unknown): NotificationSettings 
     summary: {
       ...timedSwitch(summary, DEFAULT_SETTINGS.summary),
       day: summary.day === 'same' || summary.day === 'previous' ? summary.day : 'previous',
-      parts: parseSummaryParts(summary.parts),
+      parts: parseParts(summary.parts, DEFAULT_SUMMARY_PARTS),
       onlyWithGoal: booleanOr(summary.onlyWithGoal, DEFAULT_SETTINGS.summary.onlyWithGoal),
     },
     unsavedDish: {
@@ -166,7 +221,11 @@ export function parseNotificationSettings(value: unknown): NotificationSettings 
         : DEFAULT_SETTINGS.unsavedDish.afterMinutes,
     },
     weeklyReview: booleanOr(raw.weeklyReview, DEFAULT_SETTINGS.weeklyReview),
-    weekly: timedSwitch(raw.weekly, DEFAULT_SETTINGS.weekly),
+    weekly: {
+      ...timedSwitch(weekly, DEFAULT_SETTINGS.weekly),
+      parts: parseParts(weekly.parts, DEFAULT_WEEKLY_PARTS),
+      onlyWithGoal: booleanOr(weekly.onlyWithGoal, DEFAULT_SETTINGS.weekly.onlyWithGoal),
+    },
   }
 }
 

@@ -3,10 +3,11 @@ import {
   DEFAULT_SETTINGS,
   DEFAULT_SUMMARY_PARTS,
   SUMMARY_PART_IDS,
+  DEFAULT_WEEKLY_PARTS,
   type SummaryPartId,
 } from './notificationSettings'
 import { summaryMessage, type DaySummary, type SummaryGoal } from './schedule'
-import { SAMPLE_DAY, SAMPLE_GOAL, summaryPreview } from './summarySample'
+import { SAMPLE_DAY, SAMPLE_GOAL, summaryPreview, weeklyPreview } from './summarySample'
 import { weekSoFar, type WeekDayRow } from './weekSummary'
 
 const DAY: DaySummary = {
@@ -222,5 +223,24 @@ describe('summaryPreview', () => {
     expect(summaryPreview(DEFAULT_SETTINGS.summary).body).toBe(
       'Protein 121 of 140 g · Carbs 200 of 220 g · Fat 62 of 70 g',
     )
+  })
+})
+
+describe('weeklyPreview', () => {
+  test('the default settings preview the default message for a sample week', () => {
+    const preview = weeklyPreview(DEFAULT_SETTINGS.weekly)
+
+    expect(preview.title).toMatch(/^Week \d+: [\d,]+ kcal saved$/)
+    expect(preview.body).toMatch(/^Ø [\d,]+ kcal · \d of \d days within goal$/)
+  })
+
+  test('every part has something to show in the sample week', () => {
+    const parts = DEFAULT_WEEKLY_PARTS.map(({ id }) => ({ id, on: true }))
+    const preview = weeklyPreview({ ...DEFAULT_SETTINGS.weekly, parts })
+
+    expect(preview.body).toContain('Burned')
+    expect(preview.body).toContain('not counted')
+    expect(preview.body).toContain('Ø salt')
+    expect(preview.title).toContain('kcal saved')
   })
 })

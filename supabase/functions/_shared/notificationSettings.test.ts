@@ -6,6 +6,8 @@ import {
   parseNotificationSettings,
   SUMMARY_PART_IDS,
   SUMMARY_PART_LABELS,
+  DEFAULT_WEEKLY_PARTS,
+  WEEKLY_PART_LABELS,
 } from './notificationSettings'
 
 describe('parseNotificationSettings', () => {
@@ -30,20 +32,20 @@ describe('parseNotificationSettings', () => {
       summary: { ...DEFAULT_SETTINGS.summary, on: true, day: 'same', time: '23:00' },
       unsavedDish: { on: false, afterMinutes: 60 },
       weeklyReview: false,
-      weekly: { on: false, time: '09:30' },
+      weekly: { ...DEFAULT_SETTINGS.weekly, on: false, time: '09:30' },
     })
   })
 
   test('settings saved before the weekly summary existed get its default', () => {
     const old = { partnerChanges: false, summary: { on: false, day: 'same', time: '22:00' } }
 
-    expect(parseNotificationSettings(old).weekly).toEqual({ on: true, time: '08:00' })
+    expect(parseNotificationSettings(old).weekly).toEqual(DEFAULT_SETTINGS.weekly)
   })
 
   test('an invalid weekly time falls back to the default', () => {
     expect(parseNotificationSettings({ weekly: { on: false, time: '8am' } }).weekly).toEqual({
+      ...DEFAULT_SETTINGS.weekly,
       on: false,
-      time: '08:00',
     })
   })
 
@@ -150,5 +152,63 @@ describe('minutesOf', () => {
     ['23:59', 1439],
   ])('%s → %i', (time, minutes) => {
     expect(minutesOf(time)).toBe(minutes)
+  })
+})
+
+describe('weekly parts', () => {
+  const partsOf = (parts: unknown) => parseNotificationSettings({ weekly: { parts } }).weekly.parts
+
+  test('the default is saved, average and days within goal', () => {
+    expect(DEFAULT_SETTINGS.weekly.parts.filter((part) => part.on).map((part) => part.id)).toEqual([
+      'saved',
+      'average',
+      'withinGoal',
+    ])
+    expect(DEFAULT_SETTINGS.weekly.onlyWithGoal).toBe(false)
+  })
+
+  test('every part has an id once and a label, and never a weight', () => {
+    const ids = DEFAULT_WEEKLY_PARTS.map((part) => part.id)
+    expect(new Set(ids).size).toBe(ids.length)
+    expect(Object.keys(WEEKLY_PART_LABELS).toSorted()).toEqual([...ids].toSorted())
+    expect(ids.join()).not.toMatch(/weight/i)
+  })
+
+  test.each([undefined, null, 'x', 5, {}, []])('%j falls back to the defaults', (value) => {
+    expect(partsOf(value)).toEqual(DEFAULT_WEEKLY_PARTS)
+  })
+
+  test('a saved order and on-state are kept, missing parts come last with their default', () => {
+    const parts = partsOf([
+      { id: 'salt', on: true },
+      { id: 'saved', on: false },
+      { id: 'weight', on: true },
+      { id: 'salt', on: false },
+    ])
+
+    expect(parts.slice(0, 2)).toEqual([
+      { id: 'salt', on: true },
+      { id: 'saved', on: false },
+    ])
+    expect(parts).toHaveLength(DEFAULT_WEEKLY_PARTS.length)
+    expect(parts.find((part) => part.id === 'average')?.on).toBe(true)
+    expect(parts.find((part) => part.id === 'leftOut')?.on).toBe(false)
+  })
+
+  test('a huge array is read only as far as the known parts can reach', () => {
+    const junk = Array.from({ length: 100_000 }, (_, index) => ({ id: `x${index}`, on: true }))
+    const parts = partsOf([...junk, { id: 'salt', on: true }])
+
+    // the late salt entry is beyond the bound, so salt keeps its default place and state
+    expect(parts).toEqual(DEFAULT_WEEKLY_PARTS)
+  })
+
+  test('onlyWithGoal is kept, an invalid one falls back', () => {
+    expect(parseNotificationSettings({ weekly: { onlyWithGoal: true } }).weekly.onlyWithGoal).toBe(
+      true,
+    )
+    expect(parseNotificationSettings({ weekly: { onlyWithGoal: 1 } }).weekly.onlyWithGoal).toBe(
+      false,
+    )
   })
 })

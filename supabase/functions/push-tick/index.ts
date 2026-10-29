@@ -51,6 +51,7 @@ type Profile = {
 
 const WEEK_DAY_COLUMNS =
   'date, kcal, meal_count, cheat_day, cheat_meal, alcohol_day, lunch_logged, dinner_logged'
+const WEEKLY_DAY_COLUMNS = `${WEEK_DAY_COLUMNS}, protein, carbs, fat, fiber, sugar, salt`
 const WEEK_PARTS: readonly SummaryPartId[] = ['weekAverage', 'weekSaved']
 
 type WeekDayData = {
@@ -62,6 +63,13 @@ type WeekDayData = {
   readonly alcohol_day: boolean | null
   readonly lunch_logged: boolean | null
   readonly dinner_logged: boolean | null
+  // only in the weekly summary's query
+  readonly protein?: number | null
+  readonly carbs?: number | null
+  readonly fat?: number | null
+  readonly fiber?: number | null
+  readonly sugar?: number | null
+  readonly salt?: number | null
 }
 
 // same defaults as the app's week data (src/features/history/week/weekApi.ts)
@@ -75,6 +83,12 @@ function weekDayOf(row: WeekDayData): WeekDayRow {
     alcoholDay: row.alcohol_day ?? false,
     lunchLogged: row.lunch_logged ?? false,
     dinnerLogged: row.dinner_logged ?? false,
+    protein: row.protein,
+    carbs: row.carbs,
+    fat: row.fat,
+    fiber: row.fiber,
+    sugar: row.sugar,
+    salt: row.salt,
   }
 }
 
@@ -198,7 +212,7 @@ async function weeklyFor(admin: SupabaseClient, profile: Profile, week: IsoWeek,
   const last = dates.at(-1) ?? ''
   const totals = await admin
     .from('daily_totals')
-    .select(WEEK_DAY_COLUMNS)
+    .select(WEEKLY_DAY_COLUMNS)
     .eq('user_id', profile.id)
     .gte('date', first)
     .lte('date', last)
@@ -206,7 +220,7 @@ async function weeklyFor(admin: SupabaseClient, profile: Profile, week: IsoWeek,
   // every goal up to the week's end: each day is judged against the goal valid on it
   const goals = await admin
     .from('goal_history')
-    .select('valid_from, kcal')
+    .select('valid_from, kcal, protein_g, carbs_g, fat_g, fiber_g')
     .eq('user_id', profile.id)
     .lte('valid_from', last)
   if (goals.error) throw new Error(`goal_history: ${goals.error.message}`)
@@ -214,7 +228,14 @@ async function weeklyFor(admin: SupabaseClient, profile: Profile, week: IsoWeek,
   const days = totals.data.map(weekDayOf)
   return weekFigures(
     days,
-    goals.data.map((row) => ({ validFrom: row.valid_from, kcal: row.kcal })),
+    goals.data.map((row) => ({
+      validFrom: row.valid_from,
+      kcal: row.kcal,
+      protein: row.protein_g,
+      carbs: row.carbs_g,
+      fat: row.fat_g,
+      fiber: row.fiber_g,
+    })),
     profile.kcal_burned,
     today,
   )
@@ -239,7 +260,11 @@ async function timedMessages(
     } else if (item.kind === 'weekly') {
       // a failed week only skips the weekly summary (tried again next tick), never the reminders
       try {
-        const message = weeklyMessage(item.week, await weeklyFor(admin, profile, item.week, today))
+        const message = weeklyMessage(
+          item.week,
+          await weeklyFor(admin, profile, item.week, today),
+          { parts: settings.weekly.parts, onlyWithGoal: settings.weekly.onlyWithGoal },
+        )
         if (message) outgoing.push({ kind: 'weekly', key: item.key, message })
       } catch (error) {
         console.error('weekly summary failed for', profile.id, errorMessage(error))

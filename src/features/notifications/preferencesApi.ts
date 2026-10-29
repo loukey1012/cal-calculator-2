@@ -29,8 +29,12 @@ export async function savePreferences(userId: string, preferences: Preferences):
   const { settings } = preferences
   const { error } = await supabase.from('notification_preferences').upsert({
     user_id: userId,
-    // the summary's parts as a plain (mutable) list, which is what the JSON column takes
-    settings: { ...settings, summary: { ...settings.summary, parts: [...settings.summary.parts] } },
+    // the parts as plain (mutable) lists, which is what the JSON column takes
+    settings: {
+      ...settings,
+      summary: { ...settings.summary, parts: [...settings.summary.parts] },
+      weekly: { ...settings.weekly, parts: [...settings.weekly.parts] },
+    },
     time_zone: preferences.timeZone,
   })
   if (error) throw ApiError.from(error)
