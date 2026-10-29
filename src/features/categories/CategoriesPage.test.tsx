@@ -81,7 +81,13 @@ function renderPage() {
 const dialog = () => within(screen.getByRole('dialog'))
 /** waits for the section to load */
 const section = async (name: string) =>
-  within((await screen.findByRole('heading', { level: 2, name })).closest('section') as HTMLElement)
+  within(
+    (
+      await screen.findByRole('heading', { level: 2, name: new RegExp(`^${name}(, edit)?$`) })
+    ).closest('section') as HTMLElement,
+  )
+const editGroup = async (user: ReturnType<typeof userEvent.setup>, name: string) =>
+  user.click(await screen.findByRole('button', { name: `${name}, edit` }))
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -101,29 +107,59 @@ afterEach(() => {
 })
 
 describe('CategoriesPage', () => {
-  test('lists the broad categories, then each one with its categories', async () => {
+  test('lists each broad category with its categories, without a broad categories table', async () => {
     renderPage()
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Categories' })).toBeInTheDocument()
-    const broad = await section('Broad categories')
-    expect(broad.getByRole('button', { name: /^Fresh/ })).toHaveTextContent('2 categories')
-    expect(broad.getByRole('button', { name: /^Empty/ })).toHaveTextContent('0 categories')
+    await section('Fresh')
     expect(
       screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent),
-    ).toEqual(['Broad categories', 'Empty', 'Fresh', 'Pantry'])
+    ).toEqual(['Empty, edit', 'Fresh, edit', 'Pantry, edit'])
+    expect(screen.queryByText('Broad categories')).not.toBeInTheDocument()
     expect((await section('Fresh')).getByRole('button', { name: /^Meat/ })).toHaveTextContent(
       '2 ingredients',
     )
     expect((await section('Pantry')).getByRole('button', { name: /^Misc/ })).toHaveTextContent(
       '0 ingredients',
     )
+    expect((await section('Empty')).getByText('No categories yet')).toBeInTheDocument()
+  })
+
+  test('tapping a group header opens that group', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await editGroup(user, 'Pantry')
+
+    expect(dialog().getByLabelText('Name')).toHaveValue('Pantry')
+  })
+
+  test('New Broad Category sits at the bottom, after Add Category', async () => {
+    renderPage()
+
+    const addCategory = await screen.findByRole('button', { name: 'Add Category' })
+    const newGroup = screen.getByRole('button', { name: 'New Broad Category' })
+
+    expect(
+      addCategory.compareDocumentPosition(newGroup) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Add Broad Category' })).not.toBeInTheDocument()
+  })
+
+  test('says so when there are no broad categories yet', async () => {
+    vi.mocked(fetchCategoryGroups).mockResolvedValue([])
+    vi.mocked(fetchCategories).mockResolvedValue([])
+    renderPage()
+
+    expect(await screen.findByText('No broad categories yet')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'New Broad Category' })).toBeInTheDocument()
   })
 
   test('adds a broad category', async () => {
     const user = userEvent.setup()
     renderPage()
 
-    await user.click(await screen.findByRole('button', { name: 'Add Broad Category' }))
+    await user.click(await screen.findByRole('button', { name: 'New Broad Category' }))
     await user.type(dialog().getByLabelText('Name'), '  Snacks ')
     await user.click(dialog().getByRole('button', { name: 'Save' }))
 
@@ -135,7 +171,7 @@ describe('CategoriesPage', () => {
     const user = userEvent.setup()
     renderPage()
 
-    await user.click((await section('Broad categories')).getByRole('button', { name: /^Fresh/ }))
+    await editGroup(user, 'Fresh')
     const name = dialog().getByLabelText('Name')
     expect(name).toHaveValue('Fresh')
     await user.clear(name)
@@ -150,7 +186,7 @@ describe('CategoriesPage', () => {
     const user = userEvent.setup()
     renderPage()
 
-    await user.click((await section('Broad categories')).getByRole('button', { name: /^Empty/ }))
+    await editGroup(user, 'Empty')
     await user.click(dialog().getByRole('button', { name: 'Delete Broad Category' }))
 
     expect(confirm).toHaveBeenCalledWith('Delete “Empty”?')
@@ -161,7 +197,7 @@ describe('CategoriesPage', () => {
     const user = userEvent.setup()
     renderPage()
 
-    await user.click((await section('Broad categories')).getByRole('button', { name: /^Fresh/ }))
+    await editGroup(user, 'Fresh')
 
     expect(
       dialog().getByText('To delete it, first move or delete its 2 categories.'),
@@ -176,7 +212,7 @@ describe('CategoriesPage', () => {
     const user = userEvent.setup()
     renderPage()
 
-    await user.click((await section('Broad categories')).getByRole('button', { name: /^Empty/ }))
+    await editGroup(user, 'Empty')
     await user.click(dialog().getByRole('button', { name: 'Delete Broad Category' }))
 
     expect(deleteCategoryGroup).not.toHaveBeenCalled()
@@ -242,7 +278,7 @@ describe('CategoriesPage', () => {
     const user = userEvent.setup()
     renderPage()
 
-    await user.click(await screen.findByRole('button', { name: 'Add Broad Category' }))
+    await user.click(await screen.findByRole('button', { name: 'New Broad Category' }))
     await user.click(dialog().getByRole('button', { name: 'Save' }))
 
     expect(dialog().getByText('Enter a name')).toBeInTheDocument()
@@ -254,7 +290,7 @@ describe('CategoriesPage', () => {
     const user = userEvent.setup()
     renderPage()
 
-    await user.click(await screen.findByRole('button', { name: 'Add Broad Category' }))
+    await user.click(await screen.findByRole('button', { name: 'New Broad Category' }))
     await user.type(dialog().getByLabelText('Name'), 'fresh')
     await user.click(dialog().getByRole('button', { name: 'Save' }))
 

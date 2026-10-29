@@ -1,5 +1,8 @@
 import { activePage, expect, logIn, test } from './backend.ts'
 
+// a broad category's heading button; WebKit puts a space before the hidden ", edit"
+const editOf = (name: string) => new RegExp(`^${name}\\s?, edit$`)
+
 test('manage categories: add a broad category and a category in it, move, rename and delete', async ({
   page,
   backend,
@@ -21,7 +24,7 @@ test('manage categories: add a broad category and a category in it, move, rename
   }
 
   for (const name of ['Fresh', 'Sea']) {
-    await settings.getByRole('button', { name: 'Add Broad Category' }).click()
+    await settings.getByRole('button', { name: 'New Broad Category', exact: true }).click()
     await sheet.getByLabel('Name').fill(name)
     await sheet.getByRole('button', { name: 'Save' }).click()
     await expect(sheet).toBeHidden()
@@ -44,14 +47,11 @@ test('manage categories: add a broad category and a category in it, move, rename
 
   // a broad category is only deleted once it is empty
   page.once('dialog', (dialog) => void dialog.accept())
-  await settings.getByRole('button', { name: /^Fresh/ }).click()
+  await settings.getByRole('button', { name: editOf('Fresh') }).click()
   await sheet.getByRole('button', { name: 'Delete Broad Category' }).click()
   await expect(sheet).toBeHidden()
-  await expect(settings.getByRole('button', { name: /^Fresh/ })).toBeHidden()
-  await settings
-    .getByRole('button', { name: /^Sea\b/ })
-    .first()
-    .click()
+  await expect(settings.getByRole('button', { name: editOf('Fresh') })).toBeHidden()
+  await settings.getByRole('button', { name: editOf('Sea') }).click()
   await expect(sheet.getByText('first move or delete its 1 category')).toBeVisible()
   await expect(sheet.getByRole('button', { name: 'Delete Broad Category' })).toHaveCount(0)
   await sheet.getByRole('button', { name: 'Close' }).click()

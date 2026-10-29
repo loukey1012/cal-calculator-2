@@ -7,6 +7,7 @@ import {
 } from '@tanstack/react-query'
 import type { Ingredient } from '../ingredients/ingredientsApi'
 import { ingredientKeys, useInvalidateIngredients } from '../ingredients/hooks'
+import { reviewKeys } from './keys'
 import { recipeKeys } from '../recipes/hooks'
 import {
   decideFinding,
@@ -18,10 +19,6 @@ import {
   type MergeInput,
 } from './reviewApi'
 import type { IngredientPatch } from './suggestion'
-
-export const reviewKeys = {
-  findings: (householdId: string) => ['ingredientFindings', householdId] as const,
-}
 
 export function useOpenFindings(householdId: string): UseQueryResult<Finding[]> {
   return useQuery({

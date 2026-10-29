@@ -6,7 +6,7 @@ import { monthKeys } from '../history/hooks'
 import { householdKeys } from '../household/queryKeys'
 import { ingredientKeys } from '../ingredients/hooks'
 import { recipeKeys } from '../recipes/hooks'
-import { reviewKeys } from '../review/hooks'
+import { reviewKeys } from '../review/keys'
 import { dayChangeKey } from '../meals/dayChanges'
 import { weightKeys } from '../weight/weightChanges'
 

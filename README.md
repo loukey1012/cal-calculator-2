@@ -115,7 +115,7 @@ Built for a two-person household: both members log their own meals, can see and 
 - **A package you already saved without its barcode:** above the new form, the saved ingredient it most likely is gets suggested ("Is this Skyr (Milbona)?", from the name and brand; only ingredients without a barcode). **Use it** saves the barcode on that ingredient and goes on as if it had been found (Cook: its amount; Ingredients: the ingredient). **Add to an existing ingredient** picks any saved one; replacing an ingredient's other barcode asks first. Ignoring both just leaves the new form as it is.
 - **Scanner page:** full-screen camera with a scan frame and a **torch** switch (where the phone offers one). It reads a few times a second and closes by itself. If the camera can't be used (permission off, no camera), it says so and offers the two fallbacks, which are always there: **Take photo** (the iOS camera, then the photo is read) and **Type number** (the check digit catches typos).
 - iPhone browsers have no built-in barcode reader, so the app ships ZXing (WebAssembly, ~1 MB, via `barcode-detector`). It is loaded only when you scan, served by the app itself (no CDN) and stored for offline use. The camera is turned off as soon as a code is read or the page closes, and restarted when the app comes back from the background.
-- **Settings › Categories** manages them: add, rename and delete broad categories; add, rename, move between broad categories and delete categories. Only an empty one can be deleted (it says what to move first). Swipe right to go back to Settings.
+- **Settings › Categories** manages them: each broad category is a section with its categories; tap its header (title and ⋯) to rename or delete it, **New Broad Category** at the bottom adds one; add, rename, move between broad categories and delete categories. Only an empty one can be deleted (it says what to move first). Swipe right to go back to Settings.
 
 ### Notifications (Settings › Notifications)
 
@@ -487,8 +487,8 @@ Everything up to point 56 is built and works in daily use (2026-10-29).
 - [ ] **59. Gym days:** a day mark per person, always set by hand; an outlined dumbbell; never changes any figure. Later maybe automatic from Apple Health through an iOS Shortcut (J2, an experiment)
 - [x] **60. Custom ring colors kept:** own goal colors stay as a "Custom" choice among the Goal colors when another palette is picked
 - [x] **61. Spot brightness:** the Background page's "Strength" slider is named "Spot brightness"
-- [ ] **62. Categories slimmed down:** no "Broad categories" table; tapping a group's header renames or deletes it
-- [ ] **63. Review stays open:** an ingredient opened from Review goes back to Review on Close, Save or Delete
+- [x] **62. Categories slimmed down:** no "Broad categories" table; tapping a group's header renames or deletes it
+- [x] **63. Review stays open:** an ingredient opened from Review goes back to Review on Close, Save or Delete
 - [ ] **64. Review re-checks findings:** open findings that no longer apply disappear (the weekly review checks them again; the app hides one once the ingredient was fixed)
 - [ ] **65. Merge yourself:** "Merge with…" on an ingredient, using the same compare-and-merge screen as Review; its meals move over
 - [ ] **66. Vegan and halal:** marks on ingredients (set by hand, or from Open Food Facts when its label says so), symbols in the lists and Add food, filters; a dish shows a mark only when every ingredient has it

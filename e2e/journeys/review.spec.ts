@@ -65,6 +65,17 @@ test('the weekly review: an ingredient fix applied, one ignored, a meal finding 
 
   await list.getByRole('button', { name: 'Review: 3' }).click()
   const review = page.getByRole('dialog', { name: 'Review' })
+  // an ingredient opened from a finding comes back to Review on Close
+  await review
+    .getByRole('article', { name: /Milk/ })
+    .getByRole('button', { name: 'Open Milk', exact: true })
+    .click()
+  const edit = page.getByRole('dialog', { name: 'Edit Ingredient' })
+  await expect(edit).toBeVisible()
+  await expect(review).toBeHidden()
+  await edit.getByRole('button', { name: 'Close' }).click()
+  await expect(edit).toBeHidden()
+  await expect(review).toBeVisible()
   const typo = review.getByRole('article', { name: /Buter/ })
   await expect(typo).toContainText('Buter → Butter')
   await typo.getByRole('button', { name: 'Apply fix' }).click()

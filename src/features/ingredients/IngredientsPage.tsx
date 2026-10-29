@@ -36,7 +36,12 @@ import { useIngredientSort } from './useIngredientSort'
 import { ALL_CATEGORIES, filterIngredients, groupByCategory, type CategoryFilter } from './listing'
 
 /** null ingredient = a new one, maybe for a scanned barcode */
-type Editing = { readonly ingredient: Ingredient | null; readonly barcode?: string } | null
+type Editing = {
+  readonly ingredient: Ingredient | null
+  readonly barcode?: string
+  /** set when opened from Review: closing the sheet goes back there */
+  readonly from?: 'review'
+} | null
 
 const INGREDIENTS_PATH = '/ingredients'
 const RECIPES_PATH = '/ingredients/recipes'
@@ -216,8 +221,11 @@ function IngredientList({ views }: { readonly views: ReactNode }) {
         barcode={editing?.barcode ?? null}
         categories={categoryList}
         groups={groups.data ?? []}
-        onClose={() => setEditing(null)}
-        onOpenIngredient={(ingredient) => setEditing({ ingredient })}
+        onClose={() => {
+          if (editing?.from === 'review') setReviewing(true)
+          setEditing(null)
+        }}
+        onOpenIngredient={(ingredient) => setEditing({ ingredient, from: editing?.from })}
         onUpdated={followInRecentMeals}
       />
       <ReviewSheet
@@ -227,7 +235,7 @@ function IngredientList({ views }: { readonly views: ReactNode }) {
         onClose={() => setReviewing(false)}
         onOpenIngredient={(ingredient) => {
           setReviewing(false)
-          setEditing({ ingredient })
+          setEditing({ ingredient, from: 'review' })
         }}
         onUpdated={followInRecentMeals}
       />

@@ -8,6 +8,8 @@ import { ingredient } from './testData'
 
 vi.mock('./ingredientsApi', () => ({
   fetchIngredients: vi.fn(),
+  updateIngredient: vi.fn(),
+  deleteIngredient: vi.fn(),
   fetchIngredientUses: vi.fn().mockResolvedValue({}),
   fetchCategories: vi.fn().mockResolvedValue([]),
   fetchCategoryGroups: vi.fn().mockResolvedValue([]),
@@ -33,7 +35,12 @@ import {
 import { applyToRecentMeals } from './applyToRecentMeals'
 import { fetchMembers } from '../household/householdApi'
 import { useLocation } from 'react-router'
-import { fetchIngredients, fetchIngredientUses } from './ingredientsApi'
+import {
+  deleteIngredient,
+  fetchIngredients,
+  fetchIngredientUses,
+  updateIngredient,
+} from './ingredientsApi'
 import { IngredientsPage } from './IngredientsPage'
 
 const PROFILE = {
@@ -203,6 +210,67 @@ describe('Ingredients › Review', () => {
     await user.click(within(card(sheet, 'Milk')).getByRole('button', { name: 'Open Milk' }))
 
     expect(await screen.findByRole('dialog', { name: 'Edit Ingredient' })).toBeInTheDocument()
+  })
+
+  describe('an ingredient opened from its finding', () => {
+    async function openMilkFromReview() {
+      const { user, sheet } = await openReview(2)
+      await user.click(within(card(sheet, 'Milk')).getByRole('button', { name: 'Open Milk' }))
+      return { user, edit: await screen.findByRole('dialog', { name: 'Edit Ingredient' }) }
+    }
+
+    test('Close goes back to Review', async () => {
+      const { user, edit } = await openMilkFromReview()
+      expect(screen.queryByRole('dialog', { name: 'Review' })).not.toBeInTheDocument()
+
+      await user.click(within(edit).getByRole('button', { name: 'Close' }))
+
+      expect(await screen.findByRole('dialog', { name: 'Review' })).toBeInTheDocument()
+      expect(screen.queryByRole('dialog', { name: 'Edit Ingredient' })).not.toBeInTheDocument()
+    })
+
+    test('Save goes back to Review with the findings refreshed', async () => {
+      vi.mocked(updateIngredient).mockResolvedValue({ ...MILK, unit_weight_g: 250 })
+      const { user, edit } = await openMilkFromReview()
+      // the fixed unit weight is no longer a finding
+      vi.mocked(fetchOpenFindings).mockResolvedValue([TYPO])
+
+      await user.click(within(edit).getByRole('button', { name: 'Save' }))
+
+      const review = await screen.findByRole('dialog', { name: 'Review' })
+      await waitFor(() =>
+        expect(within(review).queryByRole('article', { name: /Milk/ })).not.toBeInTheDocument(),
+      )
+      expect(card(review, 'Buter')).toBeInTheDocument()
+    })
+
+    test('Delete goes back to Review and the finding of that ingredient is gone', async () => {
+      vi.spyOn(window, 'confirm').mockReturnValue(true)
+      vi.mocked(deleteIngredient).mockResolvedValue()
+      const { user, edit } = await openMilkFromReview()
+      vi.mocked(fetchOpenFindings).mockResolvedValue([TYPO])
+
+      await user.click(within(edit).getByRole('button', { name: 'Delete Ingredient' }))
+
+      const review = await screen.findByRole('dialog', { name: 'Review' })
+      await waitFor(() =>
+        expect(within(review).queryByRole('article', { name: /Milk/ })).not.toBeInTheDocument(),
+      )
+    })
+  })
+
+  test('an ingredient opened from the list closes to the list', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: /Milk/ }))
+    await user.click(
+      within(await screen.findByRole('dialog', { name: 'Edit Ingredient' })).getByRole('button', {
+        name: 'Close',
+      }),
+    )
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
   test('a failed fix stays in the list with a message', async () => {

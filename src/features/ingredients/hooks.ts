@@ -21,6 +21,7 @@ import {
   type CategoryGroup,
   type Ingredient,
 } from './ingredientsApi'
+import { reviewKeys } from '../review/keys'
 
 export const ingredientKeys = {
   ingredients: (householdId: string) => ['ingredients', householdId] as const,
@@ -118,6 +119,17 @@ export function useInvalidateIngredients(householdId: string): () => Promise<unk
     ])
 }
 
+/** Ingredients plus the review findings, which are derived from them. */
+function useInvalidateIngredientsAndFindings(householdId: string): () => Promise<unknown> {
+  const invalidateIngredients = useInvalidateIngredients(householdId)
+  const queryClient = useQueryClient()
+  return () =>
+    Promise.all([
+      invalidateIngredients(),
+      queryClient.invalidateQueries({ queryKey: reviewKeys.findings(householdId) }),
+    ])
+}
+
 function useCacheSaved(householdId: string): (saved: Ingredient) => void {
   const queryClient = useQueryClient()
   return (saved) =>
@@ -129,7 +141,7 @@ function useCacheSaved(householdId: string): (saved: Ingredient) => void {
 export function useSaveIngredient(
   householdId: string,
 ): UseMutationResult<Ingredient, Error, SaveIngredientInput> {
-  const invalidate = useInvalidateIngredients(householdId)
+  const invalidate = useInvalidateIngredientsAndFindings(householdId)
   const cacheSaved = useCacheSaved(householdId)
   return useMutation({
     mutationFn: async ({ id, form, categories }: SaveIngredientInput) => {
@@ -150,7 +162,7 @@ type LinkBarcodeInput = { readonly id: string; readonly barcode: string }
 export function useLinkBarcode(
   householdId: string,
 ): UseMutationResult<Ingredient, Error, LinkBarcodeInput> {
-  const invalidate = useInvalidateIngredients(householdId)
+  const invalidate = useInvalidateIngredientsAndFindings(householdId)
   const cacheSaved = useCacheSaved(householdId)
   return useMutation({
     mutationFn: ({ id, barcode }: LinkBarcodeInput) => setIngredientBarcode(id, barcode),
@@ -160,7 +172,7 @@ export function useLinkBarcode(
 }
 
 export function useDeleteIngredient(householdId: string): UseMutationResult<void, Error, string> {
-  const invalidate = useInvalidateIngredients(householdId)
+  const invalidate = useInvalidateIngredientsAndFindings(householdId)
   return useMutation({
     mutationFn: (id: string) => deleteIngredient(id),
     onSuccess: invalidate,

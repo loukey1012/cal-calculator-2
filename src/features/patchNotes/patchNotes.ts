@@ -30,6 +30,15 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-29T13:30',
+    kind: 'fix',
+    title: 'Review stays open; Categories without the extra table',
+    items: [
+      'Ingredients › Review: an ingredient opened from a finding goes back to Review after Close, Save or Delete, and the findings update',
+      'Settings › Categories: the Broad categories table is gone; tap a broad category’s heading to rename or delete it, New Broad Category is at the bottom',
+    ],
+  },
+  {
     at: '2026-10-29T13:00',
     kind: 'new',
     title: 'Your own ring colors are kept as Custom',

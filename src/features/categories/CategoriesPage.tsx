@@ -43,7 +43,6 @@ type ListsProps = {
 function CategoryLists({ groups, categories, ingredients, onEdit }: ListsProps) {
   const sortedGroups = [...groups].sort(byName)
   const sortedCategories = [...categories].sort(byName)
-  const categoriesPerGroup = countBy(categories, (category) => category.group_id)
   const ingredientsPerCategory = countBy(ingredients, (ingredient) => ingredient.category_id)
 
   const categoryRow = (category: Category) => (
@@ -57,26 +56,14 @@ function CategoryLists({ groups, categories, ingredients, onEdit }: ListsProps) 
 
   return (
     <>
-      <GroupedSection header="Broad categories">
-        {sortedGroups.length === 0 && <ListRow title="None yet" />}
-        {sortedGroups.map((group) => (
-          <ListRow
-            key={group.id}
-            title={group.name}
-            detail={plural(categoriesPerGroup.get(group.id) ?? 0, 'category', 'categories')}
-            onClick={() => onEdit({ kind: 'group', group })}
-          />
-        ))}
-      </GroupedSection>
-      <div className="mt-2">
-        <Button variant="plain" onClick={() => onEdit({ kind: 'group', group: null })}>
-          Add Broad Category
-        </Button>
-      </div>
       {sortedGroups.map((group) => {
         const members = sortedCategories.filter((category) => category.group_id === group.id)
         return (
-          <GroupedSection key={group.id} header={group.name}>
+          <GroupedSection
+            key={group.id}
+            header={group.name}
+            onHeaderClick={() => onEdit({ kind: 'group', group })}
+          >
             {members.length === 0 ? (
               <ListRow title="No categories yet" />
             ) : (
@@ -85,9 +72,15 @@ function CategoryLists({ groups, categories, ingredients, onEdit }: ListsProps) 
           </GroupedSection>
         )
       })}
-      <div className="mt-2">
+      {sortedGroups.length === 0 && (
+        <p className="mt-6 text-center text-[15px] text-label-secondary">No broad categories yet</p>
+      )}
+      <div className="mt-2 flex flex-col items-start gap-1">
         <Button variant="plain" onClick={() => onEdit({ kind: 'category', category: null })}>
           Add Category
+        </Button>
+        <Button variant="plain" onClick={() => onEdit({ kind: 'group', group: null })}>
+          New Broad Category
         </Button>
       </div>
     </>
