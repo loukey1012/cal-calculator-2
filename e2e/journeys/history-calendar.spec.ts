@@ -109,7 +109,9 @@ test('the calendar shows symbols and the week bar of the open day; swipe turns t
   }).toPass()
   // only the complete day counts: the week bar under the grid shows the open day's week with
   // its calories as the average (no calories burned set, so no saved figure)
-  await expect(history.getByRole('button', { name: /^Week \d+, average 1,800 kcal$/ })).toBeVisible()
+  await expect(
+    history.getByRole('button', { name: /^Week \d+, average 1,800 kcal$/ }),
+  ).toBeVisible()
   const day = history.getByRole('region')
   await expect(day.getByTestId('day-status')).toContainText('Within goal')
   await expect(day.getByTestId('day-status')).toContainText('200 kcal left')

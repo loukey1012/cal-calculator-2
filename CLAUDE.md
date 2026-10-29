@@ -46,7 +46,9 @@ iPhone test. `goal_history.kcal_burned` dropped (migration `20261029120000`, dev
 the 2026-10-27 plan is complete. Items 57–68 (README › Coming next) are planned in
 `docs/plan-2026-10-29.md` (batches H → I → L → J → K → J2, decisions per item). H1 (60 Custom goal
 colors, 61 Spot brightness, 57 fork-and-knife cheat meal mark) confirmed; H2 (62 categories
-without the table, 63 Review stays open) built, awaits the iPhone test. **Next:** sketch I. Sketch of F: https://claude.ai/artifact/KJ5V6j5PCBaN35MXmATmmE. Sketch of D:
+without the table, 63 Review stays open) built. I (67 taller calendar days + `WeekBar`, 68 notes as
+full-screen pages: `notes/*`, per-page `app/leaveGuard.ts`, drafts in sessionStorage, tab bar hidden
+on note pages) built, awaits the iPhone test. **Next:** L1 (69, remove recipes from the app). Sketch of F: https://claude.ai/artifact/KJ5V6j5PCBaN35MXmATmmE. Sketch of D:
 https://claude.ai/artifact/Sp4cvXiKk3us9kXNUTrT6g. Working rhythm that worked: `ecc:tdd-guide`
 agents build (in parallel only on separate files), then `ecc:typescript-reviewer` +
 `ecc:react-reviewer` (+ `ecc:database-reviewer`/`ecc:security-reviewer` for SQL) +
