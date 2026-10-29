@@ -77,6 +77,8 @@ export function FoodPicker({ filter, onFilterChange, onPick, onNew }: FoodPicker
         ingredients={ingredients.data ?? []}
         brand={filter.brand}
         onBrandChange={(brand) => onFilterChange({ ...filter, brand })}
+        diet={filter.diet}
+        onDietChange={(diet) => onFilterChange({ ...filter, diet })}
         sort={sort}
         onSortChange={setSort}
       />

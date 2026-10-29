@@ -98,3 +98,60 @@ test('a new ingredient takes a saved brand from the suggestions', async ({ page,
     })
     .toEqual([{ name: 'Joghurt', brand: 'Clever' }])
 })
+
+test('diet marks: switched on in the form, shown in the list, filtered by the chips', async ({
+  page,
+  backend,
+}) => {
+  const me = await backend.user('Ingrid')
+  const household = await backend.household([me])
+  const category_id = await backend.category(household)
+  // every row names the same columns: a batch insert fills a missing one with null, not its default
+  const seeded = await backend.admin.from('ingredients').insert([
+    {
+      household_id: household,
+      category_id,
+      name: 'Hafer',
+      kcal_100: 370,
+      vegan: true,
+      halal: false,
+    },
+    {
+      household_id: household,
+      category_id,
+      name: 'Salami',
+      kcal_100: 400,
+      vegan: false,
+      halal: false,
+    },
+  ])
+  expect(seeded.error).toBeNull()
+  await logIn(page, me)
+  await page
+    .getByRole('navigation', { name: 'Tabs' })
+    .getByRole('button', { name: 'Ingredients' })
+    .click()
+  const ingredients = activePage(page)
+  const sheet = page.getByRole('dialog')
+
+  await expect(
+    ingredients.getByRole('button', { name: /^Hafer/ }).getByRole('img', { name: 'vegan' }),
+  ).toBeVisible()
+  await expect(ingredients.getByRole('button', { name: /^Salami/ }).getByRole('img')).toHaveCount(0)
+
+  await ingredients.getByRole('button', { name: 'Salami' }).click()
+  await sheet.getByRole('switch', { name: 'Halal' }).click()
+  await sheet.getByRole('button', { name: 'Save' }).click()
+  await expect(sheet).toBeHidden()
+  await expect(
+    ingredients.getByRole('button', { name: /^Salami/ }).getByRole('img', { name: 'halal' }),
+  ).toBeVisible()
+
+  await ingredients.getByRole('button', { name: 'Vegan', exact: true }).click()
+  await expect(ingredients.getByRole('button', { name: /Hafer/ })).toBeVisible()
+  await expect(ingredients.getByRole('button', { name: /Salami/ })).toBeHidden()
+  await ingredients.getByRole('button', { name: 'Vegan', exact: true }).click()
+  await ingredients.getByRole('button', { name: 'Halal', exact: true }).click()
+  await expect(ingredients.getByRole('button', { name: /Salami/ })).toBeVisible()
+  await expect(ingredients.getByRole('button', { name: /Hafer/ })).toBeHidden()
+})

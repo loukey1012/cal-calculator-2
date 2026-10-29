@@ -48,6 +48,9 @@ export type IngredientFormValues = {
   readonly unitWeightG: string
   /** the values are guessed or worked out, e.g. a restaurant dish */
   readonly kcalEstimated: boolean
+  /** the diet marks, set by hand or from the package's labels */
+  readonly vegan: boolean
+  readonly halal: boolean
 }
 
 export const EMPTY_BASIS: BasisFormValues = { kcal: '', ...mapNutrients(() => '') }
@@ -68,6 +71,8 @@ export const EMPTY_INGREDIENT_FORM: IngredientFormValues = {
   unitLabel: '',
   unitWeightG: '',
   kcalEstimated: false,
+  vegan: false,
+  halal: false,
 }
 
 export type CategoryChoice =
@@ -157,6 +162,8 @@ const ingredientFormSchema = (measure: Measure) =>
         'Must be more than 0',
       ),
       kcalEstimated: z.boolean(),
+      vegan: z.boolean(),
+      halal: z.boolean(),
     })
     .superRefine((form, ctx) => {
       if (!form.per100gEnabled && !form.perUnitEnabled) {
@@ -243,6 +250,8 @@ export function parseIngredientForm(values: IngredientFormValues): IngredientFor
         unit_label: form.unitLabel,
         unit_weight_g: form.unitWeightG,
         kcal_estimated: form.kcalEstimated,
+        vegan: form.vegan,
+        halal: form.halal,
       },
       category: categoryChoice(form),
     },
@@ -274,5 +283,7 @@ export function toFormValues(ingredient: Ingredient): IngredientFormValues {
     unitLabel: asText(ingredient.unit_label),
     unitWeightG: asText(ingredient.unit_weight_g),
     kcalEstimated: ingredient.kcal_estimated,
+    vegan: ingredient.vegan,
+    halal: ingredient.halal,
   }
 }

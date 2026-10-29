@@ -166,4 +166,87 @@ describe('merge_ingredients', () => {
     const still = await alice.client.from('ingredients').select('id').in('id', [keep, drop])
     expect(still.data).toHaveLength(2)
   })
+
+  test('the diet flags can be taken over from the dropped one, in both directions', async () => {
+    // Arrange: the dropped one is vegan, the kept one halal
+    const keep = await ingredient({ name: 'Hafermilch', kcal_100: 45, halal: true })
+    const drop = await ingredient({ name: 'Haferdrink', kcal_100: 45, vegan: true })
+
+    // Act: vegan comes from the dropped one, halal is switched off by the patch
+    const { error } = await alice.client.rpc('merge_ingredients', {
+      p_keep: keep,
+      p_drop: drop,
+      p_patch: { vegan: true, halal: false },
+      p_finding: null,
+    })
+
+    // Assert
+    expect(error).toBeNull()
+    const kept = await alice.client
+      .from('ingredients')
+      .select('vegan, halal')
+      .eq('id', keep)
+      .single()
+    expect(kept.data).toEqual({ vegan: true, halal: false })
+  })
+
+  test('the diet flags of the kept one stay when the patch leaves them out', async () => {
+    const keep = await ingredient({ name: 'Tofu', kcal_100: 120, vegan: true, halal: true })
+    const drop = await ingredient({ name: 'Tofu natur', kcal_100: 120 })
+
+    const { error } = await alice.client.rpc('merge_ingredients', {
+      p_keep: keep,
+      p_drop: drop,
+      p_patch: {},
+      p_finding: null,
+    })
+
+    expect(error).toBeNull()
+    const kept = await alice.client
+      .from('ingredients')
+      .select('vegan, halal')
+      .eq('id', keep)
+      .single()
+    expect(kept.data).toEqual({ vegan: true, halal: true })
+  })
+})
+
+describe('ingredient diet flags', () => {
+  test('are off by default', async () => {
+    const id = await ingredient({ name: 'Reis', kcal_100: 350 })
+
+    const { data } = await alice.client
+      .from('ingredients')
+      .select('vegan, halal')
+      .eq('id', id)
+      .single()
+
+    expect(data).toEqual({ vegan: false, halal: false })
+  })
+
+  test('can be set by any member of the household', async () => {
+    const id = await ingredient({ name: 'Linsen', kcal_100: 320 })
+
+    const { error } = await bob.client
+      .from('ingredients')
+      .update({ vegan: true, halal: true })
+      .eq('id', id)
+
+    expect(error).toBeNull()
+    const { data } = await alice.client
+      .from('ingredients')
+      .select('vegan, halal')
+      .eq('id', id)
+      .single()
+    expect(data).toEqual({ vegan: true, halal: true })
+  })
+
+  test('cannot be set by another household', async () => {
+    const id = await ingredient({ name: 'Bohnen', kcal_100: 90 })
+
+    await carol.client.from('ingredients').update({ vegan: true }).eq('id', id)
+
+    const { data } = await alice.client.from('ingredients').select('vegan').eq('id', id).single()
+    expect(data).toEqual({ vegan: false })
+  })
 })

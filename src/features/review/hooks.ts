@@ -6,7 +6,11 @@ import {
   type UseQueryResult,
 } from '@tanstack/react-query'
 import type { Ingredient } from '../ingredients/ingredientsApi'
+import { DISH_CHANGES_KEY, LEFTOVERS_KEY } from '../dishes/dishChanges'
+import { monthKeys } from '../history/hooks'
 import { ingredientKeys, useInvalidateIngredients } from '../ingredients/hooks'
+import { clearIngredientDraft, ingredientDraftKey } from '../ingredients/ingredientDraft'
+import { DAY_CHANGES_KEY } from '../meals/dayChanges'
 import { reviewKeys } from './keys'
 import {
   decideFinding,
@@ -87,25 +91,66 @@ export function useApplyFinding(
   })
 }
 
+/**
+ * After a merge: the ingredient lists and findings, and everything that holds the dropped
+ * ingredient's id (days, months, dishes, leftovers: its uses now point at the kept one).
+ */
+function useInvalidateAfterMerge(householdId: string): () => Promise<unknown> {
+  const queryClient = useQueryClient()
+  const invalidateIngredients = useInvalidateIngredients(householdId)
+  const roots = [
+    ingredientKeys.uses(householdId),
+    reviewKeys.findings(householdId),
+    DAY_CHANGES_KEY,
+    monthKeys.all,
+    DISH_CHANGES_KEY,
+    LEFTOVERS_KEY,
+  ]
+  return () =>
+    Promise.all([
+      invalidateIngredients(),
+      ...roots.map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+    ])
+}
+
+/** What was typed into either form before the merge would overwrite the merged values. */
+function useClearMergedDrafts(householdId: string) {
+  return ({ keepId, dropId }: { readonly keepId: string; readonly dropId: string }) => {
+    clearIngredientDraft(ingredientDraftKey(householdId, keepId))
+    clearIngredientDraft(ingredientDraftKey(householdId, dropId))
+  }
+}
+
 type MergeFindingInput = Omit<MergeInput, 'findingId'> & { readonly finding: Finding }
 
 /** Merges a duplicate into the one kept and marks its finding applied. */
 export function useMergeIngredients(
   householdId: string,
 ): UseMutationResult<void, Error, MergeFindingInput, DecidedContext> {
-  const queryClient = useQueryClient()
-  const invalidateIngredients = useInvalidateIngredients(householdId)
+  const invalidateAfterMerge = useInvalidateAfterMerge(householdId)
   const decided = useDecidedLocally<MergeFindingInput>(householdId)
+  const clearDrafts = useClearMergedDrafts(householdId)
   return useMutation({
     mutationFn: ({ finding, ...merge }) => mergeIngredients({ ...merge, findingId: finding.id }),
+    onSuccess: (_result, input) => clearDrafts(input),
     onMutate: decided.onMutate,
     onError: decided.onError,
-    // its uses moved to the kept one
-    onSettled: () =>
-      Promise.all([
-        decided.onSettled(),
-        invalidateIngredients(),
-        queryClient.invalidateQueries({ queryKey: ingredientKeys.uses(householdId) }),
-      ]),
+    onSettled: () => Promise.all([decided.onSettled(), invalidateAfterMerge()]),
+  })
+}
+
+type MergeByHandInput = Omit<MergeInput, 'findingId'>
+
+/** Merges two ingredients the user picked themselves (no finding behind it). */
+export function useMergeByHand(
+  householdId: string,
+): UseMutationResult<void, Error, MergeByHandInput> {
+  const invalidateAfterMerge = useInvalidateAfterMerge(householdId)
+  const clearDrafts = useClearMergedDrafts(householdId)
+  return useMutation({
+    mutationFn: (merge) => mergeIngredients({ ...merge, findingId: null }),
+    onSuccess: (_result, input) => clearDrafts(input),
+    // a finding about the dropped one went with it
+    onSettled: invalidateAfterMerge,
   })
 }

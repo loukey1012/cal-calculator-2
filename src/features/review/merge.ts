@@ -36,6 +36,8 @@ type Shown = (value: Ingredient[MergeField], categories: readonly Category[]) =>
 const plain: Shown = (value) => (value === null || value === '' ? '–' : String(value))
 const grams: Shown = (value) => (value === null ? '–' : `${String(value)} g`)
 
+const yesNo: Shown = (value) => (value ? 'yes' : 'no')
+
 /** The compared fields, in the order the comparison lists them. */
 const ROWS: ReadonlyArray<readonly [MergeField, string, Shown]> = [
   ['name', 'Name', plain],
@@ -57,8 +59,13 @@ const ROWS: ReadonlyArray<readonly [MergeField, string, Shown]> = [
     (key) => [`${key}_unit` as MergeField, `${NUTRIENT_LABELS[key]} / unit`, grams] as const,
   ),
   ['barcode', 'Barcode', plain],
-  ['kcal_estimated', 'Estimate', (value) => (value ? 'yes' : 'no')],
+  ['kcal_estimated', 'Estimate', yesNo],
+  ['vegan', 'Vegan', yesNo],
+  ['halal', 'Halal', yesNo],
 ]
+
+/** yes / no rows with nothing set on either side are left out, like empty values */
+const OFF_BY_DEFAULT: ReadonlySet<MergeField> = new Set(['vegan', 'halal'])
 
 /** Both ingredients field by field; empty rows (nothing on either side) are left out. */
 export function mergeRows(
@@ -74,7 +81,9 @@ export function mergeRows(
       other: shown(other[field], categories),
       differs: keep[field] !== other[field],
     }
-    return row.keep === '–' && row.other === '–' ? [] : [row]
+    const empty = row.keep === '–' && row.other === '–'
+    const bothOff = OFF_BY_DEFAULT.has(field) && !keep[field] && !other[field]
+    return empty || bothOff ? [] : [row]
   })
 }
 

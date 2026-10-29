@@ -230,7 +230,7 @@ type DetailSectionsProps = {
   readonly flagged: ReadonlySet<string>
 }
 
-/** The unit, the estimate mark and the note. */
+/** The unit, the diet marks, the estimate mark and the note. */
 function DetailSections({ form, errors, flagged }: DetailSectionsProps) {
   const { values } = form
   const amount = measureName(values.measure)
@@ -261,6 +261,21 @@ function DetailSections({ form, errors, flagged }: DetailSectionsProps) {
           error={errors.unitWeightG}
         />
         <CalculateRow values={values} onCalculated={form.replaceValues} />
+      </GroupedSection>
+      <GroupedSection
+        header="Diet"
+        footer="Marks the ingredient in lists. A dish only gets a mark when all its ingredients have it."
+      >
+        <ToggleRow
+          label="Vegan"
+          checked={values.vegan}
+          onChange={(vegan) => form.set('vegan', vegan)}
+        />
+        <ToggleRow
+          label="Halal"
+          checked={values.halal}
+          onChange={(halal) => form.set('halal', halal)}
+        />
       </GroupedSection>
       <GroupedSection footer="E.g. a restaurant dish you guessed. Dishes with it are marked as an estimate too.">
         <ToggleRow

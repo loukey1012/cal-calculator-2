@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Button } from '../../components/ios/Button'
 import { ChevronLeftIcon } from '../../components/ios/icons'
+import { useFocusOnMount } from '../../components/ios/useFocusOnMount'
 import type { Category, Ingredient } from '../ingredients/ingredientsApi'
 import { mergeRows, takenValues, type MergeField } from './merge'
 import type { IngredientPatch } from './suggestion'
@@ -20,7 +21,9 @@ type MergeViewProps = {
   readonly busy: boolean
   readonly onBack: () => void
   readonly onMerge: (choice: MergeChoice) => void
-  readonly onIgnore: () => void
+  /** left out where there is no finding to ignore */
+  readonly onIgnore?: () => void
+  readonly backLabel?: string
 }
 
 const GRID = 'grid grid-cols-[6.5rem_minmax(0,1fr)_minmax(0,1fr)] items-start gap-2 px-3 py-2.5'
@@ -41,7 +44,9 @@ export function MergeView({
   onBack,
   onMerge,
   onIgnore,
+  backLabel = 'Review',
 }: MergeViewProps) {
+  const heading = useFocusOnMount<HTMLHeadingElement>()
   // null = not picked yet: the one used more often (the counts may still be loading)
   const [keepId, setKeepId] = useState<string | null>(null)
   const [taken, setTaken] = useState<ReadonlySet<MergeField>>(new Set())
@@ -71,9 +76,11 @@ export function MergeView({
         onClick={onBack}
       >
         <ChevronLeftIcon className="h-5 w-5" />
-        Review
+        {backLabel}
       </Button>
-      <h2 className="font-display text-[22px] font-bold">Merge duplicates</h2>
+      <h2 ref={heading} tabIndex={-1} className="font-display text-[22px] font-bold outline-none">
+        Merge duplicates
+      </h2>
       <p className="text-[14px] font-medium text-label-secondary">
         Pick the one to keep. Tap a value of the other one to take it over. Everything logged with
         the other one moves to the kept one; past meals keep their calories.
@@ -156,9 +163,11 @@ export function MergeView({
       >
         Merge into {keep.name}
       </Button>
-      <Button variant="secondary" disabled={busy} onClick={onIgnore}>
-        Not duplicates: ignore
-      </Button>
+      {onIgnore && (
+        <Button variant="secondary" disabled={busy} onClick={onIgnore}>
+          Not duplicates: ignore
+        </Button>
+      )}
     </div>
   )
 }

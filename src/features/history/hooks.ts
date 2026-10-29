@@ -7,6 +7,8 @@ import { fetchAllNotes, fetchDailyTotals, fetchMonthNotes } from './historyApi'
 
 /** Prefix of month queries; meal changes refresh every month of their person. */
 export const monthKeys = {
+  /** every person's months */
+  all: ['month'] as const,
   person: (userId: string) => ['month', userId] as const,
   month: (userId: string, month: string) => ['month', userId, month] as const,
 }

@@ -501,6 +501,7 @@ export type Database = {
           fat_unit: number | null
           fiber_100: number | null
           fiber_unit: number | null
+          halal: boolean
           household_id: string
           id: string
           kcal_100: number | null
@@ -520,6 +521,7 @@ export type Database = {
           unit_label: string | null
           unit_weight_g: number | null
           updated_at: string
+          vegan: boolean
         }
         Insert: {
           barcode?: string | null
@@ -533,6 +535,7 @@ export type Database = {
           fat_unit?: number | null
           fiber_100?: number | null
           fiber_unit?: number | null
+          halal?: boolean
           household_id: string
           id?: string
           kcal_100?: number | null
@@ -552,6 +555,7 @@ export type Database = {
           unit_label?: string | null
           unit_weight_g?: number | null
           updated_at?: string
+          vegan?: boolean
         }
         Update: {
           barcode?: string | null
@@ -565,6 +569,7 @@ export type Database = {
           fat_unit?: number | null
           fiber_100?: number | null
           fiber_unit?: number | null
+          halal?: boolean
           household_id?: string
           id?: string
           kcal_100?: number | null
@@ -584,6 +589,7 @@ export type Database = {
           unit_label?: string | null
           unit_weight_g?: number | null
           updated_at?: string
+          vegan?: boolean
         }
         Relationships: [
           {

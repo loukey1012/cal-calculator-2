@@ -26,7 +26,13 @@ import { ListOptions } from './ListOptions'
 import { recentWindowStart, updatedMealsMessage } from './recentMeals'
 import { useApplyToRecentMeals } from './useApplyToRecentMeals'
 import { useIngredientSort } from './useIngredientSort'
-import { ALL_CATEGORIES, filterIngredients, groupByCategory, type CategoryFilter } from './listing'
+import {
+  ALL_CATEGORIES,
+  filterIngredients,
+  groupByCategory,
+  type CategoryFilter,
+  type DietFilter,
+} from './listing'
 
 /** null ingredient = a new one, maybe for a scanned barcode */
 type Editing = {
@@ -50,6 +56,7 @@ function IngredientList() {
   const [query, setQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>(ALL_CATEGORIES)
   const [brand, setBrand] = useState<string | null>(null)
+  const [diet, setDiet] = useState<DietFilter>({})
   const { sort, setSort, sorted } = useIngredientSort(householdId)
   const [editing, setEditing] = useState<Editing>(null)
   const [reviewing, setReviewing] = useState(false)
@@ -97,11 +104,11 @@ function IngredientList() {
     }
     const matches = filterIngredients(
       ingredients.data,
-      { query, category: categoryFilter, brand },
+      { query, category: categoryFilter, brand, diet },
       categoryList,
     )
     if (matches.length === 0) {
-      return <EmptyState title="No matches" message="Try a different search, category or brand." />
+      return <EmptyState title="No matches" message="Try a different search, category or filter." />
     }
     const row = (ingredient: Ingredient) => (
       <IngredientRow
@@ -166,6 +173,8 @@ function IngredientList() {
         ingredients={ingredients.data ?? []}
         brand={brand}
         onBrandChange={setBrand}
+        diet={diet}
+        onDietChange={setDiet}
         sort={sort}
         onSortChange={setSort}
       />
@@ -184,6 +193,11 @@ function IngredientList() {
         }}
         onOpenIngredient={(ingredient) => setEditing({ ingredient, from: editing?.from })}
         onUpdated={followInRecentMeals}
+        onMerged={(kept, valuesChanged) => {
+          toast.show(`Merged into ${kept.name}.`)
+          // values taken over from the other one reach recent meals like any edit
+          if (valuesChanged) followInRecentMeals(kept)
+        }}
       />
       <ReviewSheet
         open={reviewing}

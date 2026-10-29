@@ -30,6 +30,17 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-29T19:30',
+    kind: 'new',
+    title: 'Vegan and halal marks; merge two ingredients yourself',
+    items: [
+      'Ingredients: switch on Vegan or Halal in an ingredient; a small leaf or crescent shows in the list and in Add food, and the Vegan and Halal chips filter both lists',
+      'A scanned product is marked only when its Open Food Facts label says vegan or halal',
+      'A dish or meal shows the mark when every ingredient in it has it',
+      'Edit an ingredient › Merge with…: pick the other one, choose which values to keep, and its meals move over',
+    ],
+  },
+  {
     at: '2026-10-29T17:45',
     kind: 'new',
     title: 'Calendar symbols, all in one style',

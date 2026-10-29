@@ -28,6 +28,8 @@ const EMPTY_INGREDIENT: Ingredient = {
   salt_unit: null,
   barcode: null,
   kcal_estimated: false,
+  vegan: false,
+  halal: false,
   measure: 'g',
   created_by: null,
   created_at: '',

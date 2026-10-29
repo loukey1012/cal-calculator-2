@@ -20,6 +20,8 @@ test('scan a package: a photo is read, filled in from Open Food Facts, saved; fo
           product_name: 'Nutella',
           brands: 'Ferrero',
           serving_quantity: 15,
+          // the package states vegan, not halal: only the first is switched on
+          labels_tags: ['en:organic', 'en:vegan'],
           nutriments: { 'energy-kcal_100g': 539, fat_100g: 30.9, proteins_100g: 6.3 },
         },
       },
@@ -43,6 +45,11 @@ test('scan a package: a photo is read, filled in from Open Food Facts, saved; fo
   await expect(sheet.getByLabel('Name', { exact: true })).toHaveValue('Nutella')
   await expect(sheet.getByLabel('Barcode', { exact: true })).toHaveValue(NUTELLA)
   await expect(sheet.getByLabel('Calories per 100 g', { exact: true })).toHaveValue('539')
+  await expect(sheet.getByRole('switch', { name: 'Vegan' })).toHaveAttribute('aria-checked', 'true')
+  await expect(sheet.getByRole('switch', { name: 'Halal' })).toHaveAttribute(
+    'aria-checked',
+    'false',
+  )
   // only what the package states: the portion's weight, but no values per portion to go with it
   await expect(sheet.getByText(/A weight per unit, but no values per unit/)).toBeVisible()
   await pickBasics(sheet)
@@ -52,13 +59,21 @@ test('scan a package: a photo is read, filled in from Open Food Facts, saved; fo
     .poll(async () => {
       const { data } = await backend.admin
         .from('ingredients')
-        .select('name, barcode, kcal_100, kcal_unit, unit_weight_g')
+        .select('name, barcode, kcal_100, kcal_unit, unit_weight_g, vegan, halal')
         .eq('household_id', household)
       return data
     })
     .toEqual([
       // nothing worked out: per portion stays empty until Calculate missing values is tapped
-      { name: 'Nutella', barcode: NUTELLA, kcal_100: 539, kcal_unit: null, unit_weight_g: 15 },
+      {
+        name: 'Nutella',
+        barcode: NUTELLA,
+        kcal_100: 539,
+        kcal_unit: null,
+        unit_weight_g: 15,
+        vegan: true,
+        halal: false,
+      },
     ])
 
   // typing the number finds the saved package

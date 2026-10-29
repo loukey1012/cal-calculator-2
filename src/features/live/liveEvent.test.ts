@@ -1,5 +1,6 @@
 import { partialMatchKey } from '@tanstack/react-query'
 import { describe, expect, test } from 'vitest'
+import { ingredientKeys } from '../ingredients/hooks'
 import { keysForHint, parseHint } from './liveEvent'
 
 const ME = '00000000-0000-4000-8000-000000000001'
@@ -100,18 +101,30 @@ describe('keysForHint', () => {
     expect(keys).toEqual([['dish', DISH], ['leftovers']])
   })
 
-  test.each(['ingredients', 'categories', 'category_groups'] as const)(
+  test.each(['categories', 'category_groups'] as const)(
     'a change to %s refreshes the whole ingredient database',
     (table) => {
       const keys = keysForHint({ table, actor: PARTNER }, HOUSEHOLD)
 
       expect(keys).toEqual([
-        ['ingredients', HOUSEHOLD],
+        ingredientKeys.ingredients(HOUSEHOLD),
         ['categories', HOUSEHOLD],
         ['categoryGroups', HOUSEHOLD],
       ])
     },
   )
+
+  test('a change to an ingredient also refreshes the dishes and leftovers (a merge moves dish lines, which send no hint of their own)', () => {
+    const keys = keysForHint({ table: 'ingredients', actor: PARTNER }, HOUSEHOLD)
+
+    expect(keys).toEqual([
+      ingredientKeys.ingredients(HOUSEHOLD),
+      ['categories', HOUSEHOLD],
+      ['categoryGroups', HOUSEHOLD],
+      ['dish'],
+      ['leftovers'],
+    ])
+  })
 
   test('a finding from the review routine, or one decided on the other phone, refreshes the review', () => {
     const hint = parseHint({ table: 'review_findings', actor: null })

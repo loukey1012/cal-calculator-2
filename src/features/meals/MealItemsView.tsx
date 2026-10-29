@@ -5,6 +5,7 @@ import { ListRow } from '../../components/ios/ListRow'
 import { SwipeableRow } from '../../components/ios/SwipeableRow'
 import { toUserMessage } from '../../lib/errors'
 import { DishBlock } from '../dishes/DishBlock'
+import { ItemsDietMarks } from '../ingredients/ItemsDietMarks'
 import { formatKcalTotal, macroSummary } from '../nutrition/format'
 import { itemTotals, mealTotals } from '../nutrition/totals'
 import { describeAmount, ESTIMATE_LABEL, mealEntries, type MealItem } from './dayModel'
@@ -33,7 +34,12 @@ type MealItemsViewProps = {
 function FoodRow({ item, onClick }: { readonly item: MealItem; readonly onClick: () => void }) {
   return (
     <ListRow
-      title={item.name}
+      title={
+        <span className="flex items-center gap-1.5">
+          <span className="truncate">{item.name}</span>
+          <ItemsDietMarks ingredientIds={[item.ingredient_id]} />
+        </span>
+      }
       subtitle={
         item.dish?.kcalEstimated
           ? `${ESTIMATE_LABEL} · ${describeAmount(item)}`
@@ -63,11 +69,16 @@ export function MealItemsView({
 
   return (
     <>
-      <p data-testid="meal-total" className="text-[15px] text-label-secondary">
-        <span className="font-semibold text-label">{formatKcalTotal(totals)} kcal</span>
-        {' · '}
-        {macroSummary(totals)}
-      </p>
+      <div className="flex items-center justify-between gap-3">
+        <p data-testid="meal-total" className="text-[15px] text-label-secondary">
+          <span className="font-semibold text-label">{formatKcalTotal(totals)} kcal</span>
+          {' · '}
+          {macroSummary(totals)}
+        </p>
+        <span data-testid="meal-diet">
+          <ItemsDietMarks ingredientIds={items.map((item) => item.ingredient_id)} />
+        </span>
+      </div>
       {notice && (
         <p role="status" className="mt-2 text-[15px] font-semibold text-label">
           {notice}

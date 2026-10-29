@@ -27,7 +27,14 @@ const draftSchema = z.object({
   unitLabel: z.string(),
   unitWeightG: z.string(),
   kcalEstimated: z.boolean(),
+  // drafts kept before the diet marks existed have neither
+  vegan: z.boolean().catch(false),
+  halal: z.boolean().catch(false),
 })
+
+/** The draft key of an existing ingredient, for one household member's phone. */
+export const ingredientDraftKey = (householdId: string, ingredientId: string) =>
+  `${householdId}:${ingredientId}`
 
 const keyFor = (draftKey: string) => `ingredient-draft:v${VERSION}:${draftKey}`
 

@@ -54,8 +54,11 @@ recipes removed from the app) confirmed. L2 (`20261029160000_drop_recipes`) and 
 and prod; `src/features/dayMarks/*`, queued kinds `gymDay`/`sexDay`, live hint `sex_days`) built,
 confirmed; then the calendar symbols were unified (user's Symbols v2 · B: every left-out day one
 grey card + top-right `LeftOutMark` badge, bottom row dial/lines/two-plate dumbbell/heart in muted
-colour tokens, `markContrast.test.ts` keeps them ≥3:1), awaits the iPhone test.
-**Next:** K (66 vegan/halal, 65 merge yourself, 64 Review re-checks). Sketch of F: https://claude.ai/artifact/KJ5V6j5PCBaN35MXmATmmE. Sketch of D:
+colour tokens, `markContrast.test.ts` keeps them ≥3:1) confirmed. K1+K2a: 66 vegan/halal (migration
+`20261029180000_ingredient_diet_flags` on dev and prod, ingredients key `INGREDIENTS_SHAPE` v2,
+`dietOf.ts`, `components/ios/dietSymbols.tsx`) and 65 Merge with… (`review/MergeWithPicker.tsx`,
+`useInvalidateAfterMerge`) built, await the iPhone test. **Next:** 64 (Review re-checks findings:
+withdraw RPC + ROUTINE.md), then discuss 70 (easier day flags) and 71 (notify on partner changes). Sketch of F: https://claude.ai/artifact/KJ5V6j5PCBaN35MXmATmmE. Sketch of D:
 https://claude.ai/artifact/Sp4cvXiKk3us9kXNUTrT6g. Working rhythm that worked: `ecc:tdd-guide`
 agents build (in parallel only on separate files), then `ecc:typescript-reviewer` +
 `ecc:react-reviewer` (+ `ecc:database-reviewer`/`ecc:security-reviewer` for SQL) +

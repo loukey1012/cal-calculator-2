@@ -15,7 +15,7 @@ const API = 'https://world.openfoodfacts.org/api/v2/product'
 const SEARCH_API = '/off/search'
 const SEARCH_LANGUAGES = 'de,en'
 const FIELDS =
-  'product_name,product_name_de,brands,serving_quantity,serving_quantity_unit,serving_size,product_quantity,product_quantity_unit,quantity,image_front_small_url,nutriments'
+  'product_name,product_name_de,brands,serving_quantity,serving_quantity_unit,serving_size,product_quantity,product_quantity_unit,quantity,image_front_small_url,nutriments,labels_tags'
 const TIMEOUT_MS = 6000
 const SEARCH_TIMEOUT_MS = 10000
 const SEARCH_PAGE_SIZE = 20
@@ -75,6 +75,8 @@ const productSchema = z.object({
   serving_size: z.string().optional().catch(undefined),
   image_front_small_url: z.string().optional().catch(undefined),
   nutriments: z.record(z.string(), z.unknown()).optional(),
+  /** e.g. ['en:vegan', 'en:halal'] */
+  labels_tags: z.array(z.string()).optional().catch(undefined),
 })
 
 export type OffProduct = z.input<typeof productSchema>
@@ -123,6 +125,12 @@ function basisOf(nutriments: Record<string, unknown>, suffix: Suffix): Nutrition
     salt: nutrient(nutriments, `${OFF_NAMES.salt}${suffix}`),
   }
 }
+
+const VEGAN_LABEL = 'en:vegan'
+const HALAL_LABEL = 'en:halal'
+
+const hasLabel = (product: { labels_tags?: string[] | undefined }, label: string) =>
+  product.labels_tags?.includes(label) ?? false
 
 const unitKey = (unit: string) => unit.trim().toLowerCase()
 
@@ -264,6 +272,9 @@ export function productPrefill(raw: OffProduct, barcode: string): ProductPrefill
       perUnit: formBasis(perPortion),
       measure,
       unitWeightG: asText(reported.portionG),
+      // only what the package states; never guessed
+      vegan: hasLabel(product, VEGAN_LABEL),
+      halal: hasLabel(product, HALAL_LABEL),
     },
     warnings: nutritionWarnings(reported),
     info: productInfo(product),

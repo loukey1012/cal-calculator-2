@@ -6,6 +6,7 @@ import { SearchField } from '../../components/ios/SearchField'
 import { Sheet } from '../../components/ios/Sheet'
 import { brandCounts } from './brands'
 import type { Ingredient } from './ingredientsApi'
+import { HIT_AREA_44 } from './hitArea'
 import { searchable } from './listing'
 
 const ALL_BRANDS_LABEL = 'All brands'
@@ -34,7 +35,7 @@ export function BrandFilter({ ingredients, brand, onChange }: BrandFilterProps) 
         aria-label={`Brand: ${label}`}
         aria-haspopup="dialog"
         onClick={() => setOpen(true)}
-        className={`glass-surface flex h-8 min-w-0 items-center gap-1 rounded-full px-3 text-[14px] font-bold ${
+        className={`${HIT_AREA_44} glass-surface flex h-8 min-w-0 items-center gap-1 rounded-full px-3 text-[14px] font-bold ${
           brand === null
             ? 'bg-bg-elevated text-label shadow-card'
             : 'accent-edge bg-accent text-on-accent'
@@ -48,7 +49,7 @@ export function BrandFilter({ ingredients, brand, onChange }: BrandFilterProps) 
           type="button"
           aria-label="Show all brands"
           onClick={() => onChange(null)}
-          className="grid h-8 w-8 shrink-0 place-items-center text-label-secondary"
+          className={`${HIT_AREA_44} grid h-8 w-8 shrink-0 place-items-center text-label-secondary`}
         >
           <ClearIcon className="h-[18px] w-[18px]" />
         </button>

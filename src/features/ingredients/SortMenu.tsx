@@ -3,6 +3,7 @@ import { GroupedSection } from '../../components/ios/GroupedSection'
 import { CheckIcon, ChevronDownIcon } from '../../components/ios/icons'
 import { ListRow } from '../../components/ios/ListRow'
 import { Sheet } from '../../components/ios/Sheet'
+import { HIT_AREA_44 } from './hitArea'
 import { INGREDIENT_SORT_OPTIONS, type IngredientSort } from './sorting'
 
 type SortMenuProps = {
@@ -22,7 +23,7 @@ export function SortMenu({ sort, onChange }: SortMenuProps) {
         aria-label={`Sort: ${label}`}
         aria-haspopup="dialog"
         onClick={() => setOpen(true)}
-        className="flex h-8 shrink-0 items-center gap-1 px-1 text-[14px] font-bold text-accent-ink"
+        className={`${HIT_AREA_44} flex h-8 shrink-0 items-center gap-1 px-1 text-[14px] font-bold text-accent-ink`}
       >
         {label}
         <ChevronDownIcon className="h-3.5 w-3.5" />

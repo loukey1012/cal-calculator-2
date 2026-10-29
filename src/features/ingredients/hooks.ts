@@ -23,8 +23,15 @@ import {
 } from './ingredientsApi'
 import { reviewKeys } from '../review/keys'
 
+/**
+ * Version of the ingredient rows kept on the phone. Bump it when the rows get a new column, so a
+ * copy from before is ignored instead of handing new code rows without it (vegan and halal came
+ * with version 2). It is part of the key, so saving, refreshing and live hints follow along.
+ */
+const INGREDIENTS_SHAPE = 'v2'
+
 export const ingredientKeys = {
-  ingredients: (householdId: string) => ['ingredients', householdId] as const,
+  ingredients: (householdId: string) => ['ingredients', INGREDIENTS_SHAPE, householdId] as const,
   categories: (householdId: string) => ['categories', householdId] as const,
   categoryGroups: (householdId: string) => ['categoryGroups', householdId] as const,
   uses: (householdId: string) => ['ingredientUses', householdId] as const,
@@ -35,6 +42,12 @@ type IngredientsQueryOptions = {
   readonly alwaysRefresh?: boolean
 }
 
+const NO_INGREDIENTS: ReadonlyMap<string, Ingredient> = new Map()
+
+// one function for every observer, so React Query reuses the selected map until the data changes
+const toIngredientMap = (list: Ingredient[]): ReadonlyMap<string, Ingredient> =>
+  new Map(list.map((item) => [item.id, item]))
+
 export function useIngredients(
   householdId: string,
   { alwaysRefresh = false }: IngredientsQueryOptions = {},
@@ -44,6 +57,16 @@ export function useIngredients(
     queryFn: () => fetchIngredients(householdId),
     refetchOnMount: alwaysRefresh ? 'always' : true,
   })
+}
+
+/** The household's ingredients by id; the map is built once per fetch, not per caller. */
+export function useIngredientsById(householdId: string): ReadonlyMap<string, Ingredient> {
+  const { data } = useQuery({
+    queryKey: ingredientKeys.ingredients(householdId),
+    queryFn: () => fetchIngredients(householdId),
+    select: toIngredientMap,
+  })
+  return data ?? NO_INGREDIENTS
 }
 
 /** How often each ingredient was used; only loaded when `enabled` (sorting by most used). */

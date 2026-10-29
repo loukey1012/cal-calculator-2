@@ -428,3 +428,43 @@ describe('searchProducts', () => {
     await expect(searchProducts('skyr')).resolves.toEqual({ kind: 'unavailable' })
   })
 })
+
+describe('diet labels from Open Food Facts', () => {
+  const withLabels = (labels_tags: unknown) =>
+    productFormValues({ ...COLA_BOTTLES, labels_tags } as OffProduct, '1')
+
+  test('vegan and halal are on only when the label tag says so', () => {
+    expect(withLabels(['en:organic', 'en:vegan'])).toMatchObject({ vegan: true, halal: false })
+    expect(withLabels(['en:halal'])).toMatchObject({ vegan: false, halal: true })
+    expect(withLabels(['en:vegan', 'en:halal'])).toMatchObject({ vegan: true, halal: true })
+  })
+
+  test('nothing is guessed: other tags, no tags or odd data leave both off', () => {
+    for (const tags of [
+      ['en:vegetarian', 'en:no-gluten'],
+      ['en:non-vegan'],
+      [],
+      undefined,
+      'en:vegan',
+      [1],
+    ]) {
+      expect(withLabels(tags)).toMatchObject({ vegan: false, halal: false })
+    }
+  })
+
+  test('asks for labels_tags and reads them from a name search hit too', async () => {
+    const fetchMock = respond(200, {
+      hits: [
+        { code: '1', ...COLA_BOTTLES, labels_tags: ['en:vegan'] },
+        { code: '2', ...COLA_BOTTLES },
+      ],
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await searchProducts('cola')
+
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain('labels_tags')
+    if (result.kind !== 'found') throw new Error('expected hits')
+    expect(result.hits.map((hit) => hit.values.vegan)).toEqual([true, false])
+  })
+})

@@ -31,6 +31,8 @@ const ROW: Tables<'ingredients'> = {
   salt_unit: 0.2,
   barcode: null,
   kcal_estimated: false,
+  vegan: false,
+  halal: false,
   created_by: null,
   created_at: '',
   updated_at: '',

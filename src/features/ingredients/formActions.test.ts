@@ -265,4 +265,16 @@ describe('filling in from another source', () => {
       kcalEstimated: false,
     })
   })
+
+  test('a diet mark the product states is switched on, never off', () => {
+    const vegan = form({ vegan: true })
+
+    const filled = fillEmptyFrom(form({}), vegan)
+    const kept = fillEmptyFrom(form({ halal: true }), form({}))
+
+    expect(filled.values).toMatchObject({ vegan: true, halal: false })
+    expect(filled.count).toBe(1)
+    expect(kept.values.halal).toBe(true)
+    expect(kept.count).toBe(0)
+  })
 })

@@ -339,4 +339,29 @@ describe('IngredientSheet', () => {
 
     expect(screen.queryByRole('button', { name: 'Delete Ingredient' })).not.toBeInTheDocument()
   })
+
+  test('the Diet switches save vegan and halal, and show on again when editing', async () => {
+    const user = userEvent.setup()
+    const { onClose, unmount } = renderSheet()
+
+    await user.type(screen.getByLabelText('Name'), 'Oats')
+    await pickCategory(user, 'g1', 'c1')
+    await user.click(screen.getByRole('switch', { name: 'Per 100 g' }))
+    await user.type(screen.getByLabelText('Calories per 100 g'), '370')
+    expect(screen.getByRole('switch', { name: 'Vegan' })).toHaveAttribute('aria-checked', 'false')
+    await user.click(screen.getByRole('switch', { name: 'Vegan' }))
+    await user.click(screen.getByRole('switch', { name: 'Halal' }))
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() => expect(onClose).toHaveBeenCalled())
+    expect(createIngredient).toHaveBeenCalledWith(
+      'h1',
+      expect.objectContaining({ vegan: true, halal: true }),
+    )
+    unmount()
+
+    renderSheet(ingredient({ id: 'i2', category_id: 'c1', kcal_100: 5, halal: true }))
+    expect(screen.getByRole('switch', { name: 'Vegan' })).toHaveAttribute('aria-checked', 'false')
+    expect(screen.getByRole('switch', { name: 'Halal' })).toHaveAttribute('aria-checked', 'true')
+  })
 })

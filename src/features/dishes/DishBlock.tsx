@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Button } from '../../components/ios/Button'
 import { ListRow } from '../../components/ios/ListRow'
 import { DinnerIcon } from '../../components/ios/icons'
+import { ItemsDietMarks } from '../ingredients/ItemsDietMarks'
 import { describeAmount, ESTIMATE_LABEL, type DishRef, type MealItem } from '../meals/dayModel'
 import { formatKcalTotal } from '../nutrition/format'
 import { itemTotals, mealTotals } from '../nutrition/totals'
@@ -45,8 +46,11 @@ export function DishBlock({ items, onEdit }: DishBlockProps) {
           <DinnerIcon className="h-4 w-4" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[16px] font-semibold">
-            {dish?.name ?? autoTitle(items.map((item) => item.name))}
+          <span className="flex items-center gap-1.5 text-[16px] font-semibold">
+            <span className="truncate">
+              {dish?.name ?? autoTitle(items.map((item) => item.name))}
+            </span>
+            <ItemsDietMarks ingredientIds={items.map((item) => item.ingredient_id)} />
           </span>
           <span className="block truncate text-[13px] font-medium text-label-secondary">
             {blockSubtitle(dish, items.length)}

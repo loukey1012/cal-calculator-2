@@ -1,7 +1,7 @@
 import type { QueryKey } from '@tanstack/react-query'
 import { z } from 'zod'
 import { householdMarkKeys } from '../dayMarks/keys'
-import { dishKey, LEFTOVERS_KEY } from '../dishes/dishChanges'
+import { DISH_CHANGES_KEY, dishKey, LEFTOVERS_KEY } from '../dishes/dishChanges'
 import { goalKeys } from '../goals/hooks'
 import { monthKeys } from '../history/hooks'
 import { householdKeys } from '../household/queryKeys'
@@ -45,6 +45,14 @@ export function parseHint(payload: unknown): LiveHint | null {
   return result.success ? result.data : null
 }
 
+function ingredientDatabaseKeys(householdId: string): readonly QueryKey[] {
+  return [
+    ingredientKeys.ingredients(householdId),
+    ingredientKeys.categories(householdId),
+    ingredientKeys.categoryGroups(householdId),
+  ]
+}
+
 /**
  * The cached queries a hint makes out of date. My own changes count too: they may come from my
  * other phone (a refresh waits while this phone's own changes are being saved).
@@ -58,13 +66,11 @@ export function keysForHint(hint: LiveHint, householdId: string): readonly Query
     case 'dishes':
       return [dishKey(hint.dish_id), LEFTOVERS_KEY]
     case 'ingredients':
+      // a merge moves dish lines too, and those send no hint of their own (meal items do)
+      return [...ingredientDatabaseKeys(householdId), DISH_CHANGES_KEY, LEFTOVERS_KEY]
     case 'categories':
     case 'category_groups':
-      return [
-        ingredientKeys.ingredients(householdId),
-        ingredientKeys.categories(householdId),
-        ingredientKeys.categoryGroups(householdId),
-      ]
+      return ingredientDatabaseKeys(householdId)
     case 'review_findings':
       return [reviewKeys.findings(householdId)]
     case 'recipes':

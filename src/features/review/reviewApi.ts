@@ -1,4 +1,4 @@
-import type { Enums, Tables } from '../../lib/database.types'
+import type { Enums, Tables, Database } from '../../lib/database.types'
 import { ApiError } from '../../lib/errors'
 import { supabase } from '../../lib/supabase'
 import type { Ingredient } from '../ingredients/ingredientsApi'
@@ -53,7 +53,21 @@ export type MergeInput = {
   readonly dropId: string
   /** values taken over from the dropped one */
   readonly patch: IngredientPatch
-  readonly findingId: string
+  /** the duplicate finding this settles; null when merged by hand */
+  readonly findingId: string | null
+}
+
+type MergeArgs = Omit<Database['public']['Functions']['merge_ingredients']['Args'], 'p_finding'> & {
+  /** null when merged by hand: the function accepts it, the generated types don't say so */
+  p_finding: string | null
+}
+
+/** The merge_ingredients call with its real argument types; the one cast is kept here. */
+function callMerge(args: MergeArgs) {
+  return supabase.rpc(
+    'merge_ingredients',
+    args as Database['public']['Functions']['merge_ingredients']['Args'],
+  )
 }
 
 /** Folds one ingredient into the other in one step (see the merge_ingredients migration). */
@@ -63,7 +77,7 @@ export async function mergeIngredients({
   patch,
   findingId,
 }: MergeInput): Promise<void> {
-  const { error } = await supabase.rpc('merge_ingredients', {
+  const { error } = await callMerge({
     p_keep: keepId,
     p_drop: dropId,
     p_patch: patch,

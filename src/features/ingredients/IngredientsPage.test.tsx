@@ -190,6 +190,49 @@ describe('brands', () => {
   })
 })
 
+describe('diet', () => {
+  beforeEach(() => {
+    vi.mocked(fetchIngredients).mockResolvedValue([
+      ingredient({ id: 'oats', name: 'Oats', category_id: 'c2', kcal_100: 370, vegan: true }),
+      ingredient({ id: 'chicken', name: 'Chicken', category_id: 'c1', kcal_100: 160, halal: true }),
+      ingredient({ id: 'salami', name: 'Salami', category_id: 'c1', kcal_100: 400 }),
+    ])
+  })
+
+  test('the marks show after the name', async () => {
+    renderPage()
+
+    const row = await screen.findByRole('button', { name: /Oats/ })
+    expect(within(row).getByRole('img', { name: /vegan/ })).toBeInTheDocument()
+    expect(within(row).queryByRole('img', { name: /halal/ })).not.toBeInTheDocument()
+    const salami = screen.getByRole('button', { name: /Salami/ })
+    expect(within(salami).queryByRole('img', { name: /vegan/ })).not.toBeInTheDocument()
+  })
+
+  test('the Vegan and Halal chips filter the list and switch off again', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await screen.findByText('Oats')
+
+    await user.click(screen.getByRole('button', { name: 'Vegan' }))
+    expect(screen.getByRole('button', { name: 'Vegan' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByText('Oats')).toBeInTheDocument()
+    expect(screen.queryByText('Chicken')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Vegan' }))
+    await user.click(screen.getByRole('button', { name: 'Halal' }))
+    expect(screen.getByText('Chicken')).toBeInTheDocument()
+    expect(screen.queryByText('Oats')).not.toBeInTheDocument()
+    expect(screen.queryByText('Salami')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Vegan' }))
+    expect(screen.getByText('No matches')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Halal' }))
+    await user.click(screen.getByRole('button', { name: 'Vegan' }))
+    expect(screen.getByText('Salami')).toBeInTheDocument()
+  })
+})
+
 describe('brand suggestions', () => {
   test('a new ingredient suggests the brands already saved', async () => {
     const user = userEvent.setup()

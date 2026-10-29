@@ -45,3 +45,19 @@ describe('ingredient drafts', () => {
     expect(() => saveIngredientDraft('u1:new', typed)).not.toThrow()
   })
 })
+
+describe('drafts stored before the diet flags', () => {
+  test('an old draft without vegan and halal restores with both off', () => {
+    const { vegan, halal, ...old } = typed
+    expect([vegan, halal]).toEqual([false, false])
+    localStorage.setItem('ingredient-draft:v2:u1:new', JSON.stringify(old))
+
+    expect(loadIngredientDraft('u1:new')).toEqual(typed)
+  })
+
+  test('the flags typed into a draft are kept', () => {
+    saveIngredientDraft('u1:new', { ...typed, vegan: true, halal: true })
+
+    expect(loadIngredientDraft('u1:new')).toMatchObject({ vegan: true, halal: true })
+  })
+})

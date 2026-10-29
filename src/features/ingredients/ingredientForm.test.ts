@@ -242,3 +242,23 @@ describe('toFormValues', () => {
     })
   })
 })
+
+describe('diet flags', () => {
+  test('vegan and halal go into the saved columns', () => {
+    const data = parsed(
+      form({ per100gEnabled: true, per100g: per100g({ kcal: '92' }), vegan: true, halal: true }),
+    )
+
+    expect(data.ingredient).toMatchObject({ vegan: true, halal: true })
+  })
+
+  test('they default to off and come back into the form from a saved ingredient', () => {
+    const data = parsed(form({ per100gEnabled: true, per100g: per100g({ kcal: '92' }) }))
+
+    expect(data.ingredient).toMatchObject({ vegan: false, halal: false })
+    expect(toFormValues(ingredient({ kcal_100: 1, vegan: true }))).toMatchObject({
+      vegan: true,
+      halal: false,
+    })
+  })
+})

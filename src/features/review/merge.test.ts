@@ -61,3 +61,30 @@ describe('takenValues', () => {
     expect(takenValues(SCHEIBEN, new Set())).toEqual({})
   })
 })
+
+describe('mergeRows diet rows', () => {
+  test('Vegan and Halal are left out when both sides are off', () => {
+    const labels = mergeRows(TOASTKAESE, SCHEIBEN, [CHEESE]).map((row) => row.label)
+
+    expect(labels).not.toContain('Vegan')
+    expect(labels).not.toContain('Halal')
+  })
+
+  test('they show yes / no and which differ when one side has them', () => {
+    const rows = mergeRows(TOASTKAESE, { ...SCHEIBEN, vegan: true }, [CHEESE])
+    const vegan = rows.find((row) => row.label === 'Vegan')
+
+    expect(vegan).toEqual({
+      field: 'vegan',
+      label: 'Vegan',
+      keep: 'no',
+      other: 'yes',
+      differs: true,
+    })
+    expect(rows.some((row) => row.label === 'Halal')).toBe(false)
+  })
+
+  test('taking the other one over turns the flag on', () => {
+    expect(takenValues({ ...SCHEIBEN, halal: true }, new Set(['halal']))).toEqual({ halal: true })
+  })
+})

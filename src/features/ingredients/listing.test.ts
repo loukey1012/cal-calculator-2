@@ -129,3 +129,26 @@ describe('nutritionSummary', () => {
     )
   })
 })
+
+describe('filterIngredients by diet', () => {
+  const OATS = ingredient({ id: 'oats', name: 'Oats', vegan: true, halal: true })
+  const SALAMI = ingredient({ id: 'salami', name: 'Salami', halal: false })
+  const TOFU = ingredient({ id: 'tofu', name: 'Tofu', vegan: true })
+  const MIXED = [OATS, SALAMI, TOFU]
+  const base = { query: '', category: ALL_CATEGORIES, brand: null }
+
+  test('without a diet filter (also an old stored filter) every ingredient passes', () => {
+    expect(filterIngredients(MIXED, base)).toHaveLength(3)
+    expect(filterIngredients(MIXED, { ...base, diet: {} })).toHaveLength(3)
+    expect(filterIngredients(MIXED, { ...base, diet: { vegan: false } })).toHaveLength(3)
+  })
+
+  test('Vegan keeps vegan ones, Halal halal ones, both keep ones with both', () => {
+    const ids = (diet: { vegan?: boolean; halal?: boolean }) =>
+      filterIngredients(MIXED, { ...base, diet }).map((item) => item.id)
+
+    expect(ids({ vegan: true })).toEqual(['oats', 'tofu'])
+    expect(ids({ halal: true })).toEqual(['oats'])
+    expect(ids({ vegan: true, halal: true })).toEqual(['oats'])
+  })
+})

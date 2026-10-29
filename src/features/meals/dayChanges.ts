@@ -98,8 +98,8 @@ export type DayChange =
       readonly on: boolean
     }
 
-/** Prefix of every day change's mutation key. */
-const DAY_CHANGES_KEY = ['day'] as const
+/** Prefix of every day change's mutation key, and of every day query. */
+export const DAY_CHANGES_KEY = ['day'] as const
 const FIRST_RETRY_DELAY_MS = 1000
 const MAX_RETRY_DELAY_MS = 30_000
 

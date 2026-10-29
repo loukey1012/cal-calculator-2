@@ -265,6 +265,7 @@ function fillBasis(own: BasisFormValues, ownEnabled: boolean, source: BasisFormV
   return { basis, count: filled.length }
 }
 
+const DIET_FIELDS = ['vegan', 'halal'] as const
 const TEXT_FIELDS = ['name', 'brand', 'unitLabel', 'unitWeightG'] as const
 
 /** Only the empty fields, taken from `source` (e.g. Open Food Facts for a saved ingredient). */
@@ -279,14 +280,16 @@ export function fillEmptyFrom(
   const perUnit = source.perUnitEnabled
     ? fillBasis(values.perUnit, values.perUnitEnabled, source.perUnit)
     : { basis: values.perUnit, count: 0 }
+  const marks = DIET_FIELDS.filter((key) => !values[key] && source[key])
   const withTexts = texts.reduce<IngredientFormValues>(
     (current, key) => ({ ...current, [key]: source[key] }),
     values,
   )
   return {
-    count: texts.length + per100g.count + perUnit.count,
+    count: texts.length + marks.length + per100g.count + perUnit.count,
     values: {
       ...withTexts,
+      ...Object.fromEntries(marks.map((key) => [key, true])),
       per100gEnabled: values.per100gEnabled || per100g.count > 0,
       per100g: per100g.count > 0 ? per100g.basis : values.per100g,
       perUnitEnabled: values.perUnitEnabled || perUnit.count > 0,

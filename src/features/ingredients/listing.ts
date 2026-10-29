@@ -10,11 +10,16 @@ export type CategoryFilter =
 
 export const ALL_CATEGORIES: CategoryFilter = { kind: 'all' }
 
+/** A chosen diet mark lets through the ingredients that have it. */
+export type DietFilter = { readonly vegan?: boolean; readonly halal?: boolean }
+
 export type IngredientFilter = {
   readonly query: string
   readonly category: CategoryFilter
   /** one brand only (case and accents don't matter), or null for every brand */
   readonly brand: string | null
+  /** only vegan and/or halal ones; optional so filters stored or passed before still fit */
+  readonly diet?: DietFilter
 }
 
 /** A broad category with its categories, as the chips show it. */
@@ -64,10 +69,14 @@ function matchesBrand(ingredient: Ingredient, brand: string | null): boolean {
   return brand === null || searchable(ingredient.brand ?? '') === searchable(brand)
 }
 
+function matchesDiet(ingredient: Ingredient, diet: DietFilter | undefined): boolean {
+  return (!diet?.vegan || ingredient.vegan) && (!diet?.halal || ingredient.halal)
+}
+
 /** `categories` tell which broad category each category is in; only broad filters need them. */
 export function filterIngredients(
   ingredients: readonly Ingredient[],
-  { query, category, brand }: IngredientFilter,
+  { query, category, brand, diet }: IngredientFilter,
   categories: readonly Category[] = [],
 ): readonly Ingredient[] {
   const needle = searchable(query)
@@ -76,6 +85,7 @@ export function filterIngredients(
     (ingredient) =>
       matchesCategory(ingredient, category, groupIds) &&
       matchesBrand(ingredient, brand) &&
+      matchesDiet(ingredient, diet) &&
       (needle === '' ||
         searchable(`${ingredient.name} ${ingredient.brand ?? ''}`).includes(needle)),
   )
