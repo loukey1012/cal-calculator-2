@@ -1,4 +1,5 @@
 import { calorieOverLevel, toWholeKcal } from './calorieGoal.ts'
+import { addDays } from './isoWeek.ts'
 import { countsInAverages, type CountedDay } from './dayCounting.ts'
 
 /**
@@ -94,4 +95,19 @@ export function weekFigures(
     within: withinGoal(counted, goals),
     saved: savedKcal(days, kcalBurned, today)?.saved ?? null,
   }
+}
+
+/**
+ * The day summary's "week so far": the figures of the week's days up to and including `date`
+ * (which counts if it is complete, so it is judged as if tomorrow were today). Null when no day
+ * counted.
+ */
+export function weekSoFar(
+  days: readonly WeekDayRow[],
+  kcalBurned: number | null,
+  date: string,
+): Pick<WeekFigures, 'averageKcal' | 'saved'> | null {
+  const upToDate = days.filter((day) => day.date <= date)
+  const figures = weekFigures(upToDate, [], kcalBurned, addDays(date, 1))
+  return figures && { averageKcal: figures.averageKcal, saved: figures.saved }
 }

@@ -30,6 +30,17 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-29T10:00',
+    kind: 'new',
+    title: 'Choose what the day summary shows',
+    items: [
+      'Settings › Notifications › Day summary › Contents: switch each part on or off and drag the handles to change the order',
+      'Parts: calories left or over, protein, carbs, fat, fiber, sugar, salt, the week so far (Ø calories and calories saved), missing meals, and cheat or alcohol day',
+      '“Only nutrients with a goal” hides the others (sugar and salt have no goal)',
+      'A preview shows the notification for an example day',
+    ],
+  },
+  {
     at: '2026-10-28T15:52',
     kind: 'fix',
     title: 'Settings › Notifications opens again',

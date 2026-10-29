@@ -1,5 +1,6 @@
 import { fireEvent, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { useLocation } from 'react-router'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { renderWithProviders } from '../../test/render'
 
@@ -133,7 +134,10 @@ describe('what to be notified about', () => {
 
     await user.click(await screen.findByRole('radio', { name: 'Same day' }))
 
-    expect(lastSaved().settings.summary).toEqual({ on: true, day: 'same', time: '08:00' })
+    expect(lastSaved().settings.summary).toEqual({
+      ...DEFAULT_SETTINGS.summary,
+      day: 'same',
+    })
     expect(screen.getByText('About the same day, at the time you choose.')).toBeVisible()
   })
 
@@ -300,5 +304,36 @@ describe('testResultText', () => {
     [{ sent: 1, removed: 0, failed: 1 }, 'Sent to 1 phone. 1 phone couldn’t be reached.'],
   ])('%o', (result, text) => {
     expect(testResultText(result)).toBe(text)
+  })
+})
+
+describe('Day summary contents', () => {
+  function Where() {
+    return <p data-testid="where">{useLocation().pathname}</p>
+  }
+
+  test('a Contents row tells how many parts are shown and opens the page', async () => {
+    const user = userEvent.setup()
+    renderWithProviders(
+      <CurrentUserContext value={{ profile: ME, householdId: 'h1' }}>
+        <NotificationsPage />
+        <Where />
+      </CurrentUserContext>,
+      { route: '/settings/notifications' },
+    )
+
+    await user.click(await screen.findByRole('button', { name: /Contents/ }))
+
+    expect(screen.getByText('4 shown')).toBeVisible()
+    expect(screen.getByTestId('where')).toHaveTextContent('/settings/notifications/day-summary')
+  })
+
+  test('no Contents row while the day summary is off', async () => {
+    renderPage()
+    const user = userEvent.setup()
+
+    await user.click(await screen.findByRole('switch', { name: 'Day summary' }))
+
+    expect(screen.queryByRole('button', { name: /Contents/ })).not.toBeInTheDocument()
   })
 })

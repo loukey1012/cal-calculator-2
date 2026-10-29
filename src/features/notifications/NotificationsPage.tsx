@@ -11,8 +11,6 @@ import { PermissionRefusedError } from './pushDevice'
 import { browserPushEnvironment, pushAvailability } from './pushSupport'
 import { testResultText } from './testResult'
 
-export const NOTIFICATIONS_PATH = '/settings/notifications'
-
 const INSTALL_FIRST =
   'Notifications only reach CALculator when it is opened from the Home Screen: in Safari, tap Share › Add to Home Screen, then open it from there.'
 const UNSUPPORTED =

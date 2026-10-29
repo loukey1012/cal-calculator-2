@@ -1,8 +1,10 @@
 import { useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router'
 import { useCurrentUser } from '../../app/currentUser'
 import { ErrorBanner } from '../../components/ios/ErrorBanner'
 import { InputRow, ToggleRow } from '../../components/ios/FormRows'
 import { GroupedSection } from '../../components/ios/GroupedSection'
+import { ListRow } from '../../components/ios/ListRow'
 import { SegmentedControl } from '../../components/ios/SegmentedControl'
 import { toUserMessage } from '../../lib/errors'
 import {
@@ -13,6 +15,7 @@ import {
   type SummaryDay,
   type TimedSwitch,
 } from '../../../supabase/functions/_shared/notificationSettings.ts'
+import { DAY_SUMMARY_PATH } from './paths'
 import { usePreferences, useSavePreferences } from './hooks'
 import { deviceTimeZone, type Preferences } from './preferencesApi'
 
@@ -66,6 +69,7 @@ function TimedRows({ label, value, onChange }: TimeRowProps) {
 /** What I'm notified about and when; saved to my account, so every phone of mine follows. */
 export function NotificationKinds() {
   const { profile } = useCurrentUser()
+  const navigate = useNavigate()
   const preferences = usePreferences(profile.id)
   const save = useSavePreferences(profile.id)
   const loaded = preferences.data
@@ -128,6 +132,13 @@ export function NotificationKinds() {
             change({ ...settings, summary: { ...settings.summary, ...summary } })
           }
         />
+        {settings.summary.on && (
+          <ListRow
+            title="Contents"
+            detail={`${settings.summary.parts.filter((part) => part.on).length} shown`}
+            onClick={() => navigate(DAY_SUMMARY_PATH, { replace: true })}
+          />
+        )}
       </GroupedSection>
       {settings.summary.on && (
         <div className="mt-3">

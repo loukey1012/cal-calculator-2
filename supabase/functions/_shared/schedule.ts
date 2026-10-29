@@ -1,11 +1,14 @@
 import { type WeekFigures } from './weekSummary.ts'
 import { addDays, isoWeekday, previousIsoWeek, weekPath, type IsoWeek } from './isoWeek.ts'
+import { isMissingMeals, missingMainMeals } from './dayCounting.ts'
 import {
+  DEFAULT_SETTINGS,
   minutesOf,
   REMINDER_MEALS,
   type NotificationSettings,
   type ReminderMeal,
   type SummaryDay,
+  type SummaryPartId,
 } from './notificationSettings.ts'
 
 /**
@@ -22,6 +25,8 @@ export type PushMessage = {
   readonly url?: string
   readonly tag?: string
 }
+
+type SummarySettings = NotificationSettings['summary']
 
 /** local YYYY-MM-DD and minutes since local midnight */
 type LocalNow = { readonly date: string; readonly minutes: number }
@@ -124,18 +129,38 @@ export type DaySummary = {
   readonly protein: number | null
   readonly carbs: number | null
   readonly fat: number | null
+  readonly fiber?: number | null
+  readonly sugar?: number | null
+  readonly salt?: number | null
   readonly mealCount: number
   readonly cheatDay: boolean
   readonly cheatMeal: boolean
   readonly alcoholDay: boolean
   readonly kcalEstimated: boolean
+  readonly lunchLogged?: boolean
+  readonly dinnerLogged?: boolean
 }
 
-type SummaryGoal = {
+export type SummaryGoal = {
   readonly kcal: number
   readonly protein: number | null
   readonly carbs: number | null
   readonly fat: number | null
+  readonly fiber?: number | null
+}
+
+/** The week so far (counted days up to the summary day); null when no day counted. */
+export type SummaryWeek = Pick<WeekFigures, 'averageKcal' | 'saved'> | null
+
+type NutrientId = 'protein' | 'carbs' | 'fat' | 'fiber' | 'sugar' | 'salt'
+
+const NUTRIENTS: Readonly<Record<NutrientId, string>> = {
+  protein: 'Protein',
+  carbs: 'Carbs',
+  fat: 'Fat',
+  fiber: 'Fiber',
+  sugar: 'Sugar',
+  salt: 'Salt',
 }
 
 function grams(label: string, value: number | null, goal: number | null): string | null {
@@ -145,29 +170,76 @@ function grams(label: string, value: number | null, goal: number | null): string
     : `${label} ${Math.round(value)} of ${Math.round(goal)} g`
 }
 
+function statusOf(day: DaySummary): string | null {
+  if (day.cheatDay) return 'Cheat day'
+  if (day.alcoholDay) return 'Alcohol day'
+  return day.cheatMeal ? 'Cheat meal' : null
+}
+
+/** Left or over the goal; nothing without one. */
+function caloriesOf(day: DaySummary, goal: SummaryGoal | null): string | null {
+  if (!goal) return null
+  const difference = Math.round(goal.kcal) - Math.round(day.kcal)
+  return difference >= 0 ? `${difference} kcal left` : `${-difference} kcal over`
+}
+
+/** The app's rule, judging the summary's day as over (also the same evening, as the week does). */
+function missingMealsOf(day: DaySummary): string | null {
+  if (!isMissingMeals(day.date, day, addDays(day.date, 1))) return null
+  const text = `${missingMainMeals(day).join(' and ')} missing`
+  return text.charAt(0).toUpperCase() + text.slice(1)
+}
+
+function weekAverageOf(week: SummaryWeek): string | null {
+  return week ? `Week Ø ${kcalText.format(week.averageKcal)} kcal` : null
+}
+
+function weekSavedOf(week: SummaryWeek): string | null {
+  const saved = week?.saved
+  if (saved == null) return null
+  return saved >= 0
+    ? `Week ${kcalText.format(saved)} kcal saved`
+    : `Week ${kcalText.format(-saved)} kcal surplus`
+}
+
 export function summaryMessage(
   day: DaySummary,
   goal: SummaryGoal | null,
   which: SummaryDay,
+  options: {
+    readonly parts?: SummarySettings['parts']
+    readonly onlyWithGoal?: boolean
+    readonly week?: SummaryWeek
+  } = {},
 ): PushMessage {
+  const { parts = DEFAULT_SETTINGS.summary.parts, onlyWithGoal = false, week = null } = options
   const kcal = `${day.kcalEstimated ? '~' : ''}${Math.round(day.kcal)}`
   const total = goal ? `${kcal} of ${Math.round(goal.kcal)} kcal` : `${kcal} kcal`
-  const flag = day.cheatDay
-    ? 'Cheat day'
-    : day.alcoholDay
-      ? 'Alcohol day'
-      : day.cheatMeal
-        ? 'Cheat meal'
-        : null
-  const body = [
-    flag,
-    grams('Protein', day.protein, goal?.protein ?? null),
-    grams('Carbs', day.carbs, goal?.carbs ?? null),
-    grams('Fat', day.fat, goal?.fat ?? null),
-  ].filter((part) => part !== null)
+  const nutrient = (id: NutrientId): string | null => {
+    const target = id === 'sugar' || id === 'salt' ? null : (goal?.[id] ?? null)
+    if (onlyWithGoal && target === null) return null
+    return grams(NUTRIENTS[id], day[id] ?? null, target)
+  }
+  const textOf = (id: SummaryPartId): string | null => {
+    switch (id) {
+      case 'status':
+        return statusOf(day)
+      case 'calories':
+        return caloriesOf(day, goal)
+      case 'missingMeals':
+        return missingMealsOf(day)
+      case 'weekAverage':
+        return weekAverageOf(week)
+      case 'weekSaved':
+        return weekSavedOf(week)
+      default:
+        return nutrient(id)
+    }
+  }
+  const body = parts.filter((part) => part.on).map((part) => textOf(part.id))
   return {
     title: `${which === 'previous' ? 'Yesterday' : 'Today'}: ${total}`,
-    body: body.join(' · '),
+    body: body.filter((part) => part !== null).join(' · '),
     url: which === 'previous' ? `/history/${day.date}` : '/today',
     tag: 'summary',
   }

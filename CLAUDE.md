@@ -39,7 +39,10 @@ later, when the user brings them). E1 shipped; History then reorganised
 into Calendar | Notes | Trends (user's option 2, confirmed; a week-strip calendar maybe later), the
 month summary removed (user), E2 year overview built. F1 built (calories burned, migration on prod;
 week page, saved figure in the calendar). F2 (weekly notification) built,
-push-tick deployed to prod. **Next:** G (48), drop `goal_history.kcal_burned` in a later migration. Sketch of F: https://claude.ai/artifact/KJ5V6j5PCBaN35MXmATmmE. Sketch of D:
+push-tick deployed to prod. G1 (48, day summary contents: parts with switches and drag handles,
+live preview; `components/ios/ReorderList.tsx`) built 2026-10-29, awaits the iPhone test. **Next:**
+ask whether the weekly notification gets the same parts list; drop `goal_history.kcal_burned` in a
+later migration. Sketch of F: https://claude.ai/artifact/KJ5V6j5PCBaN35MXmATmmE. Sketch of D:
 https://claude.ai/artifact/Sp4cvXiKk3us9kXNUTrT6g. Working rhythm that worked: `ecc:tdd-guide`
 agents build (in parallel only on separate files), then `ecc:typescript-reviewer` +
 `ecc:react-reviewer` (+ `ecc:database-reviewer`/`ecc:security-reviewer` for SQL) +

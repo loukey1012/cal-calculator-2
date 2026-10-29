@@ -1,6 +1,10 @@
 import { createClient, type SupabaseClient } from 'npm:@supabase/supabase-js@2'
 import { json } from '../_shared/http.ts'
-import { parseNotificationSettings } from '../_shared/notificationSettings.ts'
+import {
+  parseNotificationSettings,
+  type NotificationSettings,
+  type SummaryPartId,
+} from '../_shared/notificationSettings.ts'
 import {
   isQuiet,
   isRecentFinding,
@@ -17,10 +21,11 @@ import {
   type MealType,
   type Planned,
   type PushMessage,
+  type SummaryWeek,
 } from '../_shared/schedule.ts'
-import { weekDatesOf, type IsoWeek } from '../_shared/isoWeek.ts'
+import { isoWeekOf, weekDatesOf, type IsoWeek } from '../_shared/isoWeek.ts'
 import { sendToAll, type Subscription } from '../_shared/sendPush.ts'
-import { weekFigures, type WeekDayRow } from '../_shared/weekSummary.ts'
+import { weekFigures, weekSoFar, type WeekDayRow } from '../_shared/weekSummary.ts'
 
 /**
  * Runs every 5 minutes (pg_cron → pg_net, see the notification_schedule migration) and sends
@@ -44,6 +49,35 @@ type Profile = {
   readonly kcal_burned: number | null
 }
 
+const WEEK_DAY_COLUMNS =
+  'date, kcal, meal_count, cheat_day, cheat_meal, alcohol_day, lunch_logged, dinner_logged'
+const WEEK_PARTS: readonly SummaryPartId[] = ['weekAverage', 'weekSaved']
+
+type WeekDayData = {
+  readonly date: string | null
+  readonly kcal: number | null
+  readonly meal_count: number | null
+  readonly cheat_day: boolean | null
+  readonly cheat_meal: boolean | null
+  readonly alcohol_day: boolean | null
+  readonly lunch_logged: boolean | null
+  readonly dinner_logged: boolean | null
+}
+
+// same defaults as the app's week data (src/features/history/week/weekApi.ts)
+function weekDayOf(row: WeekDayData): WeekDayRow {
+  return {
+    date: row.date ?? '',
+    kcal: row.kcal ?? 0,
+    mealCount: row.meal_count ?? 0,
+    cheatDay: row.cheat_day ?? false,
+    cheatMeal: row.cheat_meal ?? false,
+    alcoholDay: row.alcohol_day ?? false,
+    lunchLogged: row.lunch_logged ?? false,
+    dinnerLogged: row.dinner_logged ?? false,
+  }
+}
+
 type Outgoing = { readonly kind: string; readonly key: string; readonly message: PushMessage }
 
 async function mealIsLogged(admin: SupabaseClient, userId: string, date: string, meal: MealType) {
@@ -59,25 +93,57 @@ async function mealIsLogged(admin: SupabaseClient, userId: string, date: string,
   return (data?.item_count ?? 0) > 0 || data?.cheat_meal === true
 }
 
-async function summaryFor(admin: SupabaseClient, userId: string, date: string) {
+/** The week so far, Monday to the summary day (that day counts if it is complete). */
+async function weekSoFarFor(
+  admin: SupabaseClient,
+  userId: string,
+  date: string,
+  kcalBurned: number | null,
+): Promise<SummaryWeek> {
+  const first = weekDatesOf(isoWeekOf(date))[0] ?? date
+  const totals = await admin
+    .from('daily_totals')
+    .select(WEEK_DAY_COLUMNS)
+    .eq('user_id', userId)
+    .gte('date', first)
+    .lte('date', date)
+  if (totals.error) throw new Error(`daily_totals: ${totals.error.message}`)
+  return weekSoFar(totals.data.map(weekDayOf), kcalBurned, date)
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
+}
+
+async function summaryFor(
+  admin: SupabaseClient,
+  profile: Profile,
+  date: string,
+  parts: NotificationSettings['summary']['parts'],
+) {
+  const userId = profile.id
   const day = await admin
     .from('daily_totals')
     .select(
-      'kcal, protein, carbs, fat, meal_count, cheat_day, cheat_meal, alcohol_day, kcal_estimated',
+      'kcal, protein, carbs, fat, fiber, sugar, salt, meal_count, cheat_day, cheat_meal, alcohol_day, kcal_estimated, lunch_logged, dinner_logged',
     )
     .eq('user_id', userId)
     .eq('date', date)
     .maybeSingle()
   if (day.error) throw new Error(`daily_totals: ${day.error.message}`)
   if (!day.data || (day.data.meal_count ?? 0) === 0) return null
-  const goal = await admin
-    .from('goal_history')
-    .select('kcal, protein_g, carbs_g, fat_g')
-    .eq('user_id', userId)
-    .lte('valid_from', date)
-    .order('valid_from', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+  const needsWeek = parts.some((part) => part.on && WEEK_PARTS.includes(part.id))
+  const [goal, week] = await Promise.all([
+    admin
+      .from('goal_history')
+      .select('kcal, protein_g, carbs_g, fat_g, fiber_g')
+      .eq('user_id', userId)
+      .lte('valid_from', date)
+      .order('valid_from', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    needsWeek ? weekOrNothing(admin, userId, date, profile.kcal_burned) : null,
+  ])
   if (goal.error) throw new Error(`goal_history: ${goal.error.message}`)
   return {
     day: {
@@ -86,11 +152,16 @@ async function summaryFor(admin: SupabaseClient, userId: string, date: string) {
       protein: day.data.protein,
       carbs: day.data.carbs,
       fat: day.data.fat,
+      fiber: day.data.fiber,
+      sugar: day.data.sugar,
+      salt: day.data.salt,
       mealCount: day.data.meal_count ?? 0,
       cheatDay: day.data.cheat_day === true,
       cheatMeal: day.data.cheat_meal === true,
       alcoholDay: day.data.alcohol_day === true,
       kcalEstimated: day.data.kcal_estimated === true,
+      lunchLogged: day.data.lunch_logged === true,
+      dinnerLogged: day.data.dinner_logged === true,
     },
     goal: goal.data
       ? {
@@ -98,8 +169,25 @@ async function summaryFor(admin: SupabaseClient, userId: string, date: string) {
           protein: goal.data.protein_g,
           carbs: goal.data.carbs_g,
           fat: goal.data.fat_g,
+          fiber: goal.data.fiber_g,
         }
       : null,
+    week,
+  }
+}
+
+/** A failed week only drops the week parts; the summary and the other messages still go out. */
+async function weekOrNothing(
+  admin: SupabaseClient,
+  userId: string,
+  date: string,
+  kcalBurned: number | null,
+): Promise<SummaryWeek> {
+  try {
+    return await weekSoFarFor(admin, userId, date, kcalBurned)
+  } catch (error) {
+    console.error('week so far failed for', userId, errorMessage(error))
+    return null
   }
 }
 
@@ -110,9 +198,7 @@ async function weeklyFor(admin: SupabaseClient, profile: Profile, week: IsoWeek,
   const last = dates.at(-1) ?? ''
   const totals = await admin
     .from('daily_totals')
-    .select(
-      'date, kcal, meal_count, cheat_day, cheat_meal, alcohol_day, lunch_logged, dinner_logged',
-    )
+    .select(WEEK_DAY_COLUMNS)
     .eq('user_id', profile.id)
     .gte('date', first)
     .lte('date', last)
@@ -125,16 +211,7 @@ async function weeklyFor(admin: SupabaseClient, profile: Profile, week: IsoWeek,
     .lte('valid_from', last)
   if (goals.error) throw new Error(`goal_history: ${goals.error.message}`)
   // same defaults as the app's week data (src/features/history/week/weekApi.ts)
-  const days: WeekDayRow[] = totals.data.map((row) => ({
-    date: row.date ?? '',
-    kcal: row.kcal ?? 0,
-    mealCount: row.meal_count ?? 0,
-    cheatDay: row.cheat_day ?? false,
-    cheatMeal: row.cheat_meal ?? false,
-    alcoholDay: row.alcohol_day ?? false,
-    lunchLogged: row.lunch_logged ?? false,
-    dinnerLogged: row.dinner_logged ?? false,
-  }))
+  const days = totals.data.map(weekDayOf)
   return weekFigures(
     days,
     goals.data.map((row) => ({ validFrom: row.valid_from, kcal: row.kcal })),
@@ -165,15 +242,19 @@ async function timedMessages(
         const message = weeklyMessage(item.week, await weeklyFor(admin, profile, item.week, today))
         if (message) outgoing.push({ kind: 'weekly', key: item.key, message })
       } catch (error) {
-        console.error('weekly summary failed for', profile.id, (error as Error).message)
+        console.error('weekly summary failed for', profile.id, errorMessage(error))
       }
     } else {
-      const summary = await summaryFor(admin, profile.id, item.date)
+      const summary = await summaryFor(admin, profile, item.date, settings.summary.parts)
       if (!summary) continue
       outgoing.push({
         kind: 'summary',
         key: item.key,
-        message: summaryMessage(summary.day, summary.goal, settings.summary.day),
+        message: summaryMessage(summary.day, summary.goal, settings.summary.day, {
+          parts: settings.summary.parts,
+          onlyWithGoal: settings.summary.onlyWithGoal,
+          week: summary.week,
+        }),
       })
     }
   }
