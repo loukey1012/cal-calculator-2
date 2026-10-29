@@ -15,7 +15,6 @@ const ROW = {
   protein_g: 120,
   carbs_g: null,
   fat_g: null,
-  kcal_burned: 2600,
   fiber_g: null,
   weight_goal_kg: null,
   created_at: '',

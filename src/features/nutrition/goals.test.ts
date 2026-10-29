@@ -33,7 +33,6 @@ describe('goalFromRow', () => {
       protein_g: 120,
       carbs_g: null,
       fat_g: null,
-      kcal_burned: null,
       fiber_g: null,
       weight_goal_kg: null,
       created_at: '',

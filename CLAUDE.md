@@ -42,7 +42,8 @@ week page, saved figure in the calendar). F2 (weekly notification) built,
 push-tick deployed to prod. G1 (48, day summary contents: parts with switches and drag handles,
 live preview; `components/ios/ReorderList.tsx`) built 2026-10-29 and confirmed; G2 (weekly
 summary contents, shared `notifications/SummaryContentsPage.tsx`) built 2026-10-29, awaits the
-iPhone test. **Next:** drop `goal_history.kcal_burned` in a later migration. Sketch of F: https://claude.ai/artifact/KJ5V6j5PCBaN35MXmATmmE. Sketch of D:
+iPhone test. `goal_history.kcal_burned` dropped (migration `20261029120000`, dev and prod), so
+the 2026-10-27 plan is complete. **Next:** the user's new items. Sketch of F: https://claude.ai/artifact/KJ5V6j5PCBaN35MXmATmmE. Sketch of D:
 https://claude.ai/artifact/Sp4cvXiKk3us9kXNUTrT6g. Working rhythm that worked: `ecc:tdd-guide`
 agents build (in parallel only on separate files), then `ecc:typescript-reviewer` +
 `ecc:react-reviewer` (+ `ecc:database-reviewer`/`ecc:security-reviewer` for SQL) +

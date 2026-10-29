@@ -402,7 +402,6 @@ export type Database = {
           fiber_g: number | null
           id: string
           kcal: number
-          kcal_burned: number | null
           protein_g: number | null
           user_id: string
           valid_from: string
@@ -415,7 +414,6 @@ export type Database = {
           fiber_g?: number | null
           id?: string
           kcal: number
-          kcal_burned?: number | null
           protein_g?: number | null
           user_id: string
           valid_from: string
@@ -428,7 +426,6 @@ export type Database = {
           fiber_g?: number | null
           id?: string
           kcal?: number
-          kcal_burned?: number | null
           protein_g?: number | null
           user_id?: string
           valid_from?: string

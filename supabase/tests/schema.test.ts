@@ -235,52 +235,10 @@ describe('goals', () => {
     expect(negative.error?.code).toBe('23514')
   })
 
-  test('calories burned per day is optional and must be more than 0', async () => {
-    const burned = await alice.client
-      .from('goal_history')
-      .insert({ user_id: alice.id, valid_from: '2026-09-17', kcal: 2000, kcal_burned: 2600 })
-      .select('kcal_burned')
-      .single()
-    const notSet = await alice.client
-      .from('goal_history')
-      .insert({ user_id: alice.id, valid_from: '2026-09-18', kcal: 2000 })
-      .select('kcal_burned')
-      .single()
-    const zero = await alice.client
-      .from('goal_history')
-      .insert({ user_id: alice.id, valid_from: '2026-09-19', kcal: 2000, kcal_burned: 0 })
-    const negative = await alice.client
-      .from('goal_history')
-      .insert({ user_id: alice.id, valid_from: '2026-09-20', kcal: 2000, kcal_burned: -100 })
-    const partnerSees = await bob.client
-      .from('goal_history')
-      .select('kcal_burned')
-      .eq('user_id', alice.id)
-      .eq('valid_from', '2026-09-17')
-      .single()
-    const outsiderSees = await carol.client
-      .from('goal_history')
-      .select('kcal_burned')
-      .eq('user_id', alice.id)
-    const partnerWrites = await bob.client
-      .from('goal_history')
-      .update({ kcal_burned: 1 })
-      .eq('user_id', alice.id)
-      .select()
-    const stillSet = await alice.client
-      .from('goal_history')
-      .select('kcal_burned')
-      .eq('valid_from', '2026-09-17')
-      .single()
+  test('goals no longer hold calories burned (it lives on the profile)', async () => {
+    const old = await alice.client.from('goal_history').select('kcal_burned')
 
-    expect(burned.data).toEqual({ kcal_burned: 2600 })
-    expect(notSet.data).toEqual({ kcal_burned: null })
-    expect(zero.error?.code).toBe('23514')
-    expect(negative.error?.code).toBe('23514')
-    expect(partnerSees.data).toEqual({ kcal_burned: 2600 })
-    expect(outsiderSees.data).toEqual([])
-    expect(partnerWrites.data ?? []).toEqual([])
-    expect(stillSet.data).toEqual({ kcal_burned: 2600 })
+    expect(old.error?.code).toBe('42703')
   })
 
   test('calories burned is a per-person profile setting: optional, more than 0, own to change', async () => {

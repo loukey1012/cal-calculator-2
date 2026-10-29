@@ -30,6 +30,12 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-29T11:20',
+    kind: 'internal',
+    title: 'Goals no longer keep an old copy of calories burned',
+    items: ['Calories burned lives only in Settings › Goals › Calories burned per day, as before'],
+  },
+  {
     at: '2026-10-29T11:00',
     kind: 'new',
     title: 'Choose what the weekly summary shows',
