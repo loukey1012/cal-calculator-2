@@ -50,7 +50,7 @@ test("a partner's new food shows up on Today without reloading", async ({ page, 
   await partnerLogsSnack(backend, partner.id, 'Granola bar')
 
   // Assert
-  await expect(snack).toContainText('321 kcal', { timeout: 10_000 })
+  await expect(snack).toContainText('321 kcal')
 })
 
 test('changes made while the app was in the background show up when it comes back', async ({
@@ -73,5 +73,5 @@ test('changes made while the app was in the background show up when it comes bac
   await setVisibility(page, 'visible')
 
   // Assert
-  await expect(snack).toContainText('321 kcal', { timeout: 10_000 })
+  await expect(snack).toContainText('321 kcal')
 })

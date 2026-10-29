@@ -14,6 +14,9 @@ export default defineConfig({
   workers: process.env.CI ? 4 : undefined,
   reporter: 'list',
   timeout: 90_000,
+  // checks pass as soon as they hold; the dev backend under CI load can take longer than
+  // Playwright's 5 s default to save or refetch (also the default for expect.poll)
+  expect: { timeout: 15_000 },
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: 'on-first-retry',

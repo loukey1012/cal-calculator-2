@@ -498,6 +498,7 @@ Everything up to point 56 is built and works in daily use (2026-10-29).
 
 - [ ] **70. Easier way to set a day's flags:** cheat day, cheat meal, alcohol day, gym, sex and the like take too many steps through the day options; find something quicker (to discuss with the user)
 - [ ] **71. Notification when the partner changes my day:** a push notification whenever the partner changes anything on one of my days (today only meals trigger "changed your meals"; also flags, marks and notes — details to discuss)
+- [ ] **72. Remove “Copy from ingredient”:** the button and its function in Add ingredient and Edit ingredient go (not used)
 
 **Ideas for later (not planned yet, need discussing first):**
 
