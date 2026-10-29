@@ -23,8 +23,8 @@ allowed), always proven on dev first; never push app code that needs a migration
 production yet. After a push, watch CI with a background `gh run watch`; a red journey run is
 rerun once first (load flakes happen), then investigated.
 Data the app keeps on the phone (TanStack Query persistence) survives updates: when the shape of
-a cached query changes, give its query key a new version (like `RECIPES_SHAPE` in
-`src/features/recipes/hooks.ts`), so an old copy is ignored instead of crashing the new version.
+a cached query changes, give its query key a new version (like `NOTES_SHAPE` in
+`src/features/history/hooks.ts`), so an old copy is ignored instead of crashing the new version.
 Don't bump `CACHE_BUSTER` for that: it would also drop changes still waiting to be sent.
 A query whose data is parsed with defaults (e.g. notification settings) re-parses in `select`, so a new
 field missing from the phone's old copy gets its default (a missing `weekly` crashed Settings ›
@@ -48,7 +48,9 @@ the 2026-10-27 plan is complete. Items 57–68 (README › Coming next) are plan
 colors, 61 Spot brightness, 57 fork-and-knife cheat meal mark) confirmed; H2 (62 categories
 without the table, 63 Review stays open) built. I (67 taller calendar days + `WeekBar`, 68 notes as
 full-screen pages: `notes/*`, per-page `app/leaveGuard.ts`, drafts in sessionStorage, tab bar hidden
-on note pages) built, awaits the iPhone test. **Next:** L1 (69, remove recipes from the app). Sketch of F: https://claude.ai/artifact/KJ5V6j5PCBaN35MXmATmmE. Sketch of D:
+on note pages) confirmed; then the History ⋯ menu lost This week / Year overview, notes got Clear, and L1 (69:
+recipes removed from the app; tables stay until L2) built, awaits the iPhone test. **Next:** L2
+(migration dropping the recipe tables, once both phones run L1), then J. Sketch of F: https://claude.ai/artifact/KJ5V6j5PCBaN35MXmATmmE. Sketch of D:
 https://claude.ai/artifact/Sp4cvXiKk3us9kXNUTrT6g. Working rhythm that worked: `ecc:tdd-guide`
 agents build (in parallel only on separate files), then `ecc:typescript-reviewer` +
 `ecc:react-reviewer` (+ `ecc:database-reviewer`/`ecc:security-reviewer` for SQL) +
@@ -57,7 +59,7 @@ run locally before the push. Day counting (`isLeftOut`: cheat day, alcohol day, 
 in `supabase/functions/_shared/dayCounting.ts`, shared by the app and push-tick. What to know:
 
 - Meal pages: addresses in `src/features/meals/mealPages.ts` (`/today/meal-<meal>-<date>-<person>`,
-  `/history/<date>/meal-…`, Add food at `…/food`, Add from recipe at `…/recipes`); every tab is a
+  `/history/<date>/meal-…`, Add food at `…/food`, a meal's note at `…/note`); every tab is a
   page stack (`roots` in `app/TabShell.tsx`); the picked person travels in navigation state
   (`app/stackNavigate.ts`). Old `/cook` links (still sent by the notifications) are redirected in
   `addFood/legacyCookLink.ts`. Kept on purpose from the Cook days: the `cook_drafts` table and

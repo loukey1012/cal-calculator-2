@@ -24,12 +24,6 @@ vi.mock('../weight/weightApi', () => ({
   saveWeight: vi.fn(),
   deleteWeight: vi.fn(),
 }))
-// Add food (opened from an empty meal) loads the recipes and notes a started dish
-vi.mock('../recipes/recipesApi', () => ({
-  fetchRecipes: vi.fn().mockResolvedValue([]),
-  saveRecipe: vi.fn(),
-  deleteRecipe: vi.fn(),
-}))
 vi.mock('../addFood/draftNotice', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../addFood/draftNotice')>()),
   sendDraftNotice: vi.fn().mockResolvedValue(undefined),

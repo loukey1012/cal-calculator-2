@@ -30,6 +30,17 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-29T15:10',
+    kind: 'new',
+    title: 'Recipes removed; History menu shorter; Clear in notes',
+    items: [
+      'Recipes are gone: Ingredients shows only ingredients, and Add food no longer offers Add from recipe or Save as recipe',
+      'History › ⋯ no longer lists This week and Year overview: tap the week bar under the calendar or the month name instead',
+      'Note page: a Clear button empties the note',
+      'Opening a meal’s note no longer slides in half off the screen first',
+    ],
+  },
+  {
     at: '2026-10-29T14:35',
     kind: 'internal',
     title: 'Formatting of a test',

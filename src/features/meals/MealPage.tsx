@@ -4,7 +4,6 @@ import { BackButton } from '../../components/ios/BackButton'
 import { Button } from '../../components/ios/Button'
 import { PageHeader } from '../../components/ios/PageHeader'
 import { AddFoodPage } from '../addFood/AddFoodPage'
-import { AddFromRecipePages } from '../addFood/AddFromRecipePages'
 import { useAddFoodSession } from '../addFood/addFoodSessionContext'
 import { usePeople } from '../household/hooks'
 import { useLookOf } from '../household/usePersonLook'
@@ -18,16 +17,14 @@ import { MealLeftovers } from './MealLeftovers'
 import { MealNoteRoute } from '../notes/NoteRoutes'
 import { NoteEntryRow } from '../notes/NoteEntryRow'
 import { mealNotePath } from '../notes/notePages'
-import { foodPath, recipesPath, type MealPageRef } from './mealPages'
+import { foodPath, type MealPageRef } from './mealPages'
 import { isDraftFor } from './unsavedDish'
 
-/** A meal's page, or one of the pages below it (Add food and its steps, Add from recipe). */
+/** A meal's page, or one of the pages below it (Add food and its steps). */
 export function MealRoute({ page }: { readonly page: MealPageRef }) {
   switch (page.page) {
     case 'food':
       return <AddFoodPage page={page} />
-    case 'recipes':
-      return <AddFromRecipePages page={page} />
     case 'note':
       return <MealNoteRoute page={page} />
     case 'meal':
@@ -86,9 +83,6 @@ function MealPage({ page }: { readonly page: MealPageRef }) {
           <>
             <Button onClick={() => go(foodPath(mealPath))}>
               {waiting ? 'Continue unsaved dish' : '+ Add food'}
-            </Button>
-            <Button variant="secondary" onClick={() => go(recipesPath(mealPath))}>
-              Add from recipe
             </Button>
             <MealLeftovers meal={meal} />
           </>

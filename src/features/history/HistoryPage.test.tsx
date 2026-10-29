@@ -25,12 +25,6 @@ vi.mock('../weight/weightApi', () => ({
   saveWeight: vi.fn(),
   deleteWeight: vi.fn(),
 }))
-// Add food (opened from an empty meal) loads the recipes and notes a started dish
-vi.mock('../recipes/recipesApi', () => ({
-  fetchRecipes: vi.fn().mockResolvedValue([]),
-  saveRecipe: vi.fn(),
-  deleteRecipe: vi.fn(),
-}))
 vi.mock('../addFood/draftNotice', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../addFood/draftNotice')>()),
   sendDraftNotice: vi.fn().mockResolvedValue(undefined),
@@ -841,8 +835,7 @@ describe('the views of History', () => {
   test('the year overview keeps the buttons in the page header only', async () => {
     const user = userEvent.setup()
     renderPage()
-    await user.click(await screen.findByRole('button', { name: 'Calendar options' }))
-    await user.click(screen.getByRole('button', { name: 'Year overview' }))
+    await user.click(await screen.findByRole('button', { name: /^October 2026/ }))
 
     const yearSection = (await screen.findByRole('heading', { name: '2026' })).closest('section')!
     expect(within(yearSection).queryByRole('button', { name: /^Filter/ })).not.toBeInTheDocument()
@@ -852,8 +845,9 @@ describe('the views of History', () => {
     const header = screen.getByRole('heading', { name: 'History' }).closest('header')!
     expect(within(header).getByRole('button', { name: 'Filter' })).toBeInTheDocument()
     await user.click(within(header).getByRole('button', { name: 'Calendar options' }))
-    expect(screen.queryByRole('button', { name: 'Year overview' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Show key' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Year overview' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^This week/ })).not.toBeInTheDocument()
   })
 
   test('the Notes and Trends views have no filter or options buttons', async () => {
@@ -1033,12 +1027,11 @@ describe('the views of History', () => {
 
 describe('the year overview', () => {
   async function openYear(user: User) {
-    await user.click(await screen.findByRole('button', { name: 'Calendar options' }))
-    await user.click(screen.getByRole('button', { name: 'Year overview' }))
+    await user.click(await screen.findByRole('button', { name: /^[A-Z][a-z]+ \d{4}$/ }))
   }
   const cell = (date: string) => document.querySelector(`[data-date="${date}"]`)
 
-  test('opens from the calendar options and shows the twelve months of the year, colored', async () => {
+  test('opens from the month name and shows the twelve months of the year, colored', async () => {
     vi.mocked(fetchDailyTotals).mockResolvedValue([
       complete('2026-09-05'),
       { ...complete('2026-10-02'), kcal: 2600 },
@@ -1303,7 +1296,7 @@ describe('HistoryPage weeks', () => {
     )
   })
 
-  test('Calendar options › This week opens the running week, with what it saved so far', async () => {
+  test('the week bar opens the running week while no day is open', async () => {
     const user = userEvent.setup()
     vi.mocked(fetchWeekData).mockResolvedValue({
       days: [{ ...complete('2026-10-13'), carbs: 0, fat: 0, fiber: 0 }],
@@ -1313,15 +1306,21 @@ describe('HistoryPage weeks', () => {
     })
     renderPage('/history', BURNING)
 
-    await user.click(await screen.findByRole('button', { name: 'Calendar options' }))
-    const row = await within(screen.getByRole('dialog')).findByRole('button', {
-      name: /This week.*700 kcal saved so far/,
-    })
-    await user.click(row)
+    await user.click(await screen.findByRole('button', { name: /^Week 42/ }))
 
     expect(await screen.findByRole('heading', { level: 1, name: 'This week' })).toBeInTheDocument()
     expect(screen.getByTestId('path')).toHaveTextContent('/history/week-2026-42')
     expect(fetchWeekData).toHaveBeenCalledWith('u1', '2026-10-12', '2026-10-18')
+  })
+
+  test('the calendar options hold no This week or Year overview row', async () => {
+    const user = userEvent.setup()
+    renderPage('/history', BURNING)
+
+    await user.click(await screen.findByRole('button', { name: 'Calendar options' }))
+
+    expect(screen.queryByRole('button', { name: /This week/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Year overview' })).not.toBeInTheDocument()
   })
 
   test('an address of a week that does not exist shows the calendar', async () => {

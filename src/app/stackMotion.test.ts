@@ -42,6 +42,9 @@ describe('stackChange', () => {
     ['/settings/categories', '/settings', 'pop'],
     ['/settings/categories', '/settings/appearance', null],
     ['/settings', '/settings', null],
+    // a meal's note page is an ordinary push on top of the meal page, and Back an ordinary pop
+    ['/today/meal-dinner-2026-10-21-u1', '/today/meal-dinner-2026-10-21-u1/note', 'push'],
+    ['/today/meal-dinner-2026-10-21-u1/note', '/today/meal-dinner-2026-10-21-u1', 'pop'],
     ['/settings/appear', '/settings/appearance', null],
   ])('%s → %s is %s', (from, to, expected) => {
     expect(stackChange(from, to)).toBe(expected)

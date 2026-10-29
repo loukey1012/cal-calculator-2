@@ -24,18 +24,11 @@ vi.mock('../ingredients/ingredientsApi', () => ({
   fetchCategories: vi.fn().mockResolvedValue([]),
 }))
 vi.mock('../household/householdApi', () => ({ fetchMembers: vi.fn() }))
-vi.mock('../recipes/recipesApi', () => ({
-  fetchRecipes: vi.fn().mockResolvedValue([]),
-  saveRecipe: vi.fn(),
-  deleteRecipe: vi.fn(),
-}))
 
 import { fetchDish, saveDish } from '../dishes/dishesApi'
 import type { Dish } from '../dishes/portions'
 import { gramsItem } from '../dishes/testData'
 import { fetchMembers } from '../household/householdApi'
-import { saveRecipe } from '../recipes/recipesApi'
-import { pickedChoice, type Recipe } from '../recipes/recipeModel'
 import { deleteMealItem, fetchDay } from './mealsApi'
 import { MealContent } from './MealContent'
 
@@ -94,18 +87,11 @@ function sentDishes(): Dish[] {
   return vi.mocked(saveDish).mock.calls.map(([input]) => input.dish)
 }
 
-function savedRecipe(): Recipe {
-  const call = vi.mocked(saveRecipe).mock.calls.at(-1)
-  if (!call) throw new Error('saveRecipe was not called')
-  return call[0]
-}
-
 beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(fetchDay).mockResolvedValue([dayMeal('m1', 'lunch', [TOAST, JAM])])
   vi.mocked(fetchMembers).mockResolvedValue([ME, HER])
   vi.mocked(saveDish).mockResolvedValue()
-  vi.mocked(saveRecipe).mockResolvedValue()
   vi.mocked(fetchDish).mockResolvedValue(CHILI)
 })
 
@@ -196,58 +182,5 @@ describe('moving a meal', () => {
 
     expect(sheet.getByText('Pick another meal, day or person.')).toBeInTheDocument()
     expect(saveDish).not.toHaveBeenCalled()
-  })
-})
-
-describe('saving a meal as a recipe', () => {
-  test('a meal of several foods is merged into one dish of what I ate', async () => {
-    // Arrange
-    const user = userEvent.setup()
-    const sheet = renderSheet()
-
-    // Act
-    await user.click(await sheet.findByRole('button', { name: 'Save as recipe' }))
-    await user.type(sheet.getByLabelText('Recipe name'), 'Jam toast')
-    await user.click(sheet.getByRole('button', { name: 'Save recipe' }))
-
-    // Assert
-    const recipe = savedRecipe()
-    expect(recipe.name).toBe('Jam toast')
-    expect(recipe.portions).toEqual([{ id: expect.any(String), userId: 'u1', splitValue: null }])
-    expect(recipe.slots.map(pickedChoice).map((line) => [line.allocation, line.item.name])).toEqual(
-      [
-        ['shared', 'Toast'],
-        ['shared', 'Jam'],
-      ],
-    )
-    expect(await sheet.findByRole('status')).toHaveTextContent('Saved as a recipe')
-  })
-
-  test('a meal of one dish keeps the whole dish, with everyone who ate it', async () => {
-    // Arrange
-    vi.mocked(fetchDay).mockResolvedValue([dayMeal('m1', 'lunch', [CHILI_ITEM])])
-    const user = userEvent.setup()
-    const sheet = renderSheet()
-
-    // Act
-    await user.click(await sheet.findByRole('button', { name: 'Save as recipe' }))
-    expect(await sheet.findByDisplayValue('Chili')).toBeInTheDocument()
-    await user.click(sheet.getByRole('button', { name: 'Save recipe' }))
-
-    // Assert
-    const recipe = savedRecipe()
-    expect(recipe.portions.map((portion) => portion.userId)).toEqual(['u1', 'u2'])
-    expect(recipe.slots.map((s) => pickedChoice(s).item)).toEqual(CHILI.lines.map((l) => l.item))
-  })
-
-  test('a recipe needs a name', async () => {
-    const user = userEvent.setup()
-    const sheet = renderSheet()
-
-    await user.click(await sheet.findByRole('button', { name: 'Save as recipe' }))
-    await user.click(sheet.getByRole('button', { name: 'Save recipe' }))
-
-    expect(await sheet.findByText('Give the recipe a name')).toBeInTheDocument()
-    expect(saveRecipe).not.toHaveBeenCalled()
   })
 })

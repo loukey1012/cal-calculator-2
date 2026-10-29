@@ -42,11 +42,6 @@ vi.mock('../barcode/BarcodeScanner', () => ({
     </button>
   ),
 }))
-vi.mock('../recipes/recipesApi', () => ({
-  fetchRecipes: vi.fn().mockResolvedValue([]),
-  saveRecipe: vi.fn(),
-  deleteRecipe: vi.fn(),
-}))
 vi.mock('../dishes/dishesApi', () => ({
   fetchDish: vi.fn(),
   saveDish: vi.fn(),
@@ -350,7 +345,7 @@ describe('weighing an ingredient later', () => {
     expect(screen.getByTestId('dish-totals')).toHaveTextContent('240 kcal')
   })
 
-  test('blocks Save meal and Save as recipe until everything is weighed', async () => {
+  test('blocks Save meal until everything is weighed', async () => {
     const user = userEvent.setup()
     renderAddFood()
     await addIngredient(user, 'Patty', '100')
@@ -359,9 +354,6 @@ describe('weighing an ingredient later', () => {
 
     await user.click(screen.getByRole('button', { name: 'Save meal' }))
     expect(screen.getByText('Weigh 2 ingredients first')).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Save as recipe' }))
-    expect(screen.getByText('Weigh 2 ingredients first')).toBeInTheDocument()
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     expect(saveDish).not.toHaveBeenCalled()
   })
 

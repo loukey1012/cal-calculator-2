@@ -180,7 +180,7 @@ describe('MealContent', () => {
     const { sheet } = renderSheet()
 
     expect(await sheet.findByText('Nothing logged yet.')).toBeInTheDocument()
-    expect(sheet.queryByRole('button', { name: /Copy to|Save as recipe/ })).not.toBeInTheDocument()
+    expect(sheet.queryByRole('button', { name: /Copy to/ })).not.toBeInTheDocument()
   })
 
   test('a failed change is undone and explained', async () => {

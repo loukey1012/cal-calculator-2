@@ -140,11 +140,10 @@ test('the calendar shows symbols and the week bar of the open day; swipe turns t
     'true',
   )
 
-  // the year overview (⋯ menu): twelve small months in the days' colors; a tap opens a month
-  await history.getByRole('button', { name: 'Calendar options' }).click()
-  await page
-    .getByRole('dialog', { name: 'Calendar' })
-    .getByRole('button', { name: 'Year overview' })
+  // the year overview (tap the month name): twelve small months in the days' colors; a tap opens a month
+  await history
+    .getByRole('button', { name: /^\w+ \d{4}$/ })
+    .first()
     .click()
   const seededYear = completeDay.slice(0, 4)
   await expect(history.getByRole('heading', { name: seededYear, exact: true })).toBeVisible()

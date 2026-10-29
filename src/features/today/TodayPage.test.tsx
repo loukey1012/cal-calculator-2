@@ -25,12 +25,6 @@ vi.mock('../meals/mealsApi', () => ({
   setDayNote: vi.fn(),
   setMealNote: vi.fn(),
 }))
-// Add food (opened from an empty meal) loads the recipes and notes a started dish
-vi.mock('../recipes/recipesApi', () => ({
-  fetchRecipes: vi.fn().mockResolvedValue([]),
-  saveRecipe: vi.fn(),
-  deleteRecipe: vi.fn(),
-}))
 vi.mock('../addFood/draftNotice', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../addFood/draftNotice')>()),
   sendDraftNotice: vi.fn().mockResolvedValue(undefined),
@@ -466,14 +460,14 @@ describe('TodayPage', () => {
     expect(await screen.findByRole('button', { name: 'Continue unsaved dish' })).toBeVisible()
   })
 
-  test('an empty meal opens its page too (e.g. to cook a recipe)', async () => {
+  test('an empty meal opens its page too (e.g. to add food)', async () => {
     const user = userEvent.setup()
     renderPage()
 
     await user.click(await screen.findByRole('button', { name: /Dinner.*Nothing logged/ }))
 
     expect(screen.getByTestId('location').textContent).toBe('/today/meal-dinner-2026-10-01-u1')
-    expect(screen.getByRole('button', { name: 'Add from recipe' })).toBeVisible()
+    expect(screen.getByRole('button', { name: '+ Add food' })).toBeVisible()
   })
   test('shows rings for the goal valid today', async () => {
     renderPage()

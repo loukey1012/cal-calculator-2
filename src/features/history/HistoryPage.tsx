@@ -31,7 +31,6 @@ import {
 import { monthFilterOf, type MonthFilter } from './monthStats'
 import { SelectedDay } from './SelectedDay'
 import { useKeyShown } from './useKeyShown'
-import { useThisWeekSaved } from './week/useThisWeekSaved'
 import { isoWeekOf, weekPageOf, weekPath } from './week/weekPages'
 import { WeekRoute } from './week/WeekPage'
 
@@ -77,7 +76,6 @@ function HistoryMonth() {
   const [notesQuery, setNotesQuery] = useState(() => notesQueryOf(location.state))
   const [keyShown, setKeyShown] = useKeyShown()
   const person = people.find((member) => member.id === selectedId) ?? profile
-  const thisWeekDetail = useThisWeekSaved(person.id, person.kcal_burned, today)
 
   const requestedDay = DAY_ROUTE.exec(pathname)?.[1]
   // only real days up to today can be opened; anything else shows just the calendar
@@ -190,9 +188,6 @@ function HistoryMonth() {
               onChangeFilter={changeFilter}
               keyShown={keyShown}
               onChangeKeyShown={setKeyShown}
-              onShowYear={zoom === 'month' ? showYear : undefined}
-              onOpenThisWeek={() => openWeek(today)}
-              thisWeekDetail={thisWeekDetail}
             />
           ) : undefined
         }

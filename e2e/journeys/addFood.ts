@@ -47,10 +47,3 @@ export async function openAddFood(page: Page, meal: RegExp = /Snacks/) {
 export async function backToDay(page: Page) {
   await activePage(page).getByRole('button', { name: 'Back' }).first().click()
 }
-
-/** Opens a meal's Add from recipe, from Today. */
-export async function addFromRecipe(page: Page, meal: RegExp = /Snacks/) {
-  await openAddFood(page, meal)
-  await activePage(page).getByRole('button', { name: 'Back' }).click()
-  await activePage(page).getByRole('button', { name: 'Add from recipe' }).click()
-}

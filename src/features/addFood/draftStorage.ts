@@ -92,14 +92,6 @@ const storedSchema = z.object({
     dish: dishSchema,
     date: day.nullable(),
     mealType: mealType.nullable(),
-    recipe: z
-      .object({
-        recipeId: z.string().min(1),
-        portions: z.record(z.string(), z.string()),
-        slots: z.record(z.string(), z.string().nullable()),
-      })
-      .nullable()
-      .optional(),
   }),
 })
 

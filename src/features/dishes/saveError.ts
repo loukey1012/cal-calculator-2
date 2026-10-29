@@ -1,7 +1,7 @@
 import type { Dish } from './portions'
 
 /** Why the dish can't be saved while ingredients wait for their amount, or null. */
-export function toWeighError(dish: Dish): string | null {
+function toWeighError(dish: Dish): string | null {
   const count = dish.toWeigh?.length ?? 0
   if (count === 0) return null
   return `Weigh ${count} ${count === 1 ? 'ingredient' : 'ingredients'} first`

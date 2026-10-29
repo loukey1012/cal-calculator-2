@@ -138,6 +138,9 @@ function holdContainer(container: HTMLElement, restScrollTop: number | null): vo
   if (restScrollTop === null) {
     container.style.overflowY = 'hidden'
     container.scrollTop = 0
+    // a sideways offset left by an earlier focus goes too; a page that focuses while it slides in
+    // must pass preventScroll itself (this runs once, as the slide starts)
+    container.scrollLeft = 0
     return
   }
   container.style.overflowY = ''

@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { useLeaveGuard } from '../../app/leaveGuard'
 import { Button } from '../../components/ios/Button'
+import { ClearButton } from '../../components/ios/ClearButton'
 import { clearNoteDraft, readNoteDraft, writeNoteDraft, type NoteDraft } from './noteDraft'
 import { NOTE_MAX_LENGTH } from './notePages'
 import { useNoteFieldHeight } from './useNoteFieldHeight'
@@ -58,7 +59,10 @@ export function NotePage({
   const height = useNoteFieldHeight(field)
 
   useEffect(() => {
-    if (loaded) field.current?.focus()
+    // Without preventScroll the browser scrolls the page's clipped ancestors sideways to reveal
+    // the field while the page is still sliding in from the right (a meal's note is loaded at
+    // once, so this runs on the first frame): it first appears half off-screen, then jumps back.
+    if (loaded) field.current?.focus({ preventScroll: true })
   }, [loaded])
 
   function discard() {
@@ -82,6 +86,11 @@ export function NotePage({
     const next = { text: value, base: edit?.base ?? savedText }
     setEdit(next)
     writeNoteDraft(path, next)
+  }
+
+  function clear() {
+    change('')
+    field.current?.focus({ preventScroll: true })
   }
 
   function cancel() {
@@ -134,9 +143,12 @@ export function NotePage({
         className="glass-surface mt-3 block w-full resize-none rounded-[18px] bg-bg-elevated p-3 text-[17px] text-label shadow-card outline-none"
         onChange={(event) => change(event.target.value)}
       />
-      <p className="mt-2 text-right text-[13px] text-label-secondary">
-        {text.length} / {NOTE_MAX_LENGTH}
-      </p>
+      <div className="mt-2 flex items-center justify-end gap-4 text-[13px] text-label-secondary">
+        {loaded && text !== '' && <ClearButton onClick={clear} />}
+        <p>
+          {text.length} / {NOTE_MAX_LENGTH}
+        </p>
+      </div>
       <p role="status" aria-live="polite" className="sr-only">
         {limitStatus(text.length)}
       </p>

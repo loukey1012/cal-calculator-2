@@ -3,8 +3,8 @@ import { MEAL_TYPES, type MealType } from './dayModel'
 /**
  * The addresses of a meal and its pages. A meal is a page of the tab it was opened from:
  * /today/meal-lunch-2026-10-21-<person> or /history/2026-10-21/meal-lunch-2026-10-21-<person>.
- * Below it: Add food (/food, with the composer's steps below that) and Add from recipe
- * (/recipes, a recipe below that) and the meal's note (/note). Each page is one level below the one Back leads to.
+ * Below it: Add food (/food, with the composer's steps below that) and the meal's note (/note).
+ * Each page is one level below the one Back leads to.
  */
 export type MealRef = {
   readonly userId: string
@@ -13,19 +13,18 @@ export type MealRef = {
   readonly mealType: MealType
 }
 
-export type MealSubPage = 'meal' | 'food' | 'recipes' | 'note'
+export type MealSubPage = 'meal' | 'food' | 'note'
 
 export type MealPageRef = {
   readonly meal: MealRef
   /** the meal page's own address */
   readonly mealPath: string
   readonly page: MealSubPage
-  /** what follows, e.g. ['add', '<id>'] below food or ['<recipe id>'] below recipes */
+  /** what follows, e.g. ['add', '<id>'] below food */
   readonly rest: readonly string[]
 }
 
 const FOOD_SEGMENT = 'food'
-const RECIPES_SEGMENT = 'recipes'
 export const NOTE_SEGMENT = 'note'
 const MEAL_SEGMENT = /^meal-([a-z]+)-(\d{4}-\d{2}-\d{2})-(.+)$/
 const DAY = /^\d{4}-\d{2}-\d{2}$/
@@ -61,10 +60,6 @@ export function foodPath(mealPagePath: string): string {
   return `${mealPagePath}/${FOOD_SEGMENT}`
 }
 
-export function recipesPath(mealPagePath: string): string {
-  return `${mealPagePath}/${RECIPES_SEGMENT}`
-}
-
 /** The meal page an address shows (or one of its pages), or null for Today or History itself. */
 export function mealPageOf(path: string): MealPageRef | null {
   const segments = path.split('/').filter((segment) => segment !== '')
@@ -77,7 +72,6 @@ export function mealPageOf(path: string): MealPageRef | null {
   const [sub, ...rest] = segments.slice(prefix + 1)
   if (sub === undefined) return { meal, mealPath: mealPagePath, page: 'meal', rest: [] }
   if (sub === FOOD_SEGMENT) return { meal, mealPath: mealPagePath, page: 'food', rest }
-  if (sub === RECIPES_SEGMENT) return { meal, mealPath: mealPagePath, page: 'recipes', rest }
   if (sub === NOTE_SEGMENT && rest.length === 0) {
     return { meal, mealPath: mealPagePath, page: 'note', rest: [] }
   }

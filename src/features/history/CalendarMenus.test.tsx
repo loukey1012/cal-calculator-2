@@ -103,71 +103,16 @@ describe('CalendarOptionsMenu', () => {
     expect(onChange).toHaveBeenCalledWith(false)
   })
 
-  test('offers the year overview and closes the menu when it is picked', async () => {
+  test('offers only the key: the week and the year have their own buttons', async () => {
     const user = userEvent.setup()
-    const onShowYear = vi.fn()
-    render(
-      <CalendarOptionsMenu keyShown={false} onChangeKeyShown={vi.fn()} onShowYear={onShowYear} />,
-    )
+    render(<CalendarOptionsMenu keyShown={false} onChangeKeyShown={vi.fn()} />)
 
     await user.click(screen.getByRole('button', { name: 'Calendar options' }))
-    await user.click(screen.getByRole('button', { name: 'Year overview' }))
 
-    expect(onShowYear).toHaveBeenCalledTimes(1)
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-  })
-
-  test('starts with a This week row that shows what was saved so far and opens the week', async () => {
-    const user = userEvent.setup()
-    const onOpenThisWeek = vi.fn()
-    render(
-      <CalendarOptionsMenu
-        keyShown={false}
-        onChangeKeyShown={vi.fn()}
-        onOpenThisWeek={onOpenThisWeek}
-        thisWeekDetail="750 kcal saved so far"
-      />,
-    )
-
-    await user.click(screen.getByRole('button', { name: 'Calendar options' }))
     const rows = within(screen.getByRole('dialog'))
       .getAllByRole('button')
       .filter((button) => button.textContent !== 'Close')
-    expect(rows[0]).toHaveTextContent('This week')
-    expect(rows[0]).toHaveTextContent('750 kcal saved so far')
-    await user.click(rows[0] as HTMLElement)
-
-    expect(onOpenThisWeek).toHaveBeenCalledTimes(1)
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-  })
-
-  test('the This week row has no detail while nothing is known', async () => {
-    const user = userEvent.setup()
-    render(
-      <CalendarOptionsMenu keyShown={false} onChangeKeyShown={vi.fn()} onOpenThisWeek={vi.fn()} />,
-    )
-
-    await user.click(screen.getByRole('button', { name: 'Calendar options' }))
-
-    expect(screen.getByRole('button', { name: 'This week' })).toBeInTheDocument()
-  })
-
-  test('has no This week row where the week cannot be opened', async () => {
-    const user = userEvent.setup()
-    render(<CalendarOptionsMenu keyShown={false} onChangeKeyShown={vi.fn()} />)
-
-    await user.click(screen.getByRole('button', { name: 'Calendar options' }))
-
-    expect(screen.queryByRole('button', { name: /This week/ })).not.toBeInTheDocument()
-  })
-
-  test('has no year overview row where it is not offered', async () => {
-    const user = userEvent.setup()
-    render(<CalendarOptionsMenu keyShown={false} onChangeKeyShown={vi.fn()} />)
-
-    await user.click(screen.getByRole('button', { name: 'Calendar options' }))
-
-    expect(screen.queryByRole('button', { name: 'Year overview' })).not.toBeInTheDocument()
+    expect(rows.map((row) => row.textContent)).toEqual(['Show key'])
   })
 })
 

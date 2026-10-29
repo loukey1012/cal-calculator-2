@@ -58,6 +58,14 @@ describe('NotePage', () => {
     expect(screen.getByText('0 / 500')).toBeInTheDocument()
   })
 
+  test('focuses the text area without scrolling, so a page still sliding in is not pushed aside', () => {
+    const focus = vi.spyOn(HTMLElement.prototype, 'focus')
+    renderPage('Birthday')
+
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true })
+    focus.mockRestore()
+  })
+
   test('Done saves the edited note and goes back', async () => {
     const user = userEvent.setup()
     renderPage('Birthday')
@@ -88,6 +96,50 @@ describe('NotePage', () => {
     await user.click(screen.getByRole('button', { name: 'Done' }))
 
     expect(onSave).toHaveBeenCalledWith('')
+  })
+
+  describe('the Clear button', () => {
+    test('is shown only while there is text', async () => {
+      const user = userEvent.setup()
+      renderPage(null)
+
+      expect(screen.queryByRole('button', { name: 'Clear' })).not.toBeInTheDocument()
+      await user.type(field(), 'Hiking')
+      expect(screen.getByRole('button', { name: 'Clear' })).toBeInTheDocument()
+    })
+
+    test('empties the field, keeps the focus, and Done then saves the removal', async () => {
+      const user = userEvent.setup()
+      renderPage('Birthday')
+
+      await user.click(screen.getByRole('button', { name: 'Clear' }))
+
+      expect(field()).toHaveValue('')
+      expect(field()).toHaveFocus()
+      expect(screen.getByText('0 / 500')).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Clear' })).not.toBeInTheDocument()
+      await user.click(screen.getByRole('button', { name: 'Done' }))
+      expect(onSave).toHaveBeenCalledWith('')
+    })
+
+    test('is an edit: Cancel asks before throwing the removal away', async () => {
+      const user = userEvent.setup()
+      vi.mocked(window.confirm).mockReturnValue(false)
+      renderPage('Birthday')
+
+      await user.click(screen.getByRole('button', { name: 'Clear' }))
+      await user.click(screen.getByRole('button', { name: 'Cancel' }))
+
+      expect(window.confirm).toHaveBeenCalledWith('Discard changes?')
+      expect(onClose).not.toHaveBeenCalled()
+      expect(field()).toHaveValue('')
+    })
+
+    test('is not offered while the note is still loading', () => {
+      renderPage(undefined)
+
+      expect(screen.queryByRole('button', { name: 'Clear' })).not.toBeInTheDocument()
+    })
   })
 
   test('a new note on a day without one is saved', async () => {

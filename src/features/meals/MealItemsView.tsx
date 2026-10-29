@@ -25,7 +25,6 @@ type MealItemsViewProps = {
   readonly onDeleteDish: (dishId: string, portionCount: number | undefined) => void
   /** below the list, e.g. Add food */
   readonly actions?: ReactNode
-  readonly onSaveRecipe: () => void
   /** to another day, meal or person */
   readonly onCopy: () => void
   readonly onMove: () => void
@@ -57,7 +56,6 @@ export function MealItemsView({
   onEditDish,
   onDeleteDish,
   actions,
-  onSaveRecipe,
   onCopy,
   onMove,
 }: MealItemsViewProps) {
@@ -131,9 +129,6 @@ export function MealItemsView({
               Copy to…
             </Button>
           </div>
-          <Button variant="secondary" onClick={onSaveRecipe}>
-            Save as recipe
-          </Button>
         </div>
       )}
     </>

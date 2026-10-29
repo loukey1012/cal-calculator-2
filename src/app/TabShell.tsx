@@ -35,7 +35,7 @@ import { useAppearance } from '../features/appearance/useAppearance'
 import { useLiveUpdates } from '../features/live/useLiveUpdates'
 
 // Every tab is a stack of pages: a meal (and its Add food steps) opens on top of Today or of a
-// History day, a recipe on top of Ingredients › Recipes, Appearance etc. on top of Settings.
+// History day, Appearance etc. on top of Settings.
 // `roots` are the tab's own pages: switching between them moves nothing, a swipe there
 // switches tabs.
 const TABS = [
@@ -62,7 +62,7 @@ const TABS = [
     path: '/ingredients',
     icon: <IngredientsIcon />,
     Page: IngredientsPage,
-    roots: /^\/ingredients(\/recipes)?$/,
+    roots: /^\/ingredients$/,
   },
   {
     id: 'settings',
@@ -250,6 +250,9 @@ function ShellContent() {
 
   // the Cook tab of older versions (links in notifications): to that meal's Add food
   if (legacyCookTarget) return <Navigate to={legacyCookTarget} replace />
+  // the Recipes page of older versions (a link kept on the phone): Ingredients
+  if (/^\/ingredients\/recipes(\/.*)?$/.test(pathname))
+    return <Navigate to="/ingredients" replace />
   if (routeIndex === -1) return <Navigate to={TABS[0].path} replace />
 
   return (

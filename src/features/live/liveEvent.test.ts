@@ -104,11 +104,11 @@ describe('keysForHint', () => {
     expect(keysForHint(hint!, HOUSEHOLD)).toEqual([['ingredientFindings', HOUSEHOLD]])
   })
 
-  test('a saved or deleted recipe refreshes the recipes', () => {
+  test('a hint from an older app about a recipe is accepted and refreshes nothing', () => {
     const hint = parseHint({ table: 'recipes', actor: PARTNER })
 
     expect(hint).not.toBeNull()
-    expect(keysForHint(hint!, HOUSEHOLD)).toEqual([['recipes', 'v2', HOUSEHOLD]])
+    expect(keysForHint(hint!, HOUSEHOLD)).toEqual([])
   })
 
   test("a partner's new goal refreshes their goals", () => {

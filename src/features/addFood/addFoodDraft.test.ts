@@ -13,11 +13,8 @@ import {
   withEater,
   withMealType,
   withPrefill,
-  withRecipe,
   type AddFoodDraft,
 } from './addFoodDraft'
-import type { Recipe } from '../recipes/recipeModel'
-import { slot } from '../recipes/testData'
 
 const TODAY = '2026-10-06'
 
@@ -221,38 +218,5 @@ describe('keepEaters', () => {
   test('a draft of household members is left as it is', () => {
     const draft = newAddFoodDraft('me')
     expect(keepEaters(draft, ['me', 'her'], 'me')).toBe(draft)
-  })
-})
-
-describe('withRecipe', () => {
-  test('fills the dish from the recipe; day and meal stay, the recipe is remembered', () => {
-    // Arrange
-    const draft = withDate(withMealType(newAddFoodDraft('me'), 'dinner'), '2026-10-05', TODAY)
-    const recipe: Recipe = {
-      id: 'r-chili',
-      name: 'Chili',
-      splitMode: 'equal',
-      cookedWeightG: null,
-      kcalEstimated: false,
-      portions: [
-        { id: 'rp-me', userId: 'me', splitValue: null },
-        { id: 'rp-her', userId: 'her', splitValue: null },
-      ],
-      slots: [slot('s-mince', [sharedLine('l-mince', 'Mince', 400, 250)])],
-    }
-
-    // Act
-    const filled = withRecipe(draft, recipe, [])
-
-    // Assert
-    expect(filled).toMatchObject({ date: '2026-10-05', mealType: 'dinner' })
-    expect(filled.recipe).toMatchObject({
-      recipeId: 'r-chili',
-      slots: { 's-mince': filled.dish.lines[0]?.id },
-    })
-    expect(filled.dish.name).toBe('Chili')
-    expect(draftEaterIds(filled)).toEqual(['me', 'her'])
-    expect(filled.dish.lines.map((line) => line.item.name)).toEqual(['Mince'])
-    expect(hasContent(filled)).toBe(true)
   })
 })

@@ -85,17 +85,25 @@ describe('cook draft storage', () => {
     })
   })
 
-  test('remembers the recipe the draft was filled from', () => {
-    const recipe = {
-      recipeId: 'r-1',
-      portions: { 'rp-me': 'p-me' },
-      slots: { 's-1': 'l1', 's-2': null },
+  test('an old draft that started from a recipe opens as a plain dish', () => {
+    // Arrange
+    const draft = started()
+    const oldDraft = {
+      ...draft,
+      recipe: {
+        recipeId: 'r-1',
+        portions: { 'rp-me': 'p-me' },
+        slots: { 's-1': 'l1', 's-2': null },
+      },
     }
-    const draft = { ...started(), recipe }
+    localStorage.setItem('cook-draft:v1:me', JSON.stringify({ version: 1, draft: oldDraft }))
 
-    saveAddFoodDraft('me', draft)
+    // Act
+    const loaded = loadAddFoodDraft('me')
 
-    expect(loadAddFoodDraft('me')?.recipe).toEqual(recipe)
+    // Assert
+    expect(loaded).toEqual(draft)
+    expect(loaded).not.toHaveProperty('recipe')
   })
 
   test('a cleared draft is gone', () => {

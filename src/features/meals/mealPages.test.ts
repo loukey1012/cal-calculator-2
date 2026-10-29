@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { foodPath, mealPageOf, mealPath, recipesPath } from './mealPages'
+import { foodPath, mealPageOf, mealPath } from './mealPages'
 
 const USER = '0b8f7c1e-2d3a-4b5c-8d9e-0f1a2b3c4d5e'
 const LUNCH = { userId: USER, date: '2026-10-21', mealType: 'lunch' } as const
@@ -21,7 +21,8 @@ describe('meal pages', () => {
       page: 'food',
       rest: ['add', 'ing-1'],
     })
-    expect(mealPageOf(`${recipesPath(today)}/r1`)).toMatchObject({ page: 'recipes', rest: ['r1'] })
+    // an old address of the removed recipes page opens the meal
+    expect(mealPageOf(`${today}/recipes/r1`)).toMatchObject({ page: 'meal', rest: [] })
   })
 
   test('Today, History, its days and anything unknown are no meal page', () => {

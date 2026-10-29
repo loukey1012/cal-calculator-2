@@ -9,11 +9,6 @@ vi.mock('../features/addFood/draftNotice', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../features/addFood/draftNotice')>()),
   sendDraftNotice: vi.fn().mockResolvedValue(undefined),
 }))
-vi.mock('../features/recipes/recipesApi', () => ({
-  fetchRecipes: vi.fn().mockResolvedValue([]),
-  saveRecipe: vi.fn(),
-  deleteRecipe: vi.fn(),
-}))
 vi.mock('../features/review/reviewApi', () => ({
   fetchOpenFindings: vi.fn().mockResolvedValue([]),
   decideFinding: vi.fn(),
@@ -128,6 +123,13 @@ describe('TabShell', () => {
 
     expect(screen.getByTestId('path')).toHaveTextContent('/today')
     expect(visibleTitle()).toHaveTextContent('Today')
+  })
+
+  test('the old Recipes address opens Ingredients', () => {
+    renderShell('/ingredients/recipes')
+
+    expect(screen.getByTestId('path').textContent).toBe('/ingredients')
+    expect(visibleTitle()).toHaveTextContent('Ingredients')
   })
 
   test.each(['/', '/unknown'])('%s redirects to Today', (route) => {

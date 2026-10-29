@@ -17,12 +17,8 @@ function weekKey(userId: string, first: string) {
   return [...monthKeys.person(userId), 'week', WEEK_SHAPE, first] as const
 }
 
-/** Just the asked week's query (the calendar's "saved so far" must never show another week). */
-export function useWeekQuery(
-  userId: string,
-  first: string,
-  last: string,
-): UseQueryResult<WeekData> {
+/** Just the asked week's query (never another week's data). */
+function useWeekQuery(userId: string, first: string, last: string): UseQueryResult<WeekData> {
   return useQuery({
     queryKey: weekKey(userId, first),
     queryFn: () => fetchWeekData(userId, first, last),

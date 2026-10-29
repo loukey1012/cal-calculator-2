@@ -112,13 +112,9 @@ test('the week page adds up the calories saved over the counted days, opens from
   // (the week page slides away over the calendar: only the calendar's day is pressable)
   await expect(history.locator(`button[data-date="${tuesday}"][aria-pressed="true"]`)).toBeVisible()
 
-  // ⋯ › This week opens the running week; Back returns to the calendar, the day still open
-  await history.getByRole('button', { name: 'Calendar options' }).click()
-  await page
-    .getByRole('dialog', { name: 'Calendar' })
-    .getByRole('button', { name: /^This week/ })
-    .click()
-  await expect(week.getByRole('heading', { level: 1, name: 'This week' })).toBeVisible()
+  // the week bar opens the open day's week again; Back returns to the calendar, the day still open
+  await history.getByRole('button', { name: /^Week \d+, average/ }).click()
+  await expect(week.getByRole('heading', { level: 1, name: /^Week \d+$/ })).toBeVisible()
   await week.getByRole('button', { name: 'Back' }).click()
   await expect(page).toHaveURL(new RegExp(`/history/${tuesday}$`))
   await expect(history.getByRole('button', { name: 'Calendar options' })).toBeVisible()

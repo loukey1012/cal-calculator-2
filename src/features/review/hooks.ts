@@ -8,7 +8,6 @@ import {
 import type { Ingredient } from '../ingredients/ingredientsApi'
 import { ingredientKeys, useInvalidateIngredients } from '../ingredients/hooks'
 import { reviewKeys } from './keys'
-import { recipeKeys } from '../recipes/hooks'
 import {
   decideFinding,
   fetchOpenFindings,
@@ -101,13 +100,12 @@ export function useMergeIngredients(
     mutationFn: ({ finding, ...merge }) => mergeIngredients({ ...merge, findingId: finding.id }),
     onMutate: decided.onMutate,
     onError: decided.onError,
-    // its uses and recipes moved to the kept one
+    // its uses moved to the kept one
     onSettled: () =>
       Promise.all([
         decided.onSettled(),
         invalidateIngredients(),
         queryClient.invalidateQueries({ queryKey: ingredientKeys.uses(householdId) }),
-        queryClient.invalidateQueries({ queryKey: recipeKeys.recipes(householdId) }),
       ]),
   })
 }

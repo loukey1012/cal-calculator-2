@@ -12,7 +12,6 @@ import type { Dish } from '../dishes/portions'
 import { useIngredients } from '../ingredients/hooks'
 import type { ReferenceTable } from '../ingredients/referenceValues'
 import { useReferenceTable } from '../ingredients/useReferenceTable'
-import { MealRecipeForm } from '../recipes/MealRecipeForm'
 import { AmountEditor } from './AmountEditor'
 import { CopyMealForm } from './CopyMealForm'
 import { itemsByMeal, mealLabel, scaleItemAmount, type MealItem, type MealType } from './dayModel'
@@ -29,7 +28,6 @@ type View =
   /** a single food logged alone: its amount, changed through its dish */
   | { readonly kind: 'food'; readonly itemId: string; readonly dishId: string }
   | { readonly kind: 'dish'; readonly dishId: string }
-  | { readonly kind: 'saveRecipe' }
   | { readonly kind: 'copy' }
   /** the whole meal (null), or the items of one dish or food */
   | { readonly kind: 'move'; readonly itemIds: readonly string[] | null }
@@ -105,21 +103,9 @@ export function MealContent({ mealType, userId, date, actions }: MealContentProp
           onEditDish={(dishId) => setView({ kind: 'dish', dishId })}
           onDeleteDish={removeDish}
           actions={actions}
-          onSaveRecipe={() => open({ kind: 'saveRecipe' })}
           onCopy={() => open({ kind: 'copy' })}
           onMove={() => open({ kind: 'move', itemIds: null })}
         />
-      )
-    case 'saveRecipe':
-      return (
-        <>
-          <BackButton onClick={showItems} />
-          <MealRecipeForm
-            items={items}
-            userId={userId}
-            onSaved={() => showItemsWith('Saved as a recipe. Find it under Ingredients › Recipes.')}
-          />
-        </>
       )
     case 'copy':
       return (
