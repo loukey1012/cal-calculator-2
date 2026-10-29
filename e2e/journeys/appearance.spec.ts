@@ -118,7 +118,32 @@ test('each ring can get its own color', async ({ page, backend }) => {
         .single()
       return data?.appearance
     })
-    .toMatchObject({ customGoalColors: { protein: '#9466d6' } })
+    .toMatchObject({ customGoalColors: { protein: '#9466d6' }, customGoalColorsOn: true })
+
+  // another palette keeps the color stored, and Custom brings it back
+  const paintedProtein = () =>
+    page.locator('html').evaluate((root) => root.style.getPropertyValue('--goal-protein'))
+  await settings
+    .getByRole('radiogroup', { name: 'Goal colors' })
+    .getByRole('radio', { name: /Pastel/ })
+    .click()
+  await expect.poll(paintedProtein).not.toBe('#9466d6')
+  await expect
+    .poll(async () => {
+      const { data } = await backend.admin
+        .from('profiles')
+        .select('appearance')
+        .eq('id', me.id)
+        .single()
+      return data?.appearance
+    })
+    .toMatchObject({ customGoalColors: { protein: '#9466d6' }, customGoalColorsOn: false })
+
+  await settings
+    .getByRole('radiogroup', { name: 'Goal colors' })
+    .getByRole('radio', { name: /Custom/ })
+    .click()
+  await expect.poll(paintedProtein).toBe('#9466d6')
 })
 
 test('the accent can be White (with a thin edge on light cards) or any custom color', async ({

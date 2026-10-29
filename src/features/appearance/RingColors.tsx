@@ -20,7 +20,8 @@ type RingColorsProps = {
   /** what each ring shows now: the palette color, or the custom one */
   readonly colors: GoalColors
   readonly custom: CustomGoalColors
-  readonly onChange: (custom: CustomGoalColors) => void
+  /** a color for one goal, or null to give it its palette color back */
+  readonly onChange: (key: RingKey, color: string | null) => void
 }
 
 /** One row per goal; tapping it picks that ring's own color. */
@@ -29,15 +30,14 @@ export function RingColors({ colors, custom, onChange }: RingColorsProps) {
   const goal = GOALS.find(({ key }) => key === editing)
 
   function pick(key: RingKey, color: string | null) {
-    const { [key]: _previous, ...others } = custom
-    onChange(color === null ? others : { ...others, [key]: color })
+    onChange(key, color)
     setEditing(null)
   }
 
   return (
     <SettingSection
       title="Ring colors"
-      footer="Give a goal its own color. Choosing a palette above resets them."
+      footer="Give a goal its own color. Your own colors are kept under Custom; changing a ring switches to it."
     >
       <ul
         aria-label="Ring colors"

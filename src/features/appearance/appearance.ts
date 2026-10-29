@@ -99,6 +99,8 @@ const appearanceSchema = z
       .transform((value) => (value === undefined ? undefined : parseGlassField(value)))
       .optional(),
     customGoalColors: customGoalColorsSchema.optional(),
+    // whether the custom colors are in use; picking a palette turns it off but keeps the colors
+    customGoalColorsOn: z.boolean().optional().catch(undefined),
     // the colors of full and over rings (calories, carbs, fat); checked in overColors.ts
     overColors: z
       .unknown()
@@ -171,6 +173,16 @@ function paletteColors(palette: GoalPalette, scheme: Scheme, accent: string): Go
     mixHex(accent, SCHEME_SURFACES[scheme].card, weight),
   )
   return [kcal, protein, carbs, fat, fiber] as GoalColors
+}
+
+/**
+ * The custom ring colors in use. Appearances saved before the flag existed (colors, no flag)
+ * keep showing their colors.
+ */
+export function activeCustomGoalColors(appearance: Appearance): CustomGoalColors {
+  const stored = appearance.customGoalColors ?? {}
+  const on = appearance.customGoalColorsOn ?? Object.keys(stored).length > 0
+  return on ? stored : {}
 }
 
 /** The palette's colors, with any custom goal color in place of its palette color. */

@@ -129,7 +129,7 @@ describe('YearOverview', () => {
     renderYear({ statusOf: (date) => statuses[date] ?? 'none' })
 
     expect(cell('2026-10-01')).toHaveClass('bg-missing/25')
-    expect(cell('2026-10-02')).toHaveClass('bg-star/25')
+    expect(cell('2026-10-02')).toHaveClass('bg-label-secondary/25')
     expect(cell('2026-10-03')).toHaveClass('bg-fill')
     expect(cell('2026-10-04')).toHaveClass('border-dashed', 'bg-label/10')
     expect(cell('2026-10-05')).toHaveClass('border-alcohol', 'bg-alcohol/25')

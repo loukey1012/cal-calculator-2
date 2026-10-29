@@ -82,7 +82,7 @@ describe('Appearance › Background', () => {
     expect(radio('Position', 'Specified')).toHaveAttribute('aria-checked', 'true')
     expect(radio('Colors', 'Preset')).toHaveAttribute('aria-checked', 'true')
     expect(radio('Preset', /Style/)).toHaveAttribute('aria-checked', 'true')
-    expect(screen.getByRole('slider', { name: 'Strength' })).toHaveValue('50')
+    expect(screen.getByRole('slider', { name: 'Spot brightness' })).toHaveValue('50')
     expect(screen.queryByRole('switch', { name: 'Slow drift' })).not.toBeInTheDocument()
   })
 
@@ -245,10 +245,18 @@ describe('Appearance › Background', () => {
     expect(screen.getByRole('button', { name: 'Try another' })).toBeInTheDocument()
   })
 
+  test('explains what the spot brightness slider does', () => {
+    renderPage(BACKGROUND, { glass: 'all' })
+
+    expect(screen.getByRole('slider', { name: 'Spot brightness' })).toHaveAccessibleDescription(
+      'How bright the colored spots show behind the glass.',
+    )
+  })
+
   test('strength is saved when the slider is let go', async () => {
     renderPage(BACKGROUND, { glass: 'all' })
 
-    const strength = screen.getByRole('slider', { name: 'Strength' })
+    const strength = screen.getByRole('slider', { name: 'Spot brightness' })
     fireEvent.change(strength, { target: { value: '70' } })
     fireEvent.pointerUp(strength)
 

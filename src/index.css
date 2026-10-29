@@ -23,7 +23,6 @@
   --alcohol: #7c4dcc;
   --warning: #b86a00;
   /* calendar marks: graphics need 3:1 on the card; the badge's "!" is small text, 4.5:1 */
-  --star: #b45309;
   --missing: #c2410c;
   --on-missing: #ffffff;
   --segment-selected: #ffffff;
@@ -99,7 +98,6 @@
   --success: #3cc48a;
   --alcohol: #b38cff;
   --warning: #f0a63a;
-  --star: #f0a63a;
   --missing: #f0a63a;
   --on-missing: #1b1204;
   --segment-selected: #2a2d34;
@@ -127,7 +125,6 @@
   --success: #5ee0a0;
   --alcohol: #b38cff;
   --warning: #f0a63a;
-  --star: #f0a63a;
   --missing: #f0a63a;
   --on-missing: #1b1204;
   --segment-selected: #2f2f33;
@@ -567,7 +564,6 @@
   --color-success: var(--success);
   --color-alcohol: var(--alcohol);
   --color-warning: var(--warning);
-  --color-star: var(--star);
   --color-missing: var(--missing);
   --color-on-missing: var(--on-missing);
   --color-segment-selected: var(--segment-selected);

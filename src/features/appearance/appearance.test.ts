@@ -6,6 +6,7 @@ import {
   appearanceVariables,
   DEFAULT_APPEARANCE,
   goalColors,
+  activeCustomGoalColors,
   parseAppearance,
   resolveScheme,
   SCHEME_SURFACES,
@@ -171,6 +172,36 @@ describe('custom goal colors', () => {
       fat: '#9466d6',
       fiber: '#8e5bd6',
     })
+  })
+
+  test('colors saved before the flag existed stay active', () => {
+    const parsed = parseAppearance({ customGoalColors: { protein: '#2fa889' } })
+
+    expect(parsed.customGoalColorsOn).toBeUndefined()
+    expect(activeCustomGoalColors(parsed)).toEqual({ protein: '#2fa889' })
+  })
+
+  test('the flag switches stored colors on and off', () => {
+    const colors = { customGoalColors: { protein: '#2fa889' } }
+
+    expect(
+      activeCustomGoalColors(parseAppearance({ ...colors, customGoalColorsOn: false })),
+    ).toEqual({})
+    expect(
+      activeCustomGoalColors(parseAppearance({ ...colors, customGoalColorsOn: true })),
+    ).toEqual(colors.customGoalColors)
+  })
+
+  test('a flag without colors, or a junk flag, changes nothing', () => {
+    expect(activeCustomGoalColors(parseAppearance({ customGoalColorsOn: true }))).toEqual({})
+    const junk = parseAppearance({
+      darkStyle: 'bento',
+      customGoalColors: { fat: '#9466d6' },
+      customGoalColorsOn: 'yes',
+    })
+    expect(junk.customGoalColorsOn).toBeUndefined()
+    expect(junk.darkStyle).toBe('bento')
+    expect(activeCustomGoalColors(junk)).toEqual({ fat: '#9466d6' })
   })
 
   test('every palette has five distinct goal colors, fiber included', () => {

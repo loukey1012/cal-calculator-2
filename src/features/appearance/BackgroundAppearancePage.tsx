@@ -182,17 +182,20 @@ export function BackgroundAppearancePage() {
         )}
       </SettingSection>
 
-      <GroupedSection>
-        <Slider
-          label="Strength"
-          min={MIN_STRENGTH * 100}
-          max={MAX_STRENGTH * 100}
-          step={5}
-          value={Math.round(field.strength * 100)}
-          format={(value) => `${value}%`}
-          onChange={(value) => save({ strength: value / 100 })}
-        />
-      </GroupedSection>
+      <section className="mt-6">
+        <GroupedSection>
+          <Slider
+            label="Spot brightness"
+            min={MIN_STRENGTH * 100}
+            max={MAX_STRENGTH * 100}
+            step={5}
+            value={Math.round(field.strength * 100)}
+            format={(value) => `${value}%`}
+            description="How bright the colored spots show behind the glass."
+            onChange={(value) => save({ strength: value / 100 })}
+          />
+        </GroupedSection>
+      </section>
     </AppearanceSubPage>
   )
 }

@@ -1,12 +1,13 @@
-import type {
-  AppIcon,
-  Appearance,
-  CategoryLayout,
-  DarkStyle,
-  GlassLevel,
-  GoalPalette,
-  LightStyle,
-  ProgressStyle,
+import {
+  activeCustomGoalColors,
+  type AppIcon,
+  type Appearance,
+  type CategoryLayout,
+  type DarkStyle,
+  type GlassLevel,
+  type GoalPalette,
+  type LightStyle,
+  type ProgressStyle,
 } from './appearance'
 import {
   DEFAULT_GLASS_FIELD,
@@ -161,8 +162,13 @@ export function appColorsSummary({ theme, lightStyle, darkStyle }: Appearance): 
 }
 
 /** e.g. "Ring + bars · Vivid" */
-export function progressSummary({ progressStyle, goalPalette }: Appearance): string {
-  return `${labelOf(PROGRESS_OPTIONS, progressStyle)} · ${labelOf(PALETTE_OPTIONS, goalPalette)}`
+export function progressSummary(appearance: Appearance): string {
+  const { progressStyle, goalPalette } = appearance
+  const colors =
+    Object.keys(activeCustomGoalColors(appearance)).length > 0
+      ? 'Custom'
+      : labelOf(PALETTE_OPTIONS, goalPalette)
+  return `${labelOf(PROGRESS_OPTIONS, progressStyle)} · ${colors}`
 }
 
 export function categoryChipsSummary({ categoryLayout }: Appearance): string {

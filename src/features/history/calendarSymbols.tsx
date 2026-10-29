@@ -30,10 +30,12 @@ export function WineGlassSymbol(props: SVGProps<SVGSVGElement>) {
   )
 }
 
-export function StarSymbol(props: SVGProps<SVGSVGElement>) {
+/** Cheat meal: a fork on the left (two tines joined at the base, handle) and a knife on the right. */
+export function ForkKnifeSymbol(props: SVGProps<SVGSVGElement>) {
   return (
-    <Symbol fill="currentColor" strokeWidth="0.6" {...props}>
-      <path d="M6 .8l1.5 3.2 3.5.4-2.6 2.4.7 3.5L6 8.5l-3.1 1.8.7-3.5L1 4.4 4.5 4z" />
+    <Symbol {...props}>
+      <path d="M2 1v3.5M5 1v3.5M2 4.5a1.5 1.5 0 0 0 3 0M3.5 6v4.5" />
+      <path d="M9 10.5v-9c-1.5 1-2 2.5-2 4h2" />
     </Symbol>
   )
 }

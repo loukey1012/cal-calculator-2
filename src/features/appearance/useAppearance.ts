@@ -2,6 +2,7 @@ import { useEffect, useSyncExternalStore } from 'react'
 import { APPEARANCE_CACHE_KEY } from '../../lib/persistence'
 import type { Profile } from '../household/householdApi'
 import {
+  activeCustomGoalColors,
   appearanceVariables,
   DEFAULT_APPEARANCE,
   parseAppearance,
@@ -52,7 +53,7 @@ export function useAppearance(profile: Pick<Profile, 'appearance' | 'accent_colo
   const accent = profile.accent_color.toLowerCase()
   const { theme, lightStyle, darkStyle, goalPalette, appIcon, glass } = appearance
   // a string, so a new but equal object from the next profile load doesn't repaint
-  const customColors = JSON.stringify(appearance.customGoalColors ?? {})
+  const customColors = JSON.stringify(activeCustomGoalColors(appearance))
   const overColors = JSON.stringify(appearance.overColors ?? DEFAULT_OVER_COLORS)
 
   useEffect(() => {

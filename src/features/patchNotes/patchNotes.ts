@@ -30,6 +30,16 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-29T13:00',
+    kind: 'new',
+    title: 'Your own ring colors are kept as Custom',
+    items: [
+      'Settings › Appearance › Progress: picking a palette under Goal colors no longer deletes the colors you chose; they stay as the Custom choice, and tapping Custom brings them back',
+      'History: a cheat meal is marked with a small outlined fork and knife instead of the star',
+      'Settings › Appearance › Background: the slider for the spots is called Spot brightness',
+    ],
+  },
+  {
     at: '2026-10-29T11:20',
     kind: 'internal',
     title: 'Goals no longer keep an old copy of calories burned',

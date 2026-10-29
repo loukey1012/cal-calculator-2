@@ -2,7 +2,7 @@ import { fromLocalDateString } from '../../../lib/dates'
 import { formatKcal } from '../../nutrition/format'
 import type { Goal } from '../../nutrition/goals'
 import { dayStatus } from '../calendar'
-import { StarSymbol, WineGlassSymbol } from '../calendarSymbols'
+import { ForkKnifeSymbol, WineGlassSymbol } from '../calendarSymbols'
 import { isOutlined, STATUS_CLASSES, STATUS_TEXT } from '../statusClasses'
 import type { WeekDay } from './weekStats'
 
@@ -81,7 +81,7 @@ function DayCell({ date, total, goals, today, onOpen }: DayCellProps) {
           <WineGlassSymbol className="absolute -top-0.5 -right-0.5 h-3 w-3 text-alcohol" />
         )}
         {status === 'cheatMeal' && (
-          <StarSymbol className="absolute -top-0.5 -right-0.5 h-3 w-3 text-star" />
+          <ForkKnifeSymbol className="absolute -top-0.5 -right-0.5 h-3 w-3 text-label-secondary" />
         )}
         {status === 'missing' && (
           <span

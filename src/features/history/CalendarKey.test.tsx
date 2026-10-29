@@ -33,7 +33,8 @@ describe('CalendarKey', () => {
     render(<CalendarKey />)
 
     expect(document.querySelector('.border-alcohol.text-alcohol')).not.toBeNull()
-    expect(document.querySelector('.text-star')).not.toBeNull()
+    const fork = document.querySelector('svg.text-label-secondary:not(.h-2\\.5)')
+    expect(fork).not.toBeNull()
     expect(document.querySelector('.bg-missing.text-on-missing')).not.toBeNull()
     expect(document.querySelector('.bg-accent-ink')).not.toBeNull()
   })

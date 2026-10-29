@@ -30,7 +30,7 @@ A query whose data is parsed with defaults (e.g. notification settings) re-parse
 field missing from the phone's old copy gets its default (a missing `weekly` crashed Settings ›
 Notifications on 2026-10-28). A crash while rendering shows `CrashBoundary` (Reload), never a black screen.
 
-**State (2026-10-28):** items 1–47 built and confirmed. Items 48–56 (README ›
+**State (2026-10-29):** items 1–47 built and confirmed. Items 48–56 (README ›
 Coming next) are planned in `docs/plan-2026-10-27.md` (batches A–G, each with its decisions and
 status). **Done and pushed, CI green:** A (54, 52, 51), B (50, 49), C (55, migration on prod), the
 Save button in the day options, D (53 part 1: calendar symbols, key, swipe, hold, status pill).
@@ -43,7 +43,10 @@ push-tick deployed to prod. G1 (48, day summary contents: parts with switches an
 live preview; `components/ios/ReorderList.tsx`) built 2026-10-29 and confirmed; G2 (weekly
 summary contents, shared `notifications/SummaryContentsPage.tsx`) built 2026-10-29, awaits the
 iPhone test. `goal_history.kcal_burned` dropped (migration `20261029120000`, dev and prod), so
-the 2026-10-27 plan is complete. **Next:** the user's new items. Sketch of F: https://claude.ai/artifact/KJ5V6j5PCBaN35MXmATmmE. Sketch of D:
+the 2026-10-27 plan is complete. Items 57–68 (README › Coming next) are planned in
+`docs/plan-2026-10-29.md` (batches H → I → J → K → J2, decisions per item). H1 (60 Custom goal
+colors, 61 Spot brightness, 57 fork-and-knife cheat meal mark) built, awaits the iPhone test.
+**Next:** H2 (62 categories, 63 Review stays open), then sketch I. Sketch of F: https://claude.ai/artifact/KJ5V6j5PCBaN35MXmATmmE. Sketch of D:
 https://claude.ai/artifact/Sp4cvXiKk3us9kXNUTrT6g. Working rhythm that worked: `ecc:tdd-guide`
 agents build (in parallel only on separate files), then `ecc:typescript-reviewer` +
 `ecc:react-reviewer` (+ `ecc:database-reviewer`/`ecc:security-reviewer` for SQL) +

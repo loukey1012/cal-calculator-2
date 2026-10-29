@@ -87,6 +87,43 @@ describe('useAppearance', () => {
     expect(variable('--goal-fat')).toBe('#9466d6')
   })
 
+  test('stored custom colors are not painted while the flag is off', () => {
+    renderHook(() =>
+      useAppearance({
+        accent_color: '#007aff',
+        appearance: {
+          goalPalette: 'vivid',
+          customGoalColors: { fat: '#9466d6' },
+          customGoalColorsOn: false,
+        },
+      }),
+    )
+
+    expect(variable('--goal-fat')).not.toBe('#9466d6')
+  })
+
+  test('repaints the ring colors when the custom flag flips', () => {
+    const { rerender } = renderHook(
+      ({ on }) =>
+        useAppearance({
+          accent_color: '#007aff',
+          appearance: {
+            goalPalette: 'vivid',
+            customGoalColors: { fat: '#9466d6' },
+            customGoalColorsOn: on,
+          },
+        }),
+      { initialProps: { on: true } },
+    )
+    expect(variable('--goal-fat')).toBe('#9466d6')
+
+    rerender({ on: false })
+    expect(variable('--goal-fat')).not.toBe('#9466d6')
+
+    rerender({ on: true })
+    expect(variable('--goal-fat')).toBe('#9466d6')
+  })
+
   test('mirrors the look to localStorage for the next app start', () => {
     renderHook(() =>
       useAppearance({ accent_color: '#007aff', appearance: { theme: 'dark', darkStyle: 'bento' } }),

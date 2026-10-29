@@ -57,6 +57,26 @@ beforeEach(() => {
 })
 
 describe('Appearance menu', () => {
+  test('the Progress summary says Custom while custom ring colors are on', () => {
+    renderPage(MENU, { goalPalette: 'pastel', customGoalColors: { fat: '#9466d6' } })
+
+    expect(screen.getByRole('button', { name: /Progress/ })).toHaveTextContent(
+      'Ring + bars · Custom',
+    )
+  })
+
+  test('the Progress summary says Custom with the flag on, and not with it off', () => {
+    const colors = { goalPalette: 'pastel', customGoalColors: { fat: '#9466d6' } } as const
+    const { unmount } = renderPage(MENU, { ...colors, customGoalColorsOn: true })
+    expect(screen.getByRole('button', { name: /Progress/ })).toHaveTextContent(
+      'Ring + bars · Custom',
+    )
+    unmount()
+
+    renderPage(MENU, { ...colors, customGoalColorsOn: false })
+    expect(screen.getByRole('button', { name: /Progress/ })).not.toHaveTextContent('Custom')
+  })
+
   test('lists the four pages, each summarising its current choices', () => {
     renderPage(MENU, { theme: 'dark', darkStyle: 'bento', goalPalette: 'pastel' })
 
@@ -289,6 +309,7 @@ describe('Ring colors', () => {
         ...DEFAULT_APPEARANCE,
         goalPalette: 'pastel',
         customGoalColors: { fat: '#9466d6', protein: '#2fa889' },
+        customGoalColorsOn: true,
       },
     })
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
@@ -307,7 +328,11 @@ describe('Ring colors', () => {
 
     await waitFor(() =>
       expect(updateProfile).toHaveBeenCalledWith('u1', {
-        appearance: { ...DEFAULT_APPEARANCE, customGoalColors: { kcal: '#123456' } },
+        appearance: {
+          ...DEFAULT_APPEARANCE,
+          customGoalColors: { kcal: '#123456' },
+          customGoalColorsOn: true,
+        },
       }),
     )
   })
@@ -320,19 +345,157 @@ describe('Ring colors', () => {
     await user.click(screen.getByRole('button', { name: 'Use palette color' }))
 
     expect(updateProfile).toHaveBeenCalledWith('u1', {
-      appearance: { ...DEFAULT_APPEARANCE, customGoalColors: { fat: '#9466d6' } },
+      appearance: {
+        ...DEFAULT_APPEARANCE,
+        customGoalColors: { fat: '#9466d6' },
+        customGoalColorsOn: true,
+      },
     })
   })
 
-  test('choosing a palette resets the custom colors', async () => {
+  test('without custom colors there is no Custom card', () => {
+    renderPage(PROGRESS)
+
+    expect(
+      within(screen.getByRole('radiogroup', { name: 'Goal colors' })).queryByRole('radio', {
+        name: /Custom/,
+      }),
+    ).not.toBeInTheDocument()
+  })
+
+  test('colors saved before the flag existed show as Custom', () => {
+    renderPage(PROGRESS, { customGoalColors: { protein: '#123456' } })
+
+    expect(radio('Goal colors', /Custom/)).toHaveAttribute('aria-checked', 'true')
+    expect(radio('Goal colors', /Vivid/)).toHaveAttribute('aria-checked', 'false')
+  })
+
+  test('choosing a palette keeps the custom colors stored, switched off', async () => {
     const user = userEvent.setup()
     renderPage(PROGRESS, { customGoalColors: { protein: '#123456' } })
 
     await user.click(radio('Goal colors', /Pastel/))
 
+    expect(updateProfile).toHaveBeenCalledWith('u1', {
+      appearance: {
+        ...DEFAULT_APPEARANCE,
+        goalPalette: 'pastel',
+        customGoalColors: { protein: '#123456' },
+        customGoalColorsOn: false,
+      },
+    })
+  })
+
+  test('with a palette picked the rings show the palette and Custom is offered', () => {
+    renderPage(PROGRESS, {
+      customGoalColors: { protein: '#123456' },
+      customGoalColorsOn: false,
+    })
+
+    expect(radio('Goal colors', /Custom/)).toHaveAttribute('aria-checked', 'false')
+    expect(radio('Goal colors', /Vivid/)).toHaveAttribute('aria-checked', 'true')
+    expect(ringColorRow('Protein')).toHaveTextContent('Palette')
+  })
+
+  test('the Custom card previews the stored colors, not the palette', () => {
+    renderPage(PROGRESS, {
+      goalPalette: 'pastel',
+      customGoalColors: { protein: '#123456' },
+      customGoalColorsOn: false,
+    })
+
+    const dots = Array.from(radio('Goal colors', /Custom/).querySelectorAll('span[style]'))
+    expect(dots.map((dot) => (dot as HTMLElement).style.backgroundColor)).toContain(
+      'rgb(18, 52, 86)',
+    )
+  })
+
+  test('explains that ring edits switch to Custom', () => {
+    renderPage(PROGRESS)
+
+    expect(
+      screen.getByText('Your own colors are kept under Custom; changing a ring switches to it.', {
+        exact: false,
+      }),
+    ).toBeInTheDocument()
+  })
+
+  test('palette chosen, colors stored: editing a ring gives Custom the old colors plus the change', async () => {
+    const user = userEvent.setup()
+    renderPage(PROGRESS, {
+      goalPalette: 'pastel',
+      customGoalColors: { fat: '#9466d6', fiber: '#123456' },
+      customGoalColorsOn: false,
+    })
+
+    await user.click(ringColorRow('Protein'))
+    await user.click(
+      within(screen.getByRole('dialog', { name: 'Protein color' })).getByRole('radio', {
+        name: 'Mint',
+      }),
+    )
+
+    expect(updateProfile).toHaveBeenCalledWith('u1', {
+      appearance: {
+        ...DEFAULT_APPEARANCE,
+        goalPalette: 'pastel',
+        customGoalColors: { fat: '#9466d6', fiber: '#123456', protein: '#2fa889' },
+        customGoalColorsOn: true,
+      },
+    })
+  })
+
+  test('choosing Custom brings the stored colors back', async () => {
+    const user = userEvent.setup()
+    renderPage(PROGRESS, {
+      goalPalette: 'pastel',
+      customGoalColors: { protein: '#123456' },
+      customGoalColorsOn: false,
+    })
+
+    await user.click(radio('Goal colors', /Custom/))
+
+    expect(updateProfile).toHaveBeenCalledWith('u1', {
+      appearance: {
+        ...DEFAULT_APPEARANCE,
+        goalPalette: 'pastel',
+        customGoalColors: { protein: '#123456' },
+        customGoalColorsOn: true,
+      },
+    })
+  })
+
+  test('editing a ring while a palette is picked selects Custom, keeping the stored colors', async () => {
+    const user = userEvent.setup()
+    renderPage(PROGRESS, {
+      customGoalColors: { fat: '#9466d6' },
+      customGoalColorsOn: false,
+    })
+
+    await user.click(ringColorRow('Protein'))
+    const sheet = screen.getByRole('dialog', { name: 'Protein color' })
+    await user.click(within(sheet).getByRole('radio', { name: 'Mint' }))
+
+    expect(updateProfile).toHaveBeenCalledWith('u1', {
+      appearance: {
+        ...DEFAULT_APPEARANCE,
+        customGoalColors: { fat: '#9466d6', protein: '#2fa889' },
+        customGoalColorsOn: true,
+      },
+    })
+  })
+
+  test('removing the last custom color drops the colors and the flag', async () => {
+    const user = userEvent.setup()
+    renderPage(PROGRESS, { customGoalColors: { protein: '#123456' } })
+
+    await user.click(ringColorRow('Protein'))
+    await user.click(screen.getByRole('button', { name: 'Use palette color' }))
+
     const saved = vi.mocked(updateProfile).mock.calls[0]?.[1]
-    expect(saved).toEqual({ appearance: { ...DEFAULT_APPEARANCE, goalPalette: 'pastel' } })
+    expect(saved).toEqual({ appearance: DEFAULT_APPEARANCE })
     expect(saved?.appearance).not.toHaveProperty('customGoalColors')
+    expect(saved?.appearance).not.toHaveProperty('customGoalColorsOn')
   })
 })
 

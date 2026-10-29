@@ -1,7 +1,14 @@
 import { SegmentedControl } from '../../components/ios/SegmentedControl'
 import { GoalProgressView } from '../goals/GoalProgressView'
-import type { GoalProgress } from '../nutrition/goals'
-import { goalColors, type Appearance, type CustomGoalColors, type GoalPalette } from './appearance'
+import type { GoalProgress, RingKey } from '../nutrition/goals'
+import {
+  activeCustomGoalColors,
+  goalColors,
+  type Appearance,
+  type CustomGoalColors,
+  type GoalColors,
+  type GoalPalette,
+} from './appearance'
 import { APPEARANCE_PATH, PALETTE_OPTIONS, PROGRESS_OPTIONS } from './appearanceLabels'
 import { OptionCards, SettingSection } from './AppearanceOptions'
 import { AppearanceSubPage } from './AppearanceSubPage'
@@ -9,6 +16,19 @@ import { OverColorsSection } from './OverColorsSection'
 import { DEFAULT_OVER_COLORS } from './overColors'
 import { RingColors } from './RingColors'
 import { useAppearanceSettings } from './useAppearanceSettings'
+
+// the card for the user's own ring colors; not a stored palette
+const CUSTOM = 'custom' as const
+
+function ColorDots({ colors }: { readonly colors: GoalColors }) {
+  return (
+    <span aria-hidden="true" className="flex gap-1">
+      {colors.map((color, index) => (
+        <span key={index} className="h-4 w-4 rounded-full" style={{ backgroundColor: color }} />
+      ))}
+    </span>
+  )
+}
 
 function sample(key: GoalProgress['key'], consumed: number, target: number): GoalProgress {
   const ratio = consumed / target
@@ -45,18 +65,36 @@ const SAMPLE_OVER = [
 /** Settings › Appearance › Progress: how the goal rings and bars look. */
 export function ProgressAppearancePage() {
   const { profile, appearance, scheme, update, change } = useAppearanceSettings()
-  const custom = appearance.customGoalColors ?? {}
+  const accent = profile.accent_color
+  const stored = appearance.customGoalColors ?? {}
+  const active = activeCustomGoalColors(appearance)
+  const customOn = Object.keys(active).length > 0
+  const hasStored = Object.keys(stored).length > 0
 
-  function save(next: Partial<Appearance>, nextCustom: CustomGoalColors) {
-    const { customGoalColors: _previous, ...others } = appearance
-    const hasCustom = Object.keys(nextCustom).length > 0
+  // the custom colors and their flag are always written together
+  function saveColors(next: Partial<Appearance>, colors: CustomGoalColors, on: boolean) {
+    const { customGoalColors: _colors, customGoalColorsOn: _on, ...others } = appearance
+    const hasColors = Object.keys(colors).length > 0
     update.mutate({
-      appearance: { ...others, ...next, ...(hasCustom ? { customGoalColors: nextCustom } : {}) },
+      appearance: {
+        ...others,
+        ...next,
+        ...(hasColors ? { customGoalColors: colors, customGoalColorsOn: on } : {}),
+      },
     })
   }
 
-  // a palette is a fresh start: it replaces every custom ring color
-  const choosePalette = (goalPalette: GoalPalette) => save({ goalPalette }, {})
+  // a palette is another preset: the custom colors stay stored, switched off
+  const choosePalette = (choice: GoalPalette | typeof CUSTOM) =>
+    choice === CUSTOM
+      ? saveColors({}, stored, true)
+      : saveColors({ goalPalette: choice }, stored, false)
+
+  // editing a ring starts from the stored custom colors and switches Custom on
+  function changeRing(key: RingKey, color: string | null) {
+    const { [key]: _previous, ...others } = stored
+    saveColors({}, color === null ? others : { ...others, [key]: color }, true)
+  }
 
   return (
     <AppearanceSubPage
@@ -80,29 +118,35 @@ export function ProgressAppearancePage() {
       <SettingSection title="Goal colors">
         <OptionCards
           label="Goal colors"
-          value={appearance.goalPalette}
+          value={customOn ? CUSTOM : appearance.goalPalette}
           onChange={choosePalette}
-          options={PALETTE_OPTIONS.map((palette) => ({
-            ...palette,
-            preview: (
-              <span aria-hidden="true" className="flex gap-1">
-                {goalColors(palette.value, scheme, profile.accent_color).map((color, index) => (
-                  <span
-                    key={index}
-                    className="h-4 w-4 rounded-full"
-                    style={{ backgroundColor: color }}
-                  />
-                ))}
-              </span>
-            ),
-          }))}
+          options={[
+            ...PALETTE_OPTIONS.map((palette) => ({
+              ...palette,
+              preview: <ColorDots colors={goalColors(palette.value, scheme, accent)} />,
+            })),
+            // your own ring colors, on the palette that is picked
+            ...(hasStored
+              ? [
+                  {
+                    value: CUSTOM,
+                    label: 'Custom',
+                    preview: (
+                      <ColorDots
+                        colors={goalColors(appearance.goalPalette, scheme, accent, stored)}
+                      />
+                    ),
+                  },
+                ]
+              : []),
+          ]}
         />
       </SettingSection>
 
       <RingColors
-        colors={goalColors(appearance.goalPalette, scheme, profile.accent_color, custom)}
-        custom={custom}
-        onChange={(nextCustom) => save({}, nextCustom)}
+        colors={goalColors(appearance.goalPalette, scheme, accent, active)}
+        custom={active}
+        onChange={changeRing}
       />
 
       <OverColorsSection

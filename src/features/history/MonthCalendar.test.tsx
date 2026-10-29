@@ -163,7 +163,7 @@ describe('MonthCalendar', () => {
     expect(within(plain).queryByTestId('note-dot')).not.toBeInTheDocument()
   })
 
-  test('marks a cheat meal with a star and a missing meal with a badge, not with dots', () => {
+  test('marks a cheat meal with a fork and knife and a missing meal with a badge, not with dots', () => {
     renderCalendar()
 
     const cheatMeal = screen.getByRole('button', { name: /October 4,/ })
@@ -265,10 +265,11 @@ describe('MonthCalendar', () => {
   test('draws the marks in themed colors that keep their contrast on every style', () => {
     renderCalendar()
 
-    const star = within(screen.getByRole('button', { name: /October 4,/ })).getByTestId(
+    const forkKnife = within(screen.getByRole('button', { name: /October 4,/ })).getByTestId(
       'cheat-meal-mark',
     )
-    expect(star).toHaveClass('text-star')
+    expect(forkKnife).toHaveClass('text-label-secondary')
+    expect(forkKnife).toHaveAttribute('fill', 'none')
     const badge = within(screen.getByRole('button', { name: /October 5,/ })).getByTestId(
       'missing-dot',
     )

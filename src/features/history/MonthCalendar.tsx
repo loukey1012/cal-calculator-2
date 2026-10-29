@@ -12,7 +12,7 @@ import { Button } from '../../components/ios/Button'
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from '../../components/ios/icons'
 import { fromLocalDateString } from '../../lib/dates'
 import { addMonths, monthStart, monthWeeks, type DayMarks, type DayStatus } from './calendar'
-import { ScaleSymbol, StarSymbol, WineGlassSymbol } from './calendarSymbols'
+import { ScaleSymbol, ForkKnifeSymbol, WineGlassSymbol } from './calendarSymbols'
 import { isOutlined, STATUS_CLASSES, STATUS_TEXT } from './statusClasses'
 import { useMonthPress } from './useMonthPress'
 import { WeekAverageCell } from './WeekAverageCell'
@@ -277,9 +277,9 @@ const DayButton = memo(function DayButton({
         />
       )}
       {status === 'cheatMeal' && (
-        <StarSymbol
+        <ForkKnifeSymbol
           data-testid="cheat-meal-mark"
-          className={`absolute -top-0.5 -right-0.5 h-3 w-3 ${markColor('text-star')}`}
+          className={`absolute -top-0.5 -right-0.5 h-3 w-3 ${markColor('text-label-secondary')}`}
         />
       )}
       {status === 'missing' && (

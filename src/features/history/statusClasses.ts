@@ -26,7 +26,7 @@ export const MINI_STATUS_CLASSES: Record<DayStatus, string> = {
   ...STATUS_CLASSES,
   cheatDay: 'border-dashed border-label-secondary/60 bg-label/10 text-label-secondary',
   alcoholDay: 'border-dashed border-alcohol bg-alcohol/25 text-label-secondary',
-  cheatMeal: 'bg-star/25 text-label',
+  cheatMeal: 'bg-label-secondary/25 text-label',
   missing: 'bg-missing/25 text-label',
 }
 
