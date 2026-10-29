@@ -15,6 +15,9 @@ import { mealLabel } from './dayModel'
 import { useDay } from './hooks'
 import { MealContent } from './MealContent'
 import { MealLeftovers } from './MealLeftovers'
+import { MealNoteRoute } from '../notes/NoteRoutes'
+import { NoteEntryRow } from '../notes/NoteEntryRow'
+import { mealNotePath } from '../notes/notePages'
 import { foodPath, recipesPath, type MealPageRef } from './mealPages'
 import { isDraftFor } from './unsavedDish'
 
@@ -25,6 +28,8 @@ export function MealRoute({ page }: { readonly page: MealPageRef }) {
       return <AddFoodPage page={page} />
     case 'recipes':
       return <AddFromRecipePages page={page} />
+    case 'note':
+      return <MealNoteRoute page={page} />
     case 'meal':
       return <MealPage page={page} />
   }
@@ -66,7 +71,13 @@ function MealPage({ page }: { readonly page: MealPageRef }) {
           />
         }
       />
-      {note && <p className="-mt-1 mb-3 text-[15px] text-label-secondary">{note}</p>}
+      <div className="mb-3">
+        <NoteEntryRow
+          note={note}
+          label={mealLabel(meal.mealType)}
+          onOpen={() => go(mealNotePath(mealPath))}
+        />
+      </div>
       <MealContent
         mealType={meal.mealType}
         userId={meal.userId}

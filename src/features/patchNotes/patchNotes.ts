@@ -30,6 +30,17 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-29T14:30',
+    kind: 'new',
+    title: 'Bigger History calendar; notes on their own page',
+    items: [
+      'History: the calendar has taller, wider days with the symbols in their corners; the Ø column is gone',
+      'Under the calendar, a bar shows the open day’s week (Ø calories and calories saved); tap it for the week page',
+      'Notes: the day and each meal have a Note row; tapping it opens a full-screen page to write in, with Done and Cancel',
+      'Notes are no longer in the day options; text you started is kept until you finish or discard it',
+    ],
+  },
+  {
     at: '2026-10-29T13:30',
     kind: 'fix',
     title: 'Review stays open; Categories without the extra table',

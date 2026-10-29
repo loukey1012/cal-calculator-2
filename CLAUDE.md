@@ -44,7 +44,7 @@ live preview; `components/ios/ReorderList.tsx`) built 2026-10-29 and confirmed; 
 summary contents, shared `notifications/SummaryContentsPage.tsx`) built 2026-10-29, awaits the
 iPhone test. `goal_history.kcal_burned` dropped (migration `20261029120000`, dev and prod), so
 the 2026-10-27 plan is complete. Items 57–68 (README › Coming next) are planned in
-`docs/plan-2026-10-29.md` (batches H → I → J → K → J2, decisions per item). H1 (60 Custom goal
+`docs/plan-2026-10-29.md` (batches H → I → L → J → K → J2, decisions per item). H1 (60 Custom goal
 colors, 61 Spot brightness, 57 fork-and-knife cheat meal mark) confirmed; H2 (62 categories
 without the table, 63 Review stays open) built, awaits the iPhone test. **Next:** sketch I. Sketch of F: https://claude.ai/artifact/KJ5V6j5PCBaN35MXmATmmE. Sketch of D:
 https://claude.ai/artifact/Sp4cvXiKk3us9kXNUTrT6g. Working rhythm that worked: `ecc:tdd-guide`

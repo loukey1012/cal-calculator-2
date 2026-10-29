@@ -58,6 +58,8 @@ vi.mock('../features/ingredients/ingredientsApi', () => ({
 }))
 vi.mock('../features/meals/mealsApi', () => ({
   fetchDay: vi.fn().mockResolvedValue([]),
+  fetchDayNote: vi.fn().mockResolvedValue('Birthday'),
+  fetchDayMark: vi.fn().mockResolvedValue(null),
 }))
 vi.mock('../features/goals/goalsApi', () => ({
   fetchGoals: vi.fn().mockResolvedValue([]),
@@ -77,6 +79,7 @@ vi.mock('../features/history/historyApi', () => ({
 vi.mock('../features/auth/authApi', () => ({ signOut: vi.fn() }))
 vi.mock('../features/live/liveChannel', () => ({ openLiveChannel: () => ({ close: () => {} }) }))
 
+import { canLeavePage } from './leaveGuard'
 import { TabShell } from './TabShell'
 
 const PROFILE = {
@@ -284,6 +287,73 @@ describe('TabShell swiping', () => {
 
       await waitFor(() => expect(screen.getByTestId('path').textContent).toBe('/today'))
       expect(watchDrag()(embla.api, { target: document.body } as unknown as Event)).toBe(true)
+    })
+  })
+
+  describe('on a note page', () => {
+    const NOTE = '/today/note-2026-10-01-u1'
+    beforeEach(() => vi.spyOn(window, 'innerWidth', 'get').mockReturnValue(390))
+    beforeEach(() => sessionStorage.clear())
+    afterEach(() => vi.restoreAllMocks())
+
+    test('the tab bar is hidden while the note page is shown', async () => {
+      renderShell(NOTE)
+      await screen.findByRole('textbox', { name: 'Note' })
+
+      expect(screen.queryByRole('navigation', { name: 'Tabs' })).not.toBeInTheDocument()
+    })
+
+    test('a note with edits does not make the back swipe of another tab ask', async () => {
+      const user = userEvent.setup()
+      const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+      renderShell(NOTE)
+      const field = await screen.findByRole('textbox', { name: 'Note' })
+      await waitFor(() => expect(field).toHaveValue('Birthday'))
+      await user.type(field, '!')
+
+      expect(canLeavePage('/history/2026-10-01')).toBe(true)
+      expect(confirm).not.toHaveBeenCalled()
+    })
+
+    test('swiping right goes back to Today when nothing, without asking', async () => {
+      const confirm = vi.spyOn(window, 'confirm')
+      renderShell(NOTE)
+      await waitFor(() =>
+        expect(screen.getByRole('textbox', { name: 'Note' })).not.toHaveAttribute('readonly'),
+      )
+
+      drag({ x: 30, y: 300 }, { x: 200, y: 320 })
+
+      await waitFor(() => expect(screen.getByTestId('path').textContent).toBe('/today'))
+      expect(confirm).not.toHaveBeenCalled()
+    })
+
+    test('with edits the swipe asks first; declining keeps the page and the text', async () => {
+      const user = userEvent.setup()
+      const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+      renderShell(NOTE)
+      const field = await screen.findByRole('textbox', { name: 'Note' })
+      await waitFor(() => expect(field).toHaveValue('Birthday'))
+      await user.type(field, '!')
+
+      drag({ x: 30, y: 300 }, { x: 200, y: 320 })
+
+      await waitFor(() => expect(confirm).toHaveBeenCalledWith('Discard changes?'))
+      expect(screen.getByTestId('path').textContent).toBe(NOTE)
+      expect(screen.getByRole('textbox', { name: 'Note' })).toHaveValue('Birthday!')
+    })
+
+    test('with edits, confirming the question lets the swipe go back', async () => {
+      const user = userEvent.setup()
+      vi.spyOn(window, 'confirm').mockReturnValue(true)
+      renderShell(NOTE)
+      const field = await screen.findByRole('textbox', { name: 'Note' })
+      await waitFor(() => expect(field).toHaveValue('Birthday'))
+      await user.type(field, '!')
+
+      drag({ x: 30, y: 300 }, { x: 200, y: 320 })
+
+      await waitFor(() => expect(screen.getByTestId('path').textContent).toBe('/today'))
     })
   })
 

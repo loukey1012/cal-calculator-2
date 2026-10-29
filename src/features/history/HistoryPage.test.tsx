@@ -200,25 +200,67 @@ describe('HistoryPage', () => {
     expect(fetchMonthNotes).toHaveBeenCalledWith('u1', '2026-10-01', '2026-10-31')
   })
 
-  test('shows the average of the counted days at the end of each week', async () => {
+  const openDay = (user: ReturnType<typeof userEvent.setup>, label: string) =>
+    screen
+      .findByRole('button', { name: new RegExp(`^${label}\\b`) })
+      .then((button) => user.click(button))
+
+  test('the week bar shows the average of the counted days of the open day’s week', async () => {
     vi.mocked(fetchDailyTotals).mockResolvedValue([
       complete('2026-10-01'),
       { ...complete('2026-10-02'), kcal: 2400 },
       { ...complete('2026-10-03'), kcal: 9000, cheatDay: true },
     ])
+    const user = userEvent.setup()
     renderPage()
 
-    await waitFor(() =>
-      expect(screen.getAllByTestId('week-average').map((cell) => cell.textContent)).toContain(
-        '2,100',
-      ),
-    )
-    expect(
-      screen.getAllByTestId('week-average').filter((cell) => cell.textContent !== ''),
-    ).toHaveLength(1)
+    await openDay(user, 'October 1')
+
+    expect(await screen.findByRole('button', { name: 'Week 40, average 2,100 kcal' })).toBeVisible()
   })
 
-  describe('the saved figure at the end of a week', () => {
+  test('the week bar shows the running week while no day is open', async () => {
+    vi.mocked(fetchDailyTotals).mockResolvedValue([complete('2026-10-12')])
+    renderPage()
+
+    expect(await screen.findByRole('button', { name: 'Week 42, average 1,800 kcal' })).toBeVisible()
+  })
+
+  test('the week bar is left out when the shown month has neither an open day nor the running week', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByRole('button', { name: 'Previous month' }))
+    await screen.findByRole('heading', { name: /September 2026/ })
+
+    expect(screen.queryByRole('button', { name: /^Week \d+/ })).not.toBeInTheDocument()
+  })
+
+  test('the week bar falls back to the running week when the open day is in another month', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await user.click(await screen.findByRole('button', { name: 'Previous month' }))
+    await openDay(user, 'September 15')
+    expect(await screen.findByRole('button', { name: /^Week 38/ })).toBeVisible()
+
+    await user.click(screen.getByRole('button', { name: 'Next month' }))
+
+    expect(await screen.findByRole('button', { name: /^Week 42/ })).toBeVisible()
+    expect(screen.queryByRole('button', { name: /^Week 38/ })).not.toBeInTheDocument()
+  })
+
+  test('the week bar is left out when the open day sits on an edge cell of the shown month that is not drawn', async () => {
+    const user = userEvent.setup()
+    renderPage()
+    await openDay(user, 'October 1')
+    expect(await screen.findByRole('button', { name: /^Week 40/ })).toBeVisible()
+
+    await user.click(screen.getByRole('button', { name: 'Previous month' }))
+    await screen.findByRole('heading', { name: /September 2026/ })
+
+    expect(screen.queryByRole('button', { name: /^Week \d+/ })).not.toBeInTheDocument()
+  })
+
+  describe('the saved figure in the week bar', () => {
     const BURNING = { ...PROFILE, kcal_burned: 2600 }
     const days = [complete('2026-10-01'), complete('2026-10-02'), complete('2026-10-05')]
     const serve = (failEdges = false) =>
@@ -227,45 +269,51 @@ describe('HistoryPage', () => {
         return days.filter((day) => day.date >= first && day.date <= last)
       })
 
-    test('is burned minus eaten over the counted days of the row', async () => {
+    test('is burned minus eaten over the counted days of the week', async () => {
       serve()
+      const user = userEvent.setup()
       renderPage('/history', BURNING)
 
-      // Oct 1 and 2 (the first row), Oct 5 (the second)
-      await waitFor(() =>
-        expect(screen.getAllByTestId('week-saved').map((cell) => cell.textContent)).toEqual([
-          '−1,600',
-          '−800',
-        ]),
-      )
+      await openDay(user, 'October 1')
+      expect(
+        await screen.findByRole('button', {
+          name: 'Week 40, average 1,800 kcal, 1,600 kcal saved',
+        }),
+      ).toBeVisible()
+      await openDay(user, 'October 5')
+      expect(
+        await screen.findByRole('button', { name: 'Week 41, average 1,800 kcal, 800 kcal saved' }),
+      ).toBeVisible()
     })
 
-    test('is left out of a row across two months when the other month’s days failed to load', async () => {
+    test('is left out of a week across two months when the other month’s days failed to load', async () => {
       serve(true)
+      const user = userEvent.setup()
       renderPage('/history', BURNING)
 
+      // no figures made of only some of its days
+      await openDay(user, 'October 1')
       await waitFor(() =>
-        expect(screen.getAllByTestId('week-saved').map((cell) => cell.textContent)).toEqual([
-          '−800',
-        ]),
+        expect(fetchDailyTotals).toHaveBeenCalledWith('u1', '2026-09-28', '2026-09-30'),
       )
-      // nor does that row show an average made of only some of its days
-      expect(screen.getAllByTestId('week-average')[0]).toHaveTextContent(/^$/)
+      expect(screen.getByRole('button', { name: 'Week 40' })).toBeVisible()
+      await openDay(user, 'October 5')
+      expect(
+        await screen.findByRole('button', { name: 'Week 41, average 1,800 kcal, 800 kcal saved' }),
+      ).toBeVisible()
     })
 
-    test('is left out of the first row while the other month’s days load', async () => {
+    test('is left out of the first week while the other month’s days load', async () => {
       vi.mocked(fetchDailyTotals).mockImplementation(async (_userId, first, last) =>
         first < '2026-10-01'
           ? new Promise(() => {})
           : days.filter((day) => day.date >= first && day.date <= last),
       )
+      const user = userEvent.setup()
       renderPage('/history', BURNING)
 
-      await waitFor(() =>
-        expect(screen.getAllByTestId('week-saved').map((cell) => cell.textContent)).toEqual([
-          '−800',
-        ]),
-      )
+      await openDay(user, 'October 1')
+      expect(await screen.findByRole('button', { name: 'Week 40' })).toBeVisible()
     })
   })
 
@@ -280,15 +328,15 @@ describe('HistoryPage', () => {
     const user = userEvent.setup()
     renderPage()
 
-    await waitFor(() => expect(screen.getAllByTestId('week-average')[0]).toHaveTextContent('2,000'))
+    await openDay(user, 'October 1')
+    expect(await screen.findByRole('button', { name: 'Week 40, average 2,000 kcal' })).toBeVisible()
     // the days of the neighbouring month are not drawn
     expect(screen.queryByRole('button', { name: /September 29/ })).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Previous month' }))
+    await openDay(user, 'September 29')
 
-    await waitFor(() =>
-      expect(screen.getAllByTestId('week-average').at(-1)).toHaveTextContent('2,000'),
-    )
+    expect(await screen.findByRole('button', { name: 'Week 40, average 2,000 kcal' })).toBeVisible()
     expect(screen.queryByRole('button', { name: /October 1\b/ })).not.toBeInTheDocument()
   })
 
@@ -547,24 +595,36 @@ describe('HistoryPage', () => {
       expect(await screen.findByTestId('day-status')).toHaveTextContent('So far · 200 kcal left')
     })
 
-    test('shows the day note as a card right under the pill, once', async () => {
+    test('shows the Note row right under the pill, with the note once', async () => {
       vi.mocked(fetchDay).mockResolvedValue(LUNCH_AND_DINNER)
       vi.mocked(fetchDayNote).mockResolvedValue('Birthday at Oma’s')
       renderPage('/history/2026-10-01')
 
-      const card = await screen.findByRole('group', { name: 'Note' })
-      expect(card).toHaveTextContent('Birthday at Oma’s')
+      const row = await screen.findByRole('button', { name: /^Day note: Birthday at Oma’s/ })
       expect(screen.getAllByText('Birthday at Oma’s')).toHaveLength(1)
       const pill = screen.getByTestId('day-status')
-      expect(pill.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+      expect(pill.compareDocumentPosition(row) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     })
 
-    test('shows no note card without a note', async () => {
+    test('the Note row says "Add a note" without a note', async () => {
       vi.mocked(fetchDay).mockResolvedValue(LUNCH_AND_DINNER)
       renderPage('/history/2026-10-01')
 
       await screen.findByTestId('day-status')
-      expect(screen.queryByRole('group', { name: 'Note' })).not.toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /^Day note: Add a note/ })).toBeVisible()
+    })
+
+    test('the Note row opens the note page below the day; Cancel leads back to the day', async () => {
+      const user = userEvent.setup()
+      vi.mocked(fetchDay).mockResolvedValue(LUNCH_AND_DINNER)
+      renderPage('/history/2026-10-01')
+
+      await user.click(await screen.findByRole('button', { name: /^Day note: Add a note/ }))
+      expect(screen.getByTestId('path').textContent).toBe('/history/2026-10-01/note-2026-10-01-u1')
+      expect(await screen.findByRole('textbox', { name: 'Note' })).toBeVisible()
+      await user.click(screen.getByRole('button', { name: 'Cancel' }))
+
+      expect(screen.getByTestId('path').textContent).toBe('/history/2026-10-01')
     })
 
     test('a meal note is on its meal card right away, with a dot', async () => {
@@ -1184,32 +1244,37 @@ describe('the year overview', () => {
 describe('HistoryPage weeks', () => {
   const BURNING = { ...PROFILE, kcal_burned: 2500 }
 
-  test('shows the calories saved under each week average', async () => {
+  test('shows the calories saved in the week bar', async () => {
     vi.mocked(fetchDailyTotals).mockResolvedValue([
       complete('2026-10-01'),
       complete('2026-10-02'),
       { ...complete('2026-10-03'), cheatDay: true },
     ])
+    const user = userEvent.setup()
     renderPage('/history', BURNING)
+    await user.click(await screen.findByRole('button', { name: /^October 1\b/ }))
 
     // two counted days: 2 × (2,500 − 1,800); the cheat day is not part of it
-    await waitFor(() => expect(screen.getByTestId('week-saved')).toHaveTextContent('−1,400'))
-    expect(screen.getAllByTestId('week-saved')).toHaveLength(1)
+    expect(
+      await screen.findByRole('button', { name: 'Week 40, average 1,800 kcal, 1,400 kcal saved' }),
+    ).toBeVisible()
   })
 
   test('shows no saved figure without a burned goal', async () => {
     vi.mocked(fetchDailyTotals).mockResolvedValue([complete('2026-10-01')])
     renderPage()
 
-    await screen.findByRole('button', { name: /October 1\b/ })
-    expect(screen.queryByTestId('week-saved')).not.toBeInTheDocument()
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: /^October 1\b/ }))
+    expect(await screen.findByRole('button', { name: 'Week 40, average 1,800 kcal' })).toBeVisible()
   })
 
-  test('the week button opens the week page, and Back returns to the same month', async () => {
+  test('the week bar opens the week page, and Back returns to the same month', async () => {
     const user = userEvent.setup()
     renderPage('/history', BURNING)
     await user.click(await screen.findByRole('button', { name: 'Previous month' }))
     await screen.findByRole('heading', { name: /September 2026/ })
+    await user.click(await screen.findByRole('button', { name: /^September 22\b/ }))
 
     await user.click(await screen.findByRole('button', { name: /^Week 39/ }))
 
@@ -1220,7 +1285,8 @@ describe('HistoryPage weeks', () => {
     await user.click(screen.getByRole('button', { name: 'Back' }))
 
     expect(await screen.findByRole('heading', { name: /September 2026/ })).toBeInTheDocument()
-    expect(screen.getByTestId('path')).toHaveTextContent(/^\/history$/)
+    // the day that was open still is
+    expect(screen.getByTestId('path')).toHaveTextContent(/^\/history\/2026-09-22$/)
   })
 
   test('the week of the partner opens for the partner', async () => {
@@ -1229,6 +1295,7 @@ describe('HistoryPage weeks', () => {
     renderPage()
     await user.click(await screen.findByRole('radio', { name: 'baby' }))
 
+    await user.click(await screen.findByRole('button', { name: /^October 7\b/ }))
     await user.click(await screen.findByRole('button', { name: /^Week 41/ }))
 
     await waitFor(() =>

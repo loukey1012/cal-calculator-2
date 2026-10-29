@@ -16,7 +16,7 @@ const monthTitle = (date: string) => {
   )
 }
 
-test('the calendar shows symbols and weekly averages; swipe turns the month; hold shows a quick look', async ({
+test('the calendar shows symbols and the week bar of the open day; swipe turns the month; hold shows a quick look', async ({
   page,
   backend,
 }) => {
@@ -99,12 +99,7 @@ test('the calendar shows symbols and weekly averages; swipe turns the month; hol
     history.getByRole('button', { name: dayLabel(alcoholDay, 'alcohol day') }),
   ).toBeVisible()
 
-  // only the complete day counts: its week shows its calories as the average
   const completeButton = history.locator(`button[data-date="${completeDay}"]`)
-  const week = history
-    .getByTestId('week-row')
-    .filter({ has: page.locator(`button[data-date="${completeDay}"]`) })
-  await expect(week.getByTestId('week-average')).toHaveText('1,800')
 
   // an open day starts with its verdict; the note is a card
   // a tap right after the swipe is swallowed on purpose (the finger's own click): retry until it lands
@@ -112,11 +107,16 @@ test('the calendar shows symbols and weekly averages; swipe turns the month; hol
     await completeButton.click()
     await expect(completeButton).toHaveAttribute('aria-pressed', 'true', { timeout: 500 })
   }).toPass()
+  // only the complete day counts: the week bar under the grid shows the open day's week with
+  // its calories as the average (no calories burned set, so no saved figure)
+  await expect(history.getByRole('button', { name: /^Week \d+, average 1,800 kcal$/ })).toBeVisible()
   const day = history.getByRole('region')
   await expect(day.getByTestId('day-status')).toContainText('Within goal')
   await expect(day.getByTestId('day-status')).toContainText('200 kcal left')
   await history.locator(`button[data-date="${noteDay}"]`).click()
-  await expect(day.getByRole('group', { name: 'Note' })).toContainText(noteText)
+  await expect(
+    day.getByRole('button', { name: /note/i }).filter({ hasText: noteText }),
+  ).toBeVisible()
   await history.locator(`button[data-date="${alcoholDay}"]`).click()
   await expect(day.getByTestId('day-status')).toContainText('Alcohol day')
   await expect(day.getByTestId('day-status')).toContainText('not counted')

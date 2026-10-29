@@ -65,18 +65,19 @@ test('the week page adds up the calories saved over the counted days, opens from
     .click()
   const history = activePage(page)
 
-  // the calendar shows the week's average and what it saved, from the two counted days only
+  // opening a day of that week makes the week bar under the calendar show the week's average and
+  // what it saved, from the two counted days only
   const lastSunday = lastWeekDay(6)
   if (lastSunday.getMonth() !== new Date().getMonth()) {
     await history.getByRole('button', { name: 'Previous month' }).click()
   }
+  await history.locator(`button[data-date="${dateString(lastSunday)}"]`).click()
   const weekButton = history.getByRole('button', {
     name: /^Week \d+, average 1,900 kcal, 1,200 kcal saved$/,
   })
   await expect(weekButton).toBeVisible()
-  await expect(weekButton.getByTestId('week-saved')).toHaveText('−1,200')
 
-  // Act: the Ø opens the week's page
+  // Act: the bar opens the week's page
   await weekButton.click()
   const week = activePage(page)
   await expect(week.getByRole('heading', { level: 1, name: /^Week \d+$/ })).toBeVisible()

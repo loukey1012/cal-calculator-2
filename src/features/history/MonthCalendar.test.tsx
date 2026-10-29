@@ -23,7 +23,6 @@ function renderCalendar(today = '2026-10-15', month = '2026-10-01') {
   const onSelectDay = vi.fn()
   const onChangeMonth = vi.fn()
   const onShowYear = vi.fn()
-  const onOpenWeek = vi.fn()
   render(
     <MonthCalendar
       month={month}
@@ -31,17 +30,13 @@ function renderCalendar(today = '2026-10-15', month = '2026-10-01') {
       selectedDay="2026-10-02"
       statusOf={(date) => STATUS_OF[date] ?? 'none'}
       marksOf={(date) => MARKS_OF[date] ?? NO_MARKS}
-      averageOf={(week) => (week.includes('2026-10-07') ? 1850 : null)}
-      savedOf={(week) =>
-        week.includes('2026-10-07') ? 3090 : week.includes('2026-10-14') ? -1200 : null
-      }
-      onOpenWeek={onOpenWeek}
+      footer={<p>footer</p>}
       onSelectDay={onSelectDay}
       onChangeMonth={onChangeMonth}
       onShowYear={onShowYear}
     />,
   )
-  return { onSelectDay, onChangeMonth, onShowYear, onOpenWeek }
+  return { onSelectDay, onChangeMonth, onShowYear }
 }
 
 describe('MonthCalendar', () => {
@@ -195,22 +190,29 @@ describe('MonthCalendar', () => {
     expect(todayOnly.className).not.toMatch(/bg-accent\b/)
   })
 
-  test('shows each week average at the end of its row, empty without counted days', () => {
+  test('has no week average column, only the seven weekdays', () => {
     renderCalendar()
 
-    expect(screen.getByRole('columnheader', { name: 'Ø kcal' })).toBeInTheDocument()
-    const averages = screen.getAllByTestId('week-average')
-    expect(averages.map((cell) => cell.textContent)).toContain('1,850')
-    expect(averages.filter((cell) => cell.textContent === '')).toHaveLength(averages.length - 1)
+    expect(screen.getAllByRole('columnheader')).toHaveLength(7)
+    expect(screen.queryByRole('columnheader', { name: 'Ø kcal' })).not.toBeInTheDocument()
+    expect(screen.queryByTestId('week-average')).not.toBeInTheDocument()
   })
 
-  test('keeps the week averages on one line, without a prefix the header already says', () => {
+  test('shows its footer inside the card, under the grid', () => {
     renderCalendar()
 
-    for (const cell of screen.getAllByTestId('week-average')) {
-      expect(cell).toHaveClass('whitespace-nowrap')
-      expect(cell.textContent).not.toMatch(/Ø/)
-    }
+    const footer = screen.getByText('footer')
+    expect(footer.closest('section')).toContainElement(screen.getByRole('table'))
+    expect(
+      screen.getByRole('table').compareDocumentPosition(footer) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  test('draws the days as taller rounded squares', () => {
+    renderCalendar()
+
+    const cell = screen.getByRole('button', { name: /October 1,/ })
+    expect(cell).toHaveClass('h-[54px]', 'w-11', 'rounded-[14px]')
   })
 
   test('draws only the days of the month, though the first week reaches into September', () => {
@@ -219,32 +221,6 @@ describe('MonthCalendar', () => {
     const firstRow = screen.getAllByTestId('week-row')[0]
     expect(firstRow.querySelectorAll('button[data-date]')).toHaveLength(4)
     expect(screen.queryByRole('button', { name: /September 30/ })).not.toBeInTheDocument()
-  })
-
-  test('hands the whole week, with the days of the neighbouring months, to the average', () => {
-    const averageOf = vi.fn(() => null)
-    render(
-      <MonthCalendar
-        month="2026-10-01"
-        today="2026-10-15"
-        selectedDay={null}
-        statusOf={() => 'none'}
-        marksOf={() => NO_MARKS}
-        averageOf={averageOf}
-        onSelectDay={vi.fn()}
-        onChangeMonth={vi.fn()}
-      />,
-    )
-
-    expect(averageOf).toHaveBeenCalledWith([
-      '2026-09-28',
-      '2026-09-29',
-      '2026-09-30',
-      '2026-10-01',
-      '2026-10-02',
-      '2026-10-03',
-      '2026-10-04',
-    ])
   })
 
   test('tints the current week also as the first row of the month after it', () => {
@@ -289,62 +265,5 @@ describe('MonthCalendar', () => {
     const tinted = screen.getAllByTestId('week-row').filter((row) => row.dataset.current === 'true')
     expect(tinted).toHaveLength(1)
     expect(within(tinted[0]).getByRole('button', { name: 'Today, October 15' })).toBeInTheDocument()
-  })
-
-  describe('week buttons', () => {
-    test('the average opens its week, named with the average and the saved calories', async () => {
-      const user = userEvent.setup()
-      const { onOpenWeek } = renderCalendar()
-
-      const button = screen.getByRole('button', {
-        name: 'Week 41, average 1,850 kcal, 3,090 kcal saved',
-      })
-      expect(button).toHaveClass('h-11')
-      await user.click(button)
-
-      expect(onOpenWeek).toHaveBeenCalledWith([
-        '2026-10-05',
-        '2026-10-06',
-        '2026-10-07',
-        '2026-10-08',
-        '2026-10-09',
-        '2026-10-10',
-        '2026-10-11',
-      ])
-    })
-
-    test('shows the saved figure under the average: green saved, a surplus in the secondary color', () => {
-      renderCalendar()
-
-      const saved = screen.getAllByTestId('week-saved').map((cell) => cell.textContent)
-      expect(saved).toEqual(['−3,090', '+1,200'])
-      expect(screen.getAllByTestId('week-saved')[0]).toHaveClass('text-success')
-      expect(screen.getAllByTestId('week-saved')[1]).toHaveClass('text-label-secondary')
-    })
-
-    test('a week without data is still a button, named by its number; a surplus says so', () => {
-      renderCalendar()
-
-      expect(screen.getByRole('button', { name: 'Week 40' })).toBeEnabled()
-      expect(
-        screen.getByRole('button', { name: 'Week 42, 1,200 kcal surplus' }),
-      ).toBeInTheDocument()
-    })
-
-    test('a week that has not begun cannot be opened', () => {
-      renderCalendar('2026-10-15')
-
-      expect(screen.getByRole('button', { name: 'Week 43' })).toBeDisabled()
-      expect(screen.getByRole('button', { name: 'Week 42, 1,200 kcal surplus' })).toBeEnabled()
-    })
-
-    test('tapping it selects no day', async () => {
-      const user = userEvent.setup()
-      const { onSelectDay } = renderCalendar()
-
-      await user.click(screen.getByRole('button', { name: /^Week 41/ }))
-
-      expect(onSelectDay).not.toHaveBeenCalled()
-    })
   })
 })

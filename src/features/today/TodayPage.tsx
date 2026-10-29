@@ -5,6 +5,8 @@ import { usePagePath } from '../../app/pagePath'
 import { personOf } from '../../app/stackNavigate'
 import { MealRoute } from '../meals/MealPage'
 import { mealPageOf } from '../meals/mealPages'
+import { DayNoteRoute } from '../notes/NoteRoutes'
+import { dayNotePageOf } from '../notes/notePages'
 import { PageHeader } from '../../components/ios/PageHeader'
 import { fromLocalDateString } from '../../lib/dates'
 import { usePeople } from '../household/hooks'
@@ -17,7 +19,10 @@ const DATE_FORMAT: Intl.DateTimeFormatOptions = { weekday: 'long', day: 'numeric
 
 /** Today, or a meal of today opened on top of it. */
 export function TodayPage() {
-  const page = mealPageOf(usePagePath())
+  const path = usePagePath()
+  const page = mealPageOf(path)
+  const dayNote = dayNotePageOf(path)
+  if (dayNote) return <DayNoteRoute page={dayNote} />
   return page ? <MealRoute page={page} /> : <TodayDay />
 }
 

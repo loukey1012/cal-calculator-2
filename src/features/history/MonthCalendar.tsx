@@ -15,7 +15,6 @@ import { addMonths, monthStart, monthWeeks, type DayMarks, type DayStatus } from
 import { ScaleSymbol, ForkKnifeSymbol, WineGlassSymbol } from './calendarSymbols'
 import { isOutlined, STATUS_CLASSES, STATUS_TEXT } from './statusClasses'
 import { useMonthPress } from './useMonthPress'
-import { WeekAverageCell } from './WeekAverageCell'
 
 // a known Monday, to name the weekdays in the device language
 const A_MONDAY = new Date(2024, 0, 1)
@@ -37,12 +36,8 @@ type MonthCalendarProps = {
   readonly marksOf: (date: string) => DayMarks
   /** days that fade, because a filter is on and they don't match it */
   readonly fadedOf?: (date: string) => boolean
-  /** the average calories of the counted days of one week row; null when none counts */
-  readonly averageOf: (week: ReadonlyArray<string>) => number | null
-  /** the calories saved over the counted days of one week row (negative: a surplus); null when unknown */
-  readonly savedOf?: (week: ReadonlyArray<string>) => number | null
-  /** the average at the end of a row turns into a button that opens the week */
-  readonly onOpenWeek?: (week: ReadonlyArray<string>) => void
+  /** shown under the grid inside the card: the week bar */
+  readonly footer?: ReactNode
   readonly onSelectDay: (date: string) => void
   readonly onChangeMonth: (month: string) => void
   /** the month title turns into a button that shows the year overview */
@@ -58,9 +53,7 @@ export function MonthCalendar({
   statusOf,
   marksOf,
   fadedOf,
-  averageOf,
-  savedOf,
-  onOpenWeek,
+  footer,
   onSelectDay,
   onChangeMonth,
   onShowYear,
@@ -95,7 +88,7 @@ export function MonthCalendar({
   const showYearHintId = useId()
 
   return (
-    <section className="mt-4 rounded-[28px] bg-bg-elevated p-4 shadow-card">
+    <section className="mt-4 rounded-[28px] bg-bg-elevated p-2 shadow-card">
       <div className="flex items-center justify-between">
         <Button
           variant="plain"
@@ -169,13 +162,11 @@ export function MonthCalendar({
                   {weekday}
                 </th>
               ))}
-              <th className="caption w-[46px] pb-1 text-[11px] whitespace-nowrap">Ø kcal</th>
             </tr>
           </thead>
           <tbody>
             {weeks.map((week) => {
               const isCurrentWeek = week.includes(today)
-              const average = averageOf(week)
               // the current week's row is tinted: the cells carry it, so its ends can be rounded
               const tint = isCurrentWeek ? 'bg-accent/10' : ''
               return (
@@ -183,7 +174,7 @@ export function MonthCalendar({
                   {week.map((date, dayIndex) => (
                     <td
                       key={date}
-                      className={`p-0.5 ${tint} ${dayIndex === 0 ? 'rounded-l-2xl' : ''}`}
+                      className={`p-0.5 ${tint} ${dayIndex === 0 ? 'rounded-l-2xl' : ''} ${dayIndex === week.length - 1 ? 'rounded-r-2xl' : ''}`}
                     >
                       {/* the days of the neighbouring months only feed the week average */}
                       {date.startsWith(month.slice(0, 7)) && (
@@ -199,20 +190,13 @@ export function MonthCalendar({
                       )}
                     </td>
                   ))}
-                  <WeekAverageCell
-                    week={week}
-                    today={today}
-                    average={average}
-                    saved={savedOf?.(week) ?? null}
-                    tint={tint}
-                    onOpenWeek={onOpenWeek}
-                  />
                 </tr>
               )
             })}
           </tbody>
         </table>
       </div>
+      {footer}
       {heldDay && renderQuickLook?.(heldDay, closeQuickLook)}
     </section>
   )
@@ -261,11 +245,11 @@ const DayButton = memo(function DayButton({
       // a future day takes no touches itself, so a swipe starting on it still reaches the grid
       disabled={isFuture}
       onClick={() => onSelect(date)}
-      className={`relative mx-auto flex h-9 w-9 items-center justify-center rounded-full text-[15px] font-semibold ${isFuture ? 'pointer-events-none opacity-30' : ''} ${faded ? 'opacity-30' : ''} ${
+      className={`relative mx-auto flex h-[54px] w-11 items-start justify-center rounded-[14px] pt-[10px] text-[15px] leading-[22px] font-semibold ${isFuture ? 'pointer-events-none opacity-30' : ''} ${faded ? 'opacity-30' : ''} ${
         // the selected day is filled with the accent color; today is only a ring around its fill
         selected
           ? 'accent-edge bg-accent font-extrabold text-on-accent'
-          : `${STATUS_CLASSES[status]} ${isOutlined(status) ? 'border-2' : ''} ${isToday ? 'ring-2 ring-accent-ink ring-offset-1 ring-offset-bg-elevated' : ''}`
+          : `${STATUS_CLASSES[status]} ${isOutlined(status) ? 'border-2' : ''} ${isToday ? 'ring-2 ring-accent-ink ring-offset-0' : ''}`
       }`}
     >
       {Number(date.slice(8))}
@@ -273,20 +257,20 @@ const DayButton = memo(function DayButton({
       {status === 'alcoholDay' && (
         <WineGlassSymbol
           data-testid="alcohol-mark"
-          className={`absolute -top-0.5 -right-0.5 h-3 w-3 ${markColor('text-alcohol')}`}
+          className={`absolute top-[3px] right-[2px] h-[11px] w-[11px] ${markColor('text-alcohol')}`}
         />
       )}
       {status === 'cheatMeal' && (
         <ForkKnifeSymbol
           data-testid="cheat-meal-mark"
-          className={`absolute -top-0.5 -right-0.5 h-3 w-3 ${markColor('text-label-secondary')}`}
+          className={`absolute top-[3px] right-[2px] h-[11px] w-[11px] ${markColor('text-label-secondary')}`}
         />
       )}
       {status === 'missing' && (
         <span
           aria-hidden="true"
           data-testid="missing-dot"
-          className="absolute -top-0.5 -right-0.5 flex h-3 w-3 items-center justify-center rounded-full bg-missing text-[9px] leading-none font-extrabold text-on-missing"
+          className="absolute top-[3px] right-[2px] flex h-[11px] w-[11px] items-center justify-center rounded-full bg-missing text-[9px] leading-none font-extrabold text-on-missing"
         >
           !
         </span>
@@ -295,7 +279,7 @@ const DayButton = memo(function DayButton({
         <span
           aria-hidden="true"
           data-testid="estimate-mark"
-          className={`absolute top-0 left-0.5 text-[11px] leading-none font-bold ${markColor('text-label-secondary')}`}
+          className={`absolute top-[3px] left-[5px] text-[11px] leading-none font-bold ${markColor('text-label-secondary')}`}
         >
           ~
         </span>
@@ -303,14 +287,14 @@ const DayButton = memo(function DayButton({
       {weighed && (
         <ScaleSymbol
           data-testid="weigh-in-mark"
-          className={`absolute bottom-0 left-0 h-3 w-3 ${markColor('text-label-secondary')}`}
+          className={`absolute bottom-[3px] left-[3px] h-3 w-3 ${markColor('text-label-secondary')}`}
         />
       )}
       {hasNote && (
         <span
           aria-hidden="true"
           data-testid="note-dot"
-          className={`absolute bottom-0.5 h-1 w-1 rounded-full ${selected ? 'bg-on-accent' : 'bg-accent-ink'}`}
+          className={`absolute bottom-[5px] left-1/2 h-1 w-1 -translate-x-1/2 rounded-full ${selected ? 'bg-on-accent' : 'bg-accent-ink'}`}
         />
       )}
     </button>

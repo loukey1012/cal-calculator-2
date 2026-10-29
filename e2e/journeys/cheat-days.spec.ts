@@ -79,45 +79,6 @@ test('a cheat meal today, and a past cheat day in History', async ({ page, backe
     .toEqual([{ date: yesterday }])
 })
 
-test('a note on a cheat meal and on the day, shown on Today, then one cleared', async ({
-  page,
-  backend,
-}) => {
-  const me = await backend.user('Nora')
-  await backend.household([me])
-  await logIn(page, me)
-  const today = activePage(page)
-  const notes = async () => {
-    const meals = await backend.admin
-      .from('meals')
-      .select('meal_type, cheat_meal, note')
-      .eq('user_id', me.id)
-      .eq('date', localDay())
-    const day = await backend.admin.from('day_notes').select('note').eq('user_id', me.id)
-    return { meals: meals.data, day: day.data }
-  }
-
-  await today.getByRole('button', { name: 'Day options' }).click()
-  const options = page.getByRole('dialog', { name: 'Day' })
-  await options.getByRole('switch', { name: 'Dinner' }).click()
-  await options.getByRole('textbox', { name: 'Dinner note' }).fill('Pizza with colleagues')
-  await options.getByRole('textbox', { name: 'Day note' }).fill('Birthday at work')
-  // nothing is kept before Save
-  expect(await notes()).toEqual({ meals: [], day: [] })
-  await options.getByRole('button', { name: 'Save' }).click()
-  await expect.poll(notes).toEqual({
-    meals: [{ meal_type: 'dinner', cheat_meal: true, note: 'Pizza with colleagues' }],
-    day: [{ note: 'Birthday at work' }],
-  })
-  await expect(today.getByRole('button', { name: /Dinner/ })).toContainText('Pizza with colleagues')
-  await expect(today.getByTestId('day-total')).toContainText('Birthday at work')
-
-  await today.getByRole('button', { name: 'Day options' }).click()
-  await options.getByRole('textbox', { name: 'Day note' }).clear()
-  await options.getByRole('button', { name: 'Save' }).click()
-  await expect.poll(async () => (await notes()).day).toEqual([])
-})
-
 test('a past day marked as alcohol day, then cheat day, then none', async ({ page, backend }) => {
   const me = await backend.user('Mira')
   await backend.household([me])
@@ -178,15 +139,22 @@ test('closing the day options with edits asks first, and Cancel keeps them', asy
   const today = activePage(page)
   await today.getByRole('button', { name: 'Day options' }).click()
   const options = page.getByRole('dialog', { name: 'Day' })
-  await options.getByRole('textbox', { name: 'Day note' }).fill('Not kept')
+  await options.getByRole('switch', { name: 'Lunch' }).click()
 
   page.once('dialog', (dialog) => dialog.dismiss())
   await options.getByRole('button', { name: 'Close' }).click()
-  await expect(options.getByRole('textbox', { name: 'Day note' })).toHaveValue('Not kept')
+  await expect(options.getByRole('switch', { name: 'Lunch' })).toHaveAttribute(
+    'aria-checked',
+    'true',
+  )
 
   page.once('dialog', (dialog) => dialog.accept())
   await options.getByRole('button', { name: 'Close' }).click()
   await expect(options).toBeHidden()
-  const { data } = await backend.admin.from('day_notes').select('note').eq('user_id', me.id)
+  const { data } = await backend.admin
+    .from('meals')
+    .select('meal_type')
+    .eq('user_id', me.id)
+    .eq('cheat_meal', true)
   expect(data).toEqual([])
 })

@@ -22,6 +22,8 @@ import { useLookOf } from '../household/usePersonLook'
 import { cheatMeals, itemsByMeal, mealEntries, MEAL_TYPES, type MealType } from '../meals/dayModel'
 import { useDay, useDayNote, useLatestDayChangeError, useDayMark } from '../meals/hooks'
 import { mealPath } from '../meals/mealPages'
+import { NoteEntryRow } from '../notes/NoteEntryRow'
+import { dayNotePath } from '../notes/notePages'
 import { isDraftFor } from '../meals/unsavedDish'
 import { formatKcalTotal } from '../nutrition/format'
 import { goalForDate } from '../nutrition/goals'
@@ -33,7 +35,6 @@ import {
   missingMainMeals,
   type MainMeal,
 } from '../../../supabase/functions/_shared/dayCounting'
-import { DayNoteCard } from './DayNoteCard'
 import { DayOptionsSheet } from './DayOptionsSheet'
 import { GoalCard } from './GoalCard'
 import { useToday } from './useToday'
@@ -144,8 +145,8 @@ type DayViewProps = {
   /** local YYYY-MM-DD; today or any past day, all editable */
   readonly date: string
   /**
-   * History: the day's verdict and note come first, as a pill and a card. Today stays compact,
-   * with the note under the Meals heading.
+   * History: the day's verdict and its Note row come first. Today stays compact, with the Note
+   * row under the Meals heading.
    */
   readonly showStatus?: boolean
 }
@@ -170,6 +171,13 @@ export function DayView({ person, isOwnDay, date, showStatus = false }: DayViewP
   const mealOf = (mealType: MealType) => ({ userId: person.id, date, mealType })
   const openMeal = (mealType: MealType) =>
     navigate(mealPath(mealOf(mealType), from), { person: person.id })
+  const noteRow = (
+    <NoteEntryRow
+      note={dayNote}
+      label="Day"
+      onOpen={() => navigate(dayNotePath({ userId: person.id, date }, from), { person: person.id })}
+    />
+  )
 
   const byMeal = itemsByMeal(day.data ?? [])
   const cheatMealTypes = cheatMeals(day.data ?? [])
@@ -228,7 +236,7 @@ export function DayView({ person, isOwnDay, date, showStatus = false }: DayViewP
                   }}
                 />
               )}
-              {dayNote && <DayNoteCard note={dayNote} />}
+              <div className="w-full">{noteRow}</div>
             </div>
           )}
           <GoalCard
@@ -268,10 +276,8 @@ export function DayView({ person, isOwnDay, date, showStatus = false }: DayViewP
                   {missing.length > 0 && <DayBadge label={missingLabel(missing)} />}
                 </div>
               )}
-              {dayNote && !showStatus && (
-                <p className="mt-1.5 truncate text-[13px] text-label-secondary">{dayNote}</p>
-              )}
             </div>
+            {!showStatus && <div className="mb-3">{noteRow}</div>}
             <div className="grid grid-cols-2 gap-3">
               {meals.map(({ type, label, note, ...summary }) => (
                 <MealCard

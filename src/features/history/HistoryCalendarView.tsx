@@ -4,12 +4,13 @@ import { useGoals } from '../goals/hooks'
 import type { Profile } from '../household/householdApi'
 import type { CalendarZoom } from './historyState'
 import { useWeights } from '../weight/hooks'
-import { dayStatus, weekAverageKcal } from './calendar'
+import { dayStatus, monthWeeks, weekAverageKcal } from './calendar'
 import { CalendarKey } from './CalendarKey'
 import { FilterPill } from './FilterPill'
 import { savedKcal } from './week/weekStats'
 import { useMonthNotes, useMonthTotals, useWeekEdgeTotals } from './hooks'
 import { MonthCalendar } from './MonthCalendar'
+import { WeekBar } from './WeekBar'
 import { MonthQuickLook } from './MonthQuickLook'
 import { HistoryYearView } from './HistoryYearView'
 import { filterMatches, noteDatesOf, type MonthFilter } from './monthStats'
@@ -31,7 +32,7 @@ type HistoryCalendarViewProps = {
   readonly onChangeYear: (year: number) => void
   readonly onChangeFilter: (filter: MonthFilter | null) => void
   readonly onSelectDay: (day: string) => void
-  /** a week row's end was tapped; gets the row's dates, Monday first */
+  /** the week bar was tapped; gets the week's dates, Monday first */
   readonly onOpenWeek: (week: ReadonlyArray<string>) => void
   readonly keyShown: boolean
 }
@@ -109,6 +110,36 @@ function HistoryMonthView({
           !filterMatches(filter, statusOf(day), notedDays.has(day), byDate.get(day))
       : undefined
 
+  // the bar belongs to the open day's week when that day is in the shown month (a day of a
+  // neighbouring month is no cell here), else to the running week when the month shows it
+  const barDay =
+    selectedDay !== null && selectedDay.startsWith(monthPrefix)
+      ? selectedDay
+      : today.startsWith(monthPrefix)
+        ? today
+        : null
+  const barWeek = monthWeeks(month).find((week) => barDay !== null && week.includes(barDay)) ?? null
+  const weekBar =
+    barWeek === null ? null : (
+      <WeekBar
+        week={barWeek}
+        figures={
+          rowReady(barWeek)
+            ? {
+                average: weekAverageKcal(barWeek, byDateInWeeks, today),
+                saved:
+                  savedKcal(
+                    barWeek.flatMap((day) => byDateInWeeks.get(day) ?? []),
+                    person.kcal_burned,
+                    today,
+                  )?.saved ?? null,
+              }
+            : null
+        }
+        onOpen={onOpenWeek}
+      />
+    )
+
   return (
     <>
       <MonthCalendar
@@ -122,17 +153,7 @@ function HistoryMonthView({
           estimated: byDate.get(day)?.kcalEstimated === true,
         })}
         fadedOf={fadedOf}
-        averageOf={(week) => (rowReady(week) ? weekAverageKcal(week, byDateInWeeks, today) : null)}
-        savedOf={(week) =>
-          rowReady(week)
-            ? (savedKcal(
-                week.flatMap((day) => byDateInWeeks.get(day) ?? []),
-                person.kcal_burned,
-                today,
-              )?.saved ?? null)
-            : null
-        }
-        onOpenWeek={onOpenWeek}
+        footer={weekBar}
         onSelectDay={onSelectDay}
         onChangeMonth={onChangeMonth}
         onShowYear={onShowYear}

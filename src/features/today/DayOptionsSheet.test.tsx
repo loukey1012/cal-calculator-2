@@ -8,20 +8,9 @@ vi.mock('../meals/mealsApi', () => ({
   fetchDayMark: vi.fn(),
   setCheatMeal: vi.fn(),
   setDayMark: vi.fn(),
-  fetchDayNote: vi.fn(),
-  setDayNote: vi.fn(),
-  setMealNote: vi.fn(),
 }))
 
-import {
-  fetchDay,
-  fetchDayMark,
-  fetchDayNote,
-  setCheatMeal,
-  setDayMark,
-  setDayNote,
-  setMealNote,
-} from '../meals/mealsApi'
+import { fetchDay, fetchDayMark, setCheatMeal, setDayMark } from '../meals/mealsApi'
 import type { MealType } from '../meals/dayModel'
 import type { DayMark } from '../meals/mealsApi'
 import { dayMeal, mealItem } from '../meals/testData'
@@ -40,7 +29,6 @@ beforeEach(() => {
     {
       ...dayMeal('m1', 'dinner', []),
       cheat_meal: cheatMealsOnServer.has('dinner'),
-      note: 'Pizza with colleagues',
     },
     {
       ...dayMeal('m2', 'lunch', [mealItem({ id: 'pasta' })]),
@@ -48,9 +36,6 @@ beforeEach(() => {
     },
   ])
   vi.mocked(fetchDayMark).mockImplementation(async () => markOnServer)
-  vi.mocked(fetchDayNote).mockResolvedValue('Birthday')
-  vi.mocked(setDayNote).mockResolvedValue()
-  vi.mocked(setMealNote).mockResolvedValue()
   vi.mocked(setCheatMeal).mockImplementation(async ({ mealType, cheatMeal }) => {
     cheatMealsOnServer = new Set(
       cheatMeal
@@ -89,13 +74,6 @@ describe('DayOptionsSheet', () => {
 
     await waitFor(() => expect(radioNamed('Alcohol day')).toBeChecked())
     expect(saveButton()).toBeDisabled()
-  })
-
-  test('the notes can only be edited once the day note has loaded', async () => {
-    vi.mocked(fetchDayNote).mockImplementation(() => new Promise(() => {}))
-    renderSheet()
-
-    expect(await screen.findByRole('textbox', { name: 'Day note' })).toBeDisabled()
   })
 
   test('shows the day as neither, and which meals were cheat meals', async () => {
@@ -163,27 +141,20 @@ describe('DayOptionsSheet', () => {
 
     await user.click(radioNamed('Alcohol day'))
     await user.click(switchNamed('Lunch'))
-    await user.type(screen.getByRole('textbox', { name: 'Day note' }), ' party')
-    await user.type(screen.getByRole('textbox', { name: 'Lunch note' }), 'Salad{Enter}')
 
     expect(radioNamed('Alcohol day')).toBeChecked()
     expect(switchNamed('Lunch')).toHaveAttribute('aria-checked', 'true')
     expect(setDayMark).not.toHaveBeenCalled()
     expect(setCheatMeal).not.toHaveBeenCalled()
-    expect(setDayNote).not.toHaveBeenCalled()
-    expect(setMealNote).not.toHaveBeenCalled()
   })
 
-  test('Save saves the mark, a cheat meal and both kinds of notes together, then closes', async () => {
+  test('Save saves the mark and a cheat meal together, then closes', async () => {
     const user = userEvent.setup()
     const { onClose } = renderSheet()
-    await screen.findByDisplayValue('Birthday')
     await waitFor(() => expect(radioNamed('None')).toBeEnabled())
 
     await user.click(radioNamed('Cheat day'))
     await user.click(switchNamed('Lunch'))
-    await user.type(screen.getByRole('textbox', { name: 'Day note' }), ' party')
-    await user.type(screen.getByRole('textbox', { name: 'Lunch note' }), 'Leftovers at work')
     await user.click(saveButton())
 
     await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1))
@@ -195,14 +166,6 @@ describe('DayOptionsSheet', () => {
       mealType: 'lunch',
       cheatMeal: true,
     })
-    expect(setDayNote).toHaveBeenCalledWith('u1', '2026-10-02', 'Birthday party')
-    expect(setMealNote).toHaveBeenCalledTimes(1)
-    expect(setMealNote).toHaveBeenCalledWith({
-      userId: 'u1',
-      date: '2026-10-02',
-      mealType: 'lunch',
-      note: 'Leftovers at work',
-    })
     expect(window.confirm).not.toHaveBeenCalled()
   })
 
@@ -210,7 +173,6 @@ describe('DayOptionsSheet', () => {
     const user = userEvent.setup()
     renderSheet()
     await waitFor(() => expect(switchNamed('Dinner')).toHaveAttribute('aria-checked', 'true'))
-    await screen.findByDisplayValue('Birthday')
 
     await user.click(switchNamed('Dinner'))
     await user.click(saveButton())
@@ -223,20 +185,6 @@ describe('DayOptionsSheet', () => {
       cheatMeal: false,
     })
     expect(setDayMark).not.toHaveBeenCalled()
-    expect(setDayNote).not.toHaveBeenCalled()
-    expect(setMealNote).not.toHaveBeenCalled()
-  })
-
-  test('clearing the day note and saving removes it', async () => {
-    const user = userEvent.setup()
-    renderSheet()
-    const day = await screen.findByDisplayValue('Birthday')
-
-    await user.clear(day)
-    await user.click(saveButton())
-
-    await waitFor(() => expect(setDayNote).toHaveBeenCalledWith('u1', '2026-10-02', ''))
-    expect(setMealNote).not.toHaveBeenCalled()
   })
 
   test('a mark that fails to save goes back to what it was', async () => {
@@ -271,14 +219,13 @@ describe('DayOptionsSheet', () => {
     const user = userEvent.setup()
     vi.mocked(window.confirm).mockReturnValue(true)
     const { onClose } = renderSheet()
-    await screen.findByDisplayValue('Birthday')
 
-    await user.type(screen.getByRole('textbox', { name: 'Day note' }), '!')
+    await user.click(switchNamed('Lunch'))
     await user.click(closeButton())
 
     expect(window.confirm).toHaveBeenCalledWith('Discard changes?')
     expect(onClose).toHaveBeenCalledTimes(1)
-    expect(setDayNote).not.toHaveBeenCalled()
+    expect(setDayMark).not.toHaveBeenCalled()
   })
 
   test('Escape, the backdrop and a swipe down go through the same question', async () => {
@@ -307,18 +254,5 @@ describe('DayOptionsSheet', () => {
 
     expect(window.confirm).not.toHaveBeenCalled()
     expect(onClose).toHaveBeenCalledTimes(1)
-  })
-
-  test('shows the notes of the day and its meals', async () => {
-    renderSheet()
-
-    expect(await screen.findByDisplayValue('Birthday')).toHaveAccessibleName('Day note')
-    expect(await screen.findByDisplayValue('Pizza with colleagues')).toHaveAccessibleName(
-      'Dinner note',
-    )
-    expect(screen.getByRole('textbox', { name: 'Lunch note' })).toHaveValue('')
-    // each row says what it is for, also once it has a note
-    expect(screen.getByText('Day', { selector: 'label' })).toBeVisible()
-    expect(screen.getByText('Dinner', { selector: 'label' })).toBeVisible()
   })
 })

@@ -11,6 +11,7 @@ import {
 import { Navigate, useLocation, useNavigate } from 'react-router'
 import { HistoryIcon, IngredientsIcon, SettingsIcon, TodayIcon } from '../components/ios/icons'
 import { TabBar } from '../components/ios/TabBar'
+import { isNotePath } from '../features/notes/notePages'
 import { AddFoodSession } from '../features/addFood/AddFoodSession'
 import { useLegacyCookTarget } from '../features/addFood/legacyCookLink'
 import { HistoryPage } from '../features/history/HistoryPage'
@@ -288,12 +289,15 @@ function ShellContent() {
       </div>
       <SyncStatus />
       <UpdateToasts updatedThisStart={wasUpdatedThisStart()} update={updateReady} />
-      <TabBar
-        items={TABS}
-        activeIndex={activeIndex}
-        onSelect={(index) => navigate(TABS[index]?.path ?? TABS[0].path, { replace: true })}
-        onReselect={(index) => pageRefs.current[index]?.scrollTo({ top: 0, behavior: 'smooth' })}
-      />
+      {/* a note page needs the whole screen: the bar would sit over its text area */}
+      {!isNotePath(pathname) && (
+        <TabBar
+          items={TABS}
+          activeIndex={activeIndex}
+          onSelect={(index) => navigate(TABS[index]?.path ?? TABS[0].path, { replace: true })}
+          onReselect={(index) => pageRefs.current[index]?.scrollTo({ top: 0, behavior: 'smooth' })}
+        />
+      )}
     </div>
   )
 }

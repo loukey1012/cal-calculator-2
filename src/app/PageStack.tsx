@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { canLeavePage } from './leaveGuard'
 import { PagePathContext } from './pagePath'
 import {
   dragDirection,
@@ -305,7 +306,9 @@ export function PageStack({
       const { path: top, backPath: under } = latest.current
       if (!drag || drag.direction !== 'back' || !under) return
       const progress = drag.dx / screenWidth(container)
-      const back = releaseCompletesBack(drag.dx, screenWidth(container), drag.velocity)
+      // the page on top may veto (a note with changes asks), only when the swipe would go back
+      const back =
+        releaseCompletesBack(drag.dx, screenWidth(container), drag.velocity) && canLeavePage(top)
       if (prefersReducedMotion()) {
         if (!back) return setMotion({ kind: 'idle' })
         setMotion({ kind: 'gone', top, under })

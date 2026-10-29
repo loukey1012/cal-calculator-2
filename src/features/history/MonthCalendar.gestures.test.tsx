@@ -17,7 +17,6 @@ function calendar(
       selectedDay={null}
       statusOf={() => 'none'}
       marksOf={() => ({ hasNote: false, weighed: false, estimated: false })}
-      averageOf={() => null}
       onSelectDay={onSelectDay}
       onChangeMonth={onChangeMonth}
       renderQuickLook={(date, close) => (

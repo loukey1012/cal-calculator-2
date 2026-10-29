@@ -17,12 +17,6 @@ export function formatSaved(saved: number): string {
   return saved >= 0 ? `${formatKcal(saved)} kcal` : `${formatKcal(-saved)} kcal surplus`
 }
 
-/** Small figure in a calendar row: "−3,090" saved, "+1,200" surplus. */
-export function formatSavedShort(saved: number): string {
-  if (saved === 0) return '0'
-  return saved >= 0 ? `−${formatKcal(saved)}` : `+${formatKcal(-saved)}`
-}
-
 export function plural(count: number, one: string, many: string): string {
   return `${count} ${count === 1 ? one : many}`
 }

@@ -4,7 +4,7 @@ import { MEAL_TYPES, type MealType } from './dayModel'
  * The addresses of a meal and its pages. A meal is a page of the tab it was opened from:
  * /today/meal-lunch-2026-10-21-<person> or /history/2026-10-21/meal-lunch-2026-10-21-<person>.
  * Below it: Add food (/food, with the composer's steps below that) and Add from recipe
- * (/recipes, a recipe below that). Each page is one level below the one Back leads to.
+ * (/recipes, a recipe below that) and the meal's note (/note). Each page is one level below the one Back leads to.
  */
 export type MealRef = {
   readonly userId: string
@@ -13,7 +13,7 @@ export type MealRef = {
   readonly mealType: MealType
 }
 
-export type MealSubPage = 'meal' | 'food' | 'recipes'
+export type MealSubPage = 'meal' | 'food' | 'recipes' | 'note'
 
 export type MealPageRef = {
   readonly meal: MealRef
@@ -26,6 +26,7 @@ export type MealPageRef = {
 
 const FOOD_SEGMENT = 'food'
 const RECIPES_SEGMENT = 'recipes'
+export const NOTE_SEGMENT = 'note'
 const MEAL_SEGMENT = /^meal-([a-z]+)-(\d{4}-\d{2}-\d{2})-(.+)$/
 const DAY = /^\d{4}-\d{2}-\d{2}$/
 
@@ -77,5 +78,8 @@ export function mealPageOf(path: string): MealPageRef | null {
   if (sub === undefined) return { meal, mealPath: mealPagePath, page: 'meal', rest: [] }
   if (sub === FOOD_SEGMENT) return { meal, mealPath: mealPagePath, page: 'food', rest }
   if (sub === RECIPES_SEGMENT) return { meal, mealPath: mealPagePath, page: 'recipes', rest }
+  if (sub === NOTE_SEGMENT && rest.length === 0) {
+    return { meal, mealPath: mealPagePath, page: 'note', rest: [] }
+  }
   return { meal, mealPath: mealPagePath, page: 'meal', rest: [] }
 }

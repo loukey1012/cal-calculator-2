@@ -10,6 +10,8 @@ import { usePeople } from '../household/hooks'
 import { PersonSwitch } from '../household/PersonSwitch'
 import { MealRoute } from '../meals/MealPage'
 import { mealPageOf } from '../meals/mealPages'
+import { DayNoteRoute } from '../notes/NoteRoutes'
+import { dayNotePageOf } from '../notes/notePages'
 import { TrendsView } from '../trends/TrendsView'
 import { useToday } from '../today/useToday'
 import { monthStart } from './calendar'
@@ -53,6 +55,8 @@ export function HistoryPage() {
   const path = usePagePath()
   const page = mealPageOf(path)
   const week = weekPageOf(path, useToday())
+  const dayNote = dayNotePageOf(path)
+  if (dayNote) return <DayNoteRoute page={dayNote} />
   if (page) return <MealRoute page={page} />
   return week ? <WeekRoute week={week} /> : <HistoryMonth />
 }

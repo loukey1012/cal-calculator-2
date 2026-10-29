@@ -22,6 +22,8 @@ vi.mock('../meals/mealsApi', () => ({
   fetchDayNote: vi.fn().mockResolvedValue(null),
   setCheatMeal: vi.fn(),
   setDayMark: vi.fn(),
+  setDayNote: vi.fn(),
+  setMealNote: vi.fn(),
 }))
 // Add food (opened from an empty meal) loads the recipes and notes a started dish
 vi.mock('../recipes/recipesApi', () => ({
@@ -47,7 +49,15 @@ vi.mock('../ingredients/ingredientsApi', () => ({
 
 import { fetchGoals } from '../goals/goalsApi'
 import { fetchMembers } from '../household/householdApi'
-import { fetchDay, fetchDayMark, fetchDayNote, setDayMark, updateMealItem } from '../meals/mealsApi'
+import {
+  fetchDay,
+  fetchDayMark,
+  fetchDayNote,
+  setDayMark,
+  setDayNote,
+  setMealNote,
+  updateMealItem,
+} from '../meals/mealsApi'
 import { fetchWeights, saveWeight } from '../weight/weightApi'
 import { newAddFoodDraft, withDish } from '../addFood/addFoodDraft'
 import { AddFoodSession } from '../addFood/AddFoodSession'
@@ -264,10 +274,50 @@ describe('TodayPage', () => {
 
     renderPage()
 
-    expect(await screen.findByText('Birthday at Oma’s')).toBeInTheDocument()
+    expect(
+      await screen.findByRole('button', { name: /^Day note: Birthday at Oma’s/ }),
+    ).toBeVisible()
     expect(
       await screen.findByRole('button', { name: /Dinner.*Pizza with colleagues/ }),
     ).toBeVisible()
+  })
+
+  test('the Note row says "Add a note" when the day has none', async () => {
+    renderPage()
+
+    expect(await screen.findByRole('button', { name: /^Day note: Add a note/ })).toBeVisible()
+  })
+
+  test('the Note row opens the day’s note page; Done saves it and leads back to Today', async () => {
+    vi.mocked(fetchDayNote).mockResolvedValue('Birthday')
+    vi.mocked(setDayNote).mockResolvedValue()
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: /^Day note: Birthday/ }))
+
+    expect(screen.getByTestId('location').textContent).toBe('/today/note-2026-10-01-u1')
+    const field = await screen.findByRole('textbox', { name: 'Note' })
+    await waitFor(() => expect(field).toHaveValue('Birthday'))
+    await user.type(field, ' party')
+    await user.click(screen.getByRole('button', { name: 'Done' }))
+
+    expect(setDayNote).toHaveBeenCalledWith('u1', '2026-10-01', 'Birthday party')
+    expect(screen.getByTestId('location').textContent).toBe('/today')
+  })
+
+  test('the partner’s day note page keeps the partner picked when it is closed', async () => {
+    vi.mocked(fetchMembers).mockResolvedValue([PROFILE, PARTNER])
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    renderPage()
+
+    await user.click(await screen.findByRole('radio', { name: /baby/ }))
+    await user.click(await screen.findByRole('button', { name: /^Day note/ }))
+    expect(screen.getByTestId('location').textContent).toBe('/today/note-2026-10-01-u2')
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+
+    expect(screen.getByTestId('location').textContent).toBe('/today')
+    expect(await screen.findByRole('radio', { name: /baby/ })).toBeChecked()
   })
 
   test('Day options marks the day, also for the partner', async () => {
@@ -314,6 +364,39 @@ describe('TodayPage', () => {
 
     expect(screen.getByRole('button', { name: /Lunch/ })).toHaveTextContent('Loading…')
     expect(screen.queryByText('Nothing logged')).not.toBeInTheDocument()
+  })
+
+  test('a meal page has a Note row with the meal’s note, or "Add a note"', async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchDay).mockResolvedValue([{ ...LUNCH, note: 'Restaurant' }])
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: /Lunch/ }))
+    expect(await screen.findByRole('button', { name: /^Lunch note: Restaurant/ })).toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+    await user.click(await screen.findByRole('button', { name: /Dinner/ }))
+
+    expect(await screen.findByRole('button', { name: /^Dinner note: Add a note/ })).toBeVisible()
+  })
+
+  test('the meal’s Note row opens its note page; Done saves it and leads back to the meal', async () => {
+    const user = userEvent.setup()
+    vi.mocked(setMealNote).mockResolvedValue()
+    renderPage()
+
+    await user.click(await screen.findByRole('button', { name: /Lunch/ }))
+    await user.click(await screen.findByRole('button', { name: /^Lunch note: Add a note/ }))
+    expect(screen.getByTestId('location').textContent).toBe('/today/meal-lunch-2026-10-01-u1/note')
+    await user.type(await screen.findByRole('textbox', { name: 'Note' }), 'Restaurant')
+    await user.click(screen.getByRole('button', { name: 'Done' }))
+
+    expect(setMealNote).toHaveBeenCalledWith({
+      userId: 'u1',
+      date: '2026-10-01',
+      mealType: 'lunch',
+      note: 'Restaurant',
+    })
+    expect(screen.getByTestId('location').textContent).toBe('/today/meal-lunch-2026-10-01-u1')
   })
 
   test('tapping a meal opens it', async () => {
