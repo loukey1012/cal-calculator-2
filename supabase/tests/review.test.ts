@@ -507,3 +507,144 @@ describe('members and findings', () => {
     expect(data).toEqual([])
   })
 })
+
+describe('withdrawing findings', () => {
+  const withdraw = (ids: string[], key = reviewKey) =>
+    routine.rpc('withdraw_review_findings', { p_key: key, p_ids: ids })
+  let openId: string
+  let decidedId: string
+  let carolsId: string
+
+  beforeAll(async () => {
+    await submit(
+      [
+        { ingredient_id: butterId, kind: 'brand', message: 'Brand open.', suggestion: {} },
+        { ingredient_id: butterId, kind: 'values', message: 'Values decided.', suggestion: {} },
+        // a day finding of its own, so the meal fetch doesn't depend on earlier tests
+        {
+          user_id: alice.id,
+          date: '2026-10-05',
+          meal_type: 'dinner',
+          kind: 'missing_meal',
+          message: 'No dinner logged.',
+        },
+      ],
+      'run-withdraw',
+    )
+    const mine = await alice.client.from('review_findings').select('id, kind')
+    openId = mine.data?.find(({ kind }) => kind === 'brand')?.id ?? ''
+    decidedId = mine.data?.find(({ kind }) => kind === 'values')?.id ?? ''
+    if (!openId || !decidedId) throw new Error('the withdraw fixtures were not written')
+    const decided = await alice.client
+      .from('review_findings')
+      .update({ status: 'applied', decided_by: alice.id, decided_at: new Date().toISOString() })
+      .eq('id', decidedId)
+    if (decided.error) throw new Error(decided.error.message)
+    const other = await admin
+      .from('review_findings')
+      .insert({
+        household_id: (
+          await admin.from('profiles').select('household_id').eq('id', carol.id).single()
+        ).data?.household_id,
+        ingredient_id: cheeseId,
+        kind: 'other',
+        message: 'Carol’s finding.',
+        run_id: 'carol',
+      })
+      .select('id')
+      .single()
+    if (other.error) throw new Error(other.error.message)
+    carolsId = other.data.id
+  })
+
+  test('the fetches give each earlier finding its id and creation time', async () => {
+    const ingredients = await routine.rpc('review_ingredients', { p_key: reviewKey })
+    const meals = await routine.rpc('review_meals', {
+      p_key: reviewKey,
+      p_from: '2026-10-04',
+      p_to: '2026-10-10',
+    })
+
+    expect(ingredients.data.findings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: openId, created_at: expect.any(String) }),
+      ]),
+    )
+    expect(meals.data.findings.length).toBeGreaterThan(0)
+    for (const finding of meals.data.findings) {
+      expect(finding).toMatchObject({ id: expect.any(String), created_at: expect.any(String) })
+    }
+  })
+
+  test('removes open findings of its household only, and says how many', async () => {
+    const { data, error } = await withdraw([openId, decidedId, carolsId])
+
+    expect(error).toBeNull()
+    expect(data).toBe(1)
+    const mine = await alice.client.from('review_findings').select('id')
+    const ids = (mine.data ?? []).map(({ id }) => id)
+    expect(ids).not.toContain(openId)
+    expect(ids).toContain(decidedId)
+    const theirs = await admin.from('review_findings').select('id').eq('id', carolsId)
+    expect(theirs.data).toHaveLength(1)
+  })
+
+  test('an ignored finding stays; an open meal finding goes', async () => {
+    const mine = await alice.client.from('review_findings').select('id, kind, status')
+    const mealId =
+      mine.data?.find(({ kind, status }) => kind === 'missing_meal' && status === 'open')?.id ?? ''
+    const ignored = await alice.client
+      .from('review_findings')
+      .update({ status: 'ignored', decided_by: alice.id, decided_at: new Date().toISOString() })
+      .eq('id', decidedId)
+    expect(ignored.error).toBeNull()
+
+    const { data, error } = await withdraw([decidedId, mealId])
+
+    expect(error).toBeNull()
+    expect(data).toBe(1)
+    const left = await alice.client.from('review_findings').select('id')
+    const ids = (left.data ?? []).map(({ id }) => id)
+    expect(ids).toContain(decidedId)
+    expect(ids).not.toContain(mealId)
+  })
+
+  test('a missing list is refused', async () => {
+    const { data, error } = await routine.rpc('withdraw_review_findings', {
+      p_key: reviewKey,
+      p_ids: null as unknown as string[],
+    })
+
+    expect(data).toBeNull()
+    expect(error?.code).toBe('22023')
+  })
+
+  test('withdrawing nothing or an unknown id removes nothing', async () => {
+    const none = await withdraw([])
+    const unknown = await withdraw(['00000000-0000-4000-8000-000000000000'])
+
+    expect(none.data).toBe(0)
+    expect(unknown.data).toBe(0)
+  })
+
+  test('a wrong key is refused and removes nothing', async () => {
+    const { data, error } = await withdraw([decidedId, carolsId], 'not-the-key')
+
+    expect(data).toBeNull()
+    expect(error?.code).toBe('28000')
+    const kept = await admin.from('review_findings').select('id').eq('id', carolsId)
+    expect(kept.data).toHaveLength(1)
+  })
+
+  test('more than 200 ids are refused', async () => {
+    const ids = Array.from(
+      { length: 201 },
+      (_, index) => `00000000-0000-4000-8000-${String(index).padStart(12, '0')}`,
+    )
+
+    const { data, error } = await withdraw(ids)
+
+    expect(data).toBeNull()
+    expect(error?.code).toBe('22023')
+  })
+})

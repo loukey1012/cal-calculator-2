@@ -392,21 +392,11 @@ describe('estimates', () => {
 })
 
 describe('filling in values from elsewhere', () => {
-  test('copied from a saved ingredient; the typed name stays', async () => {
-    const user = userEvent.setup()
+  test('offers no copying from a saved ingredient', async () => {
     renderSheet()
-    await user.type(screen.getByLabelText('Name'), 'Skyr vanilla')
 
-    await user.click(await screen.findByRole('button', { name: 'Copy from an ingredient' }))
-    await user.click(await screen.findByRole('button', { name: /^Milbona Skyr/ }))
-
-    expect(screen.getByLabelText('Name')).toHaveValue('Skyr vanilla')
-    expect(screen.getByLabelText('Calories per 100 g')).toHaveValue('62')
-    expect(screen.getByLabelText('Grams per unit')).toHaveValue('150')
-    expect(screen.getByText('Copied from Skyr')).toBeInTheDocument()
-
-    await user.click(screen.getByRole('button', { name: 'Undo' }))
-    expect(screen.getByRole('switch', { name: 'Per 100 g' })).not.toBeChecked()
+    expect(await screen.findByRole('button', { name: 'Search Open Food Facts' })).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Copy from an ingredient' })).toBeNull()
   })
 
   test('a similar product found on Open Food Facts by name', async () => {

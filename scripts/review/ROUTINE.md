@@ -21,8 +21,8 @@ This writes `review-data.json`:
   (e.g. "slice"), and `unit_weight_g` is its weight in g (in ml for `ml`). `null` means unknown,
   which is not the same as 0. `kcal_estimated` means the calories are known to be a guess.
 - `categories`: the household's categories (`id`, `name`).
-- `findings`: ingredient findings from before, with their `status`: `open`, `applied` or
-  `ignored`.
+- `findings`: ingredient findings from before, with their `id`, `created_at` and `status`:
+  `open`, `applied` or `ignored`.
 - `meals`: the past week, `from` to `to` (both complete days, Vienna time):
   - `members`: the two people (`id`, `name`).
   - `goals`: each person's calorie goal from `valid_from` on (the latest one on or before a day
@@ -35,9 +35,43 @@ This writes `review-data.json`:
     were only roughly known. `cheat_day`: the person marked the day as a cheat day (it can have no
     meals at all). `alcohol_day`: the person marked the day as an alcohol day (its calories are
     not known; it can have no meals at all). `cheat_meal`: a meal that day was a cheat meal.
-  - `findings`: meal findings from before, with their `status`.
+  - `findings`: meal findings from before (all dates), with their `id`, `created_at` and `status`.
 
-## 2. Look for real problems only
+## 2. Re-check open findings
+
+Before looking for anything new, go through every finding in `findings` with `status: "open"`
+(ingredient findings, and meal findings under `meals.findings`) and decide with today's data
+whether it still applies. Withdraw it when it clearly doesn't any more, for example:
+
+- a `typo`, `brand`, `unit_name` or `unit_weight` finding whose ingredient now has the suggested
+  (or any correct) value;
+- a `values` finding whose values were corrected, or whose ingredient is now marked
+  `kcal_estimated`;
+- a `duplicate` where one of the two ingredients is gone from `ingredients` (merged) or they are
+  clearly different products now;
+- a `missing_meal`, `low_day` or `zero_kcal` finding whose meal now exists, whose day now reaches
+  the goal, or whose item now has calories; an `odd_amount` or `double_entry` whose item is no
+  longer in `meals` (corrected or deleted), or whose day is now a cheat day, alcohol day or has a
+  cheat meal.
+
+Be conservative: withdraw only when it is clearly resolved; when in doubt, leave it open. Never
+touch `applied` or `ignored` findings (the script and database refuse anyway). A meal finding
+dated outside `from` to `to` can't be re-checked (its day isn't in the data): leave it open.
+
+Write the ids to `withdraw.json`, a list of at most 200 (nothing to withdraw: skip this):
+
+```json
+["finding id", "another finding id"]
+```
+
+```bash
+node scripts/review/review.ts withdraw withdraw.json
+```
+
+Withdrawn findings just disappear from the app. If the script lists problems, fix the file and
+send it again. Findings you withdraw may be found again below only if the problem is back.
+
+## 3. Look for real problems only
 
 Be conservative: one wrong suggestion costs more than a missed nitpick. No style preferences, no
 translations, no reordering of words.
@@ -76,7 +110,7 @@ Never flag a missing snack, a day that only has snacks because that's how the pe
 day already flagged with the same kind (same person, day and meal) in `findings`. If the past days
 show a person usually skips a meal (e.g. never logs breakfast), don't flag that meal.
 
-## 3. Write the findings
+## 4. Write the findings
 
 Write `findings.json`, a list (at most 100) of ingredient findings:
 
@@ -111,7 +145,7 @@ and meal findings (no `suggestion`; `meal_type` and `meal_item_id` only where th
   right value: the message then says what to check.
 - Messages are neutral and short, in English.
 
-## 4. Send them
+## 5. Send them
 
 ```bash
 node scripts/review/review.ts submit findings.json
@@ -121,4 +155,4 @@ If the script lists problems, fix `findings.json` and send it again. With nothin
 send anything.
 
 Finish with one line, e.g. "Reviewed 187 ingredients and 7 days: 4 new findings (2 typos, 1 unit
-weight, 1 missing meal)."
+weight, 1 missing meal), 3 withdrawn."

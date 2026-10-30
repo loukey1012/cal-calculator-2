@@ -1292,6 +1292,10 @@ export type Database = {
         Args: { p_findings: Json; p_key: string; p_run_id: string }
         Returns: number
       }
+      withdraw_review_findings: {
+        Args: { p_ids: string[]; p_key: string }
+        Returns: number
+      }
     }
     Enums: {
       amount_unit: "g" | "unit" | "ml"

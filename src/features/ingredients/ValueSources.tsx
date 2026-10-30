@@ -4,16 +4,14 @@ import { ProductSearchPanel } from '../barcode/ProductSearchPanel'
 import type { ProductHit } from '../barcode/openFoodFacts'
 import type { LabelReading } from '../label/labelParser'
 import { ReadLabelRow } from '../label/ReadLabelRow'
-import { IngredientPickList } from './IngredientPickList'
-import { toFormValues, type IngredientFormValues } from './ingredientForm'
-import type { Ingredient } from './ingredientsApi'
+import type { IngredientFormValues } from './ingredientForm'
 
-type Mode = 'closed' | 'copy' | 'search'
+type Mode = 'closed' | 'search'
 
 /** Values from somewhere else, to take over into the form. */
 export type FilledValues = {
   readonly values: IngredientFormValues
-  /** e.g. "Copied from Skyr" */
+  /** e.g. "Filled in from Skyr" */
   readonly message: string
   /** the portion as printed on a product's package */
   readonly packagePortion: string | null
@@ -22,7 +20,6 @@ export type FilledValues = {
 type ValueSourcesProps = {
   /** what is typed as the name, to search with */
   readonly name: string
-  readonly savedIngredients: readonly Ingredient[]
   readonly onFill: (filled: FilledValues) => void
   /** a photo of the nutrition table was read */
   readonly onReadLabel: (reading: LabelReading) => void
@@ -53,15 +50,9 @@ function SourceRow({
 
 /**
  * Values from somewhere else: read from a photo of the nutrition table, or (for food without
- * values on it) copied from a saved ingredient or a similar product on Open Food Facts.
+ * values on it) taken from a similar product on Open Food Facts.
  */
-export function ValueSources({
-  name,
-  savedIngredients,
-  onFill,
-  onReadLabel,
-  undo,
-}: ValueSourcesProps) {
+export function ValueSources({ name, onFill, onReadLabel, undo }: ValueSourcesProps) {
   const [mode, setMode] = useState<Mode>('closed')
   const toggle = (next: Mode) => setMode((current) => (current === next ? 'closed' : next))
 
@@ -74,7 +65,7 @@ export function ValueSources({
     <section>
       <GroupedSection
         header="Fill in values"
-        footer="Read them from a photo of the nutrition table, or take them from a similar ingredient or product when the package has none."
+        footer="Read them from a photo of the nutrition table, or take them from a similar product when the package has none."
       >
         <ReadLabelRow
           onRead={(reading) => {
@@ -82,13 +73,6 @@ export function ValueSources({
             onReadLabel(reading)
           }}
         />
-        {savedIngredients.length > 0 && (
-          <SourceRow
-            label="Copy from an ingredient"
-            open={mode === 'copy'}
-            onClick={() => toggle('copy')}
-          />
-        )}
         <SourceRow
           label="Search Open Food Facts"
           open={mode === 'search'}
@@ -96,19 +80,6 @@ export function ValueSources({
         />
         {undo}
       </GroupedSection>
-      {mode === 'copy' && (
-        <IngredientPickList
-          label="Search your ingredients"
-          ingredients={savedIngredients}
-          onPick={(ingredient) =>
-            fill({
-              values: toFormValues(ingredient),
-              message: `Copied from ${ingredient.name}`,
-              packagePortion: null,
-            })
-          }
-        />
-      )}
       {mode === 'search' && (
         <ProductSearchPanel
           initialQuery={name}

@@ -40,7 +40,7 @@ type IngredientFormProps = {
   readonly categories: readonly Category[]
   readonly groups: readonly CategoryGroup[]
   readonly onSubmit: (data: ParsedIngredientForm) => void
-  /** the household's ingredients, whose brands are suggested and whose values can be copied */
+  /** the household's ingredients, whose brands are suggested */
   readonly savedIngredients?: readonly Ingredient[]
   /** the portion as printed on the package of a scanned product, e.g. "3 Kekse (30 g)" */
   readonly packagePortion?: string | null
@@ -164,7 +164,6 @@ function IngredientFormBody({
       />
       <ValueSources
         name={values.name}
-        savedIngredients={savedIngredients}
         onFill={form.fill}
         onReadLabel={(reading) =>
           form.fill({

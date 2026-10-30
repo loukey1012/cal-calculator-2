@@ -2,14 +2,15 @@
 //
 //   node scripts/review/review.ts fetch                 writes review-data.json
 //   node scripts/review/review.ts submit findings.json  checks and sends the findings
+//   node scripts/review/review.ts withdraw withdraw.json  withdraws open findings (a list of ids)
 //
 // Env: REVIEW_SUPABASE_URL, REVIEW_SUPABASE_ANON_KEY (the app's public key) and REVIEW_KEY (the
 // household's review key). With these it can read the household's ingredients and the members'
-// meals, and add findings, nothing else (supabase/migrations/*_ingredient_review.sql and
-// *_review_meals.sql).
+// meals, add findings and withdraw open ones, nothing else (supabase/migrations/*_ingredient_review.sql and
+// *_review_meals.sql, *_review_recheck.sql).
 import { randomUUID } from 'node:crypto'
 import { readFileSync, writeFileSync } from 'node:fs'
-import { checkFindings, reviewContext, type ReviewData } from './findings.ts'
+import { checkFindings, checkWithdrawals, reviewContext, type ReviewData } from './findings.ts'
 
 const DATA_FILE = 'review-data.json'
 // the household's days are Vienna days; the meal review looks at the last complete week
@@ -71,11 +72,26 @@ async function submit(file: string): Promise<void> {
   console.log(`Run ${runId}: ${findings.length} findings sent, ${String(added)} new`)
 }
 
+async function withdraw(file: string): Promise<void> {
+  const ids = checkWithdrawals(JSON.parse(readFileSync(file, 'utf8')))
+  if (ids.length === 0) {
+    console.log('Nothing to withdraw')
+    return
+  }
+  const removed = await rpc('withdraw_review_findings', { p_ids: ids })
+  console.log(`${ids.length} findings to withdraw, ${String(removed)} withdrawn`)
+}
+
 const [command, file] = process.argv.slice(2)
 try {
   if (command === 'fetch') await fetchData()
   else if (command === 'submit' && file) await submit(file)
-  else throw new Error('Usage: review.ts fetch | review.ts submit <findings.json>')
+  else if (command === 'withdraw' && file) await withdraw(file)
+  else {
+    throw new Error(
+      'Usage: review.ts fetch | review.ts submit <findings.json> | review.ts withdraw <ids.json>',
+    )
+  }
 } catch (error) {
   console.error(error instanceof Error ? error.message : error)
   process.exit(1)

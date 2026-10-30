@@ -30,6 +30,16 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-30T09:52',
+    kind: 'new',
+    title: 'Review clears findings that are already fixed',
+    items: [
+      'Ingredients › Review: a finding disappears as soon as you have fixed the ingredient yourself',
+      'The weekly review also checks its older findings again and removes the ones that no longer apply',
+      'Add or edit ingredient: the Copy from an ingredient option is gone',
+    ],
+  },
+  {
     at: '2026-10-29T19:45',
     kind: 'internal',
     title: 'Sturdier automatic tests',

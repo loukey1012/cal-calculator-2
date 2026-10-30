@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useCurrentUser } from '../../app/currentUser'
 import { Button } from '../../components/ios/Button'
 import { EmptyState } from '../../components/ios/EmptyState'
@@ -19,6 +19,7 @@ import { findByBarcode } from '../barcode/barcode'
 import { useOpenFindings } from '../review/hooks'
 import { ReviewButton } from '../review/ReviewButton'
 import { ReviewSheet } from '../review/ReviewSheet'
+import { findingStillApplies } from '../review/stillApplies'
 import { ScanBarcodeButton } from '../barcode/ScanBarcodeButton'
 import { IngredientRow } from './IngredientRow'
 import { IngredientSheet } from './IngredientSheet'
@@ -61,7 +62,17 @@ function IngredientList() {
   const [editing, setEditing] = useState<Editing>(null)
   const [reviewing, setReviewing] = useState(false)
   const findings = useOpenFindings(householdId)
-  const openFindings = findings.data?.length ?? 0
+  // findings the user already fixed themselves are left out of both the count and the sheet
+  const openFindings = useMemo(() => {
+    const byId = new Map((ingredients.data ?? []).map((item) => [item.id, item]))
+    return (findings.data ?? []).filter((finding) =>
+      findingStillApplies(
+        finding,
+        finding.ingredient_id ? byId.get(finding.ingredient_id) : undefined,
+        byId,
+      ),
+    )
+  }, [findings.data, ingredients.data])
   const today = useToday()
   const toast = useToast()
   const applyToRecent = useApplyToRecentMeals()
@@ -132,7 +143,7 @@ function IngredientList() {
         title="Ingredients"
         titleAccessory={
           <div className="flex items-center gap-1">
-            <ReviewButton count={openFindings} onClick={() => setReviewing(true)} />
+            <ReviewButton count={openFindings.length} onClick={() => setReviewing(true)} />
             <Button
               variant="plain"
               aria-label="Add ingredient"
@@ -201,7 +212,7 @@ function IngredientList() {
       />
       <ReviewSheet
         open={reviewing}
-        findings={findings.data ?? []}
+        findings={openFindings}
         ingredients={ingredients.data ?? []}
         onClose={() => setReviewing(false)}
         onOpenIngredient={(ingredient) => {

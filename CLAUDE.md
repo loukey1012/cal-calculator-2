@@ -57,8 +57,12 @@ grey card + top-right `LeftOutMark` badge, bottom row dial/lines/two-plate dumbb
 colour tokens, `markContrast.test.ts` keeps them ≥3:1) confirmed. K1+K2a: 66 vegan/halal (migration
 `20261029180000_ingredient_diet_flags` on dev and prod, ingredients key `INGREDIENTS_SHAPE` v2,
 `dietOf.ts`, `components/ios/dietSymbols.tsx`) and 65 Merge with… (`review/MergeWithPicker.tsx`,
-`useInvalidateAfterMerge`) built, await the iPhone test. **Next:** 64 (Review re-checks findings:
-withdraw RPC + ROUTINE.md), then discuss 70 (easier day flags) and 71 (notify on partner changes). Sketch of F: https://claude.ai/artifact/KJ5V6j5PCBaN35MXmATmmE. Sketch of D:
+`useInvalidateAfterMerge`) built, await the iPhone test. 64 (Review re-checks: app hides fixed findings via
+`review/stillApplies.ts`, routine withdraws via `withdraw_review_findings`, migration
+`20261029200000_review_recheck` on dev and prod, `review.ts withdraw`, ROUTINE.md step 2) and 72
+(Copy from an ingredient removed) built 2026-10-30, await the iPhone test. **Next:** discuss 70
+(easier day flags) and 71 (notify on partner changes); J2 later. Journeys on this machine:
+`E2E_BROWSER=chromium` (WebKit lacks system libraries here; CI runs WebKit). Sketch of F: https://claude.ai/artifact/KJ5V6j5PCBaN35MXmATmmE. Sketch of D:
 https://claude.ai/artifact/Sp4cvXiKk3us9kXNUTrT6g. Working rhythm that worked: `ecc:tdd-guide`
 agents build (in parallel only on separate files), then `ecc:typescript-reviewer` +
 `ecc:react-reviewer` (+ `ecc:database-reviewer`/`ecc:security-reviewer` for SQL) +

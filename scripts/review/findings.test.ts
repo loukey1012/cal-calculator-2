@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { checkFindings, reviewContext, type ReviewData } from './findings'
+import { checkFindings, checkWithdrawals, reviewContext, type ReviewData } from './findings'
 
 const BUTTER = '7d3c5f8e-1b2a-4c3d-9e8f-0a1b2c3d4e5f'
 const OTHER_BUTTER = '8e4d6a9f-2c3b-4d4e-8f9a-1b2c3d4e5f6a'
@@ -140,5 +140,36 @@ describe('checkFindings', () => {
     const ingredientsOnly = reviewContext({ ingredients: [{ id: BUTTER }] })
 
     expect(() => checkFindings([NO_LUNCH], ingredientsOnly)).toThrow('not a member')
+  })
+})
+
+describe('checkWithdrawals', () => {
+  test('passes a list of unique ids, an empty one too', () => {
+    expect(checkWithdrawals([BUTTER, ALICE])).toEqual([BUTTER, ALICE])
+    expect(checkWithdrawals([])).toEqual([])
+  })
+
+  test('refuses anything but a list', () => {
+    expect(() => checkWithdrawals({ ids: [BUTTER] })).toThrow('a list')
+    expect(() => checkWithdrawals(null)).toThrow('a list')
+  })
+
+  test('lists every entry that is not an id', () => {
+    expect(() => checkWithdrawals([BUTTER, 'nope', 5, null])).toThrow(/#2.*\n#3.*\n#4/)
+  })
+
+  test('refuses a repeated id', () => {
+    expect(() => checkWithdrawals([BUTTER, ALICE, BUTTER])).toThrow('#3: repeated')
+  })
+
+  test('allows 200 ids and refuses 201', () => {
+    const ids = (count: number) =>
+      Array.from(
+        { length: count },
+        (_, index) => `00000000-0000-4000-8000-${String(index).padStart(12, '0')}`,
+      )
+
+    expect(checkWithdrawals(ids(200))).toHaveLength(200)
+    expect(() => checkWithdrawals(ids(201))).toThrow('200')
   })
 })

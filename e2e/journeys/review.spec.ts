@@ -200,3 +200,51 @@ test('a duplicate from the review is compared and merged; its meal moves over', 
       item: [{ ingredient_id: idOf('Toastkäse'), kcal: 124 }],
     })
 })
+
+test('a finding the user already fixed by hand disappears from Review', async ({
+  page,
+  backend,
+}) => {
+  const me = await backend.user('Rita')
+  const household = await backend.household([me])
+  const { data: ingredient } = await backend.admin
+    .from('ingredients')
+    .insert({
+      household_id: household,
+      category_id: await backend.category(household),
+      name: 'Buter',
+      kcal_100: 740,
+    })
+    .select('id')
+    .single()
+  const seeded = await backend.admin.from('review_findings').insert({
+    household_id: household,
+    ingredient_id: ingredient?.id,
+    kind: 'typo',
+    message: 'The name looks misspelled.',
+    suggestion: { name: 'Butter' },
+    run_id: 'journey',
+  })
+  expect(seeded.error).toBeNull()
+  await logIn(page, me)
+  await page
+    .getByRole('navigation', { name: 'Tabs' })
+    .getByRole('button', { name: 'Ingredients' })
+    .click()
+  const list = activePage(page)
+
+  await list.getByRole('button', { name: 'Review: 1' }).click()
+  const review = page.getByRole('dialog', { name: 'Review' })
+  await review.getByRole('button', { name: 'Open Buter', exact: true }).click()
+  const edit = page.getByRole('dialog', { name: 'Edit Ingredient' })
+  await edit.getByLabel('Name', { exact: true }).fill('Butter')
+  await edit.getByRole('button', { name: 'Save' }).click()
+  await expect(edit).toBeHidden()
+
+  // back in Review, which has nothing left; the list behind it then has no Review button
+  await expect(review).toContainText('Nothing left to review.')
+  await review.getByRole('button', { name: 'Close' }).click()
+  await expect(review).toBeHidden()
+  await expect(list.getByRole('heading', { name: 'Ingredients' })).toBeVisible()
+  await expect(list.getByRole('button', { name: /^Review/ })).toHaveCount(0)
+})

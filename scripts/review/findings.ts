@@ -166,3 +166,23 @@ export function checkFindings(value: unknown, context: ReviewContext): Finding[]
     finding.ingredient_id ? { ...finding, suggestion: finding.suggestion ?? {} } : finding,
   )
 }
+
+const MAX_WITHDRAWALS = 200
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/** The ids of findings to withdraw, checked; throws with one line per problem. */
+export function checkWithdrawals(value: unknown): string[] {
+  if (!Array.isArray(value)) throw new Error('withdrawals must be a list of finding ids')
+  if (value.length > MAX_WITHDRAWALS) {
+    throw new Error(`at most ${MAX_WITHDRAWALS} withdrawals per run`)
+  }
+  const seen = new Set<unknown>()
+  const problems = value.flatMap((id, index) => {
+    const repeated = seen.has(id)
+    seen.add(id)
+    if (typeof id !== 'string' || !UUID.test(id)) return [`#${index + 1}: not a finding id`]
+    return repeated ? [`#${index + 1}: repeated`] : []
+  })
+  if (problems.length > 0) throw new Error(problems.join('\n'))
+  return value as string[]
+}
