@@ -1,4 +1,4 @@
-import { act, screen } from '@testing-library/react'
+import { act, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useEffect, useState } from 'react'
 import { beforeEach, describe, expect, test, vi } from 'vitest'
@@ -6,9 +6,27 @@ import { renderWithProviders } from '../../test/render'
 import type { DayStatusInput } from './dayStatusPill'
 
 vi.mock('../meals/mealsApi', () => ({ fetchDayNote: vi.fn(), fetchDay: vi.fn() }))
+vi.mock('../dayMarks/useDayFlags', () => ({ useDayFlags: vi.fn() }))
 
 import { fetchDay, fetchDayNote } from '../meals/mealsApi'
+import { useDayFlags, type DayFlags } from '../dayMarks/useDayFlags'
 import { DayQuickLook } from './DayQuickLook'
+
+function flagsOf(overrides: Partial<DayFlags> = {}): DayFlags {
+  return {
+    dayMark: null,
+    dayMarkLoaded: true,
+    cheatMeals: new Set(),
+    cheatMealsLoaded: true,
+    gym: false,
+    gymLoaded: true,
+    sex: null,
+    sexLoaded: false,
+    toggle: vi.fn(),
+    toggleCheatMeal: vi.fn(),
+    ...overrides,
+  }
+}
 
 const STATUS: DayStatusInput = {
   date: '2026-10-02',
@@ -41,8 +59,7 @@ function renderLook(props: Partial<React.ComponentProps<typeof DayQuickLook>> = 
         status={STATUS}
         hasFood
         hasNote
-        gym={false}
-        sex={false}
+        householdId={null}
         onClose={onClose}
         {...props}
       />
@@ -53,6 +70,7 @@ function renderLook(props: Partial<React.ComponentProps<typeof DayQuickLook>> = 
 
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.mocked(useDayFlags).mockReturnValue(flagsOf())
   vi.mocked(fetchDayNote).mockResolvedValue('Birthday at Oma’s')
   vi.mocked(fetchDay).mockResolvedValue([])
 })
@@ -66,21 +84,95 @@ describe('DayQuickLook', () => {
     expect(dialog).toHaveTextContent('1,850 of 2,000 kcal')
   })
 
-  test('names the gym and sex marks in one small line', () => {
-    renderLook({ gym: true, sex: true })
-    expect(screen.getByTestId('quick-look-marks')).toHaveTextContent('Gym · Sex')
-    expect(screen.getByTestId('quick-look-gym-symbol')).toHaveClass('text-gym')
-    expect(screen.getByTestId('quick-look-sex-symbol')).toHaveClass('text-heart')
-  })
-
-  test('names only the mark that is set', () => {
-    renderLook({ sex: true })
-    expect(screen.getByTestId('quick-look-marks')).toHaveTextContent(/^Sex$/)
-  })
-
-  test('has no marks line when neither is set', () => {
+  test('has the flag buttons of the day instead of a marks line', () => {
     renderLook()
+
+    const group = within(screen.getByRole('dialog')).getByRole('group', { name: 'Day flags' })
+    expect(
+      within(group)
+        .getAllByRole('button')
+        .map((button) => button.getAttribute('aria-label')),
+    ).toEqual(['Cheat', 'Alcohol', 'Gym'])
     expect(screen.queryByTestId('quick-look-marks')).not.toBeInTheDocument()
+  })
+
+  test('asks for the flags of that person, household and day', () => {
+    renderLook({ householdId: 'h1' })
+
+    expect(useDayFlags).toHaveBeenCalledWith({
+      userId: 'u1',
+      householdId: 'h1',
+      date: '2026-10-02',
+    })
+  })
+
+  test('has a Sex button only with a household', () => {
+    vi.mocked(useDayFlags).mockReturnValue(flagsOf({ sex: false, sexLoaded: true }))
+    renderLook({ householdId: 'h1' })
+
+    expect(screen.getByRole('button', { name: 'Sex' })).toBeInTheDocument()
+  })
+
+  test('names the partner on the group when it is their day', () => {
+    renderLook({ partnerName: 'Baby' })
+
+    expect(screen.getByRole('group', { name: 'Day flags for Baby' })).toBeInTheDocument()
+  })
+
+  test('taps on the buttons toggle the flags', async () => {
+    const flags = flagsOf({ sex: false, sexLoaded: true })
+    vi.mocked(useDayFlags).mockReturnValue(flags)
+    renderLook({ householdId: 'h1' })
+
+    await userEvent.click(screen.getByRole('button', { name: 'Alcohol' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Gym' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Sex' }))
+
+    expect(vi.mocked(flags.toggle).mock.calls).toEqual([['alcohol'], ['gym'], ['sex']])
+  })
+
+  test('a tap on a button does not close it', async () => {
+    const { onClose } = renderLook()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Gym' }))
+
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  test('the Cheat list toggles the whole day and the meals, and a tap in it does not close it', async () => {
+    const flags = flagsOf()
+    vi.mocked(useDayFlags).mockReturnValue(flags)
+    const { onClose } = renderLook()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Cheat' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Whole day' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Lunch' }))
+
+    expect(flags.toggle).toHaveBeenCalledWith('cheatDay')
+    expect(flags.toggleCheatMeal).toHaveBeenCalledWith('lunch')
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  test('Escape with the Cheat list open closes only the list', async () => {
+    const { onClose } = renderLook()
+    await userEvent.click(screen.getByRole('button', { name: 'Cheat' }))
+
+    await userEvent.keyboard('{Escape}')
+
+    expect(screen.queryByRole('dialog', { name: 'Cheat' })).not.toBeInTheDocument()
+    expect(onClose).not.toHaveBeenCalled()
+    await userEvent.keyboard('{Escape}')
+    expect(onClose).toHaveBeenCalledOnce()
+  })
+
+  test('a tap outside with the Cheat list open closes both', async () => {
+    const { onClose } = renderLook()
+    await userEvent.click(screen.getByRole('button', { name: 'Cheat' }))
+
+    await userEvent.click(screen.getByText('outside'))
+
+    expect(onClose).toHaveBeenCalledOnce()
+    expect(screen.queryByRole('dialog', { name: 'Cheat' })).not.toBeInTheDocument()
   })
 
   test('shows just the calories without a goal', () => {
@@ -134,11 +226,48 @@ describe('DayQuickLook', () => {
     expect(dialog.parentElement).toBe(document.body)
   })
 
-  test('does not take the focus from the finger', () => {
+  test('does not take the focus while the finger is still down', () => {
     renderLook()
 
-    expect(screen.getByRole('dialog')).not.toContainElement(document.activeElement as HTMLElement)
     expect(document.activeElement).toBe(document.body)
+  })
+
+  test('takes the focus once pinned', () => {
+    renderLook({ pinned: true })
+
+    expect(screen.getByRole('dialog', { name: /October 2/ })).toHaveFocus()
+  })
+
+  test('takes the focus when it becomes pinned', () => {
+    function Harness() {
+      const [pinned, setPinned] = useState(false)
+      return (
+        <>
+          <button type="button" onClick={() => setPinned(true)}>
+            pin
+          </button>
+          <DayQuickLook
+            userId="u1"
+            date="2026-10-02"
+            kcal={0}
+            estimated={false}
+            goalKcal={null}
+            status={null}
+            hasFood={false}
+            hasNote={false}
+            householdId={null}
+            pinned={pinned}
+            onClose={vi.fn()}
+          />
+        </>
+      )
+    }
+    renderWithProviders(<Harness />)
+    expect(document.activeElement).toBe(document.body)
+
+    act(() => screen.getByRole('button', { name: 'pin' }).click())
+
+    expect(screen.getByRole('dialog', { name: /October 2/ })).toHaveFocus()
   })
 
   test('keeps its listeners when the caller passes a new close function', async () => {
@@ -160,8 +289,7 @@ describe('DayQuickLook', () => {
           status={STATUS}
           hasFood
           hasNote={false}
-          gym={false}
-          sex={false}
+          householdId={null}
           onClose={close}
         />
       )

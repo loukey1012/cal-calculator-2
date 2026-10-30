@@ -17,7 +17,9 @@ import {
   dayChangeKey,
   type DayChange,
 } from './dayChanges'
-import { noteOf, type AmountPatch, type DayMeal, type MealType } from './dayModel'
+import type { CachedMirror } from './cachedMirror'
+import { dayMarkMirror, cheatMealMirror } from './monthTotalsMirror'
+import { cheatMeals, noteOf, type AmountPatch, type DayMeal, type MealType } from './dayModel'
 import { fetchDay, fetchDayMark, fetchDayNote, type DayMark } from './mealsApi'
 
 const dayKeys = {
@@ -67,12 +69,6 @@ function useDayChange(userId: string, date: string): DayChangeMutation {
   )
 }
 
-/** A cached list of dates that shows the change too (a calendar month or year). */
-type DateListMirror = {
-  readonly queryKey: QueryKey
-  readonly apply: (dates: readonly string[], change: DayChange) => string[]
-}
-
 /** Like useDayChange, for a change shown in another cached query of the day. */
 export function useCachedDayChange<TCached>(
   userId: string,
@@ -81,8 +77,8 @@ export function useCachedDayChange<TCached>(
   applyLocally: (cached: TCached | undefined, change: DayChange) => TCached,
   /** other cached queries this change makes out of date once it is saved */
   alsoRefresh: readonly QueryKey[] = [],
-  /** cached date lists that show the change at once; one that was never loaded stays unloaded */
-  mirrors: readonly DateListMirror[] = [],
+  /** cached queries that show the change at once; one that was never loaded stays unloaded */
+  mirrors: readonly CachedMirror[] = [],
 ): DayChangeMutation {
   const queryClient = useQueryClient()
   const mutationKey = dayChangeKey(userId, date)
@@ -102,10 +98,16 @@ export function useCachedDayChange<TCached>(
       const previousLists = await Promise.all(
         mirrors.map(async ({ queryKey: listKey, apply }) => {
           await queryClient.cancelQueries({ queryKey: listKey })
-          const before = queryClient.getQueryData<string[]>(listKey)
-          if (before !== undefined)
-            queryClient.setQueryData<string[]>(listKey, apply(before, change))
-          return before
+          const before = queryClient.getQueryData(listKey)
+          if (before === undefined) return before
+          try {
+            queryClient.setQueryData(listKey, apply(before, change, previous !== undefined))
+            return before
+          } catch {
+            // a mirror only shows the change sooner: the save goes ahead without it, and the
+            // entry is refreshed once the change has settled
+            return undefined
+          }
         }),
       )
       return { previous, previousLists }
@@ -168,7 +170,23 @@ type CheatMealChange = { readonly mealType: MealType; readonly cheatMeal: boolea
 
 /** Marks a meal of the day as a cheat meal, or takes the mark back. */
 export function useSetCheatMeal(userId: string, date: string): DayChangeActions<CheatMealChange> {
-  const change = useDayChange(userId, date)
+  const queryClient = useQueryClient()
+  const change = useCachedDayChange<DayMeal[]>(
+    userId,
+    date,
+    dayKeys.day(userId, date),
+    (meals, next) => applyDayChangeLocally(meals ?? [], next),
+    [],
+    // the day's own write comes first, so the mirror asks the day after the change
+    [
+      cheatMealMirror(
+        userId,
+        date,
+        () =>
+          cheatMeals(queryClient.getQueryData<DayMeal[]>(dayKeys.day(userId, date)) ?? []).size > 0,
+      ),
+    ],
+  )
   return {
     ...change,
     mutate: (input) => change.mutate({ kind: 'cheatMeal', userId, date, ...input }),
@@ -182,6 +200,9 @@ export function useSetDayMark(userId: string, date: string): DayChangeActions<Da
     date,
     dayKeys.dayMark(userId, date),
     (cached, next) => (next.kind === 'dayMark' ? next.mark : (cached ?? null)),
+    [],
+    // the calendar's cell for the day follows at once
+    [dayMarkMirror(userId, date)],
   )
   return {
     ...change,

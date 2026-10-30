@@ -2,6 +2,7 @@ import { useQuery, type UseQueryResult } from '@tanstack/react-query'
 import { monthRange, monthStart } from '../history/calendar'
 import { monthKeys } from '../history/hooks'
 import { yearRange } from '../history/yearOverview'
+import { mirrorOf } from '../meals/cachedMirror'
 import type { DayChange } from '../meals/dayChanges'
 import { useCachedDayChange, type DayChangeActions } from '../meals/hooks'
 import { fetchGymDates, fetchGymDay, fetchSexDates, fetchSexDay } from './dayMarksApi'
@@ -95,8 +96,8 @@ export function useSetGymDay(userId: string, date: string): DayChangeActions<boo
     (cached, next) => (next.kind === 'gymDay' ? next.on : (cached ?? false)),
     [],
     [
-      { queryKey: gymKeys.month(userId, monthStart(date)), apply: withChangedDate },
-      { queryKey: gymKeys.year(userId, yearOf(date)), apply: withChangedDate },
+      mirrorOf<string[]>(gymKeys.month(userId, monthStart(date)), withChangedDate),
+      mirrorOf<string[]>(gymKeys.year(userId, yearOf(date)), withChangedDate),
     ],
   )
   return { ...change, mutate: (on) => change.mutate({ kind: 'gymDay', userId, date, on }) }
@@ -119,11 +120,11 @@ export function useSetSexDay(
     householdId ? [householdMarkKeys.all(householdId)] : [],
     householdId
       ? [
-          {
-            queryKey: householdMarkKeys.month(householdId, monthStart(date)),
-            apply: withChangedDate,
-          },
-          { queryKey: householdMarkKeys.year(householdId, yearOf(date)), apply: withChangedDate },
+          mirrorOf<string[]>(
+            householdMarkKeys.month(householdId, monthStart(date)),
+            withChangedDate,
+          ),
+          mirrorOf<string[]>(householdMarkKeys.year(householdId, yearOf(date)), withChangedDate),
         ]
       : [],
   )

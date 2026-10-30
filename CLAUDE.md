@@ -67,7 +67,11 @@ built 2026-10-30 (chips with Undo), then reworked after the user's test (M1b): i
 buttons Cheat / Alcohol / Gym / Sex in the goal card's top right corner (`dayMarks/DayFlagButtons.tsx`,
 `FlagButton.tsx`, `CheatPopover.tsx` with Whole day + the four meals, `useDayFlags.ts`,
 `components/ios/Popover.tsx`; `GoalCard` `flags` → `GoalProgressView` `corner`; token `--on-mark`), no
-toast, the ⋯ Day sheet removed; awaits the iPhone test. **Next:** M2 (History hold-a-day quick look stays open with flag toggles), then N (71); J2 later. Journeys on this machine:
+toast, the ⋯ Day sheet removed; confirmed. M2 built 2026-10-30, awaits the iPhone test: a held
+History day's quick look stays open (closes on outside tap — that tap is swallowed, `history/swallowNextClick.ts`
+— Escape, month/person change, page no longer shown via `useIsPageShown` in `app/pagePath.ts`, app
+hidden) and holds `DayFlagButtons`; cells follow at once via generic mirrors (`meals/cachedMirror.ts`,
+`meals/monthTotalsMirror.ts`; a failing mirror never blocks the save). **Next:** N (71); J2 later. Journeys on this machine:
 `E2E_BROWSER=chromium` (WebKit lacks system libraries here; CI runs WebKit). Sketch of F: https://claude.ai/artifact/KJ5V6j5PCBaN35MXmATmmE. Sketch of D:
 https://claude.ai/artifact/Sp4cvXiKk3us9kXNUTrT6g. Working rhythm that worked: `ecc:tdd-guide`
 agents build (in parallel only on separate files), then `ecc:typescript-reviewer` +
@@ -90,6 +94,9 @@ in `supabase/functions/_shared/dayCounting.ts`, shared by the app and push-tick.
   "Clear <label>" name would also match the field's label in label queries).
 - Back swipe and tab swipe ignore the bottom 44 px (`stackMotion.startsAtBottomEdge`), so the
   iOS home-indicator swipe doesn't close a page.
+- `renderWithProviders(...).rerender(x)` drops the providers and remounts everything, so a "closes
+  when X changes" test can pass for the wrong reason; rerender with the providers kept
+  (`renderKept` in `history/MonthCalendar.quickLook.test.tsx`).
 - `pnpm knip` (`knip.json`, also in CI) finds unused files, exports and dependencies.
 - Journeys locally: build against dev (`VITE_SUPABASE_URL=$SUPABASE_TEST_URL
 VITE_SUPABASE_ANON_KEY=$SUPABASE_TEST_ANON_KEY`, README); without them the build talks to prod

@@ -126,3 +126,79 @@ test("on the partner's day the Gym button sets the partner's flag", async ({ pag
     })
     .toEqual([{ user_id: partner.id, date: localDay() }])
 })
+
+test('holding a calendar day opens a quick look that stays open and sets the flags', async ({
+  page,
+  backend,
+}) => {
+  const me = await backend.user('Hana')
+  await backend.household([me])
+  await logIn(page, me)
+  // a past day of the current month; on the 1st there is none, so today itself serves
+  const date = new Date().getDate() > 1 ? localDay(1) : localDay()
+  await page
+    .getByRole('navigation', { name: 'Tabs' })
+    .getByRole('button', { name: 'History' })
+    .click()
+  const history = activePage(page)
+  const cell = history.locator(`button[data-date="${date}"]`)
+  const longDate = new Intl.DateTimeFormat('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  }).format(new Date(`${date}T12:00:00`))
+  const quickLook = page.getByRole('dialog', { name: longDate })
+  const cheatList = page.getByRole('dialog', { name: 'Cheat', exact: true })
+  const gymRows = async () => {
+    const { data } = await backend.admin
+      .from('gym_days')
+      .select('user_id, date')
+      .eq('user_id', me.id)
+    return data
+  }
+  const cheatRows = async () => {
+    const { data } = await backend.admin
+      .from('cheat_days')
+      .select('date, kind')
+      .eq('user_id', me.id)
+    return data
+  }
+  const inLook = (name: string) =>
+    quickLook.getByRole('group', { name: /^Day flags/ }).getByRole('button', { name, exact: true })
+
+  await cell.hover()
+  await page.mouse.down()
+  await expect(quickLook).toBeVisible({ timeout: 3_000 })
+  await page.mouse.up()
+  // the click that follows the release is swallowed for a moment
+  await expect(quickLook).toBeVisible()
+
+  // retry until the swallowed window has passed
+  await expect(async () => {
+    await inLook('Gym').click()
+    await expect(cell.getByTestId('gym-mark')).toBeVisible({ timeout: 700 })
+  }).toPass()
+  await expect(inLook('Gym')).toHaveAttribute('aria-pressed', 'true')
+  await expect.poll(gymRows).toEqual([{ user_id: me.id, date }])
+  await inLook('Gym').click()
+  await expect(cell.getByTestId('gym-mark')).toHaveCount(0)
+  await expect.poll(gymRows).toEqual([])
+
+  await inLook('Alcohol').click()
+  await expect(cell).toHaveAttribute('data-status', 'alcoholDay')
+  await expect.poll(cheatRows).toEqual([{ date, kind: 'alcohol' }])
+
+  await quickLook.getByRole('button', { name: /^Cheat/ }).click()
+  await cheatList.getByRole('button', { name: 'Whole day' }).click()
+  await expect.poll(cheatRows).toEqual([{ date, kind: 'cheat' }])
+  await expect(cell).toHaveAttribute('data-status', 'cheatDay')
+  // a tap inside the list keeps the card open
+  await expect(quickLook).toBeVisible()
+  await expect(cheatList).toBeVisible()
+
+  await page.keyboard.press('Escape')
+  await expect(cheatList).toBeHidden()
+  await expect(quickLook).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(quickLook).toBeHidden()
+})

@@ -68,6 +68,8 @@ export function Popover({ open, anchor, label, onClose, children }: PopoverProps
     cardRef.current?.querySelector('button')?.focus()
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        // handled here: a card around the anchor (listening on the window) stays open
+        event.stopPropagation()
         onCloseRef.current()
         return
       }
@@ -102,6 +104,7 @@ export function Popover({ open, anchor, label, onClose, children }: PopoverProps
       ref={cardRef}
       role="dialog"
       aria-label={label}
+      data-popover=""
       // hidden until measured, so it never flashes at the corner
       style={position ?? { left: 0, top: 0, visibility: 'hidden' }}
       className="glass-surface fixed z-40 flex min-w-48 flex-col overflow-hidden rounded-2xl bg-bg-elevated shadow-card"

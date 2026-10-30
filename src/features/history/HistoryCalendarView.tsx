@@ -1,7 +1,10 @@
+import { useIsPageShown } from '../../app/pagePath'
+import { useCurrentUser } from '../../app/currentUser'
 import { ErrorBanner } from '../../components/ios/ErrorBanner'
 import { toUserMessage } from '../../lib/errors'
 import { useGoals } from '../goals/hooks'
 import type { Profile } from '../household/householdApi'
+import { useLookOf } from '../household/usePersonLook'
 import type { CalendarZoom } from './historyState'
 import { useMonthGymDates, useMonthSexDates } from '../dayMarks/hooks'
 import { useWeights } from '../weight/hooks'
@@ -83,6 +86,10 @@ function HistoryMonthView({
   onOpenWeek,
   keyShown,
 }: HistoryMonthViewProps) {
+  const { profile } = useCurrentUser()
+  const pageShown = useIsPageShown()
+  const lookOf = useLookOf()
+  const isOwnCalendar = person.id === profile.id
   const totals = useMonthTotals(person.id, month)
   const goals = useGoals(person.id)
   const edgeTotals = useWeekEdgeTotals(person.id, month, today)
@@ -176,10 +183,12 @@ function HistoryMonthView({
         })}
         fadedOf={fadedOf}
         footer={weekBar}
+        quickLookScope={person.id}
+        pageShown={pageShown}
         onSelectDay={onSelectDay}
         onChangeMonth={onChangeMonth}
         onShowYear={onShowYear}
-        renderQuickLook={(day, close) => (
+        renderQuickLook={(day, close, pinned) => (
           <MonthQuickLook
             userId={person.id}
             date={day}
@@ -187,8 +196,9 @@ function HistoryMonthView({
             total={byDate.get(day)}
             goals={goals.data}
             hasNote={notedDays.has(day)}
-            gym={gymDays.has(day)}
-            sex={sexDays.has(day)}
+            householdId={person.household_id}
+            partnerName={isOwnCalendar ? null : lookOf(person).name}
+            pinned={pinned}
             onClose={close}
           />
         )}

@@ -471,8 +471,14 @@ describe('HistoryPage', () => {
     fireEvent.pointerUp(day, { pointerId: 1, isPrimary: true, clientX: 50, clientY: 50 })
     fireEvent.click(day)
 
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    // lifting the finger keeps it open; the day was not opened by the click that follows
+    expect(screen.getByRole('dialog', { name: /October 1/ })).toHaveFocus()
+    expect(screen.getByRole('group', { name: 'Day flags' })).toBeInTheDocument()
     expect(screen.getByTestId('path')).toHaveTextContent(/^\/history$/)
+
+    fireEvent.pointerDown(document.body)
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
   test('swiping the calendar shows the previous month, and Today comes back', async () => {

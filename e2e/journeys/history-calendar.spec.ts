@@ -123,7 +123,7 @@ test('the calendar shows symbols and the week bar of the open day; swipe turns t
   await expect(day.getByTestId('day-status')).toContainText('Alcohol day')
   await expect(day.getByTestId('day-status')).toContainText('not counted')
 
-  // holding a day shows a quick look; lifting the finger closes it without selecting the day
+  // holding a day shows a quick look; lifting the finger keeps it open (Escape closes it) without selecting the day
   const held = history.locator(`button[data-date="${noteDay}"]`)
   await held.hover()
   await page.mouse.down()
@@ -133,6 +133,8 @@ test('the calendar shows symbols and the week bar of the open day; swipe turns t
   await expect(quickLook).toBeVisible({ timeout: 3_000 })
   await expect(quickLook).toContainText(noteText)
   await page.mouse.up()
+  await expect(quickLook).toBeVisible()
+  await page.keyboard.press('Escape')
   await expect(quickLook).toBeHidden()
   await expect(held).toHaveAttribute('aria-pressed', 'false')
   await expect(history.locator(`button[data-date="${alcoholDay}"]`)).toHaveAttribute(

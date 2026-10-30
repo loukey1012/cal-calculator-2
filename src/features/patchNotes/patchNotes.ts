@@ -30,6 +30,15 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-30T14:05',
+    kind: 'new',
+    title: 'Day flags from the calendar',
+    items: [
+      'History: holding a day opens its quick look, which now stays open after you let go',
+      'The quick look has the same Cheat, Alcohol, Gym and Sex buttons as the goal card, and the day in the calendar follows at once',
+    ],
+  },
+  {
     at: '2026-10-30T13:18',
     kind: 'new',
     title: 'Day flags on the goal card',

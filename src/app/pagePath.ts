@@ -11,3 +11,12 @@ export function usePagePath(): string {
   const { pathname } = useLocation()
   return useContext(PagePathContext) ?? pathname
 }
+
+/**
+ * Whether this page is the one the address shows: false for a tab that is not the current one,
+ * for the page below another and for one sliding away. Such a page stays mounted but unseen.
+ */
+export function useIsPageShown(): boolean {
+  const { pathname } = useLocation()
+  return (useContext(PagePathContext) ?? pathname) === pathname
+}

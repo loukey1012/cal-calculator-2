@@ -5,9 +5,14 @@ import { MEAL_TYPES } from '../meals/dayModel'
 import { useDay, useDayNote } from '../meals/hooks'
 import { formatKcal } from '../nutrition/format'
 import { DayNoteCard } from '../today/DayNoteCard'
-import { DumbbellSymbol, HeartSymbol } from './calendarSymbols'
+import { DayFlagButtons } from '../dayMarks/DayFlagButtons'
+import { useDayFlags } from '../dayMarks/useDayFlags'
 import { DayStatusPill } from './DayStatusPill'
+import { swallowClickOfThisPress } from './swallowNextClick'
 import type { DayStatusInput } from './dayStatusPill'
+
+/** the marker the Popover puts on its card */
+const POPOVER_SELECTOR = '[data-popover]'
 
 const TITLE: Intl.DateTimeFormat = new Intl.DateTimeFormat(undefined, {
   weekday: 'long',
@@ -28,18 +33,22 @@ type DayQuickLookProps = {
   readonly hasFood: boolean
   /** a note on the day or on one of its meals */
   readonly hasNote: boolean
-  /** the person's gym day */
-  readonly gym: boolean
-  /** the household's sex day */
-  readonly sex: boolean
+  /** the person's household; without one there is no Sex button */
+  readonly householdId: string | null
+  /** whose day it is, when it's the partner's (the flag buttons say so) */
+  readonly partnerName?: string | null
+  /** the finger has lifted: the card stays open and takes the focus */
+  readonly pinned?: boolean
   readonly onClose: () => void
 }
 
 /**
- * The quick look at a held day: the verdict, the calories and the notes. It closes with Escape or
- * a tap outside; the calendar closes it when the finger is lifted. It is drawn on the page, as
- * the calendar sits inside transformed parents (the tab and page slides) that would hold a fixed
- * card to themselves. It doesn't take the focus: the finger is still down.
+ * The quick look at a held day: the verdict, the calories, the day's flag buttons and the notes.
+ * It stays after the finger is lifted (`pinned`) and closes with Escape, a tap outside or when
+ * the calendar closes it. The Cheat list of the flag buttons is a popover of its own: a tap in it
+ * is not outside, and Escape closes the list first. It is drawn on the page, as the calendar sits
+ * inside transformed parents (the tab and page slides) that would hold a fixed card to
+ * themselves. It takes the focus only once pinned: until then the finger is still down.
  */
 export function DayQuickLook({
   userId,
@@ -50,10 +59,12 @@ export function DayQuickLook({
   status,
   hasFood,
   hasNote,
-  gym,
-  sex,
+  householdId,
+  partnerName = null,
+  pinned = false,
   onClose,
 }: DayQuickLookProps) {
+  const flags = useDayFlags({ userId, householdId, date })
   const cardRef = useRef<HTMLDivElement>(null)
   // the listeners below stay in place when the caller passes another function
   const onCloseRef = useRef(onClose)
@@ -62,19 +73,55 @@ export function DayQuickLook({
   })
 
   useEffect(() => {
+    // on the window: an open Cheat list handles Escape on the document first and stops it there
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onCloseRef.current()
     }
     const onPointerDown = (event: PointerEvent) => {
-      if (!cardRef.current?.contains(event.target as Node)) onCloseRef.current()
+      const target = event.target as Element
+      // the Cheat list is drawn in the body, not in the card, but belongs to it
+      if (cardRef.current?.contains(target) || target.closest(POPOVER_SELECTOR)) return
+      // like an iOS menu, the tap that dismisses it does nothing else (it opens no day)
+      swallowClickOfThisPress()
+      onCloseRef.current()
     }
-    document.addEventListener('keydown', onKeyDown)
+    // the card is portalled to the body, so it must not outlive the app being left
+    const onLeave = () => {
+      if (document.visibilityState === 'hidden') onCloseRef.current()
+    }
+    const onPageHide = () => onCloseRef.current()
+    window.addEventListener('keydown', onKeyDown)
     document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('visibilitychange', onLeave)
+    window.addEventListener('pagehide', onPageHide)
     return () => {
-      document.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('keydown', onKeyDown)
       document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('visibilitychange', onLeave)
+      window.removeEventListener('pagehide', onPageHide)
     }
   }, [])
+
+  // the focus moves into the card once pinned and, when the card goes, back to where it was
+  const focusBefore = useRef<HTMLElement | null>(null)
+  useEffect(() => {
+    if (!pinned) return
+    const card = cardRef.current
+    const active = document.activeElement
+    focusBefore.current =
+      active instanceof HTMLElement && active !== document.body
+        ? active
+        : document.querySelector<HTMLElement>(`button[data-date="${date}"]`)
+    card?.focus({ preventScroll: true })
+    return () => {
+      // the card is gone now, so focus that was in it is on the body; focus the user moved to
+      // something else stays there
+      const now = document.activeElement
+      if (!now || now === document.body || card?.contains(now)) {
+        focusBefore.current?.focus({ preventScroll: true })
+      }
+    }
+  }, [pinned, date])
 
   const tilde = estimated ? '~' : ''
   const calories =
@@ -87,7 +134,8 @@ export function DayQuickLook({
       ref={cardRef}
       role="dialog"
       aria-label={TITLE.format(fromLocalDateString(date))}
-      className="glass-surface fixed inset-x-0 top-1/3 z-30 mx-auto flex w-[min(320px,calc(100%-2rem))] flex-col items-start gap-2 rounded-[24px] bg-bg-elevated p-4 shadow-card"
+      tabIndex={-1}
+      className="glass-surface fixed inset-x-0 top-1/3 z-30 mx-auto flex w-[min(320px,calc(100%-2rem))] flex-col items-start gap-2 rounded-[24px] bg-bg-elevated p-4 shadow-card outline-none select-none [-webkit-touch-callout:none]"
     >
       <p className="font-display text-[17px] font-bold">
         {TITLE.format(fromLocalDateString(date))}
@@ -96,29 +144,7 @@ export function DayQuickLook({
       <p className="text-[15px] font-semibold tabular-nums">
         {hasFood ? calories : 'Nothing logged'}
       </p>
-      {(gym || sex) && (
-        <p
-          data-testid="quick-look-marks"
-          className="flex items-center gap-1.5 text-[13px] font-semibold text-label-secondary"
-        >
-          {gym && (
-            <>
-              <DumbbellSymbol
-                data-testid="quick-look-gym-symbol"
-                className="h-3.5 w-3.5 text-gym"
-              />
-              Gym
-            </>
-          )}
-          {gym && sex && <span aria-hidden="true">{' · '}</span>}
-          {sex && (
-            <>
-              <HeartSymbol data-testid="quick-look-sex-symbol" className="h-3.5 w-3.5 text-heart" />
-              Sex
-            </>
-          )}
-        </p>
-      )}
+      <DayFlagButtons key={`${userId}|${date}`} flags={flags} partnerName={partnerName} />
       {hasNote && <QuickLookNotes userId={userId} date={date} />}
     </div>,
     document.body,

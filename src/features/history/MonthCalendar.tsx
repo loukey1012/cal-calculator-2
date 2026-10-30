@@ -43,8 +43,15 @@ type MonthCalendarProps = {
   readonly onChangeMonth: (month: string) => void
   /** the month title turns into a button that shows the year overview */
   readonly onShowYear?: () => void
-  /** the card shown while a day is held; it calls `close` when it wants to go away */
-  readonly renderQuickLook?: (date: string, close: () => void) => ReactNode
+  /**
+   * the card shown for a held day; it calls `close` when it wants to go away. `pinned`: the
+   * finger has lifted and the card stays until it is dismissed, so its buttons can be tapped.
+   */
+  /** whose calendar it is: a card held for someone else closes when this changes */
+  readonly quickLookScope?: string
+  /** false while the page is mounted but not the one shown (another tab, a page on top) */
+  readonly pageShown?: boolean
+  readonly renderQuickLook?: (date: string, close: () => void, pinned: boolean) => ReactNode
 }
 
 export function MonthCalendar({
@@ -58,9 +65,15 @@ export function MonthCalendar({
   onSelectDay,
   onChangeMonth,
   onShowYear,
+  quickLookScope,
+  pageShown = true,
   renderQuickLook,
 }: MonthCalendarProps) {
-  const [heldDay, setHeldDay] = useState<string | null>(null)
+  const [held, setHeld] = useState<{
+    date: string
+    pinned: boolean
+    scope: string | undefined
+  } | null>(null)
   const [slide, setSlide] = useState({ month, direction: 'none' as 'none' | 'next' | 'previous' })
   const isCurrentMonth = month >= monthStart(today)
   const onSelectRef = useRef(onSelectDay)
@@ -73,16 +86,27 @@ export function MonthCalendar({
   // the new month slides in from the side it lies on
   if (slide.month !== month) {
     setSlide({ month, direction: month > slide.month ? 'next' : 'previous' })
-    if (heldDay !== null) setHeldDay(null)
+    if (held !== null) setHeld(null)
   }
+  // the card is drawn in the body: it goes when this page isn't the shown one (another tab, a
+  // page on top) or when it is another person's calendar
+  if (held !== null && (!pageShown || held.scope !== quickLookScope)) setHeld(null)
 
-  const closeQuickLook = useCallback(() => setHeldDay(null), [])
+  const closeQuickLook = useCallback(() => setHeld(null), [])
+  const openQuickLook = useCallback(
+    (date: string) => setHeld({ date, pinned: false, scope: quickLookScope }),
+    [quickLookScope],
+  )
+  // lifting the finger keeps the card open; a press that never opened one changes nothing
+  const pinQuickLook = useCallback((heldOpen: boolean) => {
+    if (heldOpen) setHeld((current) => (current ? { ...current, pinned: true } : current))
+  }, [])
   const { onPointerDown, onClickCapture } = useMonthPress({
     month,
     isCurrentMonth,
     onChangeMonth,
-    onHold: renderQuickLook ? setHeldDay : undefined,
-    onRelease: closeQuickLook,
+    onHold: renderQuickLook ? openQuickLook : undefined,
+    onRelease: pinQuickLook,
   })
 
   const title = MONTH_TITLE.format(fromLocalDateString(month))
@@ -198,7 +222,7 @@ export function MonthCalendar({
         </table>
       </div>
       {footer}
-      {heldDay && renderQuickLook?.(heldDay, closeQuickLook)}
+      {held && renderQuickLook?.(held.date, closeQuickLook, held.pinned)}
     </section>
   )
 }

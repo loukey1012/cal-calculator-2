@@ -25,8 +25,8 @@ function calendar(
       })}
       onSelectDay={onSelectDay}
       onChangeMonth={onChangeMonth}
-      renderQuickLook={(date, close) => (
-        <div role="dialog" aria-label={`look ${date}`}>
+      renderQuickLook={(date, close, pinned) => (
+        <div role="dialog" aria-label={`look ${date}`} data-pinned={pinned}>
           <button type="button" onClick={() => (onClose(), close())}>
             close
           </button>
@@ -212,15 +212,47 @@ describe('holding a day', () => {
     expect(screen.getByRole('dialog', { name: 'look 2026-10-03' })).toBeInTheDocument()
   })
 
-  test('letting go closes it and does not select the day', () => {
+  test('letting go keeps it open, pinned, and does not select the day', () => {
     const { onSelectDay } = renderCalendar()
     hold()
+    expect(screen.getByRole('dialog')).toHaveAttribute('data-pinned', 'false')
 
     fireEvent.pointerUp(dayButton(), { pointerId: 1, isPrimary: true, clientX: 100, clientY: 300 })
     fireEvent.click(dayButton())
 
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByRole('dialog', { name: 'look 2026-10-03' })).toHaveAttribute(
+      'data-pinned',
+      'true',
+    )
     expect(onSelectDay).not.toHaveBeenCalled()
+  })
+
+  test('a cancelled pointer after the hold pins it too', () => {
+    renderCalendar()
+    hold()
+
+    fireEvent.pointerCancel(dayButton(), { pointerId: 1, isPrimary: true })
+
+    expect(screen.getByRole('dialog')).toHaveAttribute('data-pinned', 'true')
+  })
+
+  test('holding another day while one is pinned opens that one, not yet pinned', () => {
+    renderCalendar()
+    hold()
+    fireEvent.pointerUp(dayButton(), { pointerId: 1, isPrimary: true })
+
+    fireEvent.pointerDown(screen.getByRole('button', { name: /^October 4$/ }), {
+      pointerId: 2,
+      isPrimary: true,
+      clientX: 140,
+      clientY: 300,
+    })
+    act(() => void vi.advanceTimersByTime(LONG_PRESS_MS))
+
+    expect(screen.getByRole('dialog', { name: 'look 2026-10-04' })).toHaveAttribute(
+      'data-pinned',
+      'false',
+    )
   })
 
   test('a tap after a hold selects normally again', () => {
@@ -299,7 +331,7 @@ describe('holding a day', () => {
     expect(notPrevented).toBe(false)
   })
 
-  test('letting go outside the grid closes it', () => {
+  test('letting go outside the grid pins it', () => {
     renderCalendar()
     hold()
 
@@ -310,7 +342,7 @@ describe('holding a day', () => {
       clientY: 600,
     })
 
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByRole('dialog')).toHaveAttribute('data-pinned', 'true')
   })
 
   test('drifting sideways while it is open and then letting go keeps the month', () => {
@@ -326,7 +358,7 @@ describe('holding a day', () => {
     fireEvent.pointerUp(dayButton(), { pointerId: 1, isPrimary: true, clientX: 220, clientY: 300 })
 
     expect(onChangeMonth).not.toHaveBeenCalled()
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByRole('dialog')).toHaveAttribute('data-pinned', 'true')
   })
 
   test('a hold ends with a plain click much later still selecting', () => {
@@ -335,6 +367,24 @@ describe('holding a day', () => {
     fireEvent.pointerUp(dayButton(), { pointerId: 1, isPrimary: true })
     act(() => void vi.advanceTimersByTime(1000))
 
+    fireEvent.click(dayButton())
+
+    expect(onSelectDay).toHaveBeenCalledExactlyOnceWith('2026-10-03')
+  })
+
+  test('a tap right after a hold whose click never came is not eaten', () => {
+    const { onSelectDay } = renderCalendar()
+    hold()
+    fireEvent.pointerUp(dayButton(), { pointerId: 1, isPrimary: true })
+    // the browser sent no click after the hold; the next press is a fresh tap
+    act(() => void vi.advanceTimersByTime(100))
+    fireEvent.pointerDown(dayButton(), {
+      pointerId: 2,
+      isPrimary: true,
+      clientX: 100,
+      clientY: 300,
+    })
+    fireEvent.pointerUp(dayButton(), { pointerId: 2, isPrimary: true, clientX: 100, clientY: 300 })
     fireEvent.click(dayButton())
 
     expect(onSelectDay).toHaveBeenCalledExactlyOnceWith('2026-10-03')
@@ -374,6 +424,16 @@ describe('holding a day', () => {
     unmount()
 
     expect(vi.getTimerCount()).toBe(0)
+  })
+
+  test('a pinned quick look is closed when the month changes', () => {
+    const { showMonth } = renderCalendar()
+    hold()
+    fireEvent.pointerUp(dayButton(), { pointerId: 1, isPrimary: true })
+
+    showMonth('2026-09-01')
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
   test('the waiting hold is dropped, and an open quick look closed, when the month changes', () => {
