@@ -1,13 +1,15 @@
 import { activePage, expect, localDay, logIn, test } from './backend.ts'
 
-const chip = (page: ReturnType<typeof activePage>, name: string) =>
-  page.getByRole('group', { name: 'Day flags' }).getByRole('button', { name, exact: true })
+const flags = (page: ReturnType<typeof activePage>) =>
+  page.getByRole('group', { name: /^Day flags/ })
+const flag = (page: ReturnType<typeof activePage>, name: string) =>
+  flags(page).getByRole('button', { name, exact: true })
 
-// a disclosure button: its name lists the marked meals
-const cheatMealChip = (page: ReturnType<typeof activePage>) =>
-  page.getByRole('group', { name: 'Day flags' }).getByRole('button', { name: /^Cheat meal/ })
+// a popup button: its name lists the marked whole day and meals
+const cheatButton = (page: ReturnType<typeof activePage>) =>
+  flags(page).getByRole('button', { name: /^Cheat/ })
 
-test('the Gym chip saves at once and Undo takes it back', async ({ page, backend }) => {
+test('the Gym button saves at once and a second tap takes it back', async ({ page, backend }) => {
   const me = await backend.user('Gina')
   await backend.household([me])
   await logIn(page, me)
@@ -20,17 +22,17 @@ test('the Gym chip saves at once and Undo takes it back', async ({ page, backend
     return data
   }
 
-  await chip(today, 'Gym').click()
-  await expect(chip(today, 'Gym')).toHaveAttribute('aria-pressed', 'true')
-  await expect(page.getByRole('status').filter({ hasText: 'Gym set' })).toBeVisible()
+  await flag(today, 'Gym').click()
+  await expect(flag(today, 'Gym')).toHaveAttribute('aria-pressed', 'true')
   await expect.poll(gymRows).toEqual([{ user_id: me.id, date: localDay() }])
+  await expect(page.getByRole('status')).toHaveCount(0)
 
-  await page.getByRole('status').getByRole('button', { name: 'Undo' }).click()
-  await expect(chip(today, 'Gym')).toHaveAttribute('aria-pressed', 'false')
+  await flag(today, 'Gym').click()
+  await expect(flag(today, 'Gym')).toHaveAttribute('aria-pressed', 'false')
   await expect.poll(gymRows).toEqual([])
 })
 
-test('Cheat day and Alcohol replace each other', async ({ page, backend }) => {
+test('Cheat whole day and Alcohol replace each other', async ({ page, backend }) => {
   const me = await backend.user('Cora')
   await backend.household([me])
   await logIn(page, me)
@@ -43,17 +45,30 @@ test('Cheat day and Alcohol replace each other', async ({ page, backend }) => {
     return data
   }
 
-  await chip(today, 'Cheat day').click()
-  await expect(chip(today, 'Cheat day')).toHaveAttribute('aria-pressed', 'true')
+  await cheatButton(today).click()
+  const popover = page.getByRole('dialog', { name: 'Cheat' })
+  await popover.getByRole('button', { name: 'Whole day' }).click()
+  await expect(popover.getByRole('button', { name: 'Whole day' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
   await expect.poll(marks).toEqual([{ date: localDay(), kind: 'cheat' }])
+  await page.keyboard.press('Escape')
+  await expect(popover).toBeHidden()
+  await expect(cheatButton(today)).toHaveAccessibleName('Cheat: whole day')
 
-  await chip(today, 'Alcohol').click()
-  await expect(chip(today, 'Alcohol')).toHaveAttribute('aria-pressed', 'true')
-  await expect(chip(today, 'Cheat day')).toHaveAttribute('aria-pressed', 'false')
+  await flag(today, 'Alcohol').click()
+  await expect(flag(today, 'Alcohol')).toHaveAttribute('aria-pressed', 'true')
+  await expect(cheatButton(today)).toHaveAccessibleName('Cheat')
   await expect.poll(marks).toEqual([{ date: localDay(), kind: 'alcohol' }])
+
+  await cheatButton(today).click()
+  await popover.getByRole('button', { name: 'Whole day' }).click()
+  await expect.poll(marks).toEqual([{ date: localDay(), kind: 'cheat' }])
+  await expect(flag(today, 'Alcohol')).toHaveAttribute('aria-pressed', 'false')
 })
 
-test('the Cheat meal popover marks several meals and stays open', async ({ page, backend }) => {
+test('the Cheat popover marks several meals and stays open', async ({ page, backend }) => {
   const me = await backend.user('Mona')
   await backend.household([me])
   await logIn(page, me)
@@ -68,8 +83,8 @@ test('the Cheat meal popover marks several meals and stays open', async ({ page,
     return (data ?? []).map((row) => row.meal_type).sort()
   }
 
-  await cheatMealChip(today).click()
-  const popover = page.getByRole('dialog', { name: 'Cheat meals' })
+  await cheatButton(today).click()
+  const popover = page.getByRole('dialog', { name: 'Cheat' })
   await popover.getByRole('button', { name: 'Lunch' }).click()
   await expect(popover.getByRole('button', { name: 'Lunch' })).toHaveAttribute(
     'aria-pressed',
@@ -85,10 +100,10 @@ test('the Cheat meal popover marks several meals and stays open', async ({ page,
 
   await page.keyboard.press('Escape')
   await expect(popover).toBeHidden()
-  await expect(cheatMealChip(today)).toHaveAccessibleName('Cheat meal: Lunch, Dinner')
+  await expect(cheatButton(today)).toHaveAccessibleName('Cheat: Lunch, Dinner')
 })
 
-test("on the partner's day the chip sets the partner's flag", async ({ page, backend }) => {
+test("on the partner's day the Gym button sets the partner's flag", async ({ page, backend }) => {
   const me = await backend.user('Lukas')
   const partner = await backend.user('Lisa')
   await backend.household([me, partner])
@@ -99,9 +114,8 @@ test("on the partner's day the chip sets the partner's flag", async ({ page, bac
     .getByRole('radio', { checked: false })
     .click()
 
-  await chip(today, 'Gym').click()
-  await expect(chip(today, 'Gym')).toHaveAttribute('aria-pressed', 'true')
-  await expect(page.getByRole('status').filter({ hasText: /^Gym set for / })).toBeVisible()
+  await flag(today, 'Gym').click()
+  await expect(flag(today, 'Gym')).toHaveAttribute('aria-pressed', 'true')
   await expect
     .poll(async () => {
       const { data } = await backend.admin
@@ -111,19 +125,4 @@ test("on the partner's day the chip sets the partner's flag", async ({ page, bac
       return data
     })
     .toEqual([{ user_id: partner.id, date: localDay() }])
-})
-
-test('a sideways drag on the chip row does not switch tabs', async ({ page, backend }) => {
-  const me = await backend.user('Dora')
-  await backend.household([me])
-  await logIn(page, me)
-  const today = activePage(page)
-  const row = today.getByRole('group', { name: 'Day flags' })
-  const box = await row.boundingBox()
-  await page.mouse.move(box!.x + box!.width - 20, box!.y + box!.height / 2)
-  await page.mouse.down()
-  await page.mouse.move(box!.x + 20, box!.y + box!.height / 2, { steps: 10 })
-  await page.mouse.up()
-  await expect(today.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible()
-  await expect(row).toBeVisible()
 })

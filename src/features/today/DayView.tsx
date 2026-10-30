@@ -1,19 +1,12 @@
-import { useCallback, useRef, useState, type ComponentType, type SVGProps } from 'react'
+import type { ComponentType, SVGProps } from 'react'
 import { usePagePath } from '../../app/pagePath'
 import { useStackNavigate } from '../../app/stackNavigate'
 import { Button } from '../../components/ios/Button'
 import { ErrorBanner } from '../../components/ios/ErrorBanner'
-import {
-  BreakfastIcon,
-  DinnerIcon,
-  EllipsisIcon,
-  LunchIcon,
-  SnackIcon,
-} from '../../components/ios/icons'
+import { BreakfastIcon, DinnerIcon, LunchIcon, SnackIcon } from '../../components/ios/icons'
 import { toUserMessage } from '../../lib/errors'
-import { Toast } from '../../components/ios/Toast'
-import { DayFlagChips } from '../dayMarks/DayFlagChips'
-import { useDayFlags, type FlagToast } from '../dayMarks/useDayFlags'
+import { DayFlagButtons } from '../dayMarks/DayFlagButtons'
+import { useDayFlags } from '../dayMarks/useDayFlags'
 import { useGoals } from '../goals/hooks'
 import { DayStatusPill } from '../history/DayStatusPill'
 import { useAddFoodSession } from '../addFood/addFoodSessionContext'
@@ -33,13 +26,7 @@ import { formatKcalTotal } from '../nutrition/format'
 import { goalForDate } from '../nutrition/goals'
 import type { NutritionTotals } from '../nutrition/types'
 import { mealTotals, sumTotals } from '../nutrition/totals'
-import {
-  isLeftOut,
-  isMissingMeals,
-  missingMainMeals,
-  type MainMeal,
-} from '../../../supabase/functions/_shared/dayCounting'
-import { DayOptionsSheet } from './DayOptionsSheet'
+import { isLeftOut } from '../../../supabase/functions/_shared/dayCounting'
 import { GoalCard } from './GoalCard'
 import { useToday } from './useToday'
 
@@ -73,16 +60,6 @@ function mealSubtitle(
   if (cheatMeal) return count === 0 ? 'Cheat meal' : `Cheat meal · ${formatKcalTotal(totals)} kcal`
   if (count === 0) return 'Nothing logged'
   return `${formatKcalTotal(totals)} kcal · ${itemCount(count)}`
-}
-
-const MISSING_LABELS: Record<string, string> = {
-  lunch: 'Lunch missing',
-  dinner: 'Dinner missing',
-  'lunch,dinner': 'Lunch and dinner missing',
-}
-
-function missingLabel(missing: readonly MainMeal[]): string {
-  return MISSING_LABELS[missing.join(',')] ?? ''
 }
 
 type MealCardProps = {
@@ -137,17 +114,6 @@ function MealCard({ type, label, subtitle, note, ingredientIds, unsaved, onOpen 
   )
 }
 
-/** how long the Undo toast of a flag stays */
-const UNDO_TOAST_MS = 5000
-
-type ShownToast = FlagToast & {
-  readonly id: number
-  /** whose day it was about, so a toast never outlives the open day */
-  readonly scope: string
-  /** the change error that was already showing when it was raised (its own failure is a new one) */
-  readonly errorThen: Error | null
-}
-
 type DayViewProps = {
   readonly person: Profile
   readonly isOwnDay: boolean
@@ -168,36 +134,11 @@ export function DayView({ person, isOwnDay, date, showStatus = false }: DayViewP
   const today = useToday()
   const goals = useGoals(person.id)
   const lookOf = useLookOf()
-  const [optionsOpen, setOptionsOpen] = useState(false)
   // reported here too, so a save that fails after its meal was left isn't silent
   const latestDayError = useLatestDayChangeError(person.id, date)
   const latestDishError = useLatestDishChangeError()
   const latestChangeError = latestDayError ?? latestDishError
-  // a new tap replaces the toast; the id remounts it, so equal texts still restart the timer
-  const [toast, setToast] = useState<ShownToast | null>(null)
-  const toastId = useRef(0)
-  const scope = `${person.id}|${date}`
-  const showToast = useCallback(
-    (next: FlagToast) => {
-      toastId.current += 1
-      setToast({ ...next, id: toastId.current, scope, errorThen: latestChangeError })
-    },
-    [scope, latestChangeError],
-  )
-  const hideToast = useCallback(() => setToast(null), [])
-  // another day, or a save that failed and was rolled back: Undo would only send a pointless write
-  const toastStale =
-    toast !== null &&
-    (toast.scope !== scope || (latestChangeError !== null && latestChangeError !== toast.errorThen))
-  if (toastStale) setToast(null)
-  const shownToast = toastStale ? null : toast
-  const flags = useDayFlags({
-    userId: person.id,
-    householdId: person.household_id,
-    date,
-    partnerName: isOwnDay ? null : lookOf(person).name,
-    onChanged: showToast,
-  })
+  const flags = useDayFlags({ userId: person.id, householdId: person.household_id, date })
   const navigate = useStackNavigate()
   const from = usePagePath().startsWith('/history') ? 'history' : 'today'
   const { draft } = useAddFoodSession()
@@ -238,8 +179,6 @@ export function DayView({ person, isOwnDay, date, showStatus = false }: DayViewP
     lunchLogged: byMeal.lunch.length > 0,
     dinnerLogged: byMeal.dinner.length > 0,
   }
-  const missing =
-    !day.isPending && isMissingMeals(date, counted, today) ? missingMainMeals(counted) : []
 
   return (
     <>
@@ -283,33 +222,22 @@ export function DayView({ person, isOwnDay, date, showStatus = false }: DayViewP
             totals={dayTotals}
             // over colors would judge a day that is left out
             showOver={!isLeftOut(counted)}
+            flags={
+              <DayFlagButtons
+                key={`${person.id}|${date}`}
+                flags={flags}
+                partnerName={isOwnDay ? null : lookOf(person).name}
+              />
+            }
           />
           <section className="mt-4">
             <div data-testid="day-total" className="mb-3 px-1">
-              <div className="flex items-center gap-3">
+              <div className="flex items-baseline justify-between gap-3">
                 <h2 className="shrink-0 font-display text-[20px] font-bold">Meals</h2>
-                {/* the leftovers offer and the day's flags in the heading row, so Today still fits the screen */}
-                <div className="min-w-0 flex-1">
-                  <DayFlagChips
-                    key={scope}
-                    flags={flags}
-                    missingLabel={missing.length > 0 ? missingLabel(missing) : null}
-                    leading={
-                      <span className="flex shrink-0">
-                        <LeftoversPill onOpen={() => openMeal(mealOfDay)} />
-                      </span>
-                    }
-                  />
-                </div>
-                <button
-                  type="button"
-                  aria-label="Day options"
-                  onClick={() => setOptionsOpen(true)}
-                  // a 44 pt tap target around the small icon
-                  className="-my-2.5 -mr-2.5 self-center p-2.5 text-accent-ink active:opacity-60"
-                >
-                  <EllipsisIcon className="h-5 w-5" />
-                </button>
+                {/* the leftovers offer in the heading row, so Today still fits the screen */}
+                <span className="flex min-w-0 flex-1">
+                  <LeftoversPill onOpen={() => openMeal(mealOfDay)} />
+                </span>
               </div>
               {/* the day's kcal and macros are on the goal card above, not repeated here */}
             </div>
@@ -331,30 +259,6 @@ export function DayView({ person, isOwnDay, date, showStatus = false }: DayViewP
           </section>
         </>
       )}
-      <DayOptionsSheet
-        open={optionsOpen}
-        userId={person.id}
-        householdId={person.household_id}
-        date={date}
-        onClose={() => setOptionsOpen(false)}
-      />
-      <Toast
-        key={shownToast?.id}
-        message={shownToast?.message ?? null}
-        durationMs={UNDO_TOAST_MS}
-        action={
-          shownToast
-            ? {
-                label: 'Undo',
-                onPress: () => {
-                  shownToast.undo()
-                  hideToast()
-                },
-              }
-            : undefined
-        }
-        onDone={hideToast}
-      />
     </>
   )
 }

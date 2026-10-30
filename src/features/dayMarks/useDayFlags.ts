@@ -1,11 +1,9 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { cheatMeals as cheatMealsOf, type MealType } from '../meals/dayModel'
 import { useDay, useDayMark, useSetCheatMeal, useSetDayMark } from '../meals/hooks'
 import type { DayMark } from '../meals/mealsApi'
-import { flagToastText, nextDayMark, type DayFlag, type FlagChange } from './dayFlags'
+import { nextDayMark, type DayFlag } from './dayFlags'
 import { useGymDay, useSetGymDay, useSetSexDay, useSexDay } from './hooks'
-
-export type FlagToast = { readonly message: string; readonly undo: () => void }
 
 export type DayFlags = {
   readonly dayMark: DayMark
@@ -14,7 +12,7 @@ export type DayFlags = {
   readonly cheatMealsLoaded: boolean
   readonly gym: boolean
   readonly gymLoaded: boolean
-  /** null without a household: the Sex chip isn't shown */
+  /** null without a household: the Sex button isn't shown */
   readonly sex: boolean | null
   readonly sexLoaded: boolean
   readonly toggle: (flag: DayFlag) => void
@@ -26,9 +24,6 @@ type Input = {
   readonly userId: string
   readonly householdId: string | null
   readonly date: string
-  /** the partner's display name when the open day is the partner's, else null */
-  readonly partnerName: string | null
-  readonly onChanged: (toast: FlagToast) => void
 }
 
 const DAY_MARK = 'dayMark'
@@ -58,16 +53,10 @@ function latestOf<T>(store: PendingStore<T>, key: string, cached: T): T {
 }
 
 /**
- * The flag chips of an open day: each tap saves at once through the day hooks (optimistic, queued
- * offline) and reports a toast whose Undo sends the previous value as a new change.
+ * The flag buttons of an open day: each tap saves at once through the day hooks (optimistic,
+ * queued offline); a second tap takes it back.
  */
-export function useDayFlags({
-  userId,
-  householdId,
-  date,
-  partnerName,
-  onChanged,
-}: Input): DayFlags {
+export function useDayFlags({ userId, householdId, date }: Input): DayFlags {
   const dayMarkQuery = useDayMark(userId, date)
   const dayQuery = useDay(userId, date)
   const gymQuery = useGymDay(userId, date)
@@ -88,27 +77,10 @@ export function useDayFlags({
     [dayQuery.data],
   )
 
-  const report = useCallback(
-    (change: FlagChange, undo: () => void) =>
-      onChanged({ message: flagToastText(change, partnerName), undo }),
-    [onChanged, partnerName],
-  )
-
-  /** Saves a value, remembers it as the latest and reports the toast with its Undo. */
-  const save = <T>(
-    store: PendingStore<T>,
-    key: string,
-    previous: T,
-    next: T,
-    send: (value: T) => void,
-    change: FlagChange,
-  ) => {
-    const apply = (value: T) => {
-      store.set(key, { value, at: Date.now() })
-      send(value)
-    }
-    apply(next)
-    report(change, () => apply(previous))
+  /** Saves a value and remembers it as the latest until the cache shows it. */
+  const save = <T>(store: PendingStore<T>, key: string, next: T, send: (value: T) => void) => {
+    store.set(key, { value: next, at: Date.now() })
+    send(next)
   }
 
   const toggle = (flag: DayFlag) => {
@@ -117,43 +89,28 @@ export function useDayFlags({
       const key = keyOf(DAY_MARK)
       const previous = latestOf(markStore, key, dayMarkQuery.data)
       const next = nextDayMark(previous, flag)
-      const changed = flag === 'cheatDay' ? next === 'cheat' : next === 'alcohol'
-      save(markStore, key, previous, next, (mark) => setDayMark.mutate(mark), {
-        flag,
-        on: changed,
-      })
+      save(markStore, key, next, (mark) => setDayMark.mutate(mark))
       return
     }
     if (flag === 'gym') {
       if (gymQuery.data === undefined) return
       const key = keyOf(GYM)
       const previous = latestOf(flagStore, key, gymQuery.data)
-      save(flagStore, key, previous, !previous, (on) => setGym.mutate(on), {
-        flag,
-        on: !previous,
-      })
+      save(flagStore, key, !previous, (on) => setGym.mutate(on))
       return
     }
     if (!setSex || sexQuery.data === undefined) return
     const key = keyOf(SEX)
     const previous = latestOf(flagStore, key, sexQuery.data)
-    save(flagStore, key, previous, !previous, (on) => setSex.mutate(on), {
-      flag,
-      on: !previous,
-    })
+    save(flagStore, key, !previous, (on) => setSex.mutate(on))
   }
 
   const toggleCheatMeal = (meal: MealType) => {
     if (dayQuery.data === undefined) return
     const key = keyOf(mealKey(meal))
     const previous = latestOf(flagStore, key, cachedCheatMeals.has(meal))
-    save(
-      flagStore,
-      key,
-      previous,
-      !previous,
-      (cheatMeal) => setCheatMeal.mutate({ mealType: meal, cheatMeal }),
-      { flag: 'cheatMeal', meal, on: !previous },
+    save(flagStore, key, !previous, (cheatMeal) =>
+      setCheatMeal.mutate({ mealType: meal, cheatMeal }),
     )
   }
 

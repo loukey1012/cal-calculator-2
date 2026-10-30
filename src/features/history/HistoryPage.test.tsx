@@ -429,16 +429,15 @@ describe('HistoryPage', () => {
     )
   })
 
-  test('an opened past day says which main meal is missing', async () => {
+  test('an opened past day says which main meal is missing in its status pill', async () => {
     vi.mocked(fetchDay).mockResolvedValue([dayMeal('m1', 'lunch', [mealItem({ id: 'soup' })])])
     renderPage('/history/2026-10-12')
 
     const day = screen.getByRole('region', { name: /October 12/ })
     await waitFor(() =>
-      expect(within(day).getByRole('group', { name: 'Day flags' })).toHaveTextContent(
-        'Dinner missing',
-      ),
+      expect(within(day).getByTestId('day-status')).toHaveTextContent('Dinner missing'),
     )
+    expect(within(day).getByRole('group', { name: 'Day flags' })).not.toHaveTextContent('missing')
   })
 
   test('tapping another day switches the details; tapping the open day closes them', async () => {

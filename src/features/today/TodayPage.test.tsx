@@ -56,7 +56,6 @@ import {
   fetchDay,
   fetchDayMark,
   fetchDayNote,
-  setDayMark,
   setDayNote,
   setMealNote,
   updateMealItem,
@@ -228,14 +227,14 @@ describe('TodayPage', () => {
     renderPage()
 
     // Assert
-    await waitFor(() => expect(chip('Cheat day')).toHaveAttribute('aria-pressed', 'true'))
+    await waitFor(() => expect(chip('Cheat: whole day')).toHaveClass('bg-cheat'))
     expect(chip('Alcohol')).toHaveAttribute('aria-pressed', 'false')
     const goals = await screen.findByRole('list', { name: 'Goals' })
     const ring = within(goals).getAllByTestId('ring')[0]
     expect(ring?.querySelectorAll('circle')[1]?.style.stroke).toBe('var(--goal-kcal)')
   })
 
-  test('gym and sex show as pressed chips on the day and leave its figures alone', async () => {
+  test('gym and sex show as pressed buttons on the day and leave its figures alone', async () => {
     vi.mocked(fetchGymDay).mockResolvedValue(true)
     vi.mocked(fetchSexDay).mockResolvedValue(true)
     vi.mocked(fetchDay).mockResolvedValue([
@@ -248,14 +247,14 @@ describe('TodayPage', () => {
     await waitFor(() => expect(chip('Gym')).toHaveAttribute('aria-pressed', 'true'))
     expect(chip('Sex')).toHaveAttribute('aria-pressed', 'true')
     // not a left-out day: over colors still apply
-    expect(chip('Cheat day')).toHaveAttribute('aria-pressed', 'false')
+    expect(chip('Cheat')).not.toHaveClass('bg-cheat')
     expect(chip('Alcohol')).toHaveAttribute('aria-pressed', 'false')
     const goals = await screen.findByRole('list', { name: 'Goals' })
     const ring = within(goals).getAllByTestId('ring')[0]
     expect(ring?.querySelectorAll('circle')[1]?.style.stroke).not.toBe('var(--goal-kcal)')
   })
 
-  test('tapping Gym saves at once and shows a toast with Undo that puts it back', async () => {
+  test('tapping Gym saves at once, a second tap takes it back, and no toast appears', async () => {
     // a small backend: the saved value is what the next fetch returns
     let savedGym = false
     vi.mocked(fetchGymDay).mockImplementation(async () => savedGym)
@@ -271,18 +270,24 @@ describe('TodayPage', () => {
 
     await waitFor(() => expect(chip('Gym')).toHaveAttribute('aria-pressed', 'true'))
     await waitFor(() => expect(setGymDay).toHaveBeenCalledWith('u1', '2026-10-01', true))
-    const toast = screen
-      .getByRole('button', { name: 'Undo' })
-      .closest('[role="status"]') as HTMLElement
-    expect(toast).toHaveTextContent('Gym set')
-    await user.click(within(toast).getByRole('button', { name: 'Undo' }))
+    expect(screen.queryByText(/Gym set/)).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull()
+    await user.click(chip('Gym'))
 
     await waitFor(() => expect(chip('Gym')).toHaveAttribute('aria-pressed', 'false'))
     await waitFor(() => expect(setGymDay).toHaveBeenLastCalledWith('u1', '2026-10-01', false))
-    expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull()
   })
 
-  test('on the partner’s day the toast names the partner', async () => {
+  test('the flags sit in the goal card, and there is no Day options button', async () => {
+    renderPage()
+
+    const flags = await screen.findByRole('group', { name: 'Day flags' })
+    const card = flags.closest('section') as HTMLElement
+    expect(await within(card).findByRole('list', { name: 'Goals' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Day options' })).toBeNull()
+  })
+
+  test('on the partner’s day a flag saves for the partner', async () => {
     vi.mocked(fetchMembers).mockResolvedValue([PROFILE, PARTNER])
     vi.mocked(fetchGymDay).mockResolvedValue(false)
     vi.mocked(fetchSexDay).mockResolvedValue(false)
@@ -294,13 +299,10 @@ describe('TodayPage', () => {
     await waitFor(() => expect(chip('Gym')).toBeEnabled())
     await user.click(chip('Gym'))
 
-    expect(
-      screen.getByRole('button', { name: 'Undo' }).closest('[role="status"]'),
-    ).toHaveTextContent('Gym set for baby')
     await waitFor(() => expect(setGymDay).toHaveBeenCalledWith('u2', '2026-10-01', true))
   })
 
-  test('a failed flag save takes the Undo toast away and shows the error', async () => {
+  test('a failed flag save shows the error', async () => {
     vi.mocked(fetchGymDay).mockResolvedValue(false)
     vi.mocked(fetchSexDay).mockResolvedValue(false)
     vi.mocked(setGymDay).mockRejectedValue(new Error('offline backend'))
@@ -314,36 +316,20 @@ describe('TodayPage', () => {
     expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull()
   })
 
-  test('the Undo toast goes away when the other person’s day opens', async () => {
-    vi.mocked(fetchMembers).mockResolvedValue([PROFILE, PARTNER])
-    vi.mocked(fetchGymDay).mockResolvedValue(false)
-    vi.mocked(fetchSexDay).mockResolvedValue(false)
-    vi.mocked(setGymDay).mockResolvedValue()
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-    renderPage()
-
-    await waitFor(() => expect(chip('Gym')).toBeEnabled())
-    await user.click(chip('Gym'))
-    expect(screen.getByRole('button', { name: 'Undo' })).toBeInTheDocument()
-    await user.click(await screen.findByRole('radio', { name: /baby/ }))
-
-    await waitFor(() => expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull())
-  })
-
-  test('the Cheat meal popover closes when the other person’s day opens', async () => {
+  test('the Cheat popover closes when the other person’s day opens', async () => {
     vi.mocked(fetchMembers).mockResolvedValue([PROFILE, PARTNER])
     vi.mocked(fetchGymDay).mockResolvedValue(false)
     vi.mocked(fetchSexDay).mockResolvedValue(false)
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     renderPage()
 
-    await waitFor(() => expect(chip('Cheat meal')).toBeEnabled())
-    await user.click(chip('Cheat meal'))
-    expect(screen.getByRole('dialog', { name: 'Cheat meals' })).toBeInTheDocument()
+    await waitFor(() => expect(chip('Cheat')).toBeEnabled())
+    await user.click(chip('Cheat'))
+    expect(screen.getByRole('dialog', { name: 'Cheat' })).toBeInTheDocument()
     // a click without a pointerdown, so only the change of day can close it
     fireEvent.click(await screen.findByRole('radio', { name: /baby/ }))
 
-    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Cheat meals' })).toBeNull())
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Cheat' })).toBeNull())
   })
 
   test('an alcohol day says so, and its rings show no over colors', async () => {
@@ -356,7 +342,7 @@ describe('TodayPage', () => {
     renderPage()
 
     await waitFor(() => expect(chip('Alcohol')).toHaveAttribute('aria-pressed', 'true'))
-    expect(chip('Cheat day')).toHaveAttribute('aria-pressed', 'false')
+    expect(chip('Cheat')).not.toHaveClass('bg-cheat')
     const goals = await screen.findByRole('list', { name: 'Goals' })
     const ring = within(goals).getAllByTestId('ring')[0]
     expect(ring?.querySelectorAll('circle')[1]?.style.stroke).toBe('var(--goal-kcal)')
@@ -372,7 +358,7 @@ describe('TodayPage', () => {
 
     const dinner = screen.getByRole('button', { name: /Dinner/ })
     await waitFor(() => expect(dinner).toHaveTextContent('Cheat meal · 1,900 kcal'))
-    expect(chip('Cheat meal: Dinner')).toHaveAttribute('aria-haspopup', 'dialog')
+    expect(chip('Cheat: Dinner')).toHaveAttribute('aria-haspopup', 'dialog')
     const goals = await screen.findByRole('list', { name: 'Goals' })
     expect(goals).toHaveTextContent('2,438 / 2,000 kcal')
     const ring = within(goals).getAllByTestId('ring')[0]
@@ -464,22 +450,6 @@ describe('TodayPage', () => {
 
     expect(screen.getByTestId('location').textContent).toBe('/today')
     expect(await screen.findByRole('radio', { name: /baby/ })).toBeChecked()
-  })
-
-  test('Day options marks the day, also for the partner', async () => {
-    vi.mocked(fetchMembers).mockResolvedValue([PROFILE, PARTNER])
-    vi.mocked(setDayMark).mockResolvedValue()
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-    renderPage()
-
-    await user.click(await screen.findByRole('radio', { name: /baby/ }))
-    await user.click(screen.getByRole('button', { name: 'Day options' }))
-    const sheet = screen.getByRole('dialog', { name: 'Day' })
-    await user.click(within(sheet).getByRole('radio', { name: 'Alcohol day' }))
-    expect(setDayMark).not.toHaveBeenCalled()
-    await user.click(within(sheet).getByRole('button', { name: 'Save' }))
-
-    await waitFor(() => expect(setDayMark).toHaveBeenCalledWith('u2', '2026-10-01', 'alcohol'))
   })
 
   test('the current weight sits next to the title; tapping it enters today’s', async () => {
@@ -652,6 +622,24 @@ describe('TodayPage', () => {
     await user.click(screen.getByRole('button', { name: 'Try again' }))
 
     expect(await screen.findByRole('list', { name: 'Goals' })).toBeInTheDocument()
+  })
+
+  test('the flags stay in the card while the goal loads, has failed to load, or is not set', async () => {
+    const inCard = (group: HTMLElement) => group.closest('section') as HTMLElement
+    // loading
+    vi.mocked(fetchGoals).mockImplementation(() => new Promise(() => {}))
+    const loading = renderPage()
+    const flags = await screen.findByRole('group', { name: 'Day flags' })
+    expect(inCard(flags)).toHaveTextContent('Loading goal…')
+    loading.unmount()
+
+    // no goal
+    vi.mocked(fetchGoals).mockResolvedValue([])
+    renderPage()
+    await screen.findByRole('button', { name: 'Set goal' })
+    expect(inCard(screen.getByRole('group', { name: 'Day flags' }))).toHaveTextContent(
+      'Set a daily goal',
+    )
   })
 
   test('no person switch when you are alone in the household', async () => {

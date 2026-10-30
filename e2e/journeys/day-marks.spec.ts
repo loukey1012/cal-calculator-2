@@ -24,14 +24,12 @@ test('Sex shows on both calendars, Gym is set by the partner and found with the 
   const householdId = await backend.household([me, partner])
   const today = localDay()
 
-  // I mark today as a sex day in the day options; it is kept only on Save
+  // I mark today as a sex day with its button
   await logIn(page, me)
   const todayPage = activePage(page)
-  await todayPage.getByRole('button', { name: 'Day options' }).click()
-  const options = page.getByRole('dialog', { name: 'Day', exact: true })
-  await expect(options.getByText('Neither changes any figure.')).toBeVisible()
-  await options.getByRole('switch', { name: 'Sex' }).click()
-  await expect(options.getByRole('switch', { name: 'Sex' })).toHaveAttribute('aria-checked', 'true')
+  const flagButton = (target: ReturnType<typeof activePage>, name: string) =>
+    target.getByRole('group', { name: /^Day flags/ }).getByRole('button', { name, exact: true })
+  await flagButton(todayPage, 'Sex').click()
   const sexRows = async () => {
     const { data } = await backend.admin
       .from('sex_days')
@@ -39,11 +37,9 @@ test('Sex shows on both calendars, Gym is set by the partner and found with the 
       .eq('household_id', householdId)
     return data
   }
-  expect(await sexRows()).toEqual([])
-  await options.getByRole('button', { name: 'Save' }).click()
   await expect.poll(sexRows).toEqual([{ household_id: householdId, date: today }])
-  await expect(todayPage.getByRole('button', { name: 'Sex', pressed: true })).toBeVisible()
-  await expect(todayPage.getByRole('button', { name: 'Gym', pressed: false })).toBeVisible()
+  await expect(flagButton(todayPage, 'Sex')).toHaveAttribute('aria-pressed', 'true')
+  await expect(flagButton(todayPage, 'Gym')).toHaveAttribute('aria-pressed', 'false')
 
   // the partner sees the heart on the same date in their own History, on another phone with the
   // same device settings as this one
@@ -68,10 +64,7 @@ test('Sex shows on both calendars, Gym is set by the partner and found with the 
       .getByRole('radiogroup', { name: 'Person' })
       .getByRole('radio', { checked: false })
       .click()
-    await partnerToday.getByRole('button', { name: 'Day options' }).click()
-    const partnerOptions = partnerPage.getByRole('dialog', { name: 'Day', exact: true })
-    await partnerOptions.getByRole('switch', { name: 'Gym' }).click()
-    await partnerOptions.getByRole('button', { name: 'Save' }).click()
+    await flagButton(partnerToday, 'Gym').click()
     const gymRows = async () => {
       const { data } = await backend.admin
         .from('gym_days')

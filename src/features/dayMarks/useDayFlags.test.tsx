@@ -22,19 +22,15 @@ vi.mock('../meals/mealsApi', () => ({
 import { setGymDay, fetchGymDay, fetchSexDay, setSexDay } from './dayMarksApi'
 import { fetchDay, fetchDayMark, setCheatMeal, setDayMark } from '../meals/mealsApi'
 import type { DayMeal } from '../meals/dayModel'
-import { PENDING_MS, useDayFlags, type FlagToast } from './useDayFlags'
+import { PENDING_MS, useDayFlags } from './useDayFlags'
 
-function setup(
-  options: { householdId?: string | null; partnerName?: string | null; userId?: string } = {},
-) {
+function setup(options: { householdId?: string | null; userId?: string } = {}) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   )
-  const toasts: FlagToast[] = []
-  const onChanged = (toast: FlagToast) => toasts.push(toast)
   const householdId = options.householdId === undefined ? 'h1' : options.householdId
   const hook = renderHook(
     ({ date }: { date: string }) =>
@@ -42,12 +38,10 @@ function setup(
         userId: options.userId ?? 'u1',
         householdId,
         date,
-        partnerName: options.partnerName ?? null,
-        onChanged,
       }),
     { wrapper, initialProps: { date: DAY } },
   )
-  return { ...hook, toasts, queryClient }
+  return { ...hook, queryClient }
 }
 
 const DAY = '2026-10-05'
@@ -87,24 +81,19 @@ async function loaded(result: { current: ReturnType<typeof useDayFlags> }) {
 }
 
 describe('useDayFlags', () => {
-  test('cheat day then alcohol saves one dayMark change to alcohol, and Undo restores cheat', async () => {
-    const { result, toasts } = setup()
+  test('cheat day then alcohol saves cheat, then alcohol (it replaces the cheat day)', async () => {
+    const { result } = setup()
     await loaded(result)
 
     act(() => result.current.toggle('cheatDay'))
     act(() => result.current.toggle('alcohol'))
 
-    expect(toasts.map((toast) => toast.message)).toEqual(['Cheat day set', 'Alcohol day set'])
     await waitFor(() => expect(vi.mocked(setDayMark)).toHaveBeenCalledTimes(2))
     expect(vi.mocked(setDayMark).mock.calls.map((call) => call[2])).toEqual(['cheat', 'alcohol'])
-
-    act(() => toasts[1]?.undo())
-    await waitFor(() => expect(vi.mocked(setDayMark)).toHaveBeenCalledTimes(3))
-    expect(vi.mocked(setDayMark).mock.calls[2]?.[2]).toBe('cheat')
   })
 
   test('two taps in the same tick act on the latest value, not a stale one', async () => {
-    const { result, toasts } = setup()
+    const { result } = setup()
     await loaded(result)
 
     act(() => {
@@ -112,46 +101,41 @@ describe('useDayFlags', () => {
       result.current.toggle('gym')
     })
 
-    expect(toasts.map((toast) => toast.message)).toEqual(['Gym set', 'Gym removed'])
     await waitFor(() => expect(vi.mocked(setGymDay)).toHaveBeenCalledTimes(2))
     expect(vi.mocked(setGymDay).mock.calls.map((call) => call[2])).toEqual([true, false])
   })
 
-  test('gym on, then Undo sends off', async () => {
-    const { result, toasts } = setup()
+  test('a second tap on cheat day takes it back', async () => {
+    const { result } = setup()
     await loaded(result)
 
-    act(() => result.current.toggle('gym'))
-    await waitFor(() => expect(result.current.gym).toBe(true))
-    act(() => toasts[0]?.undo())
+    act(() => {
+      result.current.toggle('cheatDay')
+      result.current.toggle('cheatDay')
+    })
 
-    await waitFor(() => expect(vi.mocked(setGymDay)).toHaveBeenCalledTimes(2))
-    expect(vi.mocked(setGymDay).mock.calls.map((call) => call[2])).toEqual([true, false])
+    await waitFor(() => expect(vi.mocked(setDayMark)).toHaveBeenCalledTimes(2))
+    expect(vi.mocked(setDayMark).mock.calls.map((call) => call[2])).toEqual(['cheat', null])
   })
 
-  test('sex toggles with a household and Undo restores it', async () => {
-    const { result, toasts } = setup()
+  test('sex toggles with a household', async () => {
+    const { result } = setup()
     await waitFor(() => expect(result.current.sexLoaded).toBe(true))
 
     act(() => result.current.toggle('sex'))
 
-    expect(toasts[0]?.message).toBe('Sex set')
     await waitFor(() => expect(result.current.sex).toBe(true))
-    act(() => toasts[0]?.undo())
-    await waitFor(() => expect(vi.mocked(setSexDay)).toHaveBeenCalledTimes(2))
-    expect(vi.mocked(setSexDay).mock.calls.map((call) => call[2])).toEqual([true, false])
-    await waitFor(() => expect(result.current.sex).toBe(false))
+    expect(vi.mocked(setSexDay).mock.calls.map((call) => call[2])).toEqual([true])
   })
 
-  test('cheat meal toggle reports its meal and Undo takes it back', async () => {
-    const { result, toasts } = setup()
+  test('cheat meal toggle saves that meal, a second tap takes it back', async () => {
+    const { result } = setup()
     await loaded(result)
 
     act(() => result.current.toggleCheatMeal('lunch'))
     await waitFor(() => expect(result.current.cheatMeals.has('lunch')).toBe(true))
-    expect(toasts[0]?.message).toBe('Lunch marked as a cheat meal')
+    act(() => result.current.toggleCheatMeal('lunch'))
 
-    act(() => toasts[0]?.undo())
     await waitFor(() => expect(vi.mocked(setCheatMeal)).toHaveBeenCalledTimes(2))
     expect(vi.mocked(setCheatMeal).mock.calls.map((call) => call[0].cheatMeal)).toEqual([
       true,
@@ -164,7 +148,7 @@ describe('useDayFlags', () => {
     vi.mocked(fetchDay).mockImplementation(() => new Promise(() => {}))
     vi.mocked(fetchGymDay).mockImplementation(() => new Promise(() => {}))
     vi.mocked(fetchSexDay).mockImplementation(() => new Promise(() => {}))
-    const { result, toasts } = setup()
+    const { result } = setup()
 
     act(() => {
       result.current.toggle('cheatDay')
@@ -174,7 +158,6 @@ describe('useDayFlags', () => {
       result.current.toggleCheatMeal('lunch')
     })
 
-    expect(toasts).toEqual([])
     expect(setDayMark).not.toHaveBeenCalled()
     expect(setGymDay).not.toHaveBeenCalled()
     expect(setSexDay).not.toHaveBeenCalled()
@@ -182,19 +165,18 @@ describe('useDayFlags', () => {
   })
 
   test('without a household sex is null and toggling it does nothing', async () => {
-    const { result, toasts } = setup({ householdId: null })
+    const { result } = setup({ householdId: null })
     await loaded(result)
 
     act(() => result.current.toggle('sex'))
 
     expect(result.current.sex).toBeNull()
     expect(result.current.sexLoaded).toBe(false)
-    expect(toasts).toEqual([])
     expect(setSexDay).not.toHaveBeenCalled()
   })
 
   test('on the partner’s day every save goes to the partner’s user id', async () => {
-    const { result, toasts } = setup({ userId: 'u2', partnerName: 'baby' })
+    const { result } = setup({ userId: 'u2' })
     await loaded(result)
     await waitFor(() => expect(result.current.sexLoaded).toBe(true))
 
@@ -214,26 +196,12 @@ describe('useDayFlags', () => {
       mealType: 'lunch',
       cheatMeal: true,
     })
-    expect(toasts).toHaveLength(4)
-  })
-
-  test('the partner’s name ends the message', async () => {
-    const { result, toasts } = setup({ partnerName: 'baby' })
-    await loaded(result)
-
-    act(() => result.current.toggle('gym'))
-    act(() => result.current.toggleCheatMeal('lunch'))
-
-    expect(toasts.map((toast) => toast.message)).toEqual([
-      'Gym set for baby',
-      'Lunch marked as a cheat meal for baby',
-    ])
   })
 
   describe('the just-tapped values', () => {
     afterEach(() => vi.restoreAllMocks())
 
-    test('an Undo written after switching day does not decide the new day’s next tap', async () => {
+    test('a tap on another day is not decided by the previous day’s tapped value', async () => {
       let savedOnDay = false
       vi.mocked(fetchGymDay).mockImplementation(async (_user, date) =>
         date === OTHER_DAY ? true : savedOnDay,
@@ -241,20 +209,18 @@ describe('useDayFlags', () => {
       vi.mocked(setGymDay).mockImplementation(async (_user, date, on) => {
         if (date === DAY) savedOnDay = on
       })
-      const { result, rerender, toasts } = setup()
+      const { result, rerender } = setup()
       await loaded(result)
       act(() => result.current.toggle('gym'))
       await waitFor(() => expect(result.current.gym).toBe(true))
 
       rerender({ date: OTHER_DAY })
       await waitFor(() => expect(result.current.gym).toBe(true))
-      act(() => toasts[0]?.undo())
       act(() => result.current.toggle('gym'))
 
-      await waitFor(() => expect(vi.mocked(setGymDay)).toHaveBeenCalledTimes(3))
+      await waitFor(() => expect(vi.mocked(setGymDay)).toHaveBeenCalledTimes(2))
       expect(vi.mocked(setGymDay).mock.calls.map((call) => [call[1], call[2]])).toEqual([
         [DAY, true],
-        [DAY, false],
         [OTHER_DAY, false],
       ])
     })

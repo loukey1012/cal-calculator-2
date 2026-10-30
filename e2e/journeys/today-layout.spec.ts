@@ -27,7 +27,7 @@ test('the Today page fits the iPhone screen without scrolling', async ({ page, b
   await expect(today.getByRole('list', { name: 'Goals' })).toContainText('Fiber')
   await expect(today.getByRole('button', { name: /Snack/ })).toContainText('Nothing logged')
 
-  await expect(today.getByRole('group', { name: 'Day flags' })).toBeVisible()
+  await expect(today.getByRole('group', { name: /^Day flags/ })).toBeVisible()
 
   const { scrollHeight, clientHeight } = await today.evaluate((element) => ({
     scrollHeight: element.scrollHeight,

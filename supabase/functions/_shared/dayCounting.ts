@@ -8,7 +8,7 @@
 /** Both of us log every day from here on (user, 2026-10-19); earlier days are never flagged. */
 export const TRACKING_START = '2026-10-10'
 
-export type MainMeal = 'lunch' | 'dinner'
+type MainMeal = 'lunch' | 'dinner'
 
 /** What the rules need of a day (from the daily_totals view). */
 export type CountedDay = {

@@ -167,4 +167,46 @@ describe('GoalProgressView', () => {
       expect(strokeOf(fat!)).toBe('var(--goal-fat)')
     })
   })
+
+  describe('corner', () => {
+    const corner = <div role="group" aria-label="Corner" />
+
+    test.each(['rings', 'ringBars'] as const)(
+      '%s: the corner is in the right column, above the caption and the figures',
+      (style) => {
+        render(<GoalProgressView progress={[KCAL]} style={style} corner={corner} />)
+        const [kcal] = items()
+        const group = within(kcal as HTMLElement).getByRole('group', { name: 'Corner' })
+        const caption = within(kcal as HTMLElement).getByText('Calories')
+        expect(
+          group.compareDocumentPosition(caption) & Node.DOCUMENT_POSITION_FOLLOWING,
+        ).toBeTruthy()
+        expect(kcal).toHaveTextContent('913 / 2,000 kcal')
+      },
+    )
+
+    test.each(['bars', 'compact'] as const)(
+      '%s: the corner replaces the figure beside the number, which moves under the bar',
+      (style) => {
+        render(<GoalProgressView progress={[KCAL]} style={style} corner={corner} />)
+        const [kcal] = items()
+        const group = within(kcal as HTMLElement).getByRole('group', { name: 'Corner' })
+        const bar = within(kcal as HTMLElement).getByTestId('bar')
+        const figure = within(kcal as HTMLElement).getByText('913 / 2,000 kcal')
+        expect(group.compareDocumentPosition(bar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+        expect(bar.compareDocumentPosition(figure) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+        // screen readers still hear what the figure is about
+        expect(figure.querySelector('.sr-only')).toHaveTextContent('Calories')
+        expect(figure.parentElement).toHaveClass('text-right')
+      },
+    )
+
+    test.each(['rings', 'ringBars', 'bars', 'compact'] as const)(
+      '%s: without a corner nothing extra is drawn',
+      (style) => {
+        render(<GoalProgressView progress={[KCAL]} style={style} />)
+        expect(screen.queryByRole('group', { name: 'Corner' })).toBeNull()
+      },
+    )
+  })
 })

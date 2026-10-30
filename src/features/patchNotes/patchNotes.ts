@@ -30,6 +30,17 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-30T13:18',
+    kind: 'new',
+    title: 'Day flags on the goal card',
+    items: [
+      'The day flags moved to the top right corner of the goal card as four round buttons: Cheat, Alcohol, Gym and Sex',
+      'Cheat opens a list with Whole day (a cheat day) and the four meals (cheat meals)',
+      'No message after a tap any more: tap again to take a flag back',
+      'The … next to Meals and the Day sheet are gone, everything in them is on the buttons',
+    ],
+  },
+  {
     at: '2026-10-30T12:42',
     kind: 'internal',
     title: 'Steadier automatic tests',

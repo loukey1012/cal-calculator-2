@@ -1,4 +1,23 @@
+import type { Page } from '@playwright/test'
 import { activePage, dayLabel, expect, localDay, logIn, test } from './backend.ts'
+
+const flags = (page: ReturnType<typeof activePage>) =>
+  page.getByRole('group', { name: /^Day flags/ })
+const cheatButton = (page: ReturnType<typeof activePage>) =>
+  flags(page).getByRole('button', { name: /^Cheat/ })
+
+/** Opens the Cheat popover of the open day and taps one row (it stays open: Escape closes it). */
+async function tapCheatRow(page: Page, day: ReturnType<typeof activePage>, row: string) {
+  await cheatButton(day).click()
+  const popover = page.getByRole('dialog', { name: 'Cheat' })
+  await popover.getByRole('button', { name: row, exact: true }).click()
+  await expect(popover.getByRole('button', { name: row, exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  await page.keyboard.press('Escape')
+  await expect(popover).toBeHidden()
+}
 
 test('a cheat meal today, and a past cheat day in History', async ({ page, backend }) => {
   const me = await backend.user('Hanna')
@@ -25,16 +44,9 @@ test('a cheat meal today, and a past cheat day in History', async ({ page, backe
 
   // today: dinner was a cheat meal, with nothing logged for it
   const today = activePage(page)
-  await today.getByRole('button', { name: 'Day options' }).click()
-  const options = page.getByRole('dialog', { name: 'Day' })
-  await options.getByRole('switch', { name: 'Dinner' }).click()
-  await expect(options.getByRole('switch', { name: 'Dinner' })).toHaveAttribute(
-    'aria-checked',
-    'true',
-  )
-  await options.getByRole('button', { name: 'Save' }).click()
+  await tapCheatRow(page, today, 'Dinner')
   await expect(today.getByRole('button', { name: /^Dinner/ })).toContainText('Cheat meal')
-  await expect(today.getByRole('button', { name: 'Cheat meal: Dinner' })).toBeVisible()
+  await expect(cheatButton(today)).toHaveAccessibleName('Cheat: Dinner')
   await expect
     .poll(async () => {
       const { data } = await backend.admin
@@ -59,15 +71,9 @@ test('a cheat meal today, and a past cheat day in History', async ({ page, backe
     .getByRole('button', { name: dayLabel(yesterday, 'lunch or dinner missing') })
     .click()
   const day = history.getByRole('region')
-  await day.getByRole('button', { name: 'Day options' }).click()
-  await page
-    .getByRole('dialog', { name: 'Day' })
-    .getByRole('radiogroup', { name: 'Day mark' })
-    .getByRole('radio', { name: 'Cheat day' })
-    .click()
-  await page.getByRole('dialog', { name: 'Day' }).getByRole('button', { name: 'Save' }).click()
+  await tapCheatRow(page, day, 'Whole day')
 
-  await expect(day.getByRole('button', { name: 'Cheat day', pressed: true })).toBeVisible()
+  await expect(cheatButton(day)).toHaveAccessibleName(/^Cheat: whole day/)
   await expect(history.getByRole('button', { name: /cheat day/, pressed: true })).toBeVisible()
   // left out of the averages: the open day says so, and the calendar cell is the cheat day
   await expect(day.getByTestId('day-status')).toContainText('Cheat day · not counted')
@@ -106,55 +112,21 @@ test('a past day marked as alcohol day, then cheat day, then none', async ({ pag
   )
   await history.getByRole('button', { name: new RegExp(`^${dayName}, `) }).click()
   const day = history.getByRole('region')
-  await day.getByRole('button', { name: 'Day options' }).click()
-  const options = page.getByRole('dialog', { name: 'Day' })
-  const dayMark = options.getByRole('radiogroup', { name: 'Day mark' })
 
-  await dayMark.getByRole('radio', { name: 'Alcohol day' }).click()
-  await options.getByRole('button', { name: 'Save' }).click()
+  await day.getByRole('button', { name: 'Alcohol', exact: true }).click()
   await expect(day.getByRole('button', { name: 'Alcohol', pressed: true })).toBeVisible()
   await expect(history.getByRole('button', { name: dayLabel(date, 'alcohol day') })).toBeVisible()
   await expect.poll(marks).toEqual([{ date, kind: 'alcohol' }])
 
-  await day.getByRole('button', { name: 'Day options' }).click()
-  await dayMark.getByRole('radio', { name: 'Cheat day' }).click()
-  await options.getByRole('button', { name: 'Save' }).click()
+  await tapCheatRow(page, day, 'Whole day')
   await expect.poll(marks).toEqual([{ date, kind: 'cheat' }])
-  await expect(day.getByRole('button', { name: 'Cheat day', pressed: true })).toBeVisible()
+  await expect(cheatButton(day)).toHaveAccessibleName(/^Cheat: whole day/)
   await expect(day.getByRole('button', { name: 'Alcohol', pressed: false })).toBeVisible()
 
-  await day.getByRole('button', { name: 'Day options' }).click()
-  await dayMark.getByRole('radio', { name: 'None' }).click()
-  await options.getByRole('button', { name: 'Save' }).click()
+  await cheatButton(day).click()
+  await page
+    .getByRole('dialog', { name: 'Cheat' })
+    .getByRole('button', { name: 'Whole day' })
+    .click()
   await expect.poll(marks).toEqual([])
-})
-
-test('closing the day options with edits asks first, and Cancel keeps them', async ({
-  page,
-  backend,
-}) => {
-  const me = await backend.user('Lena')
-  await backend.household([me])
-  await logIn(page, me)
-  const today = activePage(page)
-  await today.getByRole('button', { name: 'Day options' }).click()
-  const options = page.getByRole('dialog', { name: 'Day' })
-  await options.getByRole('switch', { name: 'Lunch' }).click()
-
-  page.once('dialog', (dialog) => dialog.dismiss())
-  await options.getByRole('button', { name: 'Close' }).click()
-  await expect(options.getByRole('switch', { name: 'Lunch' })).toHaveAttribute(
-    'aria-checked',
-    'true',
-  )
-
-  page.once('dialog', (dialog) => dialog.accept())
-  await options.getByRole('button', { name: 'Close' }).click()
-  await expect(options).toBeHidden()
-  const { data } = await backend.admin
-    .from('meals')
-    .select('meal_type')
-    .eq('user_id', me.id)
-    .eq('cheat_meal', true)
-  expect(data).toEqual([])
 })

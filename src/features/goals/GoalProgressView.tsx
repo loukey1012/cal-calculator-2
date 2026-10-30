@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { ProgressStyle } from '../appearance/appearance'
 import { overLevel } from '../appearance/overColors'
 import { formatGrams, formatKcal } from '../nutrition/format'
@@ -143,7 +144,7 @@ type ItemProps = {
   readonly showOver: boolean
 }
 
-function KcalHero({ goal, style, showOver }: ItemProps) {
+function KcalHero({ goal, style, showOver, corner }: ItemProps & { readonly corner: ReactNode }) {
   const { label, color, unit } = GOAL_STYLES.kcal
   const over = goal.remaining < 0
   const remaining = `${goal.estimated ? '~' : ''}${amount(Math.abs(goal.remaining), unit)}`
@@ -169,29 +170,41 @@ function KcalHero({ goal, style, showOver }: ItemProps) {
             </span>
           </p>
         </div>
-        <div className="min-w-0 space-y-1">
-          <p className="caption">{label}</p>
-          <p className="font-display text-[20px] font-bold">
-            {consumedOfTargetNumbers(goal, unit)}{' '}
-            <span className="text-[13px] font-semibold text-label-secondary">{unit}</span>
-          </p>
+        {/* with a corner the column spreads to the ring's height: it on top, the figures below */}
+        <div
+          className={`flex min-w-0 flex-1 flex-col self-stretch ${corner ? 'justify-between' : 'justify-center'}`}
+        >
+          {corner && <div className="flex justify-end">{corner}</div>}
+          <div className="space-y-1">
+            <p className="caption">{label}</p>
+            <p className="font-display text-[20px] font-bold">
+              {consumedOfTargetNumbers(goal, unit)}{' '}
+              <span className="text-[13px] font-semibold text-label-secondary">{unit}</span>
+            </p>
+          </div>
         </div>
       </li>
     )
   }
+  const consumed = (
+    <span className="text-right text-[13px] font-semibold text-label-secondary">
+      <span className="sr-only">{label} </span>
+      {consumedOfTarget(goal, unit)}
+    </span>
+  )
   return (
     <li className="col-span-full space-y-2">
-      <div className="flex items-end justify-between gap-3">
-        <p className="font-display leading-none">
+      <div className={`flex justify-between gap-3 ${corner ? 'items-center' : 'items-end'}`}>
+        {/* on one line beside the corner, so the card keeps its height on every day */}
+        <p className="min-w-0 font-display leading-none whitespace-nowrap">
           <span className="text-[32px] font-bold tracking-tight">{remaining}</span>{' '}
           <span className="text-[13px] font-semibold text-label-secondary">{remainingLabel}</span>
         </p>
-        <span className="text-right text-[13px] font-semibold text-label-secondary">
-          <span className="sr-only">{label} </span>
-          {consumedOfTarget(goal, unit)}
-        </span>
+        {corner ? <div className="shrink-0">{corner}</div> : consumed}
       </div>
       <Bar goal={goal} color={color} showOver={showOver} thin={style === 'compact'} />
+      {/* the corner took the figure's place beside the number; it moves under the bar */}
+      {corner && <p className="text-right">{consumed}</p>}
     </li>
   )
 }
@@ -245,10 +258,17 @@ type GoalProgressViewProps = {
   readonly style: ProgressStyle
   /** false on cheat days, alcohol days and days with a cheat meal: no over colors */
   readonly showOver?: boolean
+  /** buttons for the top right corner (the day's flags): beside the ring, or beside the bar's number */
+  readonly corner?: ReactNode
 }
 
 /** Calories as the headline, then one item per macro goal that is set. */
-export function GoalProgressView({ progress, style, showOver = true }: GoalProgressViewProps) {
+export function GoalProgressView({
+  progress,
+  style,
+  showOver = true,
+  corner,
+}: GoalProgressViewProps) {
   const kcal = progress.find((goal) => goal.key === 'kcal')
   const macros = progress.filter((goal) => goal.key !== 'kcal')
   return (
@@ -257,7 +277,7 @@ export function GoalProgressView({ progress, style, showOver = true }: GoalProgr
       className={`grid gap-x-3 ${style === 'compact' ? 'gap-y-3' : 'gap-y-4'}`}
       style={{ gridTemplateColumns: `repeat(${Math.max(macros.length, 1)}, minmax(0, 1fr))` }}
     >
-      {kcal && <KcalHero goal={kcal} style={style} showOver={showOver} />}
+      {kcal && <KcalHero goal={kcal} style={style} showOver={showOver} corner={corner} />}
       {macros.map((goal) => (
         <MacroItem key={goal.key} goal={goal} style={style} showOver={showOver} />
       ))}

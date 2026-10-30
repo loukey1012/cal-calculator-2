@@ -11,7 +11,6 @@ function Harness({ open, onClose }: { readonly open: boolean; readonly onClose: 
       <button ref={setAnchor}>Anchor</button>
       <p>Elsewhere</p>
       <button>Other</button>
-      <div role="status">Toast text</div>
       <Popover open={open} anchor={anchor} label="Choices" onClose={onClose}>
         <button>First</button>
         <button>Second</button>
@@ -93,17 +92,5 @@ describe('Popover', () => {
     await userEvent.tab({ shift: true })
     expect(onClose).toHaveBeenCalledOnce()
     expect(screen.getByRole('button', { name: 'Anchor' })).toHaveFocus()
-  })
-
-  test('stays open on a pointerdown inside a toast', async () => {
-    const onClose = vi.fn()
-    render(<Harness open onClose={onClose} />)
-    await userEvent.pointer({ keys: '[MouseLeft>]', target: screen.getByText('Toast text') })
-    expect(onClose).not.toHaveBeenCalled()
-  })
-
-  test('sits above the toast', () => {
-    render(<Harness open onClose={vi.fn()} />)
-    expect(screen.getByRole('dialog')).toHaveClass('z-40')
   })
 })

@@ -63,10 +63,11 @@ colour tokens, `markContrast.test.ts` keeps them ≥3:1) confirmed. K1+K2a: 66 v
 (Copy from an ingredient removed) built 2026-10-30, confirmed. Then diet marks on the Today/History
 meal cards (right of the name) and halal as an H in a circle (user's C + 1) built, await the iPhone test. Items 70 (easier day flags) and 71 (notify on
 partner changes) are planned in `docs/plan-2026-10-30.md` (M1 → M2 → N; user's answers there). M1
-built 2026-10-30, awaits the iPhone test: chips in the Meals heading row (`dayMarks/DayFlagChips.tsx`,
-`useDayFlags.ts` with Undo, `FlagChip.tsx`, `components/ios/Popover.tsx`, `CheatMealPopover.tsx`;
-token `--on-mark`); Today had only 29 px to spare, so the chips sit beside the title, not under it.
-**Next:** M2 (History hold-a-day quick look stays open with flag toggles), then N (71); J2 later. Journeys on this machine:
+built 2026-10-30 (chips with Undo), then reworked after the user's test (M1b): icon-only round
+buttons Cheat / Alcohol / Gym / Sex in the goal card's top right corner (`dayMarks/DayFlagButtons.tsx`,
+`FlagButton.tsx`, `CheatPopover.tsx` with Whole day + the four meals, `useDayFlags.ts`,
+`components/ios/Popover.tsx`; `GoalCard` `flags` → `GoalProgressView` `corner`; token `--on-mark`), no
+toast, the ⋯ Day sheet removed; awaits the iPhone test. **Next:** M2 (History hold-a-day quick look stays open with flag toggles), then N (71); J2 later. Journeys on this machine:
 `E2E_BROWSER=chromium` (WebKit lacks system libraries here; CI runs WebKit). Sketch of F: https://claude.ai/artifact/KJ5V6j5PCBaN35MXmATmmE. Sketch of D:
 https://claude.ai/artifact/Sp4cvXiKk3us9kXNUTrT6g. Working rhythm that worked: `ecc:tdd-guide`
 agents build (in parallel only on separate files), then `ecc:typescript-reviewer` +

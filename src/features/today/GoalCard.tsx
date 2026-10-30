@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Button } from '../../components/ios/Button'
 import { toUserMessage } from '../../lib/errors'
 import { useMyAppearance } from '../appearance/useMyAppearance'
@@ -17,6 +17,8 @@ type GoalCardProps = {
   readonly totals: NutritionTotals
   /** false on days that are left out of averages: no over colors */
   readonly showOver?: boolean
+  /** the day's flag buttons, drawn in the card's top right corner */
+  readonly flags?: ReactNode
 }
 
 const MESSAGE = 'py-2 text-center text-[15px] text-label-secondary'
@@ -29,11 +31,15 @@ export function GoalCard({
   date,
   totals,
   showOver = true,
+  flags,
 }: GoalCardProps) {
   const goals = useGoals(userId)
   const { progressStyle } = useMyAppearance()
   const [editing, setEditing] = useState(false)
   const goal = goalForDate(goals.data ?? [], date)
+
+  /** the corner row above a message, when there is no progress to put it beside */
+  const cornerRow = flags ? <div className="mb-2 flex justify-end">{flags}</div> : null
 
   function renderContent() {
     if (goals.data === undefined) {
@@ -58,6 +64,7 @@ export function GoalCard({
           progress={goalProgress(totals, goal)}
           style={progressStyle}
           showOver={showOver}
+          corner={flags}
         />
       )
     if (!isOwnGoal) return <p className={MESSAGE}>{name} hasn’t set a daily goal yet.</p>
@@ -75,6 +82,7 @@ export function GoalCard({
 
   return (
     <section className="mt-3 rounded-[28px] bg-bg-elevated p-4 shadow-card">
+      {goal ? null : cornerRow}
       {renderContent()}
       {isOwnGoal && (
         <GoalSheet

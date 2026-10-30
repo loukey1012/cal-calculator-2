@@ -81,9 +81,7 @@ export function Popover({ open, anchor, label, onClose, children }: PopoverProps
     }
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target as Element
-      // a toast (e.g. its Undo) belongs to the flags, so pressing it doesn't close the card
       if (cardRef.current?.contains(target) || anchor?.contains(target)) return
-      if (target.closest?.('[role="status"]')) return
       onCloseRef.current()
     }
     document.addEventListener('keydown', onKeyDown)
