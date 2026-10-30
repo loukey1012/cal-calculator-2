@@ -106,7 +106,7 @@ export const WEEKLY_PART_LABELS: Readonly<Record<WeeklyPartId, string>> = {
 }
 
 export type NotificationSettings = {
-  /** the partner logs, changes or deletes food in my meals, or shares a dish with me */
+  /** the partner changes meals, flags or notes on any of my days (told together, a flag never named) */
   readonly partnerChanges: boolean
   /** a meal still empty at its time */
   readonly reminders: Readonly<Record<ReminderMeal, TimedSwitch>>

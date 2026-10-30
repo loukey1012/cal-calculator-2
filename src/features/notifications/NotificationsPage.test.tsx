@@ -182,11 +182,21 @@ describe('what to be notified about', () => {
     )
   })
 
+  test('the partner section explains what is told and that flags are never named', async () => {
+    renderPage()
+
+    expect(
+      await screen.findByText(
+        'Meals, flags and notes your partner changes on any of your days, in one notification once they stop for a few minutes. Which flag it was is never said.',
+      ),
+    ).toBeInTheDocument()
+  })
+
   test('partner changes can be switched off', async () => {
     const user = userEvent.setup()
     renderPage()
 
-    await user.click(await screen.findByRole('switch', { name: 'Changes to your meals' }))
+    await user.click(await screen.findByRole('switch', { name: 'Changes to your days' }))
 
     expect(lastSaved().settings.partnerChanges).toBe(false)
   })

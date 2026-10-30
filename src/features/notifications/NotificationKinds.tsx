@@ -95,9 +95,12 @@ export function NotificationKinds() {
 
   return (
     <>
-      <GroupedSection header="Your partner">
+      <GroupedSection
+        header="Your partner"
+        footer="Meals, flags and notes your partner changes on any of your days, in one notification once they stop for a few minutes. Which flag it was is never said."
+      >
         <ToggleRow
-          label="Changes to your meals"
+          label="Changes to your days"
           checked={settings.partnerChanges}
           onChange={(partnerChanges) => change({ ...settings, partnerChanges })}
         />

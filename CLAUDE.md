@@ -67,11 +67,16 @@ built 2026-10-30 (chips with Undo), then reworked after the user's test (M1b): i
 buttons Cheat / Alcohol / Gym / Sex in the goal card's top right corner (`dayMarks/DayFlagButtons.tsx`,
 `FlagButton.tsx`, `CheatPopover.tsx` with Whole day + the four meals, `useDayFlags.ts`,
 `components/ios/Popover.tsx`; `GoalCard` `flags` → `GoalProgressView` `corner`; token `--on-mark`), no
-toast, the ⋯ Day sheet removed; confirmed. M2 built 2026-10-30, awaits the iPhone test: a held
+toast, the ⋯ Day sheet removed; confirmed. M2 built 2026-10-30, confirmed: a held
 History day's quick look stays open (closes on outside tap — that tap is swallowed, `history/swallowNextClick.ts`
 — Escape, month/person change, page no longer shown via `useIsPageShown` in `app/pagePath.ts`, app
 hidden) and holds `DayFlagButtons`; cells follow at once via generic mirrors (`meals/cachedMirror.ts`,
-`meals/monthTotalsMirror.ts`; a failing mirror never blocks the save). **Next:** N (71); J2 later. Journeys on this machine:
+`meals/monthTotalsMirror.ts`; a failing mirror never blocks the save). N (71) built 2026-10-30, awaits the iPhone test: partner
+changes to my meals, flags (cheat day/alcohol, cheat meal, gym) and notes notify (`partner_changes`
+kind/subject/before, migration `20261030120000_partner_day_changes` on dev and prod, no trigger on
+`sex_days`), wording in `supabase/functions/_shared/partnerChanges.ts` (a flag is never named; flags
+set and taken back are dropped at send time via `stillChanged`), switch "Changes to your days".
+**Next:** J2 later; ask the user for new items. Journeys on this machine:
 `E2E_BROWSER=chromium` (WebKit lacks system libraries here; CI runs WebKit). Sketch of F: https://claude.ai/artifact/KJ5V6j5PCBaN35MXmATmmE. Sketch of D:
 https://claude.ai/artifact/Sp4cvXiKk3us9kXNUTrT6g. Working rhythm that worked: `ecc:tdd-guide`
 agents build (in parallel only on separate files), then `ecc:typescript-reviewer` +
@@ -109,7 +114,9 @@ VITE_SUPABASE_ANON_KEY=$SUPABASE_TEST_ANON_KEY`, README); without them the build
   prod, the `push-tick` logs in the Supabase dashboard, `cron.job_run_details` and
   `net._http_response` (`supabase db query --linked --project-ref <ref>`). Known noise: editing
   only my own amount in a shared dish re-logs both portions, so the partner gets "changed your
-  meals".
+  meals". A partner notice that never came: look at `partner_changes` (waiting rows; a flag back at
+  its `before` value is dropped on purpose) and the tick logs ("partner messages failed for",
+  "partner change dropped, unreadable row").
 - **Reading nutrition labels:** if a package fails, get the recognised text (a dev-server debug
   script importing `/src/features/label/*.ts` via Vite) or a description of the photo, add it as
   a `labelParser.test.ts` / `tableRegion.test.ts` case first, then fix. A lost decimal comma

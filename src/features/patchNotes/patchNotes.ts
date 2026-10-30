@@ -30,6 +30,17 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-30T16:20',
+    kind: 'new',
+    title: 'Told when your partner changes your days',
+    items: [
+      'A notification when your partner changes your meals, flags or notes, on today or any past day',
+      'Everything they change comes together in one notification, once they stop for a few minutes',
+      'It only says "a flag", never which one; the Sex mark never notifies, and a flag set and taken back sends nothing',
+      'Settings › Notifications: the switch is now called "Changes to your days"',
+    ],
+  },
+  {
     at: '2026-10-30T14:05',
     kind: 'new',
     title: 'Day flags from the calendar',

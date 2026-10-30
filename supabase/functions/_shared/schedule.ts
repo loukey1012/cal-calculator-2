@@ -102,13 +102,13 @@ export function plannedByClock(settings: NotificationSettings, now: LocalNow): P
   return planned
 }
 
-const MEAL_LABELS: Readonly<Record<MealType, string>> = {
+export const MEAL_LABELS: Readonly<Record<MealType, string>> = {
   breakfast: 'Breakfast',
   lunch: 'Lunch',
   dinner: 'Dinner',
   snack: 'Snacks',
 }
-const MEAL_ORDER: readonly MealType[] = ['breakfast', 'lunch', 'dinner', 'snack']
+export const MEAL_ORDER: readonly MealType[] = ['breakfast', 'lunch', 'dinner', 'snack']
 
 /** e.g. /cook?person=u1&date=2026-10-20&meal=lunch&from=%2Ftoday (src/features/cook/legacyCookLink.ts sends it to the meal) */
 function cookLink(userId: string, date: string, meal: MealType): string {
@@ -334,39 +334,15 @@ export function weeklyMessage(
   return figures && weeklyMessageOf(week, figures, options)
 }
 
-type PartnerChange = { readonly date: string; readonly mealType: MealType }
-
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
-function dayLabel(date: string, today: string): string {
+export function dayLabel(date: string, today: string): string {
   if (date === today) return 'Today'
   if (date === addDays(today, -1)) return 'Yesterday'
   const [year = 0, month = 1, day = 1] = date.split('-').map(Number)
   const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay()
   return `${WEEKDAYS[weekday]} ${day} ${MONTHS[month - 1]}`
-}
-
-/** One notice for everything the partner changed in my days since the last one. */
-export function partnerChangeMessage(
-  actorName: string,
-  changes: readonly PartnerChange[],
-  today: string,
-): PushMessage {
-  const dates = [...new Set(changes.map((change) => change.date))].toSorted().toReversed()
-  const lines = dates.map((date) => {
-    const meals = MEAL_ORDER.filter((meal) =>
-      changes.some((change) => change.date === date && change.mealType === meal),
-    ).map((meal) => MEAL_LABELS[meal])
-    return `${dayLabel(date, today)}: ${meals.join(', ')}`
-  })
-  const latest = dates[0] ?? today
-  return {
-    title: `${actorName} changed your meals`,
-    body: lines.join(' · '),
-    url: latest === today ? '/today' : `/history/${latest}`,
-    tag: 'partner',
-  }
 }
 
 // matches DEFAULT_PARTNER_LOOK in src/features/household/partnerLook.ts
@@ -379,14 +355,6 @@ export function partnerName(recipientAppearance: unknown, partnerId: string): st
   return typeof look?.nickname === 'string' && look.nickname.trim() !== ''
     ? look.nickname
     : DEFAULT_PARTNER_NAME
-}
-
-// partner changes are told once nothing new came for a few minutes (one notice, not one per food)
-const PARTNER_QUIET_MINUTES = 3
-
-export function isQuiet(changedAt: readonly string[], now: Date): boolean {
-  const latest = Math.max(...changedAt.map((time) => Date.parse(time)))
-  return changedAt.length > 0 && now.getTime() - latest >= PARTNER_QUIET_MINUTES * 60_000
 }
 
 /** A dish left in Add food is told once it hasn't changed for the person's delay. */

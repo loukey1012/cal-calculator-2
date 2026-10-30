@@ -6,11 +6,10 @@ import {
   type SummaryPartId,
 } from '../_shared/notificationSettings.ts'
 import {
-  isQuiet,
   isRecentFinding,
   isUnsavedDue,
   localNow,
-  partnerChangeMessage,
+  MEAL_ORDER,
   partnerName,
   plannedByClock,
   reminderMessage,
@@ -23,6 +22,13 @@ import {
   type PushMessage,
   type SummaryWeek,
 } from '../_shared/schedule.ts'
+import {
+  isQuiet,
+  parseChangeRow,
+  partnerChangeMessage,
+  stillChanged,
+  type ChangeRow,
+} from '../_shared/partnerChanges.ts'
 import { isoWeekOf, weekDatesOf, type IsoWeek } from '../_shared/isoWeek.ts'
 import { sendToAll, type Subscription } from '../_shared/sendPush.ts'
 import { weekFigures, weekSoFar, type WeekDayRow } from '../_shared/weekSummary.ts'
@@ -286,6 +292,63 @@ async function timedMessages(
   return outgoing
 }
 
+/**
+ * What a flag change is compared with: the flags as they are now, for the days that changed. A
+ * subject that was not loaded gives undefined (kept, not dropped).
+ */
+async function currentFlags(
+  admin: SupabaseClient,
+  userId: string,
+  dates: readonly string[],
+): Promise<(date: string, subject: string) => string | undefined> {
+  const [marks, gyms, meals] = await Promise.all([
+    admin.from('cheat_days').select('date, kind').eq('user_id', userId).in('date', dates),
+    admin.from('gym_days').select('date').eq('user_id', userId).in('date', dates),
+    admin
+      .from('meals')
+      .select('date, meal_type')
+      .eq('user_id', userId)
+      .eq('cheat_meal', true)
+      .in('date', dates),
+  ])
+  if (marks.error) throw new Error(`cheat_days: ${marks.error.message}`)
+  if (gyms.error) throw new Error(`gym_days: ${gyms.error.message}`)
+  if (meals.error) throw new Error(`meals: ${meals.error.message}`)
+  const values = new Map<string, string>([
+    ...marks.data.map((row): [string, string] => [`${row.date}|day_mark`, String(row.kind)]),
+    ...gyms.data.map((row): [string, string] => [`${row.date}|gym`, 'on']),
+    ...meals.data.map((row): [string, string] => [`${row.date}|cheat_meal:${row.meal_type}`, 'on']),
+  ])
+  const loaded = new Set(dates)
+  const cheatMeals = MEAL_ORDER.map((meal) => `cheat_meal:${meal}`)
+  return (date, subject) => {
+    const known = values.get(`${date}|${subject}`)
+    if (known !== undefined) return known
+    if (!loaded.has(date)) return undefined
+    if (subject === 'day_mark') return 'none'
+    return subject === 'gym' || cheatMeals.includes(subject) ? 'off' : undefined
+  }
+}
+
+/** The partner's changes still standing, one notice per person who made them. */
+async function toldMessages(
+  admin: SupabaseClient,
+  profile: Profile,
+  rows: readonly ChangeRow[],
+  latest: string,
+  today: string,
+): Promise<Outgoing[]> {
+  const flagDates = [...new Set(rows.filter((row) => row.kind === 'flag').map((row) => row.date))]
+  const current = flagDates.length > 0 ? await currentFlags(admin, profile.id, flagDates) : null
+  const told = current ? stillChanged(rows, current) : rows
+  const actors = [...new Set(rows.map((row) => row.actor_id))]
+  return actors.flatMap((actorId) => {
+    const changes = told.filter((row) => row.actor_id === actorId)
+    const message = partnerChangeMessage(partnerName(profile.appearance, actorId), changes, today)
+    return message ? [{ kind: 'partner' as const, key: `${actorId}:${latest}`, message }] : []
+  })
+}
+
 /** The partner's changes, once they stopped changing for a moment; told ones are cleared. */
 async function partnerMessages(
   admin: SupabaseClient,
@@ -296,44 +359,40 @@ async function partnerMessages(
   const settings = parseNotificationSettings(profile.notification_settings)
   const { data, error } = await admin
     .from('partner_changes')
-    .select('actor_id, date, meal_type, changed_at')
+    .select('actor_id, date, kind, subject, before, changed_at')
     .eq('user_id', profile.id)
   if (error) throw new Error(`partner_changes: ${error.message}`)
   if (data.length === 0) return []
+  // rows that don't parse are dropped (and cleared below with the others)
+  const rows = data.flatMap((raw) => {
+    const row = parseChangeRow(raw)
+    if (!row) console.warn('partner change dropped, unreadable row for', profile.id)
+    return row ? [row] : []
+  })
   if (
     settings.partnerChanges &&
     !isQuiet(
-      data.map((row) => row.changed_at),
+      data.map((row) => String(row.changed_at)),
       now,
     )
   )
     return []
 
-  const latest =
-    data
-      .map((row) => row.changed_at)
-      .toSorted()
-      .at(-1) ?? ''
+  const latest = data
+    .map((row) => String(row.changed_at))
+    .toSorted()
+    .at(-1)
+  // read and build everything first: a failure above leaves the rows for the next tick
+  const messages = settings.partnerChanges
+    ? await toldMessages(admin, profile, rows, latest ?? '', today)
+    : []
   const cleared = await admin
     .from('partner_changes')
     .delete()
     .eq('user_id', profile.id)
-    .lte('changed_at', latest)
+    .lte('changed_at', latest ?? '')
   if (cleared.error) throw new Error(`partner_changes: ${cleared.error.message}`)
-  if (!settings.partnerChanges) return []
-
-  const actors = [...new Set(data.map((row) => row.actor_id))]
-  return actors.map((actorId) => ({
-    kind: 'partner',
-    key: `${actorId}:${latest}`,
-    message: partnerChangeMessage(
-      partnerName(profile.appearance, actorId),
-      data
-        .filter((row) => row.actor_id === actorId)
-        .map((row) => ({ date: row.date, mealType: row.meal_type })),
-      today,
-    ),
-  }))
+  return messages
 }
 
 /** A dish left in Add food, once per change of it, after the person's delay. */
@@ -390,6 +449,20 @@ async function claim(admin: SupabaseClient, userId: string, outgoing: Outgoing):
   return data.length > 0
 }
 
+/** One message source failing must not take the others down. */
+async function safely(
+  label: string,
+  profileId: string,
+  build: () => Promise<Outgoing[]>,
+): Promise<Outgoing[]> {
+  try {
+    return await build()
+  } catch (error) {
+    console.error(`${label} messages failed for`, profileId, error)
+    return []
+  }
+}
+
 async function tickFor(
   admin: SupabaseClient,
   profile: Profile,
@@ -399,10 +472,14 @@ async function tickFor(
   const local = localNow(now, profile.time_zone)
   const settings = parseNotificationSettings(profile.notification_settings)
   const outgoing = [
-    ...(await timedMessages(admin, profile, plannedByClock(settings, local), local.date)),
-    ...(await partnerMessages(admin, profile, local.date, now)),
-    ...(await unsavedMessages(admin, profile, now)),
-    ...(await reviewMessages(admin, profile, now)),
+    ...(await safely('timed', profile.id, () =>
+      timedMessages(admin, profile, plannedByClock(settings, local), local.date),
+    )),
+    ...(await safely('partner', profile.id, () =>
+      partnerMessages(admin, profile, local.date, now),
+    )),
+    ...(await safely('unsaved', profile.id, () => unsavedMessages(admin, profile, now))),
+    ...(await safely('review', profile.id, () => reviewMessages(admin, profile, now))),
   ]
   let sent = 0
   for (const item of outgoing) {

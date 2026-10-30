@@ -796,23 +796,29 @@ export type Database = {
       partner_changes: {
         Row: {
           actor_id: string
+          before: string | null
           changed_at: string
           date: string
-          meal_type: Database["public"]["Enums"]["meal_type"]
+          kind: string
+          subject: string
           user_id: string
         }
         Insert: {
           actor_id: string
+          before?: string | null
           changed_at?: string
           date: string
-          meal_type: Database["public"]["Enums"]["meal_type"]
+          kind?: string
+          subject: string
           user_id: string
         }
         Update: {
           actor_id?: string
+          before?: string | null
           changed_at?: string
           date?: string
-          meal_type?: Database["public"]["Enums"]["meal_type"]
+          kind?: string
+          subject?: string
           user_id?: string
         }
         Relationships: [

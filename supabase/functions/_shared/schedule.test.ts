@@ -10,11 +10,9 @@ import { type WeekFigures } from './weekSummary'
 import {
   addDays,
   isDue,
-  isQuiet,
   isRecentFinding,
   isUnsavedDue,
   localNow,
-  partnerChangeMessage,
   partnerName,
   plannedByClock,
   reminderMessage,
@@ -219,36 +217,6 @@ describe('messages', () => {
 
     expect(message).toMatchObject({ title: 'Today: ~1850 kcal', body: 'Cheat day', url: '/today' })
   })
-
-  test('partner changes are grouped by day, newest first, meals in order', () => {
-    const message = partnerChangeMessage(
-      'baby',
-      [
-        { date: '2026-10-20', mealType: 'dinner' },
-        { date: '2026-10-17', mealType: 'snack' },
-        { date: '2026-10-20', mealType: 'lunch' },
-        { date: '2026-10-19', mealType: 'breakfast' },
-      ],
-      '2026-10-20',
-    )
-
-    expect(message).toEqual({
-      title: 'baby changed your meals',
-      body: 'Today: Lunch, Dinner · Yesterday: Breakfast · Sat 17 Oct: Snacks',
-      url: '/today',
-      tag: 'partner',
-    })
-  })
-
-  test('changes only on a past day open that day', () => {
-    const message = partnerChangeMessage(
-      'Lisa',
-      [{ date: '2026-10-18', mealType: 'lunch' }],
-      '2026-10-20',
-    )
-
-    expect(message.url).toBe('/history/2026-10-18')
-  })
 })
 
 describe('partnerName', () => {
@@ -259,16 +227,6 @@ describe('partnerName', () => {
     expect(partnerName(appearance, 'u3')).toBe('baby')
     expect(partnerName(null, 'u2')).toBe('baby')
     expect(partnerName({ partnerLooks: { u2: { nickname: ' ' } } }, 'u2')).toBe('baby')
-  })
-})
-
-describe('isQuiet', () => {
-  const now = new Date('2026-10-20T12:10:00Z')
-
-  test('told once 3 minutes passed without a new change', () => {
-    expect(isQuiet(['2026-10-20T12:00:00Z', '2026-10-20T12:07:00Z'], now)).toBe(true)
-    expect(isQuiet(['2026-10-20T12:00:00Z', '2026-10-20T12:08:00Z'], now)).toBe(false)
-    expect(isQuiet([], now)).toBe(false)
   })
 })
 

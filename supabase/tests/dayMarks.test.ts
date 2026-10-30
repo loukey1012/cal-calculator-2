@@ -183,18 +183,33 @@ describe('gym days', () => {
   })
 })
 
-describe('marks never count or notify', () => {
-  test('a gym and a sex mark on a day without meals add no day total and no partner change', async () => {
+describe('marks never count; sex never notifies', () => {
+  test('a gym and a sex mark on a day without meals add no day total', async () => {
     const day = '2026-10-23'
 
     await alice.client.from('gym_days').insert({ user_id: alice.id, date: day })
     await alice.client.from('sex_days').insert({ household_id: householdId, date: day })
 
     const totals = await alice.client.from('daily_totals').select('date').eq('date', day)
-    const changes = await admin.from('partner_changes').select('user_id').eq('date', day)
     expect(totals.data).toEqual([])
+  })
+
+  test("the partner's gym day is noted as a flag that was off; sex and my own gym are not", async () => {
+    const day = '2026-10-27'
+
+    await bob.client.from('sex_days').insert({ household_id: householdId, date: day })
+    await bob.client.from('gym_days').insert({ user_id: alice.id, date: day })
+    await bob.client.from('gym_days').insert({ user_id: bob.id, date: day })
+
+    const changes = await admin
+      .from('partner_changes')
+      .select('user_id, actor_id, kind, subject, before')
+      .eq('user_id', alice.id)
+      .eq('date', day)
     expect(changes.error).toBeNull()
-    expect(changes.data).toEqual([])
+    expect(changes.data).toEqual([
+      { user_id: alice.id, actor_id: bob.id, kind: 'flag', subject: 'gym', before: 'off' },
+    ])
   })
 
   test('a day with meals has the same totals with or without the marks', async () => {
