@@ -30,6 +30,14 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-30T12:42',
+    kind: 'internal',
+    title: 'Steadier automatic tests',
+    items: [
+      'A test of the random background colors no longer fails when one color happens to repeat',
+    ],
+  },
+  {
     at: '2026-10-30T12:22',
     kind: 'new',
     title: 'Day flags in one tap',

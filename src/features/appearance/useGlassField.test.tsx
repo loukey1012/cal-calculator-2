@@ -55,10 +55,12 @@ describe('useGlassField', () => {
   })
 
   test('random colors change on every tab change, unless they should once per start', () => {
+    // all three spots: one alone lands on the same of 360 hues now and then
+    const colors = () => ['1', '2', '3'].map((n) => variable(`--gf-c${n}`))
     const everyTab = render({ colors: { mode: 'random', changeOn: 'tab' } })
-    const before = variable('--gf-c1')
+    const before = colors()
     everyTab.rerender({ tab: 1 })
-    expect(variable('--gf-c1')).not.toBe(before)
+    expect(colors()).not.toEqual(before)
     everyTab.unmount()
 
     const perStart = render({ colors: { mode: 'random', changeOn: 'start' } })
