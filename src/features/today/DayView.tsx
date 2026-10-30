@@ -21,6 +21,7 @@ import { useLatestDishChangeError } from '../dishes/hooks'
 import { LeftoversPill } from '../dishes/LeftoversPill'
 import type { Profile } from '../household/householdApi'
 import { useLookOf } from '../household/usePersonLook'
+import { ItemsDietMarks } from '../ingredients/ItemsDietMarks'
 import { cheatMeals, itemsByMeal, mealEntries, MEAL_TYPES, type MealType } from '../meals/dayModel'
 import { useDay, useDayNote, useLatestDayChangeError, useDayMark } from '../meals/hooks'
 import { mealPath } from '../meals/mealPages'
@@ -98,12 +99,14 @@ type MealCardProps = {
   readonly label: string
   readonly subtitle: string
   readonly note: string | null
+  /** the ingredient of every item, for the diet marks by its name (null: a custom item) */
+  readonly ingredientIds: ReadonlyArray<string | null>
   /** a dish for it is waiting, not logged yet: a dot by its name */
   readonly unsaved: boolean
   readonly onOpen: () => void
 }
 
-function MealCard({ type, label, subtitle, note, unsaved, onOpen }: MealCardProps) {
+function MealCard({ type, label, subtitle, note, ingredientIds, unsaved, onOpen }: MealCardProps) {
   const MealIcon = MEAL_ICONS[type]
   return (
     <button
@@ -112,11 +115,11 @@ function MealCard({ type, label, subtitle, note, unsaved, onOpen }: MealCardProp
       className="glass-surface flex min-w-0 flex-col gap-1.5 rounded-[22px] bg-bg-elevated p-3 text-left shadow-card transition-transform active:scale-[0.98]"
     >
       {/* icon beside the name keeps the 2×2 grid short enough for Today to fit the screen */}
-      <span className="flex items-center gap-2">
+      <span className="flex min-w-0 items-center gap-2">
         <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent-ink">
           <MealIcon className="h-4 w-4" />
         </span>
-        <span className="text-[16px] font-extrabold">{label}</span>
+        <span className="min-w-0 truncate text-[16px] font-extrabold">{label}</span>
         {unsaved && (
           <span
             data-testid="unsaved-dot"
@@ -124,6 +127,7 @@ function MealCard({ type, label, subtitle, note, unsaved, onOpen }: MealCardProp
             className="h-2.5 w-2.5 shrink-0 rounded-full bg-accent-ink"
           />
         )}
+        <ItemsDietMarks ingredientIds={ingredientIds} className="ml-auto" />
       </span>
       <span className="block truncate px-0.5 text-[13px] font-semibold text-label-secondary">
         {subtitle}
@@ -195,6 +199,7 @@ export function DayView({ person, isOwnDay, date, showStatus = false }: DayViewP
     cheatMeal: cheatMealTypes.has(type),
     unsaved: isDraftFor(draft, mealOf(type), today, mealOfDay),
     note: day.data?.find((meal) => meal.meal_type === type)?.note ?? null,
+    ingredientIds: byMeal[type].map((item) => item.ingredient_id),
   }))
   const dayTotals = sumTotals(meals.map((meal) => meal.totals))
   const hasCheatMeal = cheatMealTypes.size > 0
@@ -306,12 +311,13 @@ export function DayView({ person, isOwnDay, date, showStatus = false }: DayViewP
             </div>
             {!showStatus && <div className="mb-3">{noteRow}</div>}
             <div className="grid grid-cols-2 gap-3">
-              {meals.map(({ type, label, note, ...summary }) => (
+              {meals.map(({ type, label, note, ingredientIds, ...summary }) => (
                 <MealCard
                   key={type}
                   type={type}
                   label={label}
                   note={note}
+                  ingredientIds={ingredientIds}
                   subtitle={mealSubtitle(day.isPending, day.fetchStatus === 'paused', summary)}
                   unsaved={summary.unsaved}
                   onOpen={() => openMeal(type)}

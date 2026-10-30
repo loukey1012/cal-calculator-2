@@ -27,11 +27,12 @@ function LeafIcon(props: SVGProps<SVGSVGElement>) {
   )
 }
 
-/** Halal: a crescent. */
-function CrescentIcon(props: SVGProps<SVGSVGElement>) {
+/** Halal: an H in a circle. */
+function HalalIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <Mark {...props}>
-      <path d="M9.6 7.6A4.4 4.4 0 0 1 4.4 2.4a4.4 4.4 0 1 0 5.2 5.2z" />
+      <circle cx="6" cy="6" r="5" />
+      <path d="M4.2 3.8v4.4M7.8 3.8v4.4M4.2 6h3.6" strokeWidth={1.3} />
     </Mark>
   )
 }
@@ -39,17 +40,23 @@ function CrescentIcon(props: SVGProps<SVGSVGElement>) {
 type DietMarksProps = {
   readonly vegan: boolean
   readonly halal: boolean
+  /** placement in the surrounding row, e.g. "ml-auto" */
+  readonly className?: string
 }
 
 /**
  * The marks that apply, named by one label for the whole group ("vegan, halal") so a row's own
  * name stays first and readable; nothing when none applies.
  */
-export function DietMarks({ vegan, halal }: DietMarksProps) {
+export function DietMarks({ vegan, halal, className = '' }: DietMarksProps) {
   if (!vegan && !halal) return null
   const label = [vegan && 'vegan', halal && 'halal'].filter(Boolean).join(', ')
   return (
-    <span role="img" aria-label={label} className="inline-flex shrink-0 items-center gap-1">
+    <span
+      role="img"
+      aria-label={label}
+      className={`inline-flex shrink-0 items-center gap-1 ${className}`}
+    >
       {vegan && (
         <span className="inline-flex text-vegan">
           <LeafIcon />
@@ -57,7 +64,7 @@ export function DietMarks({ vegan, halal }: DietMarksProps) {
       )}
       {halal && (
         <span className="inline-flex text-halal">
-          <CrescentIcon />
+          <HalalIcon />
         </span>
       )}
     </span>

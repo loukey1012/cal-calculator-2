@@ -5,6 +5,7 @@ import { CurrentUserContext } from '../../app/currentUser'
 import { ApiError } from '../../lib/errors'
 import { useLocation } from 'react-router'
 import { renderWithProviders } from '../../test/render'
+import { ingredient } from '../ingredients/testData'
 import { dayMeal, mealItem } from '../meals/testData'
 
 vi.mock('../dishes/dishesApi', () => ({
@@ -50,6 +51,7 @@ vi.mock('../ingredients/ingredientsApi', () => ({
 import { fetchGymDay, fetchSexDay } from '../dayMarks/dayMarksApi'
 import { fetchGoals } from '../goals/goalsApi'
 import { fetchMembers } from '../household/householdApi'
+import { fetchIngredients } from '../ingredients/ingredientsApi'
 import {
   fetchDay,
   fetchDayMark,
@@ -305,6 +307,38 @@ describe('TodayPage', () => {
     expect(
       await screen.findByRole('button', { name: /Dinner.*Pizza with colleagues/ }),
     ).toBeVisible()
+  })
+
+  test('a meal card shows the diet marks every food in it has', async () => {
+    vi.mocked(fetchIngredients).mockResolvedValue([
+      ingredient({ id: 'oats', name: 'Oats', vegan: true, halal: true }),
+      ingredient({ id: 'soy', name: 'Soy milk', vegan: true, halal: true }),
+      ingredient({ id: 'chicken', name: 'Chicken', halal: true }),
+    ])
+    vi.mocked(fetchDay).mockResolvedValue([
+      dayMeal('m0', 'breakfast', [
+        mealItem({ id: 'e', ingredient_id: 'oats' }),
+        mealItem({ id: 'f', ingredient_id: 'chicken' }),
+      ]),
+      dayMeal('m1', 'lunch', [
+        mealItem({ id: 'a', ingredient_id: 'oats' }),
+        mealItem({ id: 'b', ingredient_id: 'soy' }),
+      ]),
+      // a custom item has no marks, so the whole meal has none
+      dayMeal('m2', 'dinner', [
+        mealItem({ id: 'c', ingredient_id: 'oats' }),
+        mealItem({ id: 'd' }),
+      ]),
+    ])
+
+    renderPage()
+
+    const lunch = await screen.findByRole('button', { name: /^Lunch/ })
+    expect(await within(lunch).findByRole('img', { name: 'vegan, halal' })).toBeVisible()
+    const dinner = screen.getByRole('button', { name: /^Dinner/ })
+    expect(within(dinner).queryByRole('img', { name: /vegan|halal/ })).toBeNull()
+    const breakfast = screen.getByRole('button', { name: /^Breakfast/ })
+    expect(within(breakfast).getByRole('img', { name: 'halal' })).toBeVisible()
   })
 
   test('the Note row says "Add a note" when the day has none', async () => {

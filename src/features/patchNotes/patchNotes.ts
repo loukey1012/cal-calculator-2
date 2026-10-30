@@ -30,6 +30,15 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-30T10:16',
+    kind: 'new',
+    title: 'Diet marks on the meal cards',
+    items: [
+      'Today and History: a meal card shows the vegan or halal mark next to its name when every food in it has it',
+      'The halal mark is now an H in a circle',
+    ],
+  },
+  {
     at: '2026-10-30T09:52',
     kind: 'new',
     title: 'Review clears findings that are already fixed',

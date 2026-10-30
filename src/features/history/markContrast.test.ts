@@ -7,7 +7,7 @@ const GRAPHIC_CONTRAST = 3
 // the marks that can sit on any day (counted days included)
 const MARKS = ['--heart', '--cheat', '--weigh', '--note', '--gym'] as const
 // the badges only appear on left-out days: the card and the grey fill
-// the diet marks (leaf, crescent) sit on list cards
+// the diet marks (leaf, H in a circle) sit on list cards
 const DIET_MARKS = ['--vegan', '--halal'] as const
 const BADGE_COLORS = ['--alcohol', '--cheat', '--missing'] as const
 // the filled badges at the top right carry a glyph in --on-missing
