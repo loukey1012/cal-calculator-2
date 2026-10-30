@@ -85,3 +85,26 @@ describe.each(Object.entries(SELECTORS))(
     })
   },
 )
+
+// the day-flag chips (Today) fill with these colours and write in --on-mark
+const TEXT_CONTRAST = 4.5
+const CHIP_COLORS = ['--cheat', '--alcohol', '--gym', '--heart'] as const
+
+describe.each(Object.entries(SELECTORS))('the day-flag chips in the %s theme', (_t, selector) => {
+  const variables = new Map([...lightVariables, ...variablesOf(selector)])
+  const read = (name: string) => {
+    const value = variables.get(name)
+    if (value === undefined) throw new Error(`${name} missing`)
+    return value
+  }
+
+  test.each(CHIP_COLORS)('--on-mark is at least 4.5:1 on a chip filled with %s', (color) => {
+    expect(contrastRatio(read('--on-mark'), read(color))).toBeGreaterThanOrEqual(TEXT_CONTRAST)
+  })
+
+  test('the off label is at least 4.5:1 on the card', () => {
+    expect(contrastRatio(read('--label-secondary'), read('--bg-elevated'))).toBeGreaterThanOrEqual(
+      TEXT_CONTRAST,
+    )
+  })
+})

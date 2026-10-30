@@ -27,6 +27,8 @@ test('the Today page fits the iPhone screen without scrolling', async ({ page, b
   await expect(today.getByRole('list', { name: 'Goals' })).toContainText('Fiber')
   await expect(today.getByRole('button', { name: /Snack/ })).toContainText('Nothing logged')
 
+  await expect(today.getByRole('group', { name: 'Day flags' })).toBeVisible()
+
   const { scrollHeight, clientHeight } = await today.evaluate((element) => ({
     scrollHeight: element.scrollHeight,
     clientHeight: element.clientHeight,
@@ -35,5 +37,8 @@ test('the Today page fits the iPhone screen without scrolling', async ({ page, b
 
   const lastMeal = await today.getByRole('button', { name: /Snack/ }).boundingBox()
   const tabBar = await page.getByRole('navigation', { name: 'Tabs' }).boundingBox()
-  expect(lastMeal!.y + lastMeal!.height).toBeLessThan(tabBar!.y)
+  const slack = tabBar!.y - (lastMeal!.y + lastMeal!.height)
+  // the room left under the last meal card, for layout changes to know what they can spend
+  test.info().annotations.push({ type: 'slack', description: `${Math.round(slack)}px` })
+  expect(slack).toBeGreaterThan(0)
 })

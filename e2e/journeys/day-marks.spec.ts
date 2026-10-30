@@ -42,7 +42,8 @@ test('Sex shows on both calendars, Gym is set by the partner and found with the 
   expect(await sexRows()).toEqual([])
   await options.getByRole('button', { name: 'Save' }).click()
   await expect.poll(sexRows).toEqual([{ household_id: householdId, date: today }])
-  await expect(todayPage.getByTestId('day-total')).toContainText('Sex')
+  await expect(todayPage.getByRole('button', { name: 'Sex', pressed: true })).toBeVisible()
+  await expect(todayPage.getByRole('button', { name: 'Gym', pressed: false })).toBeVisible()
 
   // the partner sees the heart on the same date in their own History, on another phone with the
   // same device settings as this one

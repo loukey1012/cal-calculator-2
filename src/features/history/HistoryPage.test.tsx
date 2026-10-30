@@ -435,7 +435,9 @@ describe('HistoryPage', () => {
 
     const day = screen.getByRole('region', { name: /October 12/ })
     await waitFor(() =>
-      expect(within(day).getByTestId('day-total')).toHaveTextContent('Dinner missing'),
+      expect(within(day).getByRole('group', { name: 'Day flags' })).toHaveTextContent(
+        'Dinner missing',
+      ),
     )
   })
 

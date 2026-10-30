@@ -30,6 +30,16 @@ export function groupByDay(notes: readonly PatchNote[]): readonly PatchNoteDay[]
 
 export const PATCH_NOTES: readonly PatchNote[] = [
   {
+    at: '2026-10-30T12:22',
+    kind: 'new',
+    title: 'Day flags in one tap',
+    items: [
+      'Today and History: a row of chips next to the Meals title sets Cheat day, Alcohol, Cheat meal, Gym and Sex with one tap, with Undo right after',
+      'Cheat meal opens a small list of the four meals to tick',
+      'The day options keep the full view of the day',
+    ],
+  },
+  {
     at: '2026-10-30T10:16',
     kind: 'new',
     title: 'Diet marks on the meal cards',

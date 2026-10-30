@@ -40,7 +40,9 @@ test('select a past day in History and add a forgotten dinner beneath the calend
   await history
     .getByRole('button', { name: dayLabel(yesterday, 'lunch or dinner missing') })
     .click()
-  await expect(history.getByRole('region').getByTestId('day-total')).toContainText('Dinner missing')
+  await expect(history.getByRole('region').getByRole('group', { name: 'Day flags' })).toContainText(
+    'Dinner missing',
+  )
   await expect(page).toHaveURL(new RegExp(`/history/${yesterday}$`))
   // reopening the app keeps the day selected, without sliding half of a neighbour into view
   await page.reload()

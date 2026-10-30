@@ -33,8 +33,8 @@ test('a cheat meal today, and a past cheat day in History', async ({ page, backe
     'true',
   )
   await options.getByRole('button', { name: 'Save' }).click()
-  await expect(today.getByRole('button', { name: /Dinner/ })).toContainText('Cheat meal')
-  await expect(today.getByTestId('day-total')).toContainText('Cheat meal')
+  await expect(today.getByRole('button', { name: /^Dinner/ })).toContainText('Cheat meal')
+  await expect(today.getByRole('button', { name: 'Cheat meal: Dinner' })).toBeVisible()
   await expect
     .poll(async () => {
       const { data } = await backend.admin
@@ -67,7 +67,7 @@ test('a cheat meal today, and a past cheat day in History', async ({ page, backe
     .click()
   await page.getByRole('dialog', { name: 'Day' }).getByRole('button', { name: 'Save' }).click()
 
-  await expect(day.getByTestId('day-total')).toContainText('Cheat day')
+  await expect(day.getByRole('button', { name: 'Cheat day', pressed: true })).toBeVisible()
   await expect(history.getByRole('button', { name: /cheat day/, pressed: true })).toBeVisible()
   // left out of the averages: the open day says so, and the calendar cell is the cheat day
   await expect(day.getByTestId('day-status')).toContainText('Cheat day · not counted')
@@ -112,7 +112,7 @@ test('a past day marked as alcohol day, then cheat day, then none', async ({ pag
 
   await dayMark.getByRole('radio', { name: 'Alcohol day' }).click()
   await options.getByRole('button', { name: 'Save' }).click()
-  await expect(day.getByTestId('day-total')).toContainText('Alcohol day')
+  await expect(day.getByRole('button', { name: 'Alcohol', pressed: true })).toBeVisible()
   await expect(history.getByRole('button', { name: dayLabel(date, 'alcohol day') })).toBeVisible()
   await expect.poll(marks).toEqual([{ date, kind: 'alcohol' }])
 
@@ -120,8 +120,8 @@ test('a past day marked as alcohol day, then cheat day, then none', async ({ pag
   await dayMark.getByRole('radio', { name: 'Cheat day' }).click()
   await options.getByRole('button', { name: 'Save' }).click()
   await expect.poll(marks).toEqual([{ date, kind: 'cheat' }])
-  await expect(day.getByTestId('day-total')).toContainText('Cheat day')
-  await expect(day.getByTestId('day-total')).not.toContainText('Alcohol day')
+  await expect(day.getByRole('button', { name: 'Cheat day', pressed: true })).toBeVisible()
+  await expect(day.getByRole('button', { name: 'Alcohol', pressed: false })).toBeVisible()
 
   await day.getByRole('button', { name: 'Day options' }).click()
   await dayMark.getByRole('radio', { name: 'None' }).click()

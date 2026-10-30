@@ -1,4 +1,4 @@
-import { useState, type ComponentType, type ReactNode, type SVGProps } from 'react'
+import { useCallback, useRef, useState, type ComponentType, type SVGProps } from 'react'
 import { usePagePath } from '../../app/pagePath'
 import { useStackNavigate } from '../../app/stackNavigate'
 import { Button } from '../../components/ios/Button'
@@ -11,8 +11,9 @@ import {
   SnackIcon,
 } from '../../components/ios/icons'
 import { toUserMessage } from '../../lib/errors'
-import { DumbbellSymbol, HeartSymbol } from '../history/calendarSymbols'
-import { useGymDay, useSexDay } from '../dayMarks/hooks'
+import { Toast } from '../../components/ios/Toast'
+import { DayFlagChips } from '../dayMarks/DayFlagChips'
+import { useDayFlags, type FlagToast } from '../dayMarks/useDayFlags'
 import { useGoals } from '../goals/hooks'
 import { DayStatusPill } from '../history/DayStatusPill'
 import { useAddFoodSession } from '../addFood/addFoodSessionContext'
@@ -84,16 +85,6 @@ function missingLabel(missing: readonly MainMeal[]): string {
   return MISSING_LABELS[missing.join(',')] ?? ''
 }
 
-/** A small neutral label beside the day's macros, e.g. "Cheat day". */
-function DayBadge({ label, symbol }: { readonly label: string; readonly symbol?: ReactNode }) {
-  return (
-    <span className="flex shrink-0 items-center gap-1 rounded-full bg-fill px-2 py-0.5 text-[12px] font-bold text-label-secondary">
-      {symbol}
-      {label}
-    </span>
-  )
-}
-
 type MealCardProps = {
   readonly type: MealType
   readonly label: string
@@ -146,6 +137,17 @@ function MealCard({ type, label, subtitle, note, ingredientIds, unsaved, onOpen 
   )
 }
 
+/** how long the Undo toast of a flag stays */
+const UNDO_TOAST_MS = 5000
+
+type ShownToast = FlagToast & {
+  readonly id: number
+  /** whose day it was about, so a toast never outlives the open day */
+  readonly scope: string
+  /** the change error that was already showing when it was raised (its own failure is a new one) */
+  readonly errorThen: Error | null
+}
+
 type DayViewProps = {
   readonly person: Profile
   readonly isOwnDay: boolean
@@ -163,8 +165,6 @@ export function DayView({ person, isOwnDay, date, showStatus = false }: DayViewP
   const day = useDay(person.id, date)
   const dayMark = useDayMark(person.id, date).data ?? null
   const dayNote = useDayNote(person.id, date).data ?? null
-  const gymDay = useGymDay(person.id, date).data === true
-  const sexDay = useSexDay(person.household_id, date).data === true
   const today = useToday()
   const goals = useGoals(person.id)
   const lookOf = useLookOf()
@@ -173,6 +173,31 @@ export function DayView({ person, isOwnDay, date, showStatus = false }: DayViewP
   const latestDayError = useLatestDayChangeError(person.id, date)
   const latestDishError = useLatestDishChangeError()
   const latestChangeError = latestDayError ?? latestDishError
+  // a new tap replaces the toast; the id remounts it, so equal texts still restart the timer
+  const [toast, setToast] = useState<ShownToast | null>(null)
+  const toastId = useRef(0)
+  const scope = `${person.id}|${date}`
+  const showToast = useCallback(
+    (next: FlagToast) => {
+      toastId.current += 1
+      setToast({ ...next, id: toastId.current, scope, errorThen: latestChangeError })
+    },
+    [scope, latestChangeError],
+  )
+  const hideToast = useCallback(() => setToast(null), [])
+  // another day, or a save that failed and was rolled back: Undo would only send a pointless write
+  const toastStale =
+    toast !== null &&
+    (toast.scope !== scope || (latestChangeError !== null && latestChangeError !== toast.errorThen))
+  if (toastStale) setToast(null)
+  const shownToast = toastStale ? null : toast
+  const flags = useDayFlags({
+    userId: person.id,
+    householdId: person.household_id,
+    date,
+    partnerName: isOwnDay ? null : lookOf(person).name,
+    onChanged: showToast,
+  })
   const navigate = useStackNavigate()
   const from = usePagePath().startsWith('/history') ? 'history' : 'today'
   const { draft } = useAddFoodSession()
@@ -261,12 +286,21 @@ export function DayView({ person, isOwnDay, date, showStatus = false }: DayViewP
           />
           <section className="mt-4">
             <div data-testid="day-total" className="mb-3 px-1">
-              <div className="flex items-baseline justify-between gap-3">
-                <h2 className="font-display text-[20px] font-bold">Meals</h2>
-                {/* in the heading row, so Today still fits the screen */}
-                <span className="flex min-w-0 flex-1">
-                  <LeftoversPill onOpen={() => openMeal(mealOfDay)} />
-                </span>
+              <div className="flex items-center gap-3">
+                <h2 className="shrink-0 font-display text-[20px] font-bold">Meals</h2>
+                {/* the leftovers offer and the day's flags in the heading row, so Today still fits the screen */}
+                <div className="min-w-0 flex-1">
+                  <DayFlagChips
+                    key={scope}
+                    flags={flags}
+                    missingLabel={missing.length > 0 ? missingLabel(missing) : null}
+                    leading={
+                      <span className="flex shrink-0">
+                        <LeftoversPill onOpen={() => openMeal(mealOfDay)} />
+                      </span>
+                    }
+                  />
+                </div>
                 <button
                   type="button"
                   aria-label="Day options"
@@ -278,36 +312,6 @@ export function DayView({ person, isOwnDay, date, showStatus = false }: DayViewP
                 </button>
               </div>
               {/* the day's kcal and macros are on the goal card above, not repeated here */}
-              {(dayMark !== null || hasCheatMeal || missing.length > 0 || gymDay || sexDay) && (
-                <div className="flex flex-wrap items-center gap-2">
-                  {dayMark === 'cheat' && <DayBadge label="Cheat day" />}
-                  {dayMark === 'alcohol' && <DayBadge label="Alcohol day" />}
-                  {hasCheatMeal && <DayBadge label="Cheat meal" />}
-                  {missing.length > 0 && <DayBadge label={missingLabel(missing)} />}
-                  {gymDay && (
-                    <DayBadge
-                      label="Gym"
-                      symbol={
-                        <DumbbellSymbol
-                          data-testid="gym-badge-symbol"
-                          className="h-3 w-3 text-gym"
-                        />
-                      }
-                    />
-                  )}
-                  {sexDay && (
-                    <DayBadge
-                      label="Sex"
-                      symbol={
-                        <HeartSymbol
-                          data-testid="sex-badge-symbol"
-                          className="h-3 w-3 text-heart"
-                        />
-                      }
-                    />
-                  )}
-                </div>
-              )}
             </div>
             {!showStatus && <div className="mb-3">{noteRow}</div>}
             <div className="grid grid-cols-2 gap-3">
@@ -333,6 +337,23 @@ export function DayView({ person, isOwnDay, date, showStatus = false }: DayViewP
         householdId={person.household_id}
         date={date}
         onClose={() => setOptionsOpen(false)}
+      />
+      <Toast
+        key={shownToast?.id}
+        message={shownToast?.message ?? null}
+        durationMs={UNDO_TOAST_MS}
+        action={
+          shownToast
+            ? {
+                label: 'Undo',
+                onPress: () => {
+                  shownToast.undo()
+                  hideToast()
+                },
+              }
+            : undefined
+        }
+        onDone={hideToast}
       />
     </>
   )
